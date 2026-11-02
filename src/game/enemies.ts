@@ -1,0 +1,433 @@
+import * as THREE from 'three';
+import { damp, lerpAngle } from '../core/math';
+import { Layer, SOLID, type Character, type Physics } from '../core/physics';
+import { uniqueMat } from '../render/materials';
+import type { Sfx } from '../core/audio';
+import type { Particles } from '../render/particles';
+import type { Area } from '../world/area';
+import type { Hazards } from './hazards';
+import type { PickupKind } from './pickups';
+
+/**
+ * What happened when an enemy attack reached the player: it landed, the shield stopped it,
+ * the shield stopped it but the guard broke, or it missed (airborne, just hit...).
+ */
+export type HitResult = 'hit' | 'blocked' | 'broken' | 'miss';
+
+/** What happened when the player's sword reached an enemy. */
+export type HurtResult = 'hit' | 'weak' | 'guarded' | 'ignored';
+
+/**
+ * The numbers for one attack. Every enemy move that can touch the player declares one, so
+ * each enemy has an "attack sheet" in one place (see THORNLING_LUNGE, the Lamplighter's
+ * ATTACKS). Guard cost is how many of the shield's three slots a block knocks down.
+ */
+export interface Attack {
+  /** Half-hearts lost on a clean hit. */
+  damage: number;
+  /** Shield slots knocked down when blocked: 1 light, 2 heavy, 3 crushing (full guard only). */
+  guard: number;
+  /** How hard the player is knocked back (default 12). */
+  knockback?: number;
+  /** The shield can't stop it at all (ground shockwaves). Jump or move. */
+  unblockable?: boolean;
+  /** Only hits a player standing on the ground: jump over it. */
+  groundOnly?: boolean;
+}
+
+const THORNLING_LUNGE: Attack = { damage: 1, guard: 1 };
+const WISP_DIVE: Attack = { damage: 1, guard: 1, knockback: 6 };
+
+/** A sphere the sword can hit. `priority` picks weak points over the body when both are in reach. */
+export interface Hurtbox {
+  center: THREE.Vector3;
+  radius: number;
+  part: string;
+  priority: number;
+}
+
+export interface EnemyEnv {
+  playerPos: THREE.Vector3;
+  playerAlive: boolean;
+  night: boolean;
+  physics: Physics;
+  hazards: Hazards;
+  sfx: Sfx;
+  particles: Particles;
+  /** An enemy tries to hurt the player from `from`. */
+  hitPlayer(from: THREE.Vector3, attack: Attack): HitResult;
+  /** Shoves the player away from `from` without hurting (roars, shockwaves). */
+  pushPlayer(from: THREE.Vector3, strength: number): void;
+  /** Adds another enemy to the area (summons, minions). */
+  spawn(e: Enemy): void;
+  drop(kind: PickupKind, at: THREE.Vector3): void;
+  shake(strength: number): void;
+}
+
+export abstract class Enemy {
+  readonly root = new THREE.Group();
+  readonly pos = new THREE.Vector3();
+  protected knock = new THREE.Vector3();
+  protected flash = 0;
+  protected flashMats: THREE.MeshLambertMaterial[] = [];
+  hp = 3;
+  alive = true;
+  /** Set once the death animation has finished and it can be removed. */
+  gone = false;
+  radius = 0.8;
+  /** Height above `pos` where the lock-on marker sits. */
+  lockHeight = 1;
+  protected deathT = 0;
+
+  abstract update(dt: number, env: EnemyEnv): void;
+
+  /** Whether lock-on may pick this enemy. */
+  get targetable() {
+    return this.alive;
+  }
+
+  /** Where the sword can hit this enemy (world space). Default: one sphere around the body. */
+  hurtboxes(): Hurtbox[] {
+    return [{ center: this.pos.clone().setY(this.pos.y + this.lockHeight), radius: this.radius, part: 'body', priority: 0 }];
+  }
+
+  /** The sword connects with `part`. */
+  hurt(dmg: number, from: THREE.Vector3, _part = 'body'): HurtResult {
+    if (!this.alive) return 'ignored';
+    this.hp -= dmg;
+    this.flash = 0.18;
+    this.knock.copy(this.pos).sub(from).setY(0).normalize().multiplyScalar(11);
+    this.onHurt();
+    if (this.hp <= 0) this.alive = false;
+    return 'hit';
+  }
+
+  /** The player died and respawned (bosses reset their fight here). */
+  onPlayerRespawn() {}
+
+  /** Keeps moving while a cutscene plays. Most enemies freeze, but deaths always finish. */
+  animatesInCutscene() {
+    return !this.alive;
+  }
+
+  /** Frees physics and GPU resources; called when the enemy is removed. */
+  dispose() {
+    this.root.removeFromParent();
+    for (const m of this.flashMats) m.dispose();
+  }
+
+  protected onHurt() {}
+
+  protected applyFlash(dt: number) {
+    this.flash = Math.max(0, this.flash - dt);
+    const f = this.flash > 0 ? 1 : 0;
+    for (const m of this.flashMats) m.emissive.setRGB(f, f, f);
+  }
+
+  /** Shrink and spin away after death. */
+  protected dying(dt: number) {
+    this.deathT += dt;
+    this.root.scale.setScalar(Math.max(0.01, 1 - this.deathT / 0.35));
+    this.root.rotation.y += dt * 20;
+    if (this.deathT > 0.35) this.gone = true;
+  }
+}
+
+/** A hopping ball of thorns. Wanders, notices you, winds up and lunges. */
+export class Thornling extends Enemy {
+  private state: 'wander' | 'chase' | 'windup' | 'lunge' | 'recover' | 'stagger' = 'wander';
+  private t = 0;
+  private hopT = Math.random() * 10;
+  private yaw = 0;
+  private velY = 0;
+  private readonly home: THREE.Vector3;
+  private readonly wanderTo = new THREE.Vector3();
+  private readonly lungeDir = new THREE.Vector3();
+  private hitDone = false;
+  private readonly body: THREE.Group;
+  private readonly character: Character;
+
+  constructor(parent: THREE.Object3D, physics: Physics, x: number, z: number) {
+    super();
+    const y = physics.groundY(x, z, 400, Layer.World) ?? 0;
+    this.pos.set(x, y, z);
+    this.home = this.pos.clone();
+    this.wanderTo.copy(this.home);
+    this.radius = 0.75;
+    this.lockHeight = 1.0;
+    this.character = physics.createCharacter(this.pos, 0.6, 0.15, Layer.Enemy, SOLID | Layer.Player | Layer.Enemy);
+
+    const skin = uniqueMat(0x7a2f4a), thorn = uniqueMat(0xc9b27a), eye = new THREE.MeshBasicMaterial({ color: 0xffd23a });
+    this.flashMats.push(skin, thorn);
+    this.body = new THREE.Group();
+    const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.65, 0), skin);
+    ball.castShadow = true;
+    this.body.add(ball);
+    const dirs = new THREE.IcosahedronGeometry(1, 0).attributes.position;
+    const seen = new Set<string>();
+    const spikeGeo = new THREE.ConeGeometry(0.13, 0.5, 5);
+    for (let i = 0; i < dirs.count; i++) {
+      const v = new THREE.Vector3().fromBufferAttribute(dirs, i).normalize();
+      const k = v.toArray().map((n) => n.toFixed(2)).join();
+      if (seen.has(k) || v.z > 0.7) continue;
+      seen.add(k);
+      const spike = new THREE.Mesh(spikeGeo, thorn);
+      spike.position.copy(v).multiplyScalar(0.7);
+      spike.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v);
+      this.body.add(spike);
+    }
+    for (const s of [-1, 1]) {
+      const e = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6, 5), eye);
+      e.position.set(s * 0.22, 0.12, 0.58);
+      this.body.add(e);
+    }
+    this.body.position.y = 0.75;
+    this.root.add(this.body);
+    parent.add(this.root);
+  }
+
+  protected onHurt() {
+    this.state = 'stagger';
+    this.t = 0;
+  }
+
+  dispose() {
+    super.dispose();
+    this.character.dispose();
+  }
+
+  update(dt: number, env: EnemyEnv) {
+    this.applyFlash(dt);
+    if (!this.alive) {
+      this.dying(dt);
+      return;
+    }
+    this.t += dt;
+    const to = env.playerPos.clone().sub(this.pos).setY(0);
+    const dist = to.length();
+    to.normalize();
+    const speedMul = env.night ? 1.3 : 1;
+    const vel = new THREE.Vector3();
+    let face = this.yaw;
+    let squash = 1;
+
+    switch (this.state) {
+      case 'wander': {
+        const w = this.wanderTo.clone().sub(this.pos).setY(0);
+        if (w.length() < 1 || this.t > 6) {
+          const a = Math.random() * Math.PI * 2, r = Math.random() * 9;
+          this.wanderTo.set(this.home.x + Math.cos(a) * r, 0, this.home.z + Math.sin(a) * r);
+          this.t = 0;
+        } else {
+          vel.copy(w.normalize()).multiplyScalar(1.8);
+          face = Math.atan2(w.x, w.z);
+        }
+        if (dist < 15 && env.playerAlive) this.go('chase');
+        break;
+      }
+      case 'chase':
+        vel.copy(to).multiplyScalar(4.4 * speedMul);
+        face = Math.atan2(to.x, to.z);
+        if (dist < 3.2) this.go('windup');
+        else if (dist > 26 || !env.playerAlive) this.go('wander');
+        break;
+      case 'windup':
+        face = Math.atan2(to.x, to.z);
+        squash = 1 - Math.min(1, this.t / 0.5) * 0.35;
+        if (this.t > 0.55 / speedMul) {
+          this.go('lunge');
+          this.lungeDir.copy(to);
+          this.hitDone = false;
+        }
+        break;
+      case 'lunge':
+        vel.copy(this.lungeDir).multiplyScalar(13);
+        squash = 1.15;
+        if (!this.hitDone && dist < 1.6) {
+          this.hitDone = true;
+          if (env.hitPlayer(this.pos, THORNLING_LUNGE) === 'blocked') {
+            this.knock.copy(this.lungeDir).multiplyScalar(-12);
+            this.go('stagger');
+          }
+        }
+        if (this.t > 0.28) this.go('recover');
+        break;
+      case 'recover':
+      case 'stagger':
+        if (this.t > 0.7) this.go('chase');
+        break;
+    }
+
+    vel.add(this.knock);
+    this.knock.multiplyScalar(Math.exp(-7 * dt));
+    this.velY = this.character.grounded ? -1 : this.velY - 30 * dt;
+    this.character.move(this.pos, new THREE.Vector3(vel.x * dt, this.velY * dt, vel.z * dt));
+
+    this.yaw = lerpAngle(this.yaw, face, damp(10, dt));
+    const moving = vel.lengthSq() > 0.5 && this.state !== 'stagger';
+    if (moving) this.hopT += dt * 9;
+    const hop = moving ? Math.abs(Math.sin(this.hopT)) * 0.45 : 0;
+    this.root.position.copy(this.pos);
+    this.root.rotation.y = this.yaw;
+    this.body.position.y = 0.75 + hop;
+    this.body.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
+    this.body.rotation.x = this.state === 'stagger' ? Math.sin(this.t * 30) * 0.3 : 0;
+  }
+
+  private go(s: Thornling['state']) {
+    this.state = s;
+    this.t = 0;
+  }
+}
+
+export interface WispOptions {
+  /** Fades away at dawn (the field's wisps). Off for summoned ones. */
+  nocturnal?: boolean;
+  /** Between dives, circle this point instead of drifting off (a boss's lantern). */
+  anchor?: () => THREE.Vector3 | null;
+  /** Seconds between dives. */
+  attackCooldown?: number;
+}
+
+/** A drifting will-o'-wisp that only comes out at night. One hit pops it. Passes through walls. */
+export class Gloomwisp extends Enemy {
+  private t = Math.random() * 10;
+  private cooldown = 0;
+  private fade = 0;
+  private readonly core: THREE.Mesh;
+  private readonly halo: THREE.Mesh;
+  private readonly coreMat: THREE.MeshLambertMaterial;
+  readonly nocturnal: boolean;
+  private readonly anchor: (() => THREE.Vector3 | null) | null;
+  private readonly attackCooldown: number;
+  leaving = false;
+
+  constructor(parent: THREE.Object3D, physics: Physics, x: number, z: number, opts: WispOptions = {}) {
+    super();
+    this.nocturnal = opts.nocturnal ?? true;
+    this.anchor = opts.anchor ?? null;
+    this.attackCooldown = opts.attackCooldown ?? 1.6;
+    this.cooldown = this.anchor ? 1 + Math.random() * 2 : 0;
+    this.hp = 1;
+    this.radius = 0.5;
+    this.lockHeight = 0.6;
+    this.pos.set(x, (physics.groundY(x, z, 400, Layer.World) ?? 0) + 1.6, z);
+    this.coreMat = uniqueMat(0x2a1840, { emissive: 0x6a2fb0 });
+    this.flashMats.push(this.coreMat);
+    this.core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), this.coreMat);
+    this.halo = new THREE.Mesh(
+      new THREE.SphereGeometry(0.8, 10, 8),
+      new THREE.MeshBasicMaterial({ color: 0xb06aff, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false }),
+    );
+    this.root.add(this.core, this.halo);
+    this.root.scale.setScalar(0.01);
+    parent.add(this.root);
+  }
+
+  protected applyFlash(dt: number) {
+    this.flash = Math.max(0, this.flash - dt);
+    this.coreMat.emissive.set(this.flash > 0 ? 0xffffff : 0x6a2fb0);
+  }
+
+  update(dt: number, env: EnemyEnv) {
+    this.applyFlash(dt);
+    if (!this.alive) {
+      this.dying(dt);
+      return;
+    }
+    this.t += dt;
+    this.cooldown -= dt;
+    this.fade = Math.min(1, Math.max(0, this.fade + (this.leaving ? -dt : dt)));
+    if (this.leaving && this.fade <= 0) this.gone = true;
+    const to = env.playerPos.clone().add(new THREE.Vector3(0, 1.2, 0)).sub(this.pos);
+    const dist = to.length();
+    const vel = new THREE.Vector3();
+    const anchor = this.anchor?.() ?? null;
+    if (anchor && this.cooldown > 0) {
+      // Circle the anchor until it's time to dive again.
+      const a = this.t * 1.6 + this.root.id;
+      const target = anchor.clone().add(new THREE.Vector3(Math.cos(a) * 2.2, Math.sin(this.t * 2.3) * 0.5, Math.sin(a) * 2.2));
+      vel.copy(target.sub(this.pos)).multiplyScalar(2.5);
+    } else if (dist < 22 && env.playerAlive && !this.leaving) {
+      vel.copy(to).normalize().multiplyScalar(this.cooldown > 0 ? -2.5 : anchor ? 6 : 3.6);
+      if (dist < 1.1 && this.cooldown <= 0) {
+        env.hitPlayer(this.pos, WISP_DIVE);
+        this.cooldown = this.attackCooldown;
+      }
+    } else {
+      vel.set(Math.sin(this.t * 0.7), 0, Math.cos(this.t * 0.5)).multiplyScalar(1.2);
+    }
+    vel.add(this.knock);
+    this.knock.multiplyScalar(Math.exp(-6 * dt));
+    this.pos.addScaledVector(vel, dt);
+    if (!anchor || this.cooldown <= 0) {
+      const floor = (env.physics.groundY(this.pos.x, this.pos.z, this.pos.y + 4, Layer.World) ?? this.pos.y - 1.7) + 1.2;
+      this.pos.y += (floor + 0.5 + Math.sin(this.t * 2) * 0.3 - this.pos.y) * damp(2, dt);
+    }
+    this.root.position.copy(this.pos);
+    this.root.scale.setScalar(Math.max(0.01, this.fade));
+    this.core.rotation.x += dt * 2;
+    this.core.rotation.y += dt * 3;
+    (this.halo.material as THREE.MeshBasicMaterial).opacity = 0.2 + Math.sin(this.t * 5) * 0.08;
+  }
+}
+
+/** Keeps an area populated: thornlings day and night (respawning), wisps after dark. */
+export class EnemyManager {
+  readonly list: Enemy[] = [];
+  private respawns: number[] = [];
+
+  constructor(private parent: THREE.Object3D, private physics: Physics, private area: Area) {
+    for (let i = 0; i < area.enemyCount; i++) this.spawnThornling(null);
+  }
+
+  add(e: Enemy) {
+    this.list.push(e);
+  }
+
+  private spawnThornling(player: THREE.Vector3 | null) {
+    const s = this.area.enemySpot(Math.random, player ?? undefined, player ? 40 : 0);
+    if (s) this.list.push(new Thornling(this.parent, this.physics, s.x, s.z));
+  }
+
+  /** `cutscene`: only enemies that animate in cutscenes move, and nothing spawns. */
+  update(dt: number, env: EnemyEnv, cutscene = false) {
+    for (const e of this.list) if (!cutscene || e.animatesInCutscene()) e.update(dt, env);
+    if (cutscene) {
+      this.removeGone();
+      return;
+    }
+    this.removeGone();
+    for (let i = this.respawns.length - 1; i >= 0; i--) {
+      this.respawns[i] -= dt;
+      if (this.respawns[i] <= 0) {
+        this.respawns.splice(i, 1);
+        this.spawnThornling(env.playerPos);
+      }
+    }
+    const wisps = this.list.filter((e): e is Gloomwisp => e instanceof Gloomwisp && e.nocturnal && !e.leaving);
+    if (env.night && wisps.length < 5 && Math.random() < dt * 0.5) {
+      const s = this.area.enemySpot(Math.random, env.playerPos, 22, 34);
+      if (s) this.list.push(new Gloomwisp(this.parent, this.physics, s.x, s.z));
+    }
+    if (!env.night) for (const w of wisps) w.leaving = true;
+  }
+
+  private removeGone() {
+    for (let i = this.list.length - 1; i >= 0; i--) {
+      const e = this.list[i];
+      if (!e.gone) continue;
+      e.dispose();
+      this.list.splice(i, 1);
+      if (e instanceof Thornling) this.respawns.push(45);
+    }
+  }
+
+  /** Removes every enemy (area change). */
+  clear() {
+    for (const e of this.list) e.dispose();
+    this.list.length = 0;
+    this.respawns.length = 0;
+  }
+}
+

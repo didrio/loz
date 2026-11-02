@@ -1,0 +1,41 @@
+import { describe, expect, it } from 'vitest';
+import { GameState } from './state';
+
+describe('GameState', () => {
+  it('starts a new game knowing only the Song of Hours', () => {
+    const s = new GameState();
+    expect([...s.songs]).toEqual(['hours']);
+    expect(s.flags.size).toBe(0);
+    expect(s.hp).toBe(s.maxHp);
+  });
+
+  it('keeps hearts and gems in range', () => {
+    const s = new GameState();
+    s.damage(100);
+    expect(s.hp).toBe(0);
+    s.heal(100);
+    expect(s.hp).toBe(s.maxHp);
+    s.addGems(20000);
+    expect(s.gems).toBe(9999);
+  });
+
+  it('rolls the clock into the next day and knows night from day', () => {
+    const s = new GameState();
+    s.hours = 23;
+    s.advance(2);
+    expect(s.day).toBe(2);
+    expect(s.hours).toBeCloseTo(1);
+    expect(s.isNight).toBe(true);
+    s.hours = 12;
+    expect(s.isNight).toBe(false);
+  });
+
+  it('resets in place so references stay valid', () => {
+    const s = new GameState();
+    const flags = s.flags;
+    s.set('hasSword');
+    s.reset();
+    expect(s.flags).toBe(flags);
+    expect(flags.size).toBe(0);
+  });
+});
