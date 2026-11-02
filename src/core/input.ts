@@ -4,9 +4,9 @@
  */
 
 export type Action =
-  | 'attack' | 'shield' | 'jump' | 'lock' | 'interact' | 'flute'
+  | 'attack' | 'shield' | 'jump' | 'lock' | 'interact'
   | 'confirm' | 'cancel' | 'music' | 'menuUp' | 'menuDown'
-  | 'note0' | 'note1' | 'note2' | 'note3' | 'note4';
+  | 'drinkRestore' | 'drinkAttack';
 
 export type Device = 'keyboard' | 'gamepad';
 
@@ -17,17 +17,13 @@ const KEYS: Record<Action, string[]> = {
   jump: ['Space'],
   lock: ['KeyQ', 'Tab'],
   interact: ['KeyE', 'Enter'],
-  flute: ['KeyF'],
   confirm: ['Enter', 'Space', 'KeyE', 'Mouse0'],
   cancel: ['Escape'],
   music: ['KeyP'],
   menuUp: ['ArrowUp', 'KeyW'],
   menuDown: ['ArrowDown', 'KeyS'],
-  note0: ['Digit1', 'Numpad1'],
-  note1: ['Digit2', 'Numpad2'],
-  note2: ['Digit3', 'Numpad3'],
-  note3: ['Digit4', 'Numpad4'],
-  note4: ['Digit5', 'Numpad5'],
+  drinkRestore: ['Digit1', 'Numpad1'],
+  drinkAttack: ['Digit2', 'Numpad2'],
 };
 
 /**
@@ -40,29 +36,23 @@ const PAD: Record<Action, number[]> = {
   jump: [0],
   lock: [6, 4],
   interact: [0],
-  flute: [3],
   confirm: [0, 9],
   cancel: [1],
   music: [8],
   menuUp: [12],
   menuDown: [13],
-  note0: [0],
-  note1: [13],
-  note2: [15],
-  note3: [14],
-  note4: [12],
+  drinkRestore: [14],
+  drinkAttack: [15],
 };
 
 const KEY_GLYPH: Record<Action, string> = {
-  attack: 'Click', shield: 'Shift', jump: 'Space', lock: 'Q', interact: 'E', flute: 'F',
-  confirm: 'Enter', cancel: 'Esc', music: 'P', menuUp: 'W', menuDown: 'S',
-  note0: '1', note1: '2', note2: '3', note3: '4', note4: '5',
+  attack: 'Click', shield: 'Shift', jump: 'Space', lock: 'Q', interact: 'E',
+  confirm: 'Enter', cancel: 'Esc', music: 'P', menuUp: 'W', menuDown: 'S', drinkRestore: '1', drinkAttack: '2',
 };
 
 const PAD_GLYPH: Record<Action, string> = {
-  attack: 'X', shield: 'RT', jump: 'A', lock: 'LT', interact: 'A', flute: 'Y',
-  confirm: 'A', cancel: 'B', music: 'Back', menuUp: '↑', menuDown: '↓',
-  note0: 'A', note1: '↓', note2: '→', note3: '←', note4: '↑',
+  attack: 'X', shield: 'RT', jump: 'A', lock: 'LT', interact: 'A',
+  confirm: 'A', cancel: 'B', music: 'Back', menuUp: '↑', menuDown: '↓', drinkRestore: '←', drinkAttack: '→',
 };
 
 /** The button label to show for an action on a device. */

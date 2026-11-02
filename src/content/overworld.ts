@@ -2,11 +2,10 @@ import * as THREE from 'three';
 import { easeInOut } from '../core/math';
 import { HollowLamplighter } from '../game/bosses/lamplighter';
 import type { Script, ScriptApi } from '../game/script';
-import { notesMarkup } from '../game/songs';
 import type { GameState } from '../game/state';
 import { glow } from '../render/shapes';
 import type { Overworld } from '../world/overworld';
-import { HOLLOW } from '../world/overworld/layout';
+import { HOLLOW, HOLLOW_ENTRANCE } from '../world/overworld/layout';
 
 /** What a loaded area needs from content: scripts by interactable/trigger id, and save restore. */
 export interface AreaContent {
@@ -15,15 +14,28 @@ export interface AreaContent {
   restore(state: GameState): void;
   /** Called when play begins in the area: spawn bosses, arm encounters. */
   start?(api: ScriptApi): void;
+  /** Called after Wren respawns here (died): reset what a death should reset. */
+  onRespawn?(api: ScriptApi): void;
+  /** Called every frame of play (not during cutscenes): watch for things like fight rooms. */
+  update?(api: ScriptApi, dt: number): void;
 }
 
 const say = (text: string, who?: string): Script => (api) => api.say([{ who, text }]);
 
+/**
+ * A point just in front of the shrine door's face (it faces west). Camera shots aim here,
+ * not at the door's center: a look-at point inside the door's collider makes the camera's
+ * keep-out-of-walls ray start inside stone, which pulls the camera right up against it.
+ */
+function doorFace(ow: Overworld, dy = 0) {
+  return new THREE.Vector3(ow.door.x - 0.8, ow.door.mesh.position.y + dy, ow.door.z);
+}
+
 /** The shrine door cutscene: the camera cuts to the door and watches it sink. */
-export async function shrineDoorOpens(api: ScriptApi, ow: Overworld) {
-  await api.say([{ text: 'The spiral flares bright. With a deep grinding groan, the stone door begins to sink into the earth...' }]);
-  const y = ow.door.mesh.position.y;
-  api.shot(new THREE.Vector3(ow.door.x - 11, y + 2.5, ow.door.z + 7), new THREE.Vector3(ow.door.x, y - 0.5, ow.door.z));
+async function shrineDoorOpens(api: ScriptApi, ow: Overworld) {
+  await api.say([{ text: 'You press your hand to the glowing spiral. With a deep grinding groan, the stone door begins to sink into the earth...' }]);
+  const at = doorFace(ow, -0.5);
+  api.shot(new THREE.Vector3(ow.door.x - 11, at.y + 3, ow.door.z + 7), at);
   await api.wait(0.9);
   ow.door.startOpening();
   api.state.set('shrineOpen');
@@ -112,57 +124,111 @@ export function overworldContent(ow: Overworld): AreaContent {
     spark.traverse((m) => m instanceof THREE.Mesh && (m.geometry.dispose(), (m.material as THREE.Material).dispose()));
     ow.lantern.setEmbers(1);
     api.sfx.solved();
-    await api.wait(2.2);
+    await api.wait(1.6);
+    // Down to the door below: its spiral wakes in the lantern's light.
+    const door = doorFace(ow);
+    api.shot(new THREE.Vector3(door.x - 9, door.y + 2, door.z + 5), door);
+    ow.door.wake();
+    await api.wait(2.4);
     api.releaseCamera();
     ow.vessel.show();
-    await api.say([{ text: 'The stolen flame is free. Far to the east, the great lantern holds a single warm ember again.' }]);
+    await api.say([{ text: 'The stolen flame is free. Far to the east, the great lantern holds a single warm ember again, and the spiral on the shrine door has begun to glow.' }]);
+  };
+
+  /**
+   * The Lamplighter walks its rounds only at night: it's in the hollow from dusk to dawn
+   * (so the fight is always at night, with the night theme's boss version), and gone by day
+   * unless a fight is already under way.
+   */
+  const watchTheHollow = (api: ScriptApi) => {
+    if (api.state.has('lamplighterDefeated')) return;
+    if (api.state.isNight && !lamplighter) {
+      // Waits in the middle of the hollow with its back to the road.
+      lamplighter = new HollowLamplighter(ow.root, api.physics, ow.hollow, HOLLOW.x, HOLLOW.z + 3, 0);
+      lamplighter.onDefeated = () => api.run(lamplighterFalls);
+      api.addEnemy(lamplighter);
+      ow.hollow.armed = true;
+    } else if (!api.state.isNight && lamplighter && !lamplighter.engaged && !ow.hollow.sealed && lamplighter.alive) {
+      api.removeEnemy(lamplighter);
+      lamplighter = null;
+      ow.hollow.armed = false;
+    }
   };
 
   const scripts: Record<string, Script> = {
+    // The quest thread, loosely guided: Maren gives Wren the key to the grove chest (the
+    // sword); once Wren is armed, the village talk turns to the stolen flame and the
+    // Gloaming Hollow; beating the Lamplighter relights the lantern, which wakes the
+    // shrine door. Nobody but the lantern can open it.
     async 'npc.maren'(api) {
       const { state } = api;
       const who = 'Maren';
-      if (!state.has('metMaren')) {
+      if (!state.has('gotGroveKey')) {
         await api.say([
           { who, text: 'Wren! You\'re up at last. Did you see it? The lantern on the Waking Shrine went dark last night.' },
           { who, text: 'That light has burned on the eastern hill since before my grandmother\'s grandmother. Now the thornlings are crawling all over Emberfield.' },
-          { who, text: 'The shrine door only opens to a song. My grandmother hummed it to me when I was small. Here, listen closely...' },
+          { who, text: 'You can\'t go wandering out there with nothing but a pot lid. My father left a blade in an old chest in the *Whispering Grove*, northeast of the field.' },
+          { who, text: 'He locked it so no fool child would cut their fingers off. Well... you\'re not a child anymore. Here.' },
         ]);
         state.set('metMaren');
-        state.songs.add('waking');
-        api.sfx.solved();
+        state.set('gotGroveKey');
+        state.keys++;
+        api.sfx.fanfare();
         await api.say([
-          { text: `You learned the *Song of Waking*!\n${notesMarkup('waking')}\nPress [flute] to take out your flute, then play the notes.` },
-          { who, text: 'You can\'t go up there empty-handed. An old blade sleeps in a chest in the Whispering Grove, to the northeast. Take it first.' },
+          { text: 'You got a *Small Key*!\nIt opens the old chest in the Whispering Grove.' },
+          { who, text: 'Follow the road northeast past the big lone oak. The chest sits in the clearing at the end.' },
         ]);
       } else if (!state.has('hasSword')) {
-        await api.say([{ who, text: 'The Whispering Grove is northeast of the field. Follow the road past the big lone oak. The chest sits in a clearing where the light falls.' }]);
+        await api.say([{ who, text: 'The Whispering Grove is northeast of the field. Follow the road past the big lone oak. The chest sits in the clearing at the end.' }]);
+      } else if (!state.has('lamplighterDefeated')) {
+        await api.say([
+          { who, text: 'Father\'s blade! It suits you better than it ever suited him.' },
+          { who, text: 'Wren, I\'ve been asking around. The shrine door has been shut tight since the lantern went out. Nobody can budge it.' },
+          { who, text: 'The old words on the pedestal say the stone wakes while the lantern burns. And the lantern didn\'t just go out. Tobin swears he saw its flame *carried off*, south.' },
+          { who, text: 'South past the bridge is the *Gloaming Hollow*. Old Corwin lit the lamps down there for forty years. Since last night, people say he\'s still walking his rounds after dark... only taller than he was.' },
+          { who, text: 'If something down there has our flame, taking it back is the only way that door is ever opening. Be careful.' },
+        ]);
       } else if (!ow.door.open) {
-        await api.say([{ who, text: `You found the blade! Now go east to the shrine and play the Song of Waking at the door.\n${notesMarkup('waking')}` }]);
+        await api.say([
+          { who, text: 'Did you see the shrine? The lantern is glowing again, just a little. Something came home last night... that was you, wasn\'t it?' },
+          { who, text: 'If the lantern burns, the door should wake. Go and see, Wren.' },
+        ]);
       } else {
         await api.say([{ who, text: 'You opened it?! Then the old stories are true... Whatever is down there, Wren, come back in one piece.' }]);
-      }
-      if (state.has('hasSword') && !state.has('lamplighterDefeated')) {
-        await api.say([
-          { who, text: 'And Wren... stay out of the Gloaming Hollow, south past the bridge. Old Corwin lit the lamps down there for forty years.' },
-          { who, text: 'Since the lantern went dark, people say they\'ve seen him still walking his rounds. Only... taller than he was.' },
-        ]);
-      } else if (state.has('lamplighterDefeated')) {
-        await api.say([{ who, text: 'Did you see the shrine? The lantern is glowing again, just a little. Something came home last night... was that you?' }]);
       }
     },
 
     async 'npc.tobin'(api) {
-      const lines = api.state.isNight
-        ? ['Can\'t sleep either? The wisps come out after dark. Little purple things. One good whack pops them.',
-          'If the night drags on, play the Song of Hours on that flute of yours. Never could carry a tune myself.']
-        : ['The mill doesn\'t need wind, you know. It turns because it\'s always turned. Don\'t ask me how.',
-          'Cut the bushes around the fence if you need gems. They grow back. Everything here grows back. Except my hair.'];
-      if (api.state.has('lamplighterDefeated')) lines.push('Saw a light streak across the sky, east toward the shrine. Either that\'s good news or I need more sleep.');
-      await api.say(lines.map((text) => ({ who: 'Tobin the Miller', text })));
+      const { state } = api;
+      const who = 'Tobin the Miller';
+      let lines: string[];
+      if (state.has('lamplighterDefeated')) {
+        lines = ['Saw a light streak across the sky, east toward the shrine. Either that\'s good news or I need more sleep.'];
+      } else if (state.has('hasSword')) {
+        lines = [
+          'Going up to the shrine? Don\'t bother. That door\'s shut tighter than my wallet.',
+          'The night the lantern died I was up with the mill. Saw a cold blue light drift off the hill, slow, like someone carrying it. Went south. Down toward the Gloaming Hollow. Folk only see it there after dark.',
+          'Whatever took it is still down there. If you want that door open, you\'ll have to get the flame back first. Rather you than me.',
+        ];
+      } else if (!state.has('gotGroveKey')) {
+        lines = ['Maren\'s been asking after you all morning. She\'s by the well, in the purple. Go on, before she starts asking me.'];
+      } else {
+        lines = state.isNight
+          ? ['Can\'t sleep either? The wisps come out after dark. Little purple things. One good whack pops them.',
+            'Nights feel longer since the lantern went out. Or maybe I\'m just getting old.']
+          : ['The mill doesn\'t need wind, you know. It turns because it\'s always turned. Don\'t ask me how.',
+            'Cut the bushes around the fence if you need gems. They grow back. Everything here grows back. Except my hair.'];
+      }
+      await api.say(lines.map((text) => ({ who, text })));
     },
 
     async 'chest.grove'(api) {
+      if (api.state.keys <= 0) {
+        await api.say([{ text: 'The chest is shut with an old iron padlock.\nSomeone in *Thistledown* might have the key.' }]);
+        return;
+      }
+      api.state.keys--;
+      await api.say([{ text: 'You unlocked the padlock with the *Small Key*.' }]);
       ow.chest.open();
       api.state.set('groveChestOpened');
       await api.wait(0.9);
@@ -173,20 +239,36 @@ export function overworldContent(ow: Overworld): AreaContent {
         { text: 'You found the *Wayfarer\'s Blade*!\nIts edge is nicked, but it still sings when you swing it.' },
         { text: 'Press [attack] to swing. Keep pressing in rhythm for a three-hit combo. Press [lock] to lock on to an enemy.' },
         { text: 'Hold [shield] to raise your shield (you can still jump with it up). Each block knocks down some of its *guard*, the green bars beside you.' },
-        { text: 'Guard only comes back while your shield is *lowered*, so back off and let it recover. Block with too little guard left and it *breaks*: no shield for a couple of seconds.' },
+        { text: 'Guard only comes back while your shield is *lowered*, so back off and let it recover. Block with too little guard left and it *breaks*: you stagger, barely able to move, until you catch your balance.' },
+        { text: 'Maren will want to see this. Head back to *Thistledown*.' },
       ]);
     },
 
-    'door.shrine': say('A sealed slab of stone with a glowing spiral carved into it. It hums faintly, as if waiting for a sound.'),
+    async 'door.shrine'(api) {
+      if (ow.door.awake) {
+        await shrineDoorOpens(api, ow);
+        return;
+      }
+      const hint = api.state.has('hasSword')
+        ? 'The lantern above it is dark. Whatever took its flame went south, to the Gloaming Hollow.'
+        : 'Maybe someone in *Thistledown* knows how to open it.';
+      await api.say([{ text: `A sealed slab of stone with a spiral carved into it, cold and dark. It won't budge.\n${hint}` }]);
+    },
 
     async 'trigger.shrineEntrance'(api) {
-      await api.card('The Waking Shrine', 'Stone steps spiral down into the dark.\nThe first dungeon is still being carved... to be continued.');
-      api.player.teleport(ow.door.x - 3, api.player.pos.y, ow.door.z, -Math.PI / 2);
+      await api.travel('shrine');
     },
 
     'sign.crossroads': say('NORTHWEST: Thistledown Village\nNORTHEAST: The Whispering Grove\nEAST: The Waking Shrine\nSOUTH: over the bridge to the Gloaming Hollow\nSOUTHWEST: Glimmer Lake'),
     'sign.hollow': say('GLOAMING HOLLOW\n"Here ends the lamplighter\'s road. Lamps lit at dusk, snuffed at dawn."\nUnderneath, scratched in fresh and shaky: *TURN BACK*'),
-    'trigger.hollow': lamplighterWakes,
+    async 'trigger.hollow'(api) {
+      if (api.state.has('hasSword')) return lamplighterWakes(api);
+      // Unarmed: it doesn't wake, and Wren thinks better of it.
+      await api.say([{ text: 'Something tall stands in the middle of the hollow, perfectly still, its back to you.\nWithout a weapon, you\'d rather not get any closer.' }]);
+      await api.fade(1, 0.4);
+      api.player.teleport(HOLLOW_ENTRANCE.x, api.physics.groundY(HOLLOW_ENTRANCE.x, HOLLOW_ENTRANCE.z - 6) ?? api.player.pos.y, HOLLOW_ENTRANCE.z - 6, Math.PI);
+      await api.fade(0, 0.4);
+    },
 
     async 'trigger.heartVessel'(api) {
       ow.vessel.collect();
@@ -197,8 +279,8 @@ export function overworldContent(ow: Overworld): AreaContent {
       await api.say([{ text: 'You got a *Heart Vessel*!\nYour life grew by one heart, and you feel completely restored.' }]);
     },
     'sign.village': say('Thistledown Village\n"Mind the windmill. Mind the thornlings more."'),
-    'sign.grove': say('The Whispering Grove\nThe trees here are said to remember every song ever played beneath them.'),
-    'sign.pedestal': say('Old letters, worn by rain:\n"Sing to the sleeping stone, and the stone shall wake. Rekindle the lantern, and the night shall break."'),
+    'sign.grove': say('The Whispering Grove\nThe trees here are said to remember every word ever spoken beneath them.'),
+    'sign.pedestal': say('Old letters, worn by rain:\n"While the lantern burns, the sleeping stone shall wake. Rekindle the lantern, and the night shall break."'),
   };
 
   return {
@@ -209,16 +291,16 @@ export function overworldContent(ow: Overworld): AreaContent {
       if (state.has('lamplighterDefeated')) {
         ow.hollow.clear();
         ow.lantern.setEmbers(1, true);
+        ow.door.wake(true);
         if (!state.has('hollowVessel')) ow.vessel.show();
       }
     },
     start(api) {
-      if (api.state.has('lamplighterDefeated') || lamplighter) return;
-      // Waits in the middle of the hollow with its back to the road.
-      lamplighter = new HollowLamplighter(ow.root, api.physics, ow.hollow, HOLLOW.x, HOLLOW.z + 3, 0);
-      lamplighter.onDefeated = () => api.run(lamplighterFalls);
-      api.addEnemy(lamplighter);
-      ow.hollow.armed = true;
+      watchTheHollow(api);
+    },
+
+    update(api) {
+      watchTheHollow(api);
     },
   };
 }

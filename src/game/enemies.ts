@@ -134,9 +134,18 @@ export abstract class Enemy {
 }
 
 /** A hopping ball of thorns. Wanders, notices you, winds up and lunges. */
+/** How far from home a thornling will chase before giving up and walking back. */
+const THORN_LEASH = 24;
+/** Seconds without seeing Wren before a chase is dropped. */
+const THORN_FORGET = 2.5;
+
 export class Thornling extends Enemy {
   private state: 'wander' | 'chase' | 'windup' | 'lunge' | 'recover' | 'stagger' = 'wander';
   private t = 0;
+  /** Seconds since it last saw Wren (while chasing). */
+  private unseen = 0;
+  /** After giving up a chase: seconds before it will notice Wren again (no yo-yo at the leash). */
+  private calm = 0;
   private hopT = Math.random() * 10;
   private yaw = 0;
   private velY = 0;
@@ -147,9 +156,13 @@ export class Thornling extends Enemy {
   private readonly body: THREE.Group;
   private readonly character: Character;
 
-  constructor(parent: THREE.Object3D, physics: Physics, x: number, z: number) {
+  /**
+   * `fromY`: look for the ground below this height (indoors, under the ceilings).
+   * `territory`: where Wren has to be for it to care (a dungeon room); anywhere if omitted.
+   */
+  constructor(parent: THREE.Object3D, physics: Physics, x: number, z: number, fromY = 400, private readonly territory?: (p: THREE.Vector3) => boolean) {
     super();
-    const y = physics.groundY(x, z, 400, Layer.World) ?? 0;
+    const y = physics.groundY(x, z, fromY, Layer.World) ?? 0;
     this.pos.set(x, y, z);
     this.home = this.pos.clone();
     this.wanderTo.copy(this.home);
@@ -191,6 +204,32 @@ export class Thornling extends Enemy {
     this.t = 0;
   }
 
+  /** Chasing or attacking (for tests and debugging). */
+  get alert() {
+    return this.state === 'chase' || this.state === 'windup' || this.state === 'lunge';
+  }
+
+  /**
+   * Can it see Wren? Same level (not through a floor), inside its territory, and a clear
+   * line from its eyes to Wren's (not through a wall).
+   */
+  private sees(env: EnemyEnv) {
+    const p = env.playerPos;
+    if (!env.playerAlive || Math.abs(p.y - this.pos.y) > 2.2) return false;
+    if (this.territory && !this.territory(p)) return false;
+    const eye = this.pos.clone().setY(this.pos.y + 0.8);
+    const to = p.clone().setY(p.y + 1).sub(eye);
+    const len = to.length();
+    return env.physics.rayDistance(eye, to.divideScalar(len), len, Layer.World) >= len - 0.05;
+  }
+
+  /** Drops the chase and heads home. */
+  private giveUp() {
+    this.go('wander');
+    this.wanderTo.copy(this.home);
+    this.calm = 3;
+  }
+
   dispose() {
     super.dispose();
     this.character.dispose();
@@ -211,26 +250,39 @@ export class Thornling extends Enemy {
     let face = this.yaw;
     let squash = 1;
 
+    this.calm = Math.max(0, this.calm - dt);
     switch (this.state) {
       case 'wander': {
         const w = this.wanderTo.clone().sub(this.pos).setY(0);
         if (w.length() < 1 || this.t > 6) {
-          const a = Math.random() * Math.PI * 2, r = Math.random() * 9;
-          this.wanderTo.set(this.home.x + Math.cos(a) * r, 0, this.home.z + Math.sin(a) * r);
+          // Somewhere near home, and inside its territory if it has one (dungeon enemies stay in their room).
+          for (let tries = 0; tries < 8; tries++) {
+            const a = Math.random() * Math.PI * 2, r = Math.random() * 9;
+            this.wanderTo.set(this.home.x + Math.cos(a) * r, this.pos.y, this.home.z + Math.sin(a) * r);
+            if (!this.territory || this.territory(this.wanderTo)) break;
+            this.wanderTo.copy(this.home);
+          }
           this.t = 0;
         } else {
           vel.copy(w.normalize()).multiplyScalar(1.8);
           face = Math.atan2(w.x, w.z);
         }
-        if (dist < 15 && env.playerAlive) this.go('chase');
+        if (dist < 15 && this.calm <= 0 && this.sees(env)) {
+          this.go('chase');
+          this.unseen = 0;
+        }
         break;
       }
-      case 'chase':
+      case 'chase': {
         vel.copy(to).multiplyScalar(4.4 * speedMul);
         face = Math.atan2(to.x, to.z);
-        if (dist < 3.2) this.go('windup');
-        else if (dist > 26 || !env.playerAlive) this.go('wander');
+        this.unseen = this.sees(env) ? 0 : this.unseen + dt;
+        const fromHome = Math.hypot(this.pos.x - this.home.x, this.pos.z - this.home.z);
+        const outOfBounds = !!this.territory && !this.territory(env.playerPos);
+        if (!env.playerAlive || dist > 22 || fromHome > THORN_LEASH || outOfBounds || this.unseen > THORN_FORGET) this.giveUp();
+        else if (dist < 3.2 && this.unseen === 0) this.go('windup');
         break;
+      }
       case 'windup':
         face = Math.atan2(to.x, to.z);
         squash = 1 - Math.min(1, this.t / 0.5) * 0.35;
@@ -243,7 +295,7 @@ export class Thornling extends Enemy {
       case 'lunge':
         vel.copy(this.lungeDir).multiplyScalar(13);
         squash = 1.15;
-        if (!this.hitDone && dist < 1.6) {
+        if (!this.hitDone && dist < 1.6 && Math.abs(env.playerPos.y - this.pos.y) < 1.5) {
           this.hitDone = true;
           if (env.hitPlayer(this.pos, THORNLING_LUNGE) === 'blocked') {
             this.knock.copy(this.lungeDir).multiplyScalar(-12);
@@ -385,6 +437,14 @@ export class EnemyManager {
     this.list.push(e);
   }
 
+  /** Takes an enemy out at once (no death animation, no drop): a respawn reset. */
+  remove(e: Enemy) {
+    const i = this.list.indexOf(e);
+    if (i < 0) return;
+    e.dispose();
+    this.list.splice(i, 1);
+  }
+
   private spawnThornling(player: THREE.Vector3 | null) {
     const s = this.area.enemySpot(Math.random, player ?? undefined, player ? 40 : 0);
     if (s) this.list.push(new Thornling(this.parent, this.physics, s.x, s.z));
@@ -405,6 +465,7 @@ export class EnemyManager {
         this.spawnThornling(env.playerPos);
       }
     }
+    if (this.area.indoor) return; // no wandering field enemies or night wisps indoors
     const wisps = this.list.filter((e): e is Gloomwisp => e instanceof Gloomwisp && e.nocturnal && !e.leaving);
     if (env.night && wisps.length < 5 && Math.random() < dt * 0.5) {
       const s = this.area.enemySpot(Math.random, env.playerPos, 22, 34);
@@ -419,7 +480,7 @@ export class EnemyManager {
       if (!e.gone) continue;
       e.dispose();
       this.list.splice(i, 1);
-      if (e instanceof Thornling) this.respawns.push(45);
+      if (e instanceof Thornling && !this.area.indoor) this.respawns.push(45);
     }
   }
 

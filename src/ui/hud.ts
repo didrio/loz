@@ -1,8 +1,29 @@
 import { ACTIONS, glyph, type Action, type Device } from '../core/input';
-import type { SongDef } from '../game/songs';
+import { DRINKS } from '../game/drinks';
+import type { DrinkId } from '../world/dungeon/format';
 
-const NOTE_COLORS = ['#ff7a59', '#ffc94a', '#7be36b', '#5ad1ff', '#c58bff'];
-const NOTE_ACTIONS: Action[] = ['note0', 'note1', 'note2', 'note3', 'note4'];
+/** A little corked bottle in a drink's color. */
+const bottle = (color: string) => `<svg class="bottle" viewBox="0 0 16 22" width="16" height="22" aria-hidden="true">
+  <rect x="5.5" y="1" width="5" height="3" rx="1" fill="#8a5a2b" stroke="#2a1a0a" stroke-width="1"/>
+  <path d="M6 4 V8 Q2 10 2 14 V18 Q2 21 5 21 H11 Q14 21 14 18 V14 Q14 10 10 8 V4 Z" fill="${color}" stroke="#2a1a0a" stroke-width="1.2"/>
+  <path d="M4.5 13 Q5 10.5 7 10" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.2" stroke-linecap="round"/></svg>`;
+
+// The key icons, drawn as tiny SVGs (a ring bow, a shaft and teeth) so they stay crisp at
+// any size. The dark outline is a wider copy of the same shape underneath.
+const KEY_SHAPE = `
+  <circle cx="7" cy="8" r="4.6" fill="none" stroke-width="3"/>
+  <path d="M11.5 8 H25 M20 8 V12.5 M24 8 V11.5" fill="none" stroke-width="3" stroke-linecap="square"/>`;
+const SMALL_KEY_SVG = `<svg class="key-icon" viewBox="0 0 28 16" width="28" height="16" aria-hidden="true">
+  <g stroke="#3a2608" transform="translate(0 0.8)">${KEY_SHAPE.replace(/stroke-width="3"/g, 'stroke-width="5"')}</g>
+  <g stroke="#f1c24a">${KEY_SHAPE}</g></svg>`;
+const BOSS_SHAPE = `
+  <circle cx="9" cy="10" r="6.2" fill="none" stroke-width="3.4"/>
+  <circle cx="9" cy="10" r="1.8" stroke="none" fill="currentColor"/>
+  <path d="M9 1.5 V3.8 M9 16.2 V18.5 M0.5 10 H2.8" fill="none" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M15.2 10 H34 M27 10 V15.5 M31.5 10 V14 M22.5 10 V13" fill="none" stroke-width="3.4" stroke-linecap="square"/>`;
+const BOSS_KEY_SVG = `<svg class="boss-key hidden" viewBox="0 0 36 20" width="36" height="20" aria-label="Boss Key">
+  <g stroke="#3a2608" color="#3a2608" transform="translate(0 0.8)">${BOSS_SHAPE.replace(/stroke-width="3.4"/g, 'stroke-width="5.4"').replace(/stroke-width="2.6"/g, 'stroke-width="4.4"')}</g>
+  <g stroke="#ffd76a" color="#ffd76a">${BOSS_SHAPE}</g></svg>`;
 
 const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
@@ -14,6 +35,11 @@ export class Hud {
   private bars: HTMLElement[];
   private guardFlashT = 0;
   private gems: HTMLElement;
+  private keys: HTMLElement;
+  private drinks: HTMLElement;
+  private drinksHtml = '';
+  private prompt: HTMLElement;
+  private promptLabel = '';
   private clock: HTMLElement;
   private clockIcon: HTMLElement;
   private actions: HTMLElement;
@@ -21,10 +47,6 @@ export class Hud {
   private dialog: HTMLElement;
   private dialogWho: HTMLElement;
   private dialogText: HTMLElement;
-  private flute: HTMLElement;
-  private fluteKeys: HTMLElement;
-  private fluteNotes: HTMLElement;
-  private fluteSongs: HTMLElement;
   private card: HTMLElement;
   private title: HTMLElement;
   private menu: HTMLElement;
@@ -43,30 +65,26 @@ export class Hud {
   private toastTimer = 0;
   private lastActions: [Action, string][] = [];
   private lastActionsHtml = '';
-  private fluteState: { songs: SongDef[]; notes: number[]; matched: string | null } = { songs: [], notes: [], matched: null };
 
   constructor() {
     this.el.innerHTML = `
       <div class="hud-top-left">
         <div class="hearts"></div>
         <div class="gems"><span class="gem-icon"></span><span class="gem-count">0</span></div>
+        <div class="keys hidden">${SMALL_KEY_SVG}<span class="key-count">×0</span>${BOSS_KEY_SVG}</div>
+        <div class="drinks"></div>
       </div>
       <div class="hud-top-right">
         <div class="clock"><div class="clock-icon"></div></div>
         <div class="clock-text"></div>
       </div>
       <div class="actions"></div>
+      <div class="prompt"></div>
       <div class="guard-gauge">${'<span class="bar"><span class="bar-fill"></span></span>'.repeat(3)}</div>
       <div class="area"></div>
       <div class="boss-title"><div class="boss-title-name"></div><div class="boss-title-sub"></div></div>
       <div class="boss-bar hidden"><div class="boss-name"></div><div class="boss-track"><div class="boss-lag"></div><div class="boss-fill"></div><div class="boss-mark"></div></div></div>
       <div class="toast"></div>
-      <div class="flute hidden">
-        <div class="flute-title">Reed Flute <span class="flute-help"></span></div>
-        <div class="flute-keys"></div>
-        <div class="flute-played"></div>
-        <div class="flute-songs"></div>
-      </div>
       <div class="dialog hidden"><div class="dialog-who"></div><div class="dialog-text"></div><div class="dialog-next">▼</div></div>
       <div class="fade"></div>
       <div class="card hidden"></div>
@@ -77,9 +95,8 @@ export class Hud {
         <div class="controls">
           <div><b>WASD</b> move</div><div><b>Mouse</b> camera (click to capture) · <b>←→↑↓</b> also</div>
           <div><b>Click / J</b> sword</div><div><b>Shift / Right-click</b> shield</div>
-          <div><b>Space</b> jump</div><div><b>Esc</b> put the flute away</div>
-          <div><b>Q</b> lock on / center camera</div><div><b>E</b> talk · open · read</div>
-          <div><b>F</b> flute</div><div><b>P</b> music on/off</div>
+          <div><b>Space</b> jump</div><div><b>Q</b> lock on / center camera</div>
+          <div><b>E</b> talk · open · read</div><div><b>P</b> music on/off</div>
           <div class="pad-note">Gamepads work too.</div>
         </div>
       </div>
@@ -89,6 +106,9 @@ export class Hud {
     this.guard = q('.guard-gauge');
     this.bars = Array.from(this.guard.querySelectorAll<HTMLElement>('.bar-fill'));
     this.gems = q('.gem-count');
+    this.keys = q('.keys');
+    this.drinks = q('.drinks');
+    this.prompt = q('.prompt');
     this.clock = q('.clock-text');
     this.clockIcon = q('.clock-icon');
     this.actions = q('.actions');
@@ -96,10 +116,6 @@ export class Hud {
     this.dialog = q('.dialog');
     this.dialogWho = q('.dialog-who');
     this.dialogText = q('.dialog-text');
-    this.flute = q('.flute');
-    this.fluteKeys = q('.flute-keys');
-    this.fluteNotes = q('.flute-played');
-    this.fluteSongs = q('.flute-songs');
     this.card = q('.card');
     this.title = q('.title');
     this.menu = q('.menu');
@@ -118,14 +134,9 @@ export class Hud {
     return `<span class="key">${escape(glyph(a, this.device))}</span>`;
   }
 
-  private note(n: number, size = '') {
-    return `<span class="note ${size}" style="--c:${NOTE_COLORS[n]}">${escape(glyph(NOTE_ACTIONS[n], this.device))}</span>`;
-  }
-
-  /** `*em*`, `{n}` flute notes, `[action]` buttons, newlines. */
+  /** `*em*`, `[action]` buttons, newlines. */
   private format(text: string) {
     return escape(text)
-      .replace(/\{(\d)\}/g, (_, n) => this.note(Number(n)))
       .replace(/\[(\w+)\]/g, (m, a) => ((ACTIONS as string[]).includes(a) ? this.key(a as Action) : m))
       .replace(/\*([^*]+)\*/g, '<em>$1</em>')
       .replace(/\n/g, '<br>');
@@ -139,7 +150,8 @@ export class Hud {
     this.renderTyping();
     this.lastActionsHtml = '';
     this.setActions(this.lastActions);
-    this.renderFlute();
+    this.promptLabel = '';
+    this.drinksHtml = '';
   }
 
   // --- status ---------------------------------------------------------------------
@@ -193,6 +205,46 @@ export class Hud {
   setGems(n: number) {
     const s = String(n);
     if (this.gems.textContent !== s) this.gems.textContent = s;
+  }
+
+  /** Small keys usable here (and the dungeon's boss key, if held); hidden when there are none. */
+  setKeys(n: number, bossKey = false) {
+    this.keys.classList.toggle('hidden', n <= 0 && !bossKey);
+    this.keys.querySelector('.key-icon')!.classList.toggle('hidden', n <= 0);
+    const count = this.keys.querySelector('.key-count')!;
+    count.classList.toggle('hidden', n <= 0);
+    const s = `×${n}`;
+    if (count.textContent !== s) count.textContent = s;
+    this.keys.querySelector('.boss-key')!.classList.toggle('hidden', !bossKey);
+  }
+
+  /**
+   * The drinks Wren has found: a bottle each, how many are left, and its button. Empty ones
+   * dim (they refill on death). `boost`: how much of an Ember Tonic is left (0–1).
+   */
+  setDrinks(list: { id: DrinkId; left: number }[], boost: number) {
+    const html = list.map(({ id, left }) => {
+      const action: Action = id === 'restore' ? 'drinkRestore' : 'drinkAttack';
+      const bar = id === 'attack' && boost > 0 ? `<span class="boost"><span style="width:${Math.round(boost * 100)}%"></span></span>` : '';
+      return `<div class="drink${left > 0 ? '' : ' empty'}" title="${escape(DRINKS[id].name)}">${bottle(DRINKS[id].color)}<span class="drink-count">×${left}</span>${this.key(action)}${bar}</div>`;
+    }).join('');
+    if (html === this.drinksHtml) return;
+    this.drinksHtml = html;
+    this.drinks.innerHTML = html;
+  }
+
+  /**
+   * The interact prompt that floats over something in reach: its button and what it does
+   * ("E Talk"), at a screen position, or null to hide it.
+   */
+  setPrompt(p: { x: number; y: number; label: string } | null) {
+    this.prompt.classList.toggle('show', !!p);
+    if (!p) return;
+    this.prompt.style.transform = `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) translate(-50%, -100%)`;
+    if (p.label !== this.promptLabel) {
+      this.promptLabel = p.label;
+      this.prompt.innerHTML = `${this.key('interact')}<span>${escape(p.label)}</span>`;
+    }
   }
 
   setClock(hours: number, day: number) {
@@ -284,7 +336,7 @@ export class Hud {
   }
 
   private renderTyping() {
-    // Type out the raw text, but never cut a markup token like {2} or [attack] in half.
+    // Type out the raw text, but never cut a markup token like [attack] in half.
     let cut = Math.floor(this.typing.shown);
     const open = this.typing.full.slice(0, cut).search(/[{[][^}\]]*$/);
     if (open !== -1) cut = open;
@@ -292,31 +344,6 @@ export class Hud {
     if ((shown.match(/\*/g)?.length ?? 0) % 2 === 1) shown += '*'; // highlight while it types
     this.dialogText.innerHTML = this.format(shown);
     this.dialog.classList.toggle('done', this.dialogDone);
-  }
-
-  // --- flute ----------------------------------------------------------------------
-
-  showFlute(on: boolean, songs: SongDef[]) {
-    this.flute.classList.toggle('hidden', !on);
-    this.fluteState = { songs, notes: [], matched: null };
-    this.renderFlute();
-  }
-
-  setFluteNotes(notes: number[], matched: string | null) {
-    this.fluteState.notes = notes.slice();
-    this.fluteState.matched = matched;
-    this.renderFlute();
-  }
-
-  private renderFlute() {
-    const { songs, notes, matched } = this.fluteState;
-    this.el.querySelector('.flute-help')!.innerHTML =
-      `${this.note(0, 'tiny')}–${this.note(4, 'tiny')} to play · ${this.key('cancel')} to put away`;
-    this.fluteKeys.innerHTML = [0, 1, 2, 3, 4].map((n) => this.note(n, 'big')).join('');
-    this.fluteNotes.innerHTML = notes.map((n) => this.note(n)).join('') + (matched ? `<span class="matched">♪ ${escape(matched)}</span>` : '');
-    this.fluteSongs.innerHTML =
-      songs.map((s) => `<div class="song"><span class="song-name">${escape(s.name)}</span>${s.notes.map((n) => this.note(n, 'small')).join('')}</div>`).join('') ||
-      '<div class="song">You don\'t know any songs yet.</div>';
   }
 
   // --- full screen ----------------------------------------------------------------

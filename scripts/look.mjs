@@ -24,7 +24,8 @@ const park = (h, opts) =>
 
 /** Walks into Gloaming Hollow and waits until the Lamplighter fight is on. */
 const startBossFight = async (h) => {
-  await h.game(() => (window.embervale.state.hours = 16.5));
+  await h.game(() => (window.embervale.state.hours = 21)); // it only walks at night
+  await h.until(() => window.embervale.enemies.list.some((e) => e.title), 10000);
   await h.teleport(-23, 116.5, 0);
   await h.until(() => window.embervale.mode === 'play' && !!window.embervale.activeBoss, 60000);
   await h.game(() => (window.embervale.player.invuln = 1e6)); // even value keeps Wren visible
@@ -62,6 +63,81 @@ const SCENES = {
     await h.teleport(74, -70, Math.atan2(8, -8));
     await h.wait(1500);
     await h.shot('grove');
+  },
+  async chest(h) {
+    // The locked grove chest from the road, with the interact prompt floating over it.
+    await h.newGame();
+    const c = await h.game(() => ({ x: window.embervale.area.chest.x, z: window.embervale.area.chest.z }));
+    await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+    await h.teleport(c.x - 1.6, c.z + 1.6, Math.atan2(1.6, -1.6));
+    await h.wait(1200);
+    await h.shot('chest-locked');
+  },
+  async door(h) {
+    // The shrine door asleep (dark spiral), then awake (glowing) once the lantern is relit.
+    await h.newGame();
+    const d = await h.game(() => ({ x: window.embervale.area.door.x, z: window.embervale.area.door.z }));
+    await h.teleport(d.x - 6, d.z, Math.PI / 2);
+    await h.wait(1200);
+    await h.shot('door-asleep');
+    await h.game(() => window.embervale.area.door.wake(true));
+    await h.teleport(d.x - 2.2, d.z, Math.PI / 2);
+    await h.wait(800);
+    await h.shot('door-awake');
+  },
+  async dungeon(h) {
+    // The Waking Shrine built from its data: a few rooms at eye level, then a top-down view
+    // of each floor (ceilings hidden, daylight on so the layout reads) to compare with
+    // `npm run map -- shrine`.
+    await h.newGame();
+    // Already entered, so the seal cutscene doesn't play (it would hold the camera).
+    await h.game(() => {
+      window.embervale.state.dungeon('shrine').entered = true;
+      window.embervale.loadArea('shrine');
+    });
+    await h.wait(1500);
+    await h.shot('dungeon-entry');
+    const room = (id) => h.game((id) => window.embervale.area.def.rooms.find((r) => r.id === id), id);
+    const inside = async (name, id, fx, fz, facing) => {
+      const r = await room(id);
+      await h.game(([r, fx, fz, facing]) => {
+        const g = window.embervale;
+        const y = r.floor * 8 + 0.05;
+        g.player.teleport(r.x + r.w * fx, y, r.z + r.d * fz, facing);
+        g.rig.snap(g.player.pos, facing);
+      }, [r, fx, fz, facing]);
+      await h.wait(1200);
+      await h.shot(name);
+    };
+    await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+    // One or two rooms from each wing: sandstone halls, marble galleries, mossy undercroft, basalt hearth.
+    await inside('dungeon-nave', 'nave', 0.25, 0.85, Math.PI * 0.75);
+    await inside('dungeon-statues', 'statueGallery', 0.5, 0.15, 0);
+    await inside('dungeon-court', 'sunkenCourt', 0.15, 0.35, Math.PI / 2);
+    await inside('dungeon-gallery', 'gallery', 0.5, 0.75, Math.PI);
+    await inside('dungeon-crystals', 'crystalWalk', 0.15, 0.5, Math.PI / 2);
+    await inside('dungeon-cistern', 'cistern', 0.4, 0.15, 0);
+    await inside('dungeon-pithall', 'pitHall', 0.85, 0.5, -Math.PI / 2);
+    await inside('dungeon-gauntlet', 'gauntlet', 0.5, 0.85, Math.PI);
+    await inside('dungeon-boss', 'boss', 0.5, 0.6, Math.PI);
+    for (const floor of [1, 0, -1, -2]) {
+      await h.game((floor) => {
+        const g = window.embervale, a = g.area;
+        a.showFloor(floor);
+        g.sky.setIndoor(false);
+        g.state.hours = 12;
+        const rooms = a.def.rooms.filter((r) => r.floor === floor);
+        const minX = Math.min(...rooms.map((r) => r.x)), maxX = Math.max(...rooms.map((r) => r.x + r.w));
+        const minZ = Math.min(...rooms.map((r) => r.z)), maxZ = Math.max(...rooms.map((r) => r.z + r.d));
+        const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2, span = Math.max(maxX - minX, (maxZ - minZ) * 1.6);
+        g.player.teleport(cx, floor * 8 + 200, cz); // out of the shot
+        g.rig.frozen = true;
+        g.camera.position.set(cx, floor * 8 + span * 0.95, cz + 0.01);
+        g.camera.lookAt(cx, floor * 8, cz);
+      }, floor);
+      await h.wait(700);
+      await h.shot(`dungeon-floor${floor}`);
+    }
   },
   async shrine(h) {
     await h.newGame();

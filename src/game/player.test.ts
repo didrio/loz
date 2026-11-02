@@ -27,7 +27,16 @@ function setup() {
     }
   };
   const settle = () => step(0.5);
-  return { p, health, settle, step };
+  /** Runs forward (+z) for `seconds`, optionally pressing jump on the first frame; returns the distance covered. */
+  const run = (seconds: number, jump = false) => {
+    const z = p.pos.z;
+    for (let t = 0; t < seconds; t += 1 / 60) {
+      p.update(1 / 60, { ...NO_CONTROLS, move: new THREE.Vector3(0, 0, 1), jump: jump && t === 0 }, env);
+      physics.step(1 / 60);
+    }
+    return p.pos.z - z;
+  };
+  return { p, health, settle, step, run };
 }
 
 const front = new THREE.Vector3(0, 0, 3);
@@ -106,6 +115,33 @@ describe('Player.receiveHit', () => {
     expect(health.hp).toBe(6);
   });
 
+  it('an Ember Tonic doubles the sword\'s damage while it lasts', () => {
+    const physics = new Physics();
+    physics.box(0, -0.5, 0, 30, 0.5, 30);
+    physics.refreshQueries();
+    const p = new Player(new THREE.Scene(), physics, { hp: 6, maxHp: 6 });
+    p.teleport(0, 0, 0, 0); // facing +z
+    const dealt: number[] = [];
+    const target = {
+      alive: true, pos: new THREE.Vector3(0, 0, 1.6),
+      hurtboxes: () => [{ center: new THREE.Vector3(0, 1, 1.6), radius: 0.6, part: 'body', priority: 0 }],
+      hurt: (dmg: number) => (dealt.push(dmg), 'hit'),
+    };
+    const env = {
+      area: { waterLevel: null, cut: () => [] } as unknown as Area,
+      lockTarget: null, enemies: [target] as unknown as PlayerEnv['enemies'], hasSword: true,
+      onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
+    } satisfies PlayerEnv;
+    const swing = () => {
+      p.update(1 / 60, { ...NO_CONTROLS, attack: true }, env);
+      for (let t = 0; t < 0.6; t += 1 / 60) p.update(1 / 60, NO_CONTROLS, env);
+    };
+    swing();
+    p.attackBoost = 30;
+    swing();
+    expect(dealt).toEqual([1, 2]);
+  });
+
   it('only recovers guard while the shield is lowered', () => {
     const { p, step } = setup();
     step(0.5, true);
@@ -114,5 +150,21 @@ describe('Player.receiveHit', () => {
     expect(p.guard.slots).toBe(2);
     step(2.1, false);
     expect(p.guard.slots).toBe(3);
+  });
+
+  it('a guard break staggers: a crawl at a tenth of running speed and no jumping until it wears off', () => {
+    const { p, step, run } = setup();
+    step(0.5, true);
+    expect(p.receiveHit(front, CRUSH)).toBe('blocked');
+    expect(p.receiveHit(front, LIGHT)).toBe('broken');
+    step(0.5); // let the knockback die down
+    const crawl = run(0.5);
+    expect(crawl).toBeGreaterThan(0);
+    expect(crawl).toBeLessThan(8.5 * 0.5 * 0.15);
+    run(0.1, true);
+    expect(p.grounded).toBe(true);
+    step(1.2); // the break wears off
+    expect(p.guard.broken).toBe(0);
+    expect(run(0.5)).toBeGreaterThan(8.5 * 0.5 * 0.8);
   });
 });

@@ -5,6 +5,7 @@ import { buildHumanoid, type Humanoid } from '../render/characters';
 import { mat, uniqueMat } from '../render/materials';
 import type { Area } from '../world/area';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
+import { ATTACK_BOOST } from './drinks';
 import { Guard } from './guard';
 
 /** What the player wants to do this frame, in world space. Built from input, or by scripts. */
@@ -45,6 +46,8 @@ const SWINGS = [
   { dur: 0.42, dmg: 2 },
 ];
 const RUN_SPEED = 8.5;
+/** While the guard is broken Wren staggers: a crawl at this fraction of normal speed, no jumping. */
+const STAGGER_SPEED = 0.1;
 const GRAVITY = 30;
 
 export class Player {
@@ -56,7 +59,6 @@ export class Player {
   shielding = false;
   /** The shield's three guard slots (see guard.ts). */
   readonly guard = new Guard();
-  fluting = false;
   private readonly body: Character;
   private velY = 0;
   private state: State = 'move';
@@ -65,17 +67,22 @@ export class Player {
   private queued = false;
   private hitSet = new Set<Enemy>();
   private bushesCut = false;
+  /** This swing has already struck the area (stones, crystals): once per swing. */
+  private struck = false;
   private knock = new THREE.Vector3();
   private walkPhase = 0;
   private speedXZ = 0;
   private deathT = 0;
   private readonly sword = new THREE.Group();
   private readonly shield = new THREE.Group();
-  private readonly flute: THREE.Mesh;
   private readonly trail: THREE.Mesh;
   private readonly trailPivot = new THREE.Group();
   /** The shield's wood; flashes red while the guard is broken. */
   private readonly shieldMat = uniqueMat(0x8b5a2b);
+  /** The blade, its own material so it can glow while an Ember Tonic is active. */
+  private readonly bladeMat = uniqueMat(0xd8dde3, { emissive: 0x000000 });
+  /** Seconds left of an Ember Tonic (the sword hits harder meanwhile). */
+  attackBoost = 0;
 
   constructor(scene: THREE.Scene, physics: Physics, private readonly health: Health) {
     this.h = buildHumanoid({ skin: 0xf0c49c, hair: 0x2e2018, coat: 0xb4532a, pants: 0x4a4038, boots: 0x5a3a22, accent: 0x2aa198 });
@@ -84,7 +91,7 @@ export class Player {
 
     // Sword in the right hand, blade continuing the line of the arm.
     const steel = mat(0xd8dde3), gold = mat(0xc9a227), grip = mat(0x3a2412);
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.05, 0.03), steel);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.05, 0.03), this.bladeMat);
     blade.position.y = -0.78;
     const tip = new THREE.Mesh(new THREE.ConeGeometry(0.057, 0.18, 4), steel);
     tip.rotation.x = Math.PI;
@@ -109,12 +116,6 @@ export class Player {
     this.shield.add(disc, rim, boss);
     this.shield.position.set(0.12, -0.42, 0.12);
     this.h.armL.add(this.shield);
-
-    this.flute = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 6), mat(0xd9b77a));
-    this.flute.rotation.z = Math.PI / 2;
-    this.flute.position.set(0, -0.1, 0.32);
-    this.flute.visible = false;
-    this.h.head.add(this.flute);
 
     this.trail = new THREE.Mesh(
       new THREE.RingGeometry(0.7, 2.3, 18, 1, 0, Math.PI * 0.9),
@@ -209,19 +210,23 @@ export class Player {
     this.t = 0;
     this.queued = false;
     this.hitSet.clear();
+    this.struck = false;
     this.bushesCut = false;
     env.onSwing();
   }
 
   update(dt: number, c: Controls, env: PlayerEnv) {
     this.invuln = Math.max(0, this.invuln - dt);
+    this.attackBoost = Math.max(0, this.attackBoost - dt);
+    const ember = this.attackBoost > 0 ? 0.7 + Math.sin(this.attackBoost * 8) * 0.25 : 0;
+    this.bladeMat.emissive.setRGB(1 * ember, 0.45 * ember, 0.1 * ember);
     // Guard slots only recover while the shield is lowered (last frame's state).
     this.guard.update(dt, this.shielding);
     const water = env.area.waterLevel;
     const wading = water !== null && this.pos.y < water - 0.35;
     const lock = env.lockTarget;
     const grounded = this.body.grounded;
-    const canAct = this.alive && !this.fluting;
+    const canAct = this.alive;
     const move = canAct ? c.move : NO_CONTROLS.move;
     // The shield stays up through jumps: hold it, hop, keep blocking.
     this.shielding = canAct && this.state === 'move' && c.shield && this.guard.canBlock;
@@ -230,8 +235,9 @@ export class Player {
       if (this.state === 'move') this.startAttack(0, env);
       else if (this.state === 'attack' && this.t > SWINGS[this.combo].dur * 0.4 && this.combo < 2) this.queued = true;
     }
+    const staggered = this.guard.broken > 0;
     let jumped = false;
-    if (canAct && this.state === 'move' && grounded && c.jump) {
+    if (canAct && this.state === 'move' && grounded && c.jump && !staggered) {
       this.velY = wading ? 8 : 11;
       jumped = true;
       env.onJump();
@@ -241,7 +247,7 @@ export class Player {
     this.t += dt;
     switch (this.state) {
       case 'move': {
-        const speed = this.shielding ? 3.2 : wading ? 5 : RUN_SPEED;
+        const speed = (this.shielding ? 3.2 : wading ? 5 : RUN_SPEED) * (staggered ? STAGGER_SPEED : 1);
         vel.copy(move).multiplyScalar(speed);
         if (!lock && move.lengthSq() > 0.01 && !this.shielding) {
           this.facing = lerpAngle(this.facing, Math.atan2(move.x, move.z), damp(14, dt));
@@ -311,9 +317,14 @@ export class Player {
       const box = this.reachable(e.hurtboxes());
       if (!box) continue;
       this.hitSet.add(e);
-      const result = e.hurt(dmg, this.pos, box.part);
+      const result = e.hurt(dmg * (this.attackBoost > 0 ? ATTACK_BOOST : 1), this.pos, box.part);
       if (result === 'guarded') this.recoil(e.pos);
       env.onHitEnemy(e, result, box.center);
+    }
+    if (!this.struck && env.area.strike) {
+      this.struck = true;
+      const fw = this.forward;
+      env.area.strike(this.pos.x, this.pos.y, this.pos.z, fw.x, fw.z, 2.4);
     }
     if (!this.bushesCut) {
       const f = this.forward;
@@ -339,7 +350,6 @@ export class Player {
     h.pivot.position.y = 0.9 + Math.abs(s) * 0.07 * amt;
     h.pivot.rotation.set(0, 0, 0);
     this.sword.rotation.x = -1.1;
-    this.flute.visible = this.fluting;
     const trailMat = this.trail.material as THREE.MeshBasicMaterial;
     trailMat.opacity = Math.max(0, trailMat.opacity - dt * 5);
 
@@ -392,12 +402,6 @@ export class Player {
     }
     const flash = broken > 0 && Math.floor(broken * 6) % 2 === 0 ? 1 : 0;
     this.shieldMat.color.setHex(flash ? 0xc0392b : 0x8b5a2b);
-
-    if (this.fluting) {
-      h.armL.rotation.set(-2.0, -0.55, 0);
-      h.armR.rotation.set(-2.0, 0.55, 0);
-      h.legL.rotation.x = h.legR.rotation.x = 0;
-    }
 
     h.root.visible = this.invuln <= 0 || Math.floor(this.invuln * 16) % 2 === 0;
   }

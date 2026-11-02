@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { GameState } from './state';
 
 describe('GameState', () => {
-  it('starts a new game knowing only the Song of Hours', () => {
+  it('starts a new game with nothing: no flags, no keys, full hearts', () => {
     const s = new GameState();
-    expect([...s.songs]).toEqual(['hours']);
+    expect(s.keys).toBe(0);
     expect(s.flags.size).toBe(0);
     expect(s.hp).toBe(s.maxHp);
   });

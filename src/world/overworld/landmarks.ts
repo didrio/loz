@@ -46,7 +46,7 @@ export function buildBridge(b: AreaBuilder) {
   b.track(b.physics.trimesh(new Float32Array(verts), new Uint32Array(idx)));
 }
 
-/** The grove clearing: a ring of stones, a fallen log and a shaft of light on the chest. */
+/** The grove clearing: a ring of stones and a fallen log around the chest. */
 export function buildGrove(b: AreaBuilder) {
   const { x, z } = GROVE;
   const stone = mat(0x8a877e);
@@ -60,12 +60,6 @@ export function buildGrove(b: AreaBuilder) {
   log.rotation.z = Math.PI / 2;
   log.rotation.y = 0.6;
   b.box(lx, ly, lz, 2.5, 0.45, 0.45, 0.6, Layer.Prop);
-  const shaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.2, 3.2, 22, 12, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0xfff1b8, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }),
-  );
-  shaft.position.set(x, terrainHeight(x, z) + 11, z);
-  return b.dynamic(shaft);
 }
 
 /** The shrine on the eastern hill: a stone house with a gate, a dead lantern and old pillars. */

@@ -7,8 +7,9 @@
  * the shield is very safe in short bursts, then you back off and lower it to recover.
  *
  * Blocking with too few slots up breaks the guard: the shield still stops that hit, but
- * Wren is knocked back and can't raise the shield for GUARD_BREAK seconds (moving and
- * attacking still work). There's no stamina otherwise: this is the whole defense system.
+ * Wren is knocked back and staggered for GUARD_BREAK seconds: no shield, no jumping, and
+ * only a crawl at a tenth of running speed (the sword still swings). There's no stamina
+ * otherwise: this is the whole defense system.
  */
 
 export const GUARD_SLOTS = 3;

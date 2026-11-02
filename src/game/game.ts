@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { createArea, type AreaId } from '../content/areas';
+import { createArea, isAreaId, type AreaId } from '../content/areas';
 import type { AreaContent } from '../content/overworld';
-import { death, intro, songEffects } from '../content/story';
+import { death, intro } from '../content/story';
 import { Sfx } from '../core/audio';
 import { Director } from '../core/director';
 import { Input, type Action } from '../core/input';
@@ -10,26 +10,27 @@ import { decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings
 import { Particles } from '../render/particles';
 import { Sky } from '../render/sky';
 import { Hud } from '../ui/hud';
-import type { Area, Interactable } from '../world/area';
+import { sameLevel, type Area, type Interactable } from '../world/area';
 import { Boss } from './boss';
 import { CameraRig } from './camera';
 import { Debug } from './debug';
 import { Dialog } from './dialog';
 import { EnemyManager, Gloomwisp, type Enemy, type EnemyEnv, type HurtResult } from './enemies';
 import { Hazards, type HazardEnv } from './hazards';
+import { ATTACK_BOOST_SECONDS, DRINK_ORDER } from './drinks';
+import { pickLockTarget } from './lockon';
+import type { DrinkId } from '../world/dungeon/format';
 import { Pickups } from './pickups';
 import { NO_CONTROLS, Player, type Controls, type PlayerEnv } from './player';
 import type { Page, Script, ScriptApi } from './script';
-import { matchSong, SONGS, type SongDef } from './songs';
 import { GameState } from './state';
 
 /**
  * - title: the menu over a slow camera orbit
  * - play: the player has control
- * - flute: the flute is out; note buttons play notes
  * - cutscene: a script is running (dialog, item get, cutscene); no player control
  */
-export type Mode = 'title' | 'play' | 'flute' | 'cutscene';
+export type Mode = 'title' | 'play' | 'cutscene';
 
 type MenuItem = 'continue' | 'new' | 'confirmNew';
 const MENU_LABELS: Record<MenuItem, string> = { continue: 'Continue', new: 'New Game', confirmNew: 'Start over? This erases your save' };
@@ -71,7 +72,6 @@ export class Game implements ScriptApi {
   private readonly timer = new THREE.Timer();
   private readonly debug: Debug | null;
   private areaName = '';
-  private notes: number[] = [];
   private warpTo: number | null = null;
   private fadeValue = 0;
   private autosaveT = AUTOSAVE_SECONDS;
@@ -81,6 +81,8 @@ export class Game implements ScriptApi {
   private timeScale = 1;
   /** Real seconds left of hit-stop: a few frozen frames that make hits land with weight. */
   private hitStop = 0;
+  /** The music is off (Wren just died). */
+  private musicSilenced = false;
   /** Set when a script is waiting to run after the current one. */
   private pendingScripts: Script[] = [];
 
@@ -124,8 +126,13 @@ export class Game implements ScriptApi {
   // Areas
   // ---------------------------------------------------------------------------
 
-  /** Unloads the current area (if any) and builds another; the player starts at its spawn. */
-  loadArea(id: AreaId) {
+  /**
+   * Unloads the current area (if any) and builds another; the player starts at its spawn
+   * or at a named `entrance`. During play the area's content restores its saved state and
+   * starts (bosses, enemies, cutscenes on arrival); on the title screen that waits for
+   * New Game / Continue.
+   */
+  loadArea(id: AreaId, entrance?: string) {
     if (this.area) {
       this.enemies.clear();
       this.pickups.clear();
@@ -137,13 +144,19 @@ export class Game implements ScriptApi {
     this.content = content;
     this.scene.add(area.root);
     this.physics.refreshQueries();
+    this.sky.setIndoor(!!area.indoor);
+    this.rig.dist = area.indoor ? 7 : 9;
     this.enemies = new EnemyManager(area.root, this.physics, area);
-    this.placeAtSpawn();
-    if (this.mode !== 'title') this.content.start?.(this);
+    this.state.area = id;
+    this.placeAtSpawn(entrance);
+    if (this.mode !== 'title') {
+      this.content.restore(this.state);
+      this.content.start?.(this);
+    }
   }
 
-  private placeAtSpawn() {
-    const s = this.area.spawn;
+  private placeAtSpawn(entrance?: string) {
+    const s = (entrance && this.area.entrances?.[entrance]) || this.area.spawn;
     const y = s.y ?? this.physics.groundY(s.x, s.z) ?? 0;
     this.player.teleport(s.x, y, s.z, s.facing);
     this.rig.snap(this.player.pos, s.facing);
@@ -170,12 +183,6 @@ export class Game implements ScriptApi {
         break;
       case 'play':
         this.updatePlay(dt);
-        break;
-      case 'flute':
-        // The world doesn't stop for a song: enemies keep coming.
-        this.player.update(dt, NO_CONTROLS, this.playerEnv);
-        this.updateCombat(dt);
-        this.updateFlute();
         break;
       case 'cutscene':
         this.player.update(dt, NO_CONTROLS, this.playerEnv);
@@ -211,6 +218,10 @@ export class Game implements ScriptApi {
     if (choice === 'continue') {
       const save = this.saveSlot.load();
       if (save) this.state.load(save);
+      // Resume in the area the game was saved in (at its entrance).
+      const where = isAreaId(this.state.area) ? this.state.area : 'overworld';
+      if (where !== this.area.id) this.loadArea(where);
+      this.state.area = where;
       this.content.restore(this.state);
       this.begin(false);
     } else if (choice === 'new' && m.items.includes('continue')) {
@@ -220,6 +231,7 @@ export class Game implements ScriptApi {
     } else {
       this.state.reset();
       this.saveSlot.clear();
+      if (this.area.id !== 'overworld') this.loadArea('overworld');
       this.begin(true);
     }
   }
@@ -240,11 +252,12 @@ export class Game implements ScriptApi {
   }
 
   private updatePlay(dt: number) {
-    this.advanceClock(dt);
+    if (!this.area.indoor) this.advanceClock(dt);
     if (this.input.clicked() && !this.input.locked) this.input.requestLock();
 
     // Lock-on: toggles; with nothing to lock onto it recenters the camera instead.
-    if (this.lock && (!this.lock.alive || this.lock.pos.distanceTo(this.player.pos) > 25)) this.lock = null;
+    // Let go when the target dies, gets far away, or ends up on another floor.
+    if (this.lock && (!this.lock.alive || this.lock.pos.distanceTo(this.player.pos) > 25 || Math.abs(this.lock.pos.y - this.player.pos.y) > 4)) this.lock = null;
     if (this.input.pressed('lock')) {
       if (this.lock) this.lock = null;
       else {
@@ -261,16 +274,12 @@ export class Game implements ScriptApi {
       if (script) this.run(script);
       return;
     }
-    if (this.input.pressed('flute')) {
-      this.openFlute();
-      return;
-    }
 
     this.player.update(dt, this.controls(), this.playerEnv);
     this.updateCombat(dt);
 
     for (const t of this.area.triggers) {
-      if (!t.enabled() || Math.hypot(this.player.pos.x - t.x, this.player.pos.z - t.z) > t.r) continue;
+      if (!t.enabled() || !sameLevel(t.y, this.player.pos.y) || Math.hypot(this.player.pos.x - t.x, this.player.pos.z - t.z) > t.r) continue;
       const script = this.content.scripts[t.id];
       if (script) this.run(script);
       return;
@@ -278,17 +287,19 @@ export class Game implements ScriptApi {
 
     const name = this.area.nameAt(this.player.pos.x, this.player.pos.z);
     if (name !== this.areaName) this.showAreaName(name);
+    this.content.update?.(this, dt);
 
     if (!this.player.alive) {
       this.run(death);
       return;
     }
 
+    for (const id of DRINK_ORDER) if (this.input.pressed(id === 'restore' ? 'drinkRestore' : 'drinkAttack')) this.drink(id);
+
+    // What you can interact with gets its prompt floating over it, not in the corner.
     const actions: [Action, string][] = [];
-    if (near) actions.push(['interact', near.label]);
     if (this.state.has('hasSword')) actions.push(['attack', 'Sword']);
     actions.push(['lock', this.lock ? 'Release' : 'Lock on']);
-    actions.push(['flute', 'Flute']);
     this.hud.setActions(actions);
 
     this.autosaveT -= dt;
@@ -300,12 +311,26 @@ export class Game implements ScriptApi {
    * like a stamina wheel. Null when it shouldn't show.
    */
   private guardGaugePosition() {
-    if (!this.player.guard.gaugeVisible || (this.mode !== 'play' && this.mode !== 'flute')) return null;
+    if (!this.player.guard.gaugeVisible || this.mode !== 'play') return null;
     this.camera.updateMatrixWorld();
     const right = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0);
-    const p = this.player.pos.clone().add(new THREE.Vector3(0, 1.3, 0)).addScaledVector(right, 1.1).project(this.camera);
-    if (p.z > 1) return null;
-    return { x: ((p.x + 1) / 2) * window.innerWidth, y: ((1 - p.y) / 2) * window.innerHeight };
+    return this.toScreen(this.player.pos.clone().add(new THREE.Vector3(0, 1.3, 0)).addScaledVector(right, 1.1));
+  }
+
+  /** The interact prompt floating over whatever is in reach (null when nothing is, or not in play). */
+  private interactPrompt() {
+    const near = this.mode === 'play' ? this.nearestInteractable() : null;
+    if (!near) return null;
+    const at = this.toScreen(new THREE.Vector3(near.x, near.promptY ?? this.player.pos.y + 2.4, near.z));
+    return at && { ...at, label: near.label };
+  }
+
+  /** A world point in screen pixels, or null if it's behind the camera. */
+  private toScreen(p: THREE.Vector3) {
+    this.camera.updateMatrixWorld();
+    const v = p.clone().project(this.camera);
+    if (v.z > 1) return null;
+    return { x: ((v.x + 1) / 2) * window.innerWidth, y: ((1 - v.y) / 2) * window.innerHeight };
   }
 
   /** Enemies, their attacks and the things they drop. */
@@ -321,7 +346,6 @@ export class Game implements ScriptApi {
         this.sfx.gem();
       }
     });
-    if (!this.player.alive && this.mode === 'flute') this.closeFlute();
   }
 
   private advanceClock(dt: number) {
@@ -370,9 +394,12 @@ export class Game implements ScriptApi {
     this.sky.gloom += (gloomTarget - this.sky.gloom) * Math.min(1, rawDt * 1.5);
     hud.setHearts(state.hp, state.maxHp);
     hud.setGems(state.gems);
+    hud.setDrinks(DRINK_ORDER.filter((id) => (state.drinks.found.get(id) ?? 0) > 0).map((id) => ({ id, left: state.drinks.left.get(id) ?? 0 })), player.attackBoost / ATTACK_BOOST_SECONDS);
+    hud.setKeys(state.keysHere, !!state.dungeons.get(state.area)?.bossKey);
     hud.setClock(state.hours, state.day);
     if (this.mode !== 'play') hud.setActions([]);
-    this.sfx.updateMusic(rawDt, boss ? 'boss' : state.isNight ? 'night' : 'day', this.mode !== 'title');
+    const mood = boss ? 'boss' : this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day');
+    this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced);
     if (input.pressed('music')) {
       this.sfx.musicOn = this.settings.music = !this.settings.music;
       this.store.set(SETTINGS_KEY, JSON.stringify(this.settings));
@@ -385,69 +412,15 @@ export class Game implements ScriptApi {
     } else this.marker.visible = false;
 
     if (this.mode !== 'title') {
-      const canLook = this.mode === 'play' || this.mode === 'flute';
+      const canLook = this.mode === 'play';
       const lockAt = this.lock?.alive ? this.lock.pos.clone().setY(this.lock.pos.y + this.lock.lockHeight) : null;
       this.rig.update(dt, canLook ? input.look(dt) : { yaw: 0, pitch: 0 }, player.pos, lockAt);
     }
     hud.setGuard(player.guard.fills(), player.guard.broken, this.guardGaugePosition());
+    hud.setPrompt(this.interactPrompt());
     this.physics.step(dt);
     this.sky.update(state.hours, this.mode === 'title' ? new THREE.Vector3() : player.pos, this.camera.position);
     this.debug?.update(dt);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Flute
-  // ---------------------------------------------------------------------------
-
-  private knownSongs() {
-    return SONGS.filter((s) => this.state.songs.has(s.id));
-  }
-
-  private openFlute() {
-    this.mode = 'flute';
-    this.player.fluting = true;
-    this.notes = [];
-    this.lock = null;
-    this.hud.showFlute(true, this.knownSongs());
-  }
-
-  private closeFlute() {
-    this.player.fluting = false;
-    this.hud.showFlute(false, this.knownSongs());
-    if (this.mode === 'flute') this.mode = 'play';
-  }
-
-  private updateFlute() {
-    if (this.input.pressed('flute') || this.input.pressed('cancel')) {
-      this.closeFlute();
-      return;
-    }
-    for (let i = 0; i < 5; i++) {
-      if (!this.input.pressed(`note${i}` as Action)) continue;
-      this.sfx.flute(i);
-      this.notes.push(i);
-      if (this.notes.length > 8) this.notes.shift();
-      const song = matchSong(this.notes, this.state.songs);
-      this.hud.setFluteNotes(this.notes, song?.name ?? null);
-      if (song) {
-        this.run(this.songScript(song));
-        return;
-      }
-    }
-  }
-
-  /** Echo the song back, put the flute away, then do whatever the song does. */
-  private songScript(song: SongDef): Script {
-    return async (api) => {
-      await api.wait(0.6);
-      for (const n of song.notes) {
-        this.sfx.flute(n, 0.5);
-        await api.wait(0.32);
-      }
-      await api.wait(0.4);
-      this.closeFlute();
-      await songEffects[song.id](api);
-    };
   }
 
   // ---------------------------------------------------------------------------
@@ -457,7 +430,7 @@ export class Game implements ScriptApi {
   private nearestInteractable() {
     let best: Interactable | null = null, bestD = Infinity;
     for (const it of this.area.interactables) {
-      if (!it.enabled()) continue;
+      if (!it.enabled() || !sameLevel(it.y, this.player.pos.y)) continue;
       const d = Math.hypot(this.player.pos.x - it.x, this.player.pos.z - it.z);
       if (d < it.r && d < bestD) {
         best = it;
@@ -469,21 +442,7 @@ export class Game implements ScriptApi {
 
   private findLockTarget() {
     const camFwd = new THREE.Vector3(-Math.sin(this.rig.yaw), 0, -Math.cos(this.rig.yaw));
-    let best: Enemy | null = null, bestScore = Infinity;
-    for (const e of this.enemies.list) {
-      if (!e.targetable || (e instanceof Gloomwisp && e.leaving)) continue;
-      const to = e.pos.clone().sub(this.player.pos).setY(0);
-      const d = to.length();
-      if (d > 20) continue;
-      const dot = to.normalize().dot(camFwd);
-      if (dot < 0 && d > 5) continue;
-      const score = d - dot * 8;
-      if (score < bestScore) {
-        best = e;
-        bestScore = score;
-      }
-    }
-    return best;
+    return pickLockTarget(this.player.pos, camFwd, this.enemies.list, this.physics);
   }
 
   private buildMarker() {
@@ -573,7 +532,7 @@ export class Game implements ScriptApi {
     return {
       playerPos: this.player.pos,
       playerAlive: this.player.alive,
-      night: this.state.isNight,
+      night: this.state.isNight && !this.area.indoor,
       physics: this.physics,
       hazards: this.hazards,
       sfx: this.sfx,
@@ -636,6 +595,11 @@ export class Game implements ScriptApi {
     this.enemies.add(e);
   }
 
+  removeEnemy(e: Enemy) {
+    this.enemies.remove(e);
+    if (this.lock === e) this.lock = null;
+  }
+
   say(pages: Page[]) {
     return this.dialog.show(pages);
   }
@@ -683,11 +647,47 @@ export class Game implements ScriptApi {
     this.warpTo = toHour;
   }
 
+  /** Drinks one of the single-use draughts, if there's one left. */
+  drink(id: DrinkId) {
+    if (!this.state.drinks.use(id)) {
+      this.sfx.denied();
+      return;
+    }
+    this.sfx.drink();
+    const at = this.player.pos.clone().setY(this.player.pos.y + 1.2);
+    if (id === 'restore') {
+      this.state.hp = this.state.maxHp;
+      this.sfx.heart();
+      this.particles.burst(at, 0xff6080, 20, 3, 0.9, false);
+    } else {
+      this.player.attackBoost = ATTACK_BOOST_SECONDS;
+      this.particles.burst(at, 0xffa030, 20, 3, 0.9, false);
+    }
+  }
+
   respawn() {
     this.player.revive();
+    // The checkpoint rule: every drink found is back, and any tonic has worn off.
+    this.state.drinks.refill();
+    this.player.attackBoost = 0;
     this.placeAtSpawn();
     this.hazards.clear();
     for (const e of this.enemies.list) e.onPlayerRespawn();
+    this.content.onRespawn?.(this);
+  }
+
+  silenceMusic(on: boolean) {
+    this.musicSilenced = on;
+  }
+
+  /** Fades out, moves to another area (at a named entrance), names it, fades back in. */
+  async travel(id: AreaId, entrance?: string) {
+    await this.fade(1, 0.5);
+    this.loadArea(id, entrance);
+    this.areaName = this.area.nameAt(this.player.pos.x, this.player.pos.z);
+    await this.wait(0.2);
+    this.showAreaName(this.areaName);
+    await this.fade(0, 0.5);
   }
 
   giveSword() {

@@ -3,26 +3,19 @@
  * The context is created on the first key press (browsers require a user gesture).
  */
 
-// Five flute notes: a major pentatonic on C5.
-export const FLUTE_FREQS = [523.25, 587.33, 659.25, 783.99, 880.0];
+import { MusicPlayer } from './synth';
+import { compiledSong, type MusicMood } from './tracks';
 
-// Background music: a slow arpeggio over a four-chord loop (day) or a minor loop (night).
-const DAY_CHORDS = [[349.23, 440, 523.25], [293.66, 349.23, 440], [233.08, 293.66, 349.23], [261.63, 329.63, 392]];
-const NIGHT_CHORDS = [[220, 261.63, 329.63], [174.61, 220, 261.63], [196, 246.94, 293.66], [164.81, 196, 246.94]];
-// Boss fight: a driving low pulse in D minor with a detuned music-box line on top.
-const BOSS_BASS = [73.42, 73.42, 69.3, 65.41, 73.42, 73.42, 77.78, 69.3];
-const BOSS_BOX = [587.33, 698.46, 554.37, 0, 587.33, 830.61, 698.46, 0, 523.25, 622.25, 554.37, 0, 466.16, 554.37, 440, 0];
-
-export type MusicMood = 'day' | 'night' | 'boss';
+export type { MusicMood } from './tracks';
 
 export class Sfx {
   private ctx: AudioContext | null = null;
   private master!: GainNode;
   private musicGain!: GainNode;
   private noiseBuf!: AudioBuffer;
-  private musicT = 0;
-  private musicStep = 0;
-  private mood: MusicMood = 'day';
+  private music!: MusicPlayer;
+  /** The mood whose song is playing, or null for silence. */
+  private musicMood: MusicMood | null = null;
   musicOn = true;
 
   init() {
@@ -35,8 +28,9 @@ export class Sfx {
     this.master.gain.value = 0.5;
     this.master.connect(this.ctx.destination);
     this.musicGain = this.ctx.createGain();
-    this.musicGain.gain.value = 0.35;
+    this.musicGain.gain.value = 0.4;
     this.musicGain.connect(this.master);
+    this.music = new MusicPlayer(this.ctx, this.musicGain);
     this.noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -78,32 +72,6 @@ export class Sfx {
     src.stop(t0 + dur + 0.05);
   }
 
-  /** A breathy flute note with a little vibrato. */
-  flute(i: number, dur = 0.55, delay = 0) {
-    const ctx = this.ctx;
-    if (!ctx) return;
-    const t0 = ctx.currentTime + delay;
-    const o = ctx.createOscillator();
-    o.type = 'triangle';
-    o.frequency.value = FLUTE_FREQS[i];
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 5.5;
-    const lg = ctx.createGain();
-    lg.gain.value = 5;
-    lfo.connect(lg).connect(o.frequency);
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.05);
-    g.gain.setValueAtTime(0.22, t0 + dur * 0.7);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(g).connect(this.master);
-    o.start(t0);
-    lfo.start(t0);
-    o.stop(t0 + dur + 0.05);
-    lfo.stop(t0 + dur + 0.05);
-    this.noise(0.12, 3000, 1500, 0.03, 'bandpass', delay);
-  }
-
   swing() { this.noise(0.16, 2400, 500, 0.25); }
   hit() { this.tone(240, 0.12, 'square', 0.15, 90); this.noise(0.08, 1500, 300, 0.3, 'lowpass'); }
   clank() { this.tone(1200, 0.15, 'square', 0.08, 900); this.tone(1800, 0.1, 'sine', 0.1); }
@@ -125,6 +93,25 @@ export class Sfx {
   select() { this.tone(988, 0.06, 'triangle', 0.1); }
   lockOn() { this.tone(700, 0.08, 'triangle', 0.1, 1100); }
   rumble() { this.noise(3.2, 160, 60, 0.5, 'lowpass'); }
+  /** Uncorking and drinking a draught: a pop, then a few bubbly gulps. */
+  drink() {
+    this.tone(900, 0.06, 'sine', 0.12, 400);
+    [0.15, 0.32, 0.49].forEach((d) => this.tone(240, 0.12, 'sine', 0.14, 160, d));
+    this.noise(0.5, 1800, 600, 0.08, 'bandpass', 0.12);
+  }
+  /** Can't do that (no drink left). */
+  denied() { this.tone(180, 0.12, 'square', 0.06, 140); }
+  /** Wren falls: a slow, falling minor figure over a low drone. */
+  defeat() {
+    [587.33, 523.25, 466.16, 392].forEach((f, i) => this.tone(f, 0.7, 'triangle', 0.14, f * 0.97, i * 0.32));
+    this.tone(98, 2.2, 'sine', 0.2, 82);
+  }
+  /** A wakestone grinding one cell across the floor. */
+  stoneSlide() { this.noise(0.35, 500, 160, 0.35, 'lowpass'); this.tone(70, 0.3, 'sawtooth', 0.05, 55); }
+  /** The sword on a stone that won't budge. */
+  stoneThunk() { this.tone(150, 0.18, 'square', 0.1, 80); this.noise(0.1, 900, 300, 0.25, 'lowpass'); }
+  /** A stone dropping into a pit and settling. */
+  stoneSink() { this.noise(0.6, 400, 60, 0.45, 'lowpass'); this.tone(90, 0.5, 'sine', 0.25, 40, 0.15); }
 
   // --- boss sounds ---
   /** A long wooden/iron creak (a huge thing moving). */
@@ -164,44 +151,21 @@ export class Sfx {
     [587.33, 739.99, 880, 1174.7, 1480].forEach((f, i) => this.tone(f, 0.5, 'sine', 0.12, undefined, i * 0.1));
   }
 
-  /** Called every frame; schedules the next note when it's due. */
-  updateMusic(dt: number, mood: MusicMood, playing: boolean) {
-    if (!this.ctx || !this.musicOn || !playing) return;
-    if (mood !== this.mood) {
-      this.mood = mood;
-      this.musicStep = 0;
-      this.musicT = 0;
+  /**
+   * Called every frame: picks the song for the mood and keeps notes scheduled. Day and
+   * night crossfade slowly; the boss theme cuts in fast.
+   */
+  updateMusic(mood: MusicMood, playing: boolean) {
+    if (!this.ctx) return;
+    // Browsers can suspend audio (a long pause, the tab in the background); bring it back
+    // so the music never just stops.
+    if (this.ctx.state === 'suspended' && playing && this.musicOn) void this.ctx.resume();
+    const want = this.musicOn && playing ? mood : null;
+    if (want !== this.musicMood) {
+      const fast = want === 'boss' || this.musicMood === 'boss';
+      this.music.play(want && compiledSong(want), fast ? 0.6 : 2.5);
+      this.musicMood = want;
     }
-    this.musicT -= dt;
-    if (this.musicT > 0) return;
-    if (mood === 'boss') {
-      this.bossStep();
-      return;
-    }
-    const night = mood === 'night';
-    const beat = night ? 0.55 : 0.42;
-    this.musicT = beat;
-    const chords = night ? NIGHT_CHORDS : DAY_CHORDS;
-    const chord = chords[Math.floor(this.musicStep / 8) % chords.length];
-    const pattern = [0, 1, 2, 1, 0, 2, 1, 2];
-    const note = chord[pattern[this.musicStep % 8]];
-    this.tone(note, beat * 2.2, 'triangle', 0.05, undefined, 0, this.musicGain);
-    if (this.musicStep % 8 === 0) this.tone(chord[0] / 2, beat * 7, 'sine', 0.06, undefined, 0, this.musicGain);
-    this.musicStep++;
-  }
-
-  private bossStep() {
-    const step = 0.17;
-    this.musicT = step;
-    const i = this.musicStep++;
-    const out = this.musicGain;
-    if (i % 2 === 0) this.tone(BOSS_BASS[Math.floor(i / 4) % BOSS_BASS.length], step * 1.8, 'square', 0.07, undefined, 0, out);
-    if (i % 4 === 2) this.noise(0.05, 7000, 5000, 0.05, 'highpass');
-    if (i % 8 === 4) this.noise(0.12, 300, 80, 0.12, 'lowpass');
-    const note = BOSS_BOX[i % BOSS_BOX.length];
-    if (note && Math.floor(i / 16) % 2 === 1) {
-      this.tone(note, 0.5, 'sine', 0.04, undefined, 0, out);
-      this.tone(note * 1.012, 0.5, 'sine', 0.025, undefined, 0, out);
-    }
+    this.music.update();
   }
 }

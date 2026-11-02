@@ -22,6 +22,8 @@ export class CameraRig {
   private lookNow = new THREE.Vector3();
   private shakeAmt = 0;
   private shakeT = 0;
+  /** Debug/look scripts only: leave the camera wherever it was put (e.g. a top-down map view). */
+  frozen = false;
 
   constructor(readonly camera: THREE.PerspectiveCamera, private physics: Physics) {}
 
@@ -68,6 +70,7 @@ export class CameraRig {
   }
 
   update(dt: number, look: { yaw: number; pitch: number }, playerPos: THREE.Vector3, lockTarget: THREE.Vector3 | null) {
+    if (this.frozen) return;
     const c = this.camera;
     if (this.shotFrom) {
       // Cutscene shot: glide toward the requested spot, but never end up inside a tree or wall.

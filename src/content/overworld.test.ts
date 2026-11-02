@@ -1,49 +1,13 @@
-import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { Sfx } from '../core/audio';
 import { initPhysics, Physics } from '../core/physics';
-import type { Player } from '../game/player';
-import type { Page, ScriptApi } from '../game/script';
 import { GameState } from '../game/state';
-import type { Particles } from '../render/particles';
 import { Overworld } from '../world/overworld';
+import { fakeApi } from './fakeApi';
 import { overworldContent } from './overworld';
-import { songEffects } from './story';
 
 beforeAll(async () => {
   await initPhysics();
 });
-
-/** A ScriptApi that resolves everything instantly and records what was said. */
-function fakeApi(area: Overworld, physics: Physics, state = new GameState()) {
-  const said: Page[] = [];
-  const noop = () => {};
-  const player = { pos: new THREE.Vector3(), teleport: noop, setSword: noop } as unknown as Player;
-  const sfx = new Proxy({}, { get: () => noop }) as Sfx;
-  const api: ScriptApi = {
-    state, sfx, player, area,
-    particles: { burst: noop } as unknown as Particles,
-    physics,
-    tween: async () => {},
-    showBossTitle: noop,
-    setTimeScale: noop,
-    addEnemy: noop,
-    run: noop,
-    say: async (pages) => void said.push(...pages),
-    wait: async () => {},
-    until: async () => {},
-    fade: async () => {},
-    card: async () => {},
-    shot: noop,
-    releaseCamera: noop,
-    showAreaName: noop,
-    toast: noop,
-    warpTime: noop,
-    respawn: noop,
-    giveSword: () => state.set('hasSword'),
-  };
-  return { api, said, state };
-}
 
 describe('overworld content', () => {
   let ow: Overworld;
@@ -65,24 +29,78 @@ describe('overworld content', () => {
     expect(y).not.toBeNull();
   });
 
-  it('plays the quest in order: Maren, then the chest', async () => {
-    const { api, state } = fakeApi(ow, physics);
-    const { scripts } = overworldContent(ow);
+  it('plays the quest in order: locked chest, Maren\'s key, sword, rumors of the hollow, a sealed door', async () => {
+    const area = new Overworld(physics);
+    const { api, state, said } = fakeApi(area, physics);
+    const { scripts } = overworldContent(area);
+    const text = () => said.map((p) => p.text).join(' ');
+
+    // Straight to the grove: the chest is locked, and the game points to the village.
+    await scripts['chest.grove'](api);
+    expect(area.chest.opened).toBe(false);
+    expect(state.has('hasSword')).toBe(false);
+    expect(text()).toContain('Thistledown');
+
     await scripts['npc.maren'](api);
     expect(state.has('metMaren')).toBe(true);
-    expect(state.songs.has('waking')).toBe(true);
+    expect(state.keys).toBe(1);
+
     await scripts['chest.grove'](api);
     expect(state.has('hasSword')).toBe(true);
-    expect(ow.chest.opened).toBe(true);
+    expect(area.chest.opened).toBe(true);
+    expect(state.keys).toBe(0);
+
+    // Armed, the village talk turns to the stolen flame and the Gloaming Hollow.
+    said.length = 0;
+    await scripts['npc.maren'](api);
+    expect(text()).toContain('Gloaming Hollow');
+    said.length = 0;
+    await scripts['npc.tobin'](api);
+    expect(text()).toContain('Gloaming Hollow');
+
+    // The door stays shut: only the relit lantern wakes it.
+    await scripts['door.shrine'](api);
+    expect(area.door.opening).toBe(false);
+    expect(state.has('shrineOpen')).toBe(false);
+    area.dispose();
   });
 
-  it('opens the shrine when the Song of Waking is played near the door', async () => {
-    const { api, state } = fakeApi(ow, physics);
-    api.player.pos.set(ow.door.x - 6, 9, ow.door.z);
-    const opening = songEffects.waking(api);
-    await opening;
-    expect(ow.door.opening).toBe(true);
+  it('opens the shrine door by interacting with it once the lantern is relit', async () => {
+    const area = new Overworld(physics);
+    const { api, state } = fakeApi(area, physics);
+    state.set('hasSword');
+    state.set('lamplighterDefeated');
+    const content = overworldContent(area);
+    content.restore(state);
+    expect(area.door.awake).toBe(true);
+    await content.scripts['door.shrine'](api);
+    expect(area.door.opening).toBe(true);
     expect(state.has('shrineOpen')).toBe(true);
+    // Walking in through the open door takes Wren into the dungeon.
+    const { api: api2, travels } = fakeApi(area, physics, state);
+    await content.scripts['trigger.shrineEntrance'](api2);
+    expect(travels).toEqual([{ area: 'shrine', entrance: undefined }]);
+    area.dispose();
+  });
+
+  it('still hands over the key on a save from before keys existed (met Maren, no key)', async () => {
+    const area = new Overworld(physics);
+    const state = new GameState();
+    state.set('metMaren');
+    const { api } = fakeApi(area, physics, state);
+    await overworldContent(area).scripts['npc.maren'](api);
+    expect(state.keys).toBe(1);
+    expect(state.has('gotGroveKey')).toBe(true);
+    area.dispose();
+  });
+
+  it('does not start the Lamplighter fight without a sword', async () => {
+    const area = new Overworld(physics);
+    const { api } = fakeApi(area, physics);
+    area.hollow.armed = true;
+    await overworldContent(area).scripts['trigger.hollow'](api);
+    expect(area.hollow.sealed).toBe(false);
+    area.dispose();
   });
 
   it('restores opened things from a save', () => {
@@ -93,6 +111,7 @@ describe('overworld content', () => {
     overworldContent(fresh).restore(state);
     expect(fresh.chest.opened).toBe(true);
     expect(fresh.door.open).toBe(true);
+    expect(fresh.door.awake).toBe(false); // the lantern isn't lit in this save
     fresh.dispose();
   });
 

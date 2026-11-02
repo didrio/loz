@@ -21,6 +21,8 @@ export class Overworld implements Area {
   readonly spawn = SPAWN;
   readonly waterLevel = WATER_Y;
   readonly enemyCount = 14;
+  /** Where Wren arrives from elsewhere: just outside the shrine door, facing away from it. */
+  readonly entrances = { shrineDoor: { x: SHRINE_DOOR.x - 3.5, z: SHRINE_DOOR.z, facing: -Math.PI / 2 } };
   readonly interactables: Interactable[];
   readonly triggers: Trigger[];
   readonly npcs: { maren: Npc; tobin: Npc };
@@ -35,7 +37,6 @@ export class Overworld implements Area {
   private readonly bushes: BushField;
   private readonly water: THREE.Mesh;
   private readonly blades: THREE.Group;
-  private readonly shaft: THREE.Mesh;
   private readonly windowMat: THREE.MeshLambertMaterial;
   private readonly lanternMat: THREE.MeshBasicMaterial;
   private readonly disposer: () => void;
@@ -51,7 +52,7 @@ export class Overworld implements Area {
     this.windowMat = village.windowMat;
     this.lanternMat = village.lanternMat;
     this.blades = village.blades;
-    this.shaft = buildGrove(b);
+    buildGrove(b);
     const shrine = buildShrine(b);
     this.lantern = shrine.lantern;
     buildTrees(b);
@@ -73,17 +74,26 @@ export class Overworld implements Area {
       tobin: npc(VILLAGE.x - 17, VILLAGE.z + 4, Math.PI / 2, 1.06,
         { skin: 0xd99a6c, hair: 0xb8662a, coat: 0x8a6b3a, pants: 0x4a3a2a, boots: 0x2e2018, accent: 0xe8dfc4 }),
     };
-    this.chest = new Chest(b, GROVE.x, GROVE.z, terrainHeight(GROVE.x, GROVE.z), Math.atan2(-6, 6));
+    // Its front faces down the grove road (which arrives from the southwest), locked until
+    // Maren hands over the key.
+    this.chest = new Chest(b, GROVE.x, GROVE.z, terrainHeight(GROVE.x, GROVE.z), Math.atan2(-6, 6), true);
     this.door = new StoneDoor(b, SHRINE_DOOR.x, SHRINE_DOOR.z, terrainHeight(SHRINE_DOOR.x, SHRINE_DOOR.z));
 
     const always = () => true;
+    /** The prompt floats this high above the ground at a spot. */
+    const above = (x: number, z: number, h: number) => terrainHeight(x, z) + h;
+    const door = this.door;
     this.interactables = [
-      { id: 'npc.maren', x: this.npcs.maren.x, z: this.npcs.maren.z, r: 2.6, label: 'Talk', enabled: always },
-      { id: 'npc.tobin', x: this.npcs.tobin.x, z: this.npcs.tobin.z, r: 2.6, label: 'Talk', enabled: always },
-      { id: 'chest.grove', x: GROVE.x, z: GROVE.z, r: 2.4, label: 'Open', enabled: () => !this.chest.opened },
-      { id: 'door.shrine', x: SHRINE_DOOR.x - 1.2, z: SHRINE_DOOR.z, r: 3, label: 'Check', enabled: () => !this.door.opening },
-      { id: 'sign.pedestal', x: shrine.pedestal.x, z: shrine.pedestal.z, r: 2.3, label: 'Read', enabled: always },
-      ...SIGNS.map((s) => ({ id: s.id, x: s.x, z: s.z, r: 2.3, label: 'Read', enabled: always })),
+      { id: 'npc.maren', x: this.npcs.maren.x, z: this.npcs.maren.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.maren.x, this.npcs.maren.z, 2.5), enabled: always },
+      { id: 'npc.tobin', x: this.npcs.tobin.x, z: this.npcs.tobin.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.tobin.x, this.npcs.tobin.z, 2.6), enabled: always },
+      { id: 'chest.grove', x: GROVE.x, z: GROVE.z, r: 2.4, label: 'Open', promptY: above(GROVE.x, GROVE.z, 1.9), enabled: () => !this.chest.opened },
+      {
+        id: 'door.shrine', x: SHRINE_DOOR.x - 1.2, z: SHRINE_DOOR.z, r: 3, promptY: above(SHRINE_DOOR.x, SHRINE_DOOR.z, 3.4),
+        get label() { return door.awake ? 'Open' : 'Check'; },
+        enabled: () => !door.opening,
+      },
+      { id: 'sign.pedestal', x: shrine.pedestal.x, z: shrine.pedestal.z, r: 2.3, label: 'Read', promptY: above(shrine.pedestal.x, shrine.pedestal.z, 2), enabled: always },
+      ...SIGNS.map((s) => ({ id: s.id, x: s.x, z: s.z, r: 2.3, label: 'Read', promptY: above(s.x, s.z, 2.4), enabled: always })),
     ];
     this.triggers = [
       { id: 'trigger.shrineEntrance', x: SHRINE_DOOR.x, z: SHRINE_DOOR.z, r: 1.6, enabled: () => this.door.open },
@@ -99,6 +109,11 @@ export class Overworld implements Area {
 
   nameAt(x: number, z: number) {
     return areaNameAt(x, z);
+  }
+
+  /** Thistledown has its own (simpler) theme by day; at night the valley shares one. */
+  musicAt(x: number, z: number, night: boolean) {
+    return !night && areaNameAt(x, z) === 'Thistledown Village' ? 'village' as const : undefined;
   }
 
   enemySpot(rand: () => number, near?: THREE.Vector3, minDist = 0, maxDist = Infinity) {
@@ -130,7 +145,6 @@ export class Overworld implements Area {
     this.water.position.y = WATER_Y + Math.sin(this.t * 0.8) * 0.05;
     this.windowMat.emissive.setRGB(0.9 * night, 0.6 * night, 0.25 * night);
     this.lanternMat.color.setRGB(0.4 + 0.6 * night, 0.27 + 0.5 * night, 0.13 + 0.2 * night);
-    (this.shaft.material as THREE.MeshBasicMaterial).opacity = 0.1 * (1 - night) + Math.sin(this.t) * 0.02;
     this.chest.update(dt);
     this.door.update(dt);
     this.lantern.update(dt);

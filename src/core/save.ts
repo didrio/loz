@@ -4,18 +4,39 @@
  * can swap localStorage for real files without touching game code.
  */
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 3;
 
 export interface SaveData {
   version: typeof SAVE_VERSION;
   flags: string[];
-  songs: string[];
+  /** Small keys held outside dungeons (v2+; v1 saved known flute songs instead, since removed). */
+  keys: number;
+  /** The area the game was saved in; continue resumes at its entrance (v3+; before: overworld). */
+  area: string;
+  /** Items Wren carries, by id (v3+). */
+  items: string[];
+  /** Progress inside each dungeon, by dungeon id (v3+). */
+  dungeons: Record<string, DungeonSave>;
+  /** Drinks found and left, by drink id (added within v3; absent means none). */
+  drinks: Record<string, { found: number; left: number }>;
   gems: number;
   hp: number;
   maxHp: number;
   hours: number;
   day: number;
   savedAt: number;
+}
+
+/** One dungeon's progress, all keyed by the ids in its data (doors, chests, switches, rooms). */
+export interface DungeonSave {
+  keys: number;
+  bossKey: boolean;
+  doors: string[];
+  chests: string[];
+  switches: string[];
+  cleared: string[];
+  entered: boolean;
+  done: boolean;
 }
 
 export interface Settings {
@@ -81,13 +102,20 @@ export function decodeSave(raw: string | null): SaveData | null {
   }
   if (!data || typeof data !== 'object') return null;
   const o = data as Record<string, unknown>;
-  if (o.version !== SAVE_VERSION) return null;
-  if (!Array.isArray(o.flags) || !Array.isArray(o.songs)) return null;
+  // v1 saved the flute songs the player knew; the flute is gone, so they're just dropped
+  // (v1 had no keys). The quest grants the key by its own flag, so nothing gets stuck.
+  // v1/v2 had no areas, items or dungeons: they load in the overworld with none.
+  if (o.version !== SAVE_VERSION && o.version !== 1 && o.version !== 2) return null;
+  if (!Array.isArray(o.flags)) return null;
   const maxHp = isNum(o.maxHp) ? Math.max(2, Math.min(40, Math.round(o.maxHp / 2) * 2)) : 6;
   return {
     version: SAVE_VERSION,
     flags: strings(o.flags),
-    songs: strings(o.songs),
+    keys: count(o.keys),
+    area: typeof o.area === 'string' && o.area ? o.area : 'overworld',
+    items: strings(o.items),
+    dungeons: decodeDungeons(o.dungeons),
+    drinks: decodeDrinks(o.drinks),
     gems: isNum(o.gems) ? Math.max(0, Math.min(9999, Math.floor(o.gems))) : 0,
     maxHp,
     hp: isNum(o.hp) ? Math.max(1, Math.min(maxHp, Math.floor(o.hp))) : maxHp,
@@ -95,6 +123,42 @@ export function decodeSave(raw: string | null): SaveData | null {
     day: isNum(o.day) ? Math.max(1, Math.floor(o.day)) : 1,
     savedAt: isNum(o.savedAt) ? o.savedAt : 0,
   };
+}
+
+function count(v: unknown) {
+  return isNum(v) ? Math.max(0, Math.min(99, Math.floor(v))) : 0;
+}
+
+function decodeDrinks(v: unknown): Record<string, { found: number; left: number }> {
+  const out: Record<string, { found: number; left: number }> = {};
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+  for (const [id, raw] of Object.entries(v as Record<string, unknown>)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const d = raw as Record<string, unknown>;
+    const found = count(d.found);
+    if (found > 0) out[id] = { found, left: Math.min(found, count(d.left)) };
+  }
+  return out;
+}
+
+function decodeDungeons(v: unknown): Record<string, DungeonSave> {
+  const out: Record<string, DungeonSave> = {};
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+  for (const [id, raw] of Object.entries(v as Record<string, unknown>)) {
+    if (!raw || typeof raw !== 'object') continue;
+    const d = raw as Record<string, unknown>;
+    out[id] = {
+      keys: count(d.keys),
+      bossKey: d.bossKey === true,
+      doors: strings(d.doors),
+      chests: strings(d.chests),
+      switches: strings(d.switches),
+      cleared: strings(d.cleared),
+      entered: d.entered === true,
+      done: d.done === true,
+    };
+  }
+  return out;
 }
 
 export function decodeSettings(raw: string | null): Settings {

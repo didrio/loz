@@ -71,6 +71,12 @@ export class Physics {
     return this.add(d, member);
   }
 
+  /** Box with any orientation (ramps, tilted slabs). `rotation` is a unit quaternion. */
+  orientedBox(x: number, y: number, z: number, hx: number, hy: number, hz: number, rotation: THREE.Quaternion, member: number = Layer.World) {
+    const d = RAPIER.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setRotation({ x: rotation.x, y: rotation.y, z: rotation.z, w: rotation.w });
+    return this.add(d, member);
+  }
+
   /** Upright cylinder centered at (x, y, z). */
   cylinder(x: number, y: number, z: number, halfHeight: number, radius: number, member: number = Layer.World) {
     return this.add(RAPIER.ColliderDesc.cylinder(halfHeight, radius).setTranslation(x, y, z), member);

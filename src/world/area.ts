@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { RAPIER } from '../core/physics';
 import { Layer, Physics } from '../core/physics';
+import type { MusicMood } from '../core/tracks';
 import { disposeTree, mergeStatic } from '../render/materials';
 
 /**
@@ -11,7 +12,9 @@ import { disposeTree, mergeStatic } from '../render/materials';
 export interface Area {
   readonly id: string;
   readonly root: THREE.Group;
-  readonly spawn: { x: number; y?: number; z: number; facing: number };
+  readonly spawn: Spot;
+  /** Named places to arrive at from elsewhere (e.g. `shrineDoor`: just outside the shrine). */
+  readonly entrances?: Record<string, Spot>;
   /** Water surface height, if the area has water (for wading). */
   readonly waterLevel: number | null;
   readonly interactables: Interactable[];
@@ -22,10 +25,29 @@ export interface Area {
   enemySpot(rand: () => number, near?: THREE.Vector3, minDist?: number, maxDist?: number): { x: number; z: number } | null;
   /** How many thornlings roam here. */
   readonly enemyCount: number;
+  /**
+   * Indoors (dungeons, interiors): no sky or sun, its own dim light and dark fog, the clock
+   * stands still, no night wisps or respawning field enemies, and a closer camera.
+   */
+  readonly indoor?: boolean;
+  /** This area's own theme (a dungeon's); the field's day/night themes if omitted. */
+  readonly music?: MusicMood;
+  /** A theme for a part of the area (the village by day), or undefined for the usual one. */
+  musicAt?(x: number, z: number, night: boolean): MusicMood | undefined;
   /** Cuts grass/bushes in a sword arc; returns where things were cut. */
   cut(x: number, z: number, dirX: number, dirZ: number, reach: number): THREE.Vector3[];
+  /** The sword swings at (x, y, z) facing (dirX, dirZ): strike crystal switches and the like. */
+  strike?(x: number, y: number, z: number, dirX: number, dirZ: number, reach: number): void;
   update(dt: number, env: AreaEnv): void;
   dispose(): void;
+}
+
+/** Where to put Wren: feet position (y found from the ground if omitted) and facing. */
+export interface Spot {
+  x: number;
+  y?: number;
+  z: number;
+  facing: number;
 }
 
 export interface AreaEnv {
@@ -41,7 +63,12 @@ export interface Interactable {
   x: number;
   z: number;
   r: number;
+  /** Shown in the prompt over it ("Talk", "Open"...). May be a getter if it changes. */
   label: string;
+  /** World height of the floating prompt (defaults to a little above the player's head). */
+  promptY?: number;
+  /** The floor it stands on, where floors stack (dungeons): only in reach from that height. */
+  y?: number;
   enabled(): boolean;
 }
 
@@ -51,8 +78,13 @@ export interface Trigger {
   x: number;
   z: number;
   r: number;
+  /** The floor it's on, where floors stack (dungeons). */
+  y?: number;
   enabled(): boolean;
 }
+
+/** Whether a stacked-floor spot (`y`) is on the player's level. */
+export const sameLevel = (y: number | undefined, playerY: number) => y === undefined || Math.abs(playerY - y) < 2.5;
 
 /**
  * Collects an area's meshes and colliders while it's being built. Static meshes are merged
@@ -89,6 +121,10 @@ export class AreaBuilder {
 
   box(x: number, y: number, z: number, hx: number, hy: number, hz: number, rotY = 0, member: number = Layer.World) {
     return this.track(this.physics.box(x, y, z, hx, hy, hz, rotY, member));
+  }
+
+  orientedBox(x: number, y: number, z: number, hx: number, hy: number, hz: number, rotation: THREE.Quaternion, member: number = Layer.World) {
+    return this.track(this.physics.orientedBox(x, y, z, hx, hy, hz, rotation, member));
   }
 
   cylinder(x: number, y: number, z: number, halfHeight: number, r: number, member: number = Layer.World) {

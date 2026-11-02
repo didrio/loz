@@ -56,6 +56,9 @@ export class Sky {
   night = 0;
   /** Boss-fight darkness, 0–1: dims the lights, pulls the fog in and tints it violet. */
   gloom = 0;
+  /** Indoors: no sky, no sun shadows, a dim warm fill and close dark fog (see `setIndoor`). */
+  private indoor = false;
+  private readonly indoorFog = new THREE.Color(0x0a0c10);
   private readonly gloomFog = new THREE.Color(0x120e1c);
 
   constructor(private scene: THREE.Scene) {
@@ -110,7 +113,32 @@ export class Sky {
     scene.add(this.sun, this.sun.target);
   }
 
+  setIndoor(on: boolean) {
+    this.indoor = on;
+    for (const o of [this.dome, this.stars, this.sunDisc, this.moonDisc]) o.visible = !on;
+    this.sun.castShadow = !on;
+    this.night = 0;
+  }
+
   update(hours: number, focus: THREE.Vector3, camPos: THREE.Vector3) {
+    if (this.indoor) {
+      const fog = this.scene.fog as THREE.Fog;
+      const g = this.gloom;
+      fog.color.copy(this.indoorFog);
+      fog.near = 14 - 8 * g;
+      fog.far = 60 - 30 * g;
+      // A soft overhead fill (no shadows: every ceiling would shade everything) plus a
+      // warm/dark hemisphere; the rooms' own lights do the rest.
+      this.sun.color.set(0xc8d4e0);
+      this.sun.intensity = 0.45 * (1 - 0.6 * g);
+      this.sun.position.copy(focus).add(new THREE.Vector3(10, 60, 20));
+      this.sun.target.position.copy(focus);
+      this.hemi.color.set(0x8e9cb0);
+      this.hemi.groundColor.set(0x23262b);
+      this.hemi.intensity = 0.9 * (1 - 0.5 * g);
+      return;
+    }
+    this.hemi.groundColor.set(0x4a5a2a);
     sample(hours, 'top', this.uniforms.top.value);
     sample(hours, 'horizon', this.uniforms.horizon.value);
     const fog = this.scene.fog as THREE.Fog;

@@ -2,6 +2,7 @@ import type * as THREE from 'three';
 import type { Sfx } from '../core/audio';
 import type { Physics } from '../core/physics';
 import type { Particles } from '../render/particles';
+import type { AreaId } from '../content/areas';
 import type { Area } from '../world/area';
 import type { Enemy } from './enemies';
 import type { Player } from './player';
@@ -11,8 +12,8 @@ export interface Page {
   /** Speaker name; omit for narration and item messages. */
   who?: string;
   /**
-   * Text. `*word*` is highlighted, `{0}`–`{4}` show flute note buttons and `[attack]` etc.
-   * show the button for an action on the player's current device. `\n` breaks lines.
+   * Text. `*word*` is highlighted and `[attack]` etc. show the button for an action on the
+   * player's current device. `\n` breaks lines.
    */
   text: string;
 }
@@ -55,6 +56,8 @@ export interface ScriptApi {
   setTimeScale(scale: number): void;
   /** Adds an enemy or boss to the current area. */
   addEnemy(e: Enemy): void;
+  /** Takes an enemy out of the area at once (no death, no drop). */
+  removeEnemy(e: Enemy): void;
   /** Starts another script once the current one (if any) has finished. */
   run(script: Script): void;
   toast(text: string): void;
@@ -62,6 +65,10 @@ export interface ScriptApi {
   warpTime(toHour: number): void;
   /** Sends the player back to the area's start with full health. */
   respawn(): void;
+  /** Stops the music (true) until called with false, when the area's theme starts over. */
+  silenceMusic(on: boolean): void;
+  /** Fades out, loads another area (at a named entrance, or its spawn) and fades back in. */
+  travel(area: AreaId, entrance?: string): Promise<void>;
   giveSword(): void;
 }
 

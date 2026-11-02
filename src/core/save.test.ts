@@ -6,7 +6,7 @@ describe('save files', () => {
   it('round-trips game state', () => {
     const s = new GameState();
     s.set('hasSword');
-    s.songs.add('waking');
+    s.keys = 1;
     s.gems = 42;
     s.hp = 3;
     s.advance(20);
@@ -15,7 +15,7 @@ describe('save files', () => {
     const loaded = new GameState();
     loaded.load(slot.load()!);
     expect(loaded.has('hasSword')).toBe(true);
-    expect(loaded.songs.has('waking')).toBe(true);
+    expect(loaded.keys).toBe(1);
     expect(loaded.gems).toBe(42);
     expect(loaded.day).toBe(2);
     expect(loaded.hours).toBeCloseTo(5);
@@ -25,25 +25,75 @@ describe('save files', () => {
     expect(decodeSave(null)).toBeNull();
     expect(decodeSave('not json')).toBeNull();
     expect(decodeSave('[]')).toBeNull();
-    expect(decodeSave(JSON.stringify({ version: SAVE_VERSION + 1, flags: [], songs: [] }))).toBeNull();
+    expect(decodeSave(JSON.stringify({ version: SAVE_VERSION + 1, flags: [] }))).toBeNull();
   });
 
   it('repairs out-of-range values instead of trusting them', () => {
-    const d = decodeSave(JSON.stringify({ version: SAVE_VERSION, flags: ['hasSword', 3], songs: [], gems: -5, hp: 99, maxHp: 7, hours: 30, day: 0 }))!;
+    const d = decodeSave(JSON.stringify({ version: SAVE_VERSION, flags: ['hasSword', 3], keys: -2, gems: -5, hp: 99, maxHp: 7, hours: 30, day: 0 }))!;
     expect(d.flags).toEqual(['hasSword']);
     expect(d.gems).toBe(0);
+    expect(d.keys).toBe(0);
     expect(d.maxHp % 2).toBe(0);
     expect(d.hp).toBeLessThanOrEqual(d.maxHp);
     expect(d.hours).toBe(6);
     expect(d.day).toBe(1);
   });
 
-  it('drops flags and songs the game no longer knows', () => {
+  it('drops flags the game no longer knows', () => {
     const s = new GameState();
-    s.load({ ...new GameState().toSave(), flags: ['hasSword', 'oldRemovedFlag'], songs: ['waking', 'nope'] });
+    s.load({ ...new GameState().toSave(), flags: ['hasSword', 'oldRemovedFlag'] });
     expect([...s.flags]).toEqual(['hasSword']);
-    expect(s.songs.has('waking')).toBe(true);
-    expect(s.songs.size).toBe(2); // hours (starting song) + waking
+  });
+
+  it('migrates a v1 save (from when there was a flute): songs dropped, no keys, progress kept', () => {
+    const d = decodeSave(JSON.stringify({ version: 1, flags: ['metMaren', 'hasSword'], songs: ['hours', 'waking'], gems: 12, hp: 6, maxHp: 6, hours: 10, day: 2 }))!;
+    expect(d.version).toBe(SAVE_VERSION);
+    expect(d.keys).toBe(0);
+    expect(d.flags).toEqual(['metMaren', 'hasSword']);
+    expect(d.gems).toBe(12);
+    expect('songs' in d).toBe(false);
+  });
+
+  it('round-trips the area, items and each dungeon\'s progress (v3)', () => {
+    const s = new GameState();
+    s.area = 'shrine';
+    s.items.add('tether');
+    const d = s.dungeon('shrine');
+    d.keys = 1;
+    d.bossKey = true;
+    d.entered = true;
+    d.doors.add('tetherDoor');
+    d.chests.add('southChest');
+    d.switches.add('northBar');
+    d.cleared.add('southCell');
+    const loaded = new GameState();
+    loaded.load(decodeSave(JSON.stringify(s.toSave()))!);
+    expect(loaded.area).toBe('shrine');
+    expect(loaded.items.has('tether')).toBe(true);
+    const l = loaded.dungeon('shrine');
+    expect([l.keys, l.bossKey, l.entered, l.done]).toEqual([1, true, true, false]);
+    expect([...l.doors, ...l.chests, ...l.switches, ...l.cleared]).toEqual(['tetherDoor', 'southChest', 'northBar', 'southCell']);
+    expect(loaded.keysHere).toBe(1); // in the shrine, its own keys count
+    loaded.area = 'overworld';
+    expect(loaded.keysHere).toBe(0);
+  });
+
+  it('migrates a v2 save: overworld, no items, no dungeon progress', () => {
+    const d = decodeSave(JSON.stringify({ version: 2, flags: ['hasSword'], keys: 1, gems: 3, hp: 6, maxHp: 6, hours: 10, day: 1 }))!;
+    expect(d.version).toBe(SAVE_VERSION);
+    expect(d.area).toBe('overworld');
+    expect(d.items).toEqual([]);
+    expect(d.dungeons).toEqual({});
+    expect(d.keys).toBe(1);
+  });
+
+  it('repairs broken dungeon progress instead of trusting it', () => {
+    const d = decodeSave(JSON.stringify({ version: SAVE_VERSION, flags: [], dungeons: { shrine: { keys: -4, doors: ['a', 7], done: 'yes' }, bad: 3 }, items: ['tether', 'nonsense'] }))!;
+    expect(d.dungeons.shrine).toMatchObject({ keys: 0, doors: ['a'], done: false, bossKey: false });
+    expect('bad' in d.dungeons).toBe(false);
+    const s = new GameState();
+    s.load(d);
+    expect([...s.items]).toEqual(['tether']);
   });
 
   it('always continues with at least three hearts', () => {

@@ -54,7 +54,7 @@ export async function openGame(env, outDir) {
       return {
         mode: g.mode,
         flags: [...g.state.flags],
-        songs: [...g.state.songs],
+        keys: g.state.keys,
         hp: g.state.hp,
         pos: { x: g.player.pos.x, y: g.player.pos.y, z: g.player.pos.z },
         enemies: g.enemies.list.filter((e) => e.alive).length,
@@ -69,14 +69,18 @@ export async function openGame(env, outDir) {
       await press('Enter', 1, 200);
     }
   };
-  /** Puts Wren on the ground at (x, z), facing `facing` (0 = south/+z), camera behind. */
-  const teleport = (x, z, facing) =>
-    game(([x, z, facing]) => {
+  /**
+   * Puts Wren on the ground at (x, z), facing `facing` (0 = south/+z), camera behind.
+   * Indoors, pass `fromY` (just above the floor you want): from the default height the
+   * ray would land on the roof.
+   */
+  const teleport = (x, z, facing, fromY = 400) =>
+    game(([x, z, facing, fromY]) => {
       const g = window.embervale;
-      const y = g.physics.groundY(x, z) ?? 0;
+      const y = g.physics.groundY(x, z, fromY) ?? 0;
       g.player.teleport(x, y + 0.05, z, facing);
       g.rig.snap(g.player.pos, facing);
-    }, [x, z, facing]);
+    }, [x, z, facing, fromY]);
   /** Loads the page and waits for the title menu. */
   const boot = async () => {
     await page.goto(env.url);

@@ -44,6 +44,32 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
   60% { margin-left: -3px; } 80% { margin-left: 2px; }
 }
 
+.keys { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 20px; font-weight: bold; }
+.drinks { display: flex; gap: 10px; margin-top: 8px; }
+.drink { position: relative; display: flex; align-items: center; gap: 4px; font-size: 17px; font-weight: bold; }
+.drink .key { min-width: 20px; height: 20px; font-size: 11px; padding: 0 5px; }
+.drink.empty { opacity: 0.35; filter: grayscale(0.8); }
+.bottle { display: block; }
+.boost { position: absolute; left: 0; right: 0; bottom: -6px; height: 3px; background: rgba(0, 0, 0, 0.4); border-radius: 2px; overflow: hidden; }
+.boost span { display: block; height: 100%; background: #ffb02e; box-shadow: 0 0 4px #ff8a00; }
+.key-icon { display: block; }
+.boss-key { display: block; margin-left: 8px; filter: drop-shadow(0 0 4px rgba(255, 200, 80, 0.7)); }
+.key-icon.hidden, .boss-key.hidden { display: none; }
+
+/* Interact prompt: floats over the thing in reach (positioned every frame). */
+.prompt {
+  position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 6px;
+  padding: 3px 11px 3px 3px; border-radius: 18px; background: rgba(10, 20, 40, 0.7);
+  border: 2px solid rgba(232, 199, 112, 0.85); font-size: 15px; font-weight: bold; white-space: nowrap;
+  opacity: 0; transition: opacity 0.15s;
+}
+.prompt.show { opacity: 1; animation: prompt-bob 1.2s ease-in-out infinite; }
+.prompt::after {
+  content: ''; position: absolute; left: 50%; bottom: -8px; margin-left: -6px;
+  border: 6px solid transparent; border-top-color: rgba(232, 199, 112, 0.85); border-bottom: 0;
+}
+@keyframes prompt-bob { 50% { margin-top: -4px; } }
+
 .gem-icon {
   width: 14px; height: 20px; background: linear-gradient(135deg, #8dffb4, #1fb85a);
   clip-path: polygon(50% 0, 100% 40%, 50% 100%, 0 40%);
@@ -107,34 +133,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .dialog-next { position: absolute; right: 18px; bottom: 6px; color: #e8c770; opacity: 0; }
 .dialog.done .dialog-next { opacity: 1; animation: bob 0.8s infinite; }
 @keyframes bob { 50% { transform: translateY(4px); } }
-
-.note {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border-radius: 50%; margin: 0 2px; vertical-align: middle;
-  background: var(--c); color: #1a1a1a; text-shadow: none; font-weight: bold; font-size: 15px;
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25);
-}
-
-/* Flute */
-.flute {
-  position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%);
-  width: min(620px, 92vw); padding: 16px 22px; border-radius: 14px;
-  background: rgba(8, 14, 34, 0.82); border: 2px solid rgba(232, 199, 112, 0.8);
-}
-.flute-title { font-size: 18px; font-weight: bold; color: #ffd76a; }
-.flute-title span { font-size: 13px; color: #c8c8d8; font-weight: normal; margin-left: 8px; }
-.flute-keys { margin: 10px 0; }
-.flute-played {
-  min-height: 46px; padding: 6px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.06);
-  background-image: repeating-linear-gradient(transparent 0 8px, rgba(255, 255, 255, 0.12) 8px 9px);
-}
-.matched { margin-left: 12px; color: #ffd76a; font-weight: bold; font-size: 18px; }
-.flute-songs { margin-top: 10px; font-size: 14px; color: #ddd; }
-.song { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
-.song-name { min-width: 130px; }
-.note.small { width: 22px; height: 22px; font-size: 12px; }
-.note.tiny { width: 18px; height: 18px; font-size: 11px; margin: 0 1px; }
-.note.big { width: 40px; height: 40px; font-size: 18px; }
 
 /* Full screen */
 .fade { position: absolute; inset: 0; background: #000; opacity: 0; }
