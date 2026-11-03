@@ -86,12 +86,12 @@ export default async function run(t) {
   await step('the pause menu lists the note and reads it', async () => {
     await press('KeyP');
     await until(() => window.embervale.pauseMenu.isOpen, 5000);
-    check(/On stone and cloth/.test((await menu()).text), 'note missing from the list');
+    check(/The Stoneward tunic/.test((await menu()).text), 'note missing from the list');
     await press('Enter');
     check(/Stoneward/.test((await menu()).text), 'note text not shown');
     await shot('hints-04-note');
     await press('Backspace');
-    check(/On stone and cloth/.test((await menu()).text) && (await menu()).open, 'Backspace should go back to the list');
+    check(/The Stoneward tunic/.test((await menu()).text) && (await menu()).open, 'Backspace should go back to the list');
     await page.keyboard.press('KeyP');
     await until(() => !window.embervale.pauseMenu.isOpen, 5000);
   });

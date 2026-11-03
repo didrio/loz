@@ -112,6 +112,25 @@ const SCENES = {
     await h.finishScript();
     await h.shot('with-shield');
   },
+  /** The ruins (S3): every ruined home from its open front, then one from the side with its jars, and Thistledown's ring from the square. */
+  async ruins(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.state.set('hasSword'));
+    const ruins = await h.game(async () => (await import('/src/world/overworld/layout.ts')).RUINS.map((r) => ({ id: r.id, x: r.x, z: r.z, yaw: r.yaw, r: r.r })));
+    for (const r of ruins) {
+      const fx = Math.sin(r.yaw), fz = Math.cos(r.yaw);
+      await h.teleport(r.x + fx * (r.r + 3), r.z + fz * (r.r + 3), r.yaw + Math.PI);
+      await h.wait(1500);
+      await h.shot(`ruin-${r.id}`);
+    }
+    // The square: the two standing homes and the two ruined ones around the well.
+    await h.teleport(-62, -50, Math.atan2(0, -1));
+    await h.wait(1200);
+    await h.shot('ring-north');
+    await h.teleport(-62, -66, 0);
+    await h.wait(1200);
+    await h.shot('ring-south');
+  },
   async village(h) {
     await h.newGame();
     await h.teleport(-50, -42, Math.atan2(-12, -16));
@@ -410,14 +429,14 @@ const SCENES = {
         const g = window.embervale;
         const at = g.area.buds.get(id).center;
         const T = at.constructor;
-        const [dx, dz] = id === 'bud.flasks' ? [-0.87, 0.5] : [0.87, -0.5];
+        const [dx, dz] = id === 'bud.flasks' || id === 'bud.boss' ? [-0.87, 0.5] : [0.87, -0.5];
         g.rig.shot(new T(at.x + dist * dx, at.y + up, at.z + dist * dz), new T(at.x, at.y + 0.6, at.z), true);
       }, [id, dist, up]);
     const where = (id) => h.game((id) => {
       const bud = window.embervale.area.buds.get(id);
       return { x: bud.x, z: bud.z };
     }, id);
-    for (const id of ['bud.tunic', 'bud.flasks', 'bud.bells']) {
+    for (const id of ['bud.tunic', 'bud.flasks', 'bud.bells', 'bud.boss']) {
       const b = await where(id);
       await h.teleport(b.x + 0.9, b.z + 1.6, Math.atan2(-0.9, -1.6)); // beside it, for scale
       await frame(id, 9, 3.5);

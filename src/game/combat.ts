@@ -171,6 +171,12 @@ export class Combat {
         particles.burst(at, 0x4f9a35, 14, 5, 0.6);
         pickups.drop(at, 0.3, 0.1);
       },
+      onBreakJar: (jar) => {
+        this.g.state.set(`jar.${jar.id}`);
+        sfx.jar();
+        particles.burst(jar.at, 0xa8683a, 16, 5, 0.7);
+        if (jar.drop !== 'empty') pickups.spawn(jar.drop, jar.at);
+      },
     };
   }
 

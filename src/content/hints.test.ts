@@ -96,4 +96,11 @@ describe('keepers\' notes (Murmurbuds)', () => {
     ow.strike(bud.x + 2, bud.y + 0.9, bud.z, -1, 0, 2.4); // open: nothing left to strike
     expect(struck).toEqual(['bud.tunic']);
   });
+
+  it('the boss note names the two things the fight hides: jumping the shock ring and pulling a loose plate, without naming the item', () => {
+    const boss = HINTS.find((h) => h.id === 'boss')!;
+    expect(boss.text).toMatch(/jump/i);
+    expect(boss.text).not.toMatch(/glove|tether|dungeon/i);
+    expect(boss.text).toMatch(/plate/);
+  });
 });

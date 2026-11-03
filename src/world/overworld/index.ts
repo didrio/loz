@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Physics } from '../../core/physics';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
+import { JarField } from '../jars';
 import { BossArena, BushField, Chest, GreatLantern, HeartVessel, Npc, ShieldPickup, StoneDoor } from '../objects';
 import { buildCamp, CANYON_COURSE, WAYBELL_PICKUP } from './camp';
 import { Gate } from './gate';
@@ -70,6 +71,8 @@ export class Overworld implements Area {
   readonly vessel: HeartVessel;
   private readonly hollowFx: { update(dt: number): void };
   private readonly bushes: BushField;
+  /** The jars in the ruins (breaking one is saved as `jar.<id>`). */
+  readonly jars: JarField;
   /** The blight's thorns in the field; they shrink away as the blight lifts. */
   private readonly growths: ReturnType<typeof buildBlightGrowths>;
   /** The Murmurbuds, by id (`bud.<hint>`). */
@@ -112,7 +115,9 @@ export class Overworld implements Area {
     this.wayPost = camp.post;
     this.wayBell = camp.bell;
     this.canyonCrossing = camp.course;
-    this.shield = buildRuins(b).shield;
+    const ruins = buildRuins(b);
+    this.shield = ruins.shield;
+    this.jars = ruins.jars;
     this.growths = buildBlightGrowths(b, regionRng('blight'));
     this.bushes = new BushField(b, [...bushSpots(b), ...hollow.bushes]);
     this.buds = new Map(BUDS.map(({ id, x, z }) => [id, new MurmurbudLook(b, id, x, terrainHeight(x, z), z)]));
@@ -228,6 +233,10 @@ export class Overworld implements Area {
 
   cut(x: number, z: number, dirX: number, dirZ: number, reach: number) {
     return this.bushes.cut(x, z, dirX, dirZ, reach);
+  }
+
+  breakJars(x: number, z: number, dirX: number, dirZ: number, reach: number) {
+    return this.jars.hit(x, z, dirX, dirZ, reach);
   }
 
   strike(x: number, y: number, z: number, dirX: number, dirZ: number, reach: number) {

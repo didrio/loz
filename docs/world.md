@@ -43,6 +43,10 @@ recheck old text against them when you touch it.
   black trees and old iron lamp posts, with ash drifting up. Sign: "Here ends the
   lamplighter's road." The arena of the first mini-boss.
 
+- **Ruins**: Thistledown's ring has two standing cottages (east, southwest) and two ruined ones (northeast, northwest); more
+  ruined homes lie across the valley (the shield's cottage north of the village, one by the south road, one by Glimmer Lake, one by
+  the Northpass gate). Each holds clay **jars** a sword breaks once (saved): one with a blue gem (5), one or two with a heart, the rest empty.
+
 - **The Hushing Gorge** (working name; built): a winding cut in the western mountain ring, west of the
   valley, where the keepers hid the Morrowbell. A sign at its mouth warns walkers off; a statue of a
   keeper still stands guard in the corridor, thornlings nest below, and the way on is over a pit on
@@ -190,11 +194,11 @@ its tip (so it reads as something), and lock-on can hold it. Only reading is sav
 but not read closes again on reload.
 
 - **Voice**: the keepers, writing for a stranger: old-fashioned, fond, a little bossy, one
-  practical idea per note, specific to Emberfield. Titles are "On ...".
-- **Notes** (`content/hints.ts`, bud ids `bud.<hint>` placed in `world/overworld/layout.ts`
-  `BUDS`): *On stone and cloth* (buy the Stoneward Tunic; behind the windmill), *On empty
-  flasks* (Odo refills them, red or amber; Glimmer Lake's east bank), *On bells and posts* (a
-  post's arm names its bell; rung bells answer, and you can follow; by the Hushing Gorge's mouth).
+  practical idea per note, specific to Emberfield. Titles say plainly what the note helps with ("Refilling your flasks"); each text names the person, the price or the button involved.
+- **Notes** (`content/hints.ts`, bud ids `bud.<hint>` placed in `world/overworld/layout.ts` `BUDS`, spread over the valley, 60+ m apart):
+  *The Stoneward tunic* (Odo sells it, 50 gems; off the road to Thistledown), *Refilling your flasks* (Odo, 20 gems each; the river's
+  south bank), *Bells, posts and travel* (a post's arm names its bell; rung bells answer, and you can travel; by the Hushing Gorge's
+  mouth), *Fighting the stone giant* (jump the shock ring; after a slam pull the glowing chest plate off; it deliberately never names the Tether Glove, owner's call; beside the shrine road).
 - **Adding one**: an entry in `HINTS`, its flag `hint.<id>` in `FLAGS` (`game/state.ts`), a spot
   in `BUDS`. `content/hints.test.ts` checks the three line up.
 - **The rule** (`game/murmurbud.ts`, run by `game/buds.ts`): a strike adds 0.25 to a gauge that

@@ -4,13 +4,13 @@ import { mat, uniqueMat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
 import { MILL, STALL, terrainHeight, VILLAGE } from './layout';
 
-/** Thistledown: five cottages around a well, a windmill, a fence ring and lanterns. */
+/** Thistledown: four cottages (two standing here, two ruined ones in `RUINS`) around a well, a windmill, a fence ring and lanterns. */
 export function buildVillage(b: AreaBuilder) {
   const { x: cx, z: cz } = VILLAGE;
   const windowMat = uniqueMat(0x2a2a3a);
   const lanternMat = new THREE.MeshBasicMaterial({ color: 0x664422 });
 
-  const house = (x: number, z: number, wall: number, roof: number, w = 8.5, d = 7.5, h = 3.4) => {
+  const house = (x: number, z: number, wall: number, roof: number, w = 10.5, d = 9, h = 3.6) => {
     const y = terrainHeight(x, z) - 0.2;
     const yaw = Math.atan2(cx - x, cz - z);
     const g = new THREE.Group();
@@ -41,12 +41,10 @@ export function buildVillage(b: AreaBuilder) {
     b.box(x, y + h / 2, z, w / 2 + 0.15, h / 2 + 0.2, d / 2 + 0.15, yaw);
   };
 
+  // The east and southwest homes still stand; the northeast and northwest ones are ruins (ruins.ts).
   const houses: [number, number, number][] = [
     [-0.15, 0xeadcbc, 0xa5452f],
-    [1.55, 0xdcc8a4, 0x5b6f9a],
-    [2.35, 0xeadcbc, 0x8a5a2b],
-    [-2.45, 0xe4d2b0, 0xa5452f],
-    [-0.95, 0xd8c09a, 0x4f7d4a],
+    [2.35, 0xdcc8a4, 0x5b6f9a],
   ];
   for (const [a, wall, roof] of houses) house(cx + Math.cos(a) * 17, cz + Math.sin(a) * 17, wall, roof);
 

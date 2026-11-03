@@ -7,8 +7,9 @@ import { Flasks } from './flasks';
  * Quest progress flags. Add new ones here (they're saved by name). Keep names stable once
  * shipped: renaming one would silently drop it from existing saves.
  */
-export const FLAGS = ['metMaren', 'hasSword', 'hasShield', 'groveChestOpened', 'shrineOpen', 'lamplighterDefeated', 'hollowVessel', 'gravelheartVessel', 'valleyOpen', 'gotGroveKey', 'village.millKey', 'village.stonewardTunic', 'village.marenBell', 'village.tobinBell', 'village.surfIdea', 'village.surfTried', 'village.scare', 'hint.tunic', 'hint.flasks', 'hint.bells'] as const;
-export type Flag = (typeof FLAGS)[number];
+export const FLAGS = ['metMaren', 'hasSword', 'hasShield', 'groveChestOpened', 'shrineOpen', 'lamplighterDefeated', 'hollowVessel', 'gravelheartVessel', 'valleyOpen', 'gotGroveKey', 'village.millKey', 'village.stonewardTunic', 'village.marenBell', 'village.tobinBell', 'village.surfIdea', 'village.surfTried', 'village.scare', 'hint.tunic', 'hint.flasks', 'hint.bells', 'hint.boss'] as const;
+/** A broken jar (`jar.<ruin id>.<n>`; world/jars.ts) is saved as a flag by its own id. */
+export type Flag = (typeof FLAGS)[number] | `jar.${string}`;
 
 /** Items Wren can carry (the dungeon tools). Saved by id; unknown ids are dropped on load. */
 export const ITEMS = ['tether'] as const;
@@ -167,7 +168,7 @@ export class GameState {
   /** Restores from a (validated) save. Unknown flags, items and bells are dropped. */
   load(d: SaveData) {
     this.reset();
-    for (const f of d.flags) if ((FLAGS as readonly string[]).includes(f)) this.flags.add(f as Flag);
+    for (const f of d.flags) if ((FLAGS as readonly string[]).includes(f) || f.startsWith('jar.')) this.flags.add(f as Flag);
     this.keys = d.keys;
     this.area = d.area;
     for (const i of d.items) if ((ITEMS as readonly string[]).includes(i)) this.items.add(i as Item);

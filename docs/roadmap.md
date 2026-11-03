@@ -24,9 +24,10 @@ Next, in order:
    - ~~S1, the shield-first opening~~ done (2026-11-03; [world.md](world.md), "The opening"). **For S2–S5:** no new story
      cutscenes without asking (AGENTS.md design decisions); the blight lift (S2) and the prism (S5) were planned as cutscenes.
    - ~~S2, the blight~~ done (2026-11-03; [world.md](world.md), "The blight"). Music is placeholder (owner listens); the restored field has 3 strays and no wisps (owner's call).
-   - [ ] **S3, village and ruins.** Four bigger cottages (two ruined) plus the mill; hand-placed `RUINS` across the
-     valley (`world/overworld/ruins.ts`), the shield's cottage among them; scenery filtered with `inRuin` (the `inGate`
-     pattern, so nothing reshuffles; narrow the per-region seeds trigger and tell the owner).
+   - ~~S3, village and ruins~~ done (2026-11-03; [world.md](world.md), "Places"): four bigger cottages (two ruined) plus the mill, six `RUINS` in all
+     (`world/overworld/ruins.ts`), scenery filtered with `inRuin` (per-region seeds trigger stays narrowed; nothing reshuffled). Added with it (owner's
+     asks): clay **jars** in every ruin (`world/jars.ts`; one blue gem, 1-2 hearts, the rest empty; saved as `jar.<id>` flags), the Murmurbuds spread
+     across the valley, a fourth note (`bud.boss`: jump the shock ring, tether a loose plate) and plainer note titles and texts.
    - [ ] **S4, sigils and the village's silence.** `world/sigil.ts`, `content/sigils.ts` (registry like `hints.ts`,
      flags `sigil.<id>`), the hollow's sigil, a dungeon data kind `sigil` with `appears: { cleared }`, a "Messages" page
      in the pause menu, villager reactions, the full text pass (lantern/thief/ward/Warden lines, Gravelheart's epithet

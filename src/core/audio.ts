@@ -84,6 +84,8 @@ export class Sfx {
     this.tone(900, 0.12, 'square', 0.06, 300, 0.05);
   }
   cut() { this.noise(0.18, 3500, 900, 0.22); }
+  /** A clay jar cracking apart: a dull knock and a rattle of shards. */
+  jar() { this.tone(210, 0.1, 'triangle', 0.16, 120); this.noise(0.22, 4200, 1200, 0.22, 'bandpass'); }
   hurt() { this.tone(330, 0.25, 'sawtooth', 0.15, 140); }
   jump() { this.tone(300, 0.12, 'sine', 0.08, 520); }
   /** Getting on the shield: a soft wooden scuff and a low scrape. */

@@ -3,6 +3,7 @@ import type { RAPIER } from '../core/physics';
 import { Layer, Physics } from '../core/physics';
 import type { MusicMood } from '../core/tracks';
 import type { BellId, BellPost } from './bell';
+import type { BrokenJar } from './jars';
 import type { MurmurbudLook } from './murmurbud';
 import { disposeTree, mergeStatic } from '../render/materials';
 
@@ -40,6 +41,8 @@ export interface Area {
   musicAt?(x: number, z: number, night: boolean): MusicMood | undefined;
   /** Cuts grass/bushes in a sword arc; returns where things were cut. */
   cut(x: number, z: number, dirX: number, dirZ: number, reach: number): THREE.Vector3[];
+  /** Breaks jars in a sword arc (same reach as `cut`); each says what it held. */
+  breakJars?(x: number, z: number, dirX: number, dirZ: number, reach: number): BrokenJar[];
   /** The sword swings at (x, y, z) facing (dirX, dirZ): strike crystal switches and the like. */
   strike?(x: number, y: number, z: number, dirX: number, dirZ: number, reach: number): void;
   /** The Murmurbuds here (hint notes), by id; `strike` reports the ones a swing reached to `onBudStrike`. */

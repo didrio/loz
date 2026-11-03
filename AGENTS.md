@@ -21,9 +21,10 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 As of 2026-11-03: Emberfield plays start to finish: a wordless start, the shield in a ruined cottage, the village, the Lamplighter,
 then **the Waking Shrine** through **Gravelheart** and the Keepers' Seal, which opens the gate to the Northpass and **Wayfarers' Camp**
-(Cragstalkers, the Waybell). Bells, trials, Murmurbuds, the pause menu (P), shield surfing and the dev menu (~ / L3) work. Unplayed by
-the owner: surfing, the sealed gate, D3. Open: a Lamplighter-fight report (stuck at the arena edge, then "inverted" controls) that
-didn't reproduce; the owner is retrying it (roadmap, "Known quirks"). The blight (S2) lies on the valley until the seal breaks (music is placeholder). **Next:** story revamp S3–S5 (roadmap 0.7), then the pause
+(Cragstalkers, the Waybell). The valley lies under **the blight** (violet sky, ash, thorns, placeholder songs the owner likes) until the
+seal breaks; then 3 stray thornlings and no wisps. Bells, trials, Murmurbuds, jars in the ruins, the pause menu (P), shield surfing and the dev menu
+(~ / L3) work. Unplayed by the owner: surfing, the sealed gate, D3. Open: a Lamplighter-fight report (stuck at the arena edge, then
+"inverted" controls) that didn't reproduce (roadmap, "Known quirks"). **Next:** story revamp S4–S5 (roadmap 0.7), then the pause
 menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
@@ -128,6 +129,7 @@ src/
   world/
     area.ts, interior.ts   Area interface, Interactable, Trigger, AreaBuilder; MillInterior (Tobin's mill)
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
+    jars.ts                JarField: clay jars in the ruins (a sword breaks one; blue gem / heart / empty; saved as `jar.<id>` flags)
     bell.ts, murmurbud.ts  BELL_IDS, BellPost, BellPickup; MurmurbudLook (hint bulb: swells, sulks, opens, floating note, wisp)
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
     overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp,

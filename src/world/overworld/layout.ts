@@ -31,9 +31,10 @@ export const HOLLOW = { x: -23, z: 127, r: 15, floor: 0.6 };
  * `bud.<hint>`; what each note says is in content/hints.ts.
  */
 export const BUDS = [
-  { id: 'bud.tunic', x: -92, z: -50 }, // behind the windmill
-  { id: 'bud.flasks', x: -68, z: 78 }, // Glimmer Lake's east bank
+  { id: 'bud.tunic', x: -30, z: -56 }, // off the road to Thistledown, northwest of the start
+  { id: 'bud.flasks', x: 26, z: 106 }, // the river's south bank, east of the bridge
   { id: 'bud.bells', x: -111, z: 28 }, // by the Hushing Gorge's mouth
+  { id: 'bud.boss', x: 48, z: 30 }, // beside the shrine road, before the ford
 ] as const;
 
 /**
@@ -308,8 +309,21 @@ export function inHollow(x: number, z: number, margin = 0) {
  * view on the way out (owner's call, 2026-11-03).
  */
 export const RUINS = [
-  { id: 'shieldCottage', x: VILLAGE.x + 2, z: VILLAGE.z - 39, yaw: Math.atan2(-2, 39), r: 5.5 },
+  { id: 'shieldCottage', x: VILLAGE.x + 2, z: VILLAGE.z - 39, yaw: Math.atan2(-2, 39), r: 5.5, scale: 1, flip: 1, jars: ['empty', 'bluegem', 'heart', 'empty'] },
+  // Thistledown's two ruined homes, on the northeast and northwest of the ring (the intact ones are east and southwest).
+  { id: 'ringNortheast', ...ringHome(-1.2), r: 7, scale: 1.3, flip: -1, jars: ['empty', 'heart', 'empty', 'bluegem', 'empty'] },
+  { id: 'ringNorthwest', ...ringHome(-2.2), r: 7, scale: 1.3, flip: 1, jars: ['heart', 'empty', 'empty', 'bluegem', 'empty'] },
+  // Out in the valley, each a short walk off a road or a shore.
+  { id: 'roadsideHome', x: 12, z: 38, yaw: Math.atan2(-20, -3), r: 6, scale: 1.15, flip: -1, jars: ['empty', 'bluegem', 'heart', 'empty', 'heart'] },
+  { id: 'lakeHome', x: -60, z: 98, yaw: Math.atan2(-40, 2), r: 6, scale: 1.2, flip: 1, jars: ['heart', 'empty', 'bluegem', 'empty', 'heart'] },
+  { id: 'gateHome', x: 20, z: -95, yaw: Math.atan2(10, 35), r: 6, scale: 1.1, flip: -1, jars: ['empty', 'heart', 'bluegem', 'heart', 'empty'] },
 ] as const;
+
+/** A home on the village ring (radius 17 from the square, angle `a`), its door facing the well. */
+function ringHome(a: number) {
+  const x = VILLAGE.x + Math.cos(a) * 17, z = VILLAGE.z + Math.sin(a) * 17;
+  return { x, z, yaw: Math.atan2(VILLAGE.x - x, VILLAGE.z - z) };
+}
 
 /** True within `margin` meters of a ruin's footprint (scenery stays clear, without reshuffling). */
 export function inRuin(x: number, z: number, margin = 0) {

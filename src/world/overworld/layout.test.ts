@@ -1,6 +1,6 @@
 import { mulberry32 } from '../../core/math';
 import { describe, expect, it } from 'vitest';
-import { areaNameAt, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
+import { areaNameAt, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
 
 describe('overworld layout', () => {
   it('starts the player on dry, fairly flat ground', () => {
@@ -141,6 +141,41 @@ describe('ruins', () => {
       expect(Math.max(...hs) - Math.min(...hs), r.id).toBeLessThan(0.35);
       expect(pathDist(r.x, r.z), r.id).toBeGreaterThan(r.r);
       expect(Math.min(...hs), r.id).toBeGreaterThan(WATER_Y + 1);
+    }
+  });
+
+  it('keep apart, and clear of the gate, the hollow, the shrine, the lake and the river', () => {
+    for (const [i, a] of RUINS.entries()) {
+      for (const c of RUINS.slice(i + 1)) expect(Math.hypot(a.x - c.x, a.z - c.z), `${a.id} / ${c.id}`).toBeGreaterThan(a.r + c.r);
+      if (!a.id.startsWith('ring') && a.id !== 'shieldCottage') {
+        expect(Math.hypot(a.x - VILLAGE.x, a.z - VILLAGE.z), a.id).toBeGreaterThan(VILLAGE.r + a.r);
+      }
+      expect(Math.hypot(a.x - GATE.x, a.z - GATE.z), a.id).toBeGreaterThan(25);
+      expect(Math.hypot(a.x - HOLLOW.x, a.z - HOLLOW.z), a.id).toBeGreaterThan(HOLLOW.r + a.r + 6);
+      expect(Math.hypot(a.x - SHRINE.x, a.z - SHRINE.z), a.id).toBeGreaterThan(40);
+      expect(Math.hypot(a.x - LAKE.x, a.z - LAKE.z), a.id).toBeGreaterThan(36);
+      expect(Math.abs(a.z - riverZ(a.x)), a.id).toBeGreaterThan(15);
+    }
+  });
+
+  it('hide jars: one blue gem, one or two hearts and the rest empty, in every ruin', () => {
+    for (const r of RUINS) {
+      const n = (d: string) => r.jars.filter((j) => j === d).length;
+      expect(n('bluegem'), r.id).toBe(1);
+      expect(n('heart'), r.id).toBeGreaterThanOrEqual(1);
+      expect(n('heart'), r.id).toBeLessThanOrEqual(2);
+      expect(n('empty'), r.id).toBeGreaterThanOrEqual(2);
+      expect(r.jars.length, r.id).toBeLessThanOrEqual(6);
+    }
+  });
+});
+
+describe('murmurbuds', () => {
+  it('stand on dry land, spread across the valley and clear of the ruins', () => {
+    for (const [i, a] of BUDS.entries()) {
+      expect(terrainHeight(a.x, a.z), a.id).toBeGreaterThan(WATER_Y + 0.5);
+      for (const c of BUDS.slice(i + 1)) expect(Math.hypot(a.x - c.x, a.z - c.z), `${a.id} / ${c.id}`).toBeGreaterThan(60);
+      for (const r of RUINS) expect(Math.hypot(a.x - r.x, a.z - r.z), `${a.id} / ${r.id}`).toBeGreaterThan(r.r + 2);
     }
   });
 });
