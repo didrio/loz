@@ -6,6 +6,7 @@ import type { GameState } from '../game/state';
 import { glow } from '../render/shapes';
 import type { Overworld } from '../world/overworld';
 import { HOLLOW, HOLLOW_ENTRANCE } from '../world/overworld/layout';
+import { offerWare } from './shop';
 
 /** What a loaded area needs from content: scripts by interactable/trigger id, and save restore. */
 export interface AreaContent {
@@ -222,6 +223,49 @@ export function overworldContent(ow: Overworld): AreaContent {
             'Cut the bushes around the fence if you need gems. They grow back. Everything here grows back. Except my hair.'];
       }
       await api.say(lines.map((text) => ({ who, text })));
+      // Once Wren is armed, Tobin trusts them with the mill (whichever thing he talked about).
+      if (state.has('hasSword') && !state.has('village.millKey')) {
+        await api.say([
+          { who, text: 'Say, you look like you\'ve not slept in a week. Take this. The mill\'s door, round the west side of the square. There\'s a bed in there that\'s doing nothing.' },
+        ]);
+        state.set('village.millKey');
+        api.sfx.fanfare();
+        await api.say([{ text: 'You got the *Mill Key*!\nIt opens Tobin\'s mill, where you can sleep until morning or evening and wake fully rested.' }]);
+      }
+    },
+
+    async 'door.mill'(api) {
+      if (!api.state.has('village.millKey')) {
+        await api.say([{ text: 'The mill\'s door is locked. Tobin the Miller keeps the key.' }]);
+        return;
+      }
+      await api.travel('mill');
+    },
+
+    async 'npc.odo'(api) {
+      const { state } = api;
+      const who = 'Odo the Peddler';
+      if (state.has('village.stonewardTunic')) {
+        await api.say([{ who, text: 'It suits you! Slate looks well on a hero. Come back if you ever need a hand with anything else.' }]);
+        return;
+      }
+      const result = await offerWare(api, [
+        { who, text: 'Gems for goods, friend! I carry things the valley\'s forgotten it needs.' },
+        { who, text: 'Take this *Stoneward Tunic*, woven with grit from the old shrine quarry. Statues and stone shells hit you *half as hard*. A bargain at 100 gems.' },
+      ], 100);
+      if (result === 'short') {
+        await api.say([{ who, text: `You're short, friend. That's 100 gems, and you have ${state.gems}. The bushes by the fence grow back, you know.` }]);
+      } else if (result === 'declined') {
+        await api.say([{ who, text: 'Take your time. I\'m not going anywhere. Stalls don\'t walk.' }]);
+      } else {
+        state.set('village.stonewardTunic');
+        api.player.setStoneward(true);
+        api.sfx.fanfare();
+        await api.say([
+          { text: 'You got the *Stoneward Tunic*!\nStone hits (statues, shells) do half damage, rounded up. Your tunic turns slate-blue.' },
+          { who, text: 'Wear it in good health!' },
+        ]);
+      }
     },
 
     async 'chest.grove'(api) {

@@ -32,6 +32,8 @@ export interface ScriptApi {
 
   /** Shows dialog pages; resolves when the player has read the last one. */
   say(pages: Page[]): Promise<void>;
+  /** Like `say`, but the last page ends in a choice list; resolves with the index picked. */
+  ask(pages: Page[], options: string[]): Promise<number>;
   /** Waits for game time to pass. */
   wait(seconds: number): Promise<void>;
   /** Waits until a condition holds (checked once per frame). */
@@ -61,7 +63,7 @@ export interface ScriptApi {
   /** Starts another script once the current one (if any) has finished. */
   run(script: Script): void;
   toast(text: string): void;
-  /** Fast-forwards the clock to an hour of the day. */
+  /** Fast-forwards the clock to an hour of the day (it runs indoors too while warping). */
   warpTime(toHour: number): void;
   /** Sends the player back to the area's start with full health. */
   respawn(): void;

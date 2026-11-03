@@ -10,6 +10,10 @@ export const WORLD_RADIUS = 172;
 export const WATER_Y = -1;
 export const SPAWN = { x: 0, z: 14, facing: Math.PI };
 export const VILLAGE = { x: -62, z: -58, r: 30 };
+/** Tobin's windmill on the village's west side; its door faces east, onto the square. */
+export const MILL = { x: VILLAGE.x - 22, z: VILLAGE.z };
+/** Odo the merchant's stall: his counter runs north-south, customers stand on its east side. */
+export const STALL = { x: VILLAGE.x - 5.4, z: VILLAGE.z - 4 };
 export const GROVE = { x: 82, z: -78 };
 export const SHRINE = { x: 108, z: 28 };
 export const LAKE = { x: -100, z: 100 };

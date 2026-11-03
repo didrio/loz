@@ -19,6 +19,9 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
 - **Defense is the shield, nothing else** (no dodge roll, no stamina). The shield has a
   **guard** of 3 slots (`game/guard.ts`). Every attack is an `Attack` with `damage`
   (half-hearts) and `guard` (slots a block knocks down: 1 light, 2 heavy, 3 crushing);
+  An attack may also be `stone: true` (statues, shells: the Sentinel's swing, the Shellback's
+  charge): with the **Stoneward Tunic** (`village.stonewardTunic`, 100 gems from Odo,
+  `Player.setStoneward`) Wren takes `ceil(damage / 2)` from it, and nothing else changes.
   TypeScript requires both, and each enemy keeps its numbers in one attack sheet
   (`THORNLING_LUNGE`, the Lamplighter's `ATTACKS`). Each knocked-down slot returns on its
   own after 2 s, **but only while the shield is lowered** (its timer pauses, not resets,

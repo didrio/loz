@@ -178,9 +178,10 @@ export class Game implements ScriptApi {
         this.updatePlay(dt);
         break;
       case 'cutscene':
+        if (this.warpTo !== null) this.advanceClock(dt); // sleeping: a script warps the clock
         this.player.update(dt, NO_CONTROLS, this.combat.playerEnv);
         this.enemies.update(dt, this.combat.enemyEnv, true);
-        this.dialog.update(this.input.pressed('confirm'));
+        this.dialog.update(this.input.pressed('confirm'), this.menuStep());
         break;
     }
 
@@ -212,6 +213,7 @@ export class Game implements ScriptApi {
   private begin(newGame: boolean) {
     this.hud.hideTitle();
     this.player.setSword(this.state.has('hasSword'));
+    this.player.setStoneward(this.state.has('village.stonewardTunic'));
     this.placeAtSpawn();
     this.areaName = this.area.nameAt(this.player.pos.x, this.player.pos.z);
     this.mode = 'play';
@@ -221,7 +223,8 @@ export class Game implements ScriptApi {
   }
 
   private updatePlay(dt: number) {
-    if (!this.area.indoor) this.advanceClock(dt);
+    // Indoors the clock stands still, except while Wren sleeps (a warp).
+    if (!this.area.indoor || this.warpTo !== null) this.advanceClock(dt);
     if (this.input.clicked() && !this.input.locked) this.input.requestLock();
 
     this.combat.updateLock(this.input.pressed('lock'));
@@ -292,6 +295,11 @@ export class Game implements ScriptApi {
     const v = p.clone().project(this.camera);
     if (v.z > 1) return null;
     return { x: ((v.x + 1) / 2) * window.innerWidth, y: ((1 - v.y) / 2) * window.innerHeight };
+  }
+
+  /** -1 / 1 when the menu keys step up / down this frame. */
+  private menuStep() {
+    return this.input.pressed('menuUp') ? -1 : this.input.pressed('menuDown') ? 1 : 0;
   }
 
   private advanceClock(dt: number) {
@@ -416,8 +424,12 @@ export class Game implements ScriptApi {
     this.combat.forget(e);
   }
 
-  say(pages: Page[]) {
-    return this.dialog.show(pages);
+  async say(pages: Page[]) {
+    await this.dialog.show(pages);
+  }
+
+  ask(pages: Page[], options: string[]) {
+    return this.dialog.show(pages, options);
   }
 
   wait(seconds: number) {

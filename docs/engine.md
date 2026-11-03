@@ -63,6 +63,17 @@ floor and only count on that level (`sameLevel`). `Area.strike` lets the sword h
 that aren't enemies (crystal switches).
 Dungeons are described as data first (see [dungeons.md](dungeons.md)).
 
+**Interiors** (`world/interior.ts`): `MillInterior` is Tobin's mill (id `mill`), a one-room
+indoor `Area` with no ceiling mesh (walls stop the camera), one warm flickering light, a
+`bed` interactable and an `exit` trigger, bound by `content/mill.ts`. The overworld's
+`mill` entrance is the square outside its door. A future house/shop is another class like it.
+
+**Choices and sleeping**: `api.ask(pages, options)` is `say` whose last page ends in a
+choice list (menu up/down, confirm); it resolves with the index. `content/shop.ts`
+`offerWare(api, pages, price)` wraps it as Buy / Not now and takes the gems: every shop
+uses it. The clock stands still indoors *except during a warp* (`warpTime`), which is how the
+bed jumps to the next 06:00 / 18:00 (`wakeHour` in `content/mill.ts`).
+
 **Indoor areas** (`Area.indoor`, the dungeons): the sky, sun disc and stars are hidden and
 the sun casts no shadows (every ceiling would shade everything); a cool hemisphere fill, a
 dim overhead light and close dark fog take over (`Sky.setIndoor`), and each room's own
@@ -146,7 +157,8 @@ keyed by the dungeon's data ids, plus `done`), hearts, gems and the clock. It's
 mutated in place (systems keep references). `keysHere` is the field's plain key count (0 inside a dungeon) and `dungeonKeysHere` the colored
 keys held in the current dungeon; the HUD shows both. Add flags to `FLAGS`; **never rename a shipped flag**
 (old saves would silently lose it). New flags use a namespaced name, `<area>.<thing>`
-(e.g. `shrine.bigKey`); the original seven overworld flags keep their plain names forever.
+(e.g. `shrine.bigKey`); the original seven overworld flags keep their plain names forever. Village flags so far:
+`village.millKey` (Tobin's gift), `village.stonewardTunic` (bought from Odo).
 Saves are versioned JSON (`embervale:save:0`), validated and repaired on load; bump
 `SAVE_VERSION` only with a migration in `decodeSave`. `SAVE_VERSION` is 4 (v4: a dungeon's `keys` is a list of colors, not a count; a v3 count loads
 as none and the shrine's `restore` re-derives held keys from opened key chests whose door is still shut): v1 saves (which

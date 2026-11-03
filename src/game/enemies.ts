@@ -34,6 +34,8 @@ export interface Attack {
   unblockable?: boolean;
   /** Only hits a player standing on the ground: jump over it. */
   groundOnly?: boolean;
+  /** Stone strikes (statues, shells): the Stoneward Tunic halves their damage, rounded up. */
+  stone?: boolean;
 }
 
 const THORNLING_LUNGE: Attack = { damage: 1, guard: 1 };

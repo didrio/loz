@@ -23,7 +23,7 @@ As of 2026-11-02: Emberfield (the valley) plays start to finish; the Hollow Lamp
 only), the quest thread and all music are done. **The Waking Shrine** (25 rooms, four wings) is
 playable up to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy
 feel is untuned until the owner plays.
-**Next: the owner's playtest tweak D, the village**, then E (flasks) and F (dungeon fixes) ([docs/roadmap.md](docs/roadmap.md), A–C done),
+**Next: the owner's playtest tweak E (flasks, plan mode), then F (dungeon fixes)** ([docs/roadmap.md](docs/roadmap.md), A–D done),
 then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
 
 ## Docs: read the one for the area you're touching
@@ -120,6 +120,7 @@ src/
     math.ts                noise, easing, angles, seeded RNG
   render/                  materials (shared/unique, static merging), shapes, characters, sky, particles
   world/
+    interior.ts            MillInterior: Tobin's mill (a one-room indoor area)
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
     overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, index (Overworld)
@@ -139,10 +140,11 @@ src/
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter
     lockon.ts              which enemy lock-on picks (same level, in sight)
     drinks.ts              single-use drinks (found / left, refilled on death): Restoring Draught, Ember Tonic
-    camera.ts, dialog.ts, pickups.ts, state.ts, debug.ts
+    camera.ts, dialog.ts (say + ask: yes/no choices), pickups.ts, state.ts, debug.ts
   content/                 the game's story; what things DO
     areas.ts               createArea(id): builds an area and binds its content
     overworld.ts           scripts for every overworld interactable/trigger, save restore
+    mill.ts, shop.ts       Tobin's mill (bed, exit); offerWare, the shared Buy / Not now offer
     shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
     fakeApi.ts             the fake ScriptApi content tests run against
     story.ts               intro, death

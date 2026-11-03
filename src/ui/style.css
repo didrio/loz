@@ -132,6 +132,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 }
 .dialog em { color: #ffd76a; font-style: normal; }
 .dialog .key, .card .key { height: 26px; min-width: 26px; font-size: 13px; vertical-align: middle; margin: 0 2px; }
+.dialog-choices { display: flex; gap: 28px; justify-content: center; margin-top: 8px; }
+.dialog-choice { padding: 2px 16px; color: rgba(255, 255, 255, 0.55); }
+.dialog-choice.selected { color: #fff; }
+.dialog-choice.selected::before { content: '▸ '; color: #ffd76a; }
 .dialog-next { position: absolute; right: 18px; bottom: 6px; color: #e8c770; opacity: 0; }
 .dialog.done .dialog-next { opacity: 1; animation: bob 0.8s infinite; }
 @keyframes bob { 50% { transform: translateY(4px); } }

@@ -45,6 +45,9 @@ const SWINGS = [
   { dur: 0.3, dmg: 1 },
   { dur: 0.42, dmg: 2 },
 ];
+/** Wren's tunic: orange, or slate-blue once the Stoneward Tunic is bought. */
+const COAT = 0xb4532a;
+const STONEWARD_COAT = 0x6b8296;
 const RUN_SPEED = 8.5;
 /** While the guard is broken Wren staggers: a crawl at this fraction of normal speed, no jumping, no sword. */
 const STAGGER_SPEED = 0.06;
@@ -131,9 +134,17 @@ export class Player {
   devSpeed = 1;
   private opacity = 1;
   private fadeMats: THREE.Material[] | null = null;
+  private readonly coatMat = uniqueMat(COAT);
+  /** Wearing the Stoneward Tunic: stone hits do half damage (rounded up). */
+  private stoneward = false;
 
   constructor(scene: THREE.Scene, physics: Physics, private readonly health: Health) {
-    this.h = buildHumanoid({ skin: 0xf0c49c, hair: 0x2e2018, coat: 0xb4532a, pants: 0x4a4038, boots: 0x5a3a22, accent: 0x2aa198 });
+    this.h = buildHumanoid({ skin: 0xf0c49c, hair: 0x2e2018, coat: COAT, pants: 0x4a4038, boots: 0x5a3a22, accent: 0x2aa198 });
+    // The tunic gets its own material, so buying the Stoneward Tunic can recolor it.
+    const shared = mat(COAT);
+    this.h.root.traverse((m) => {
+      if (m instanceof THREE.Mesh && m.material === shared) m.material = this.coatMat;
+    });
     scene.add(this.h.root);
     this.body = physics.createCharacter(this.pos, this.radius, 0.5, Layer.Player, SOLID | Layer.Enemy);
 
@@ -218,6 +229,11 @@ export class Player {
     this.h.root.visible = o > 0.02;
   }
 
+  setStoneward(on: boolean) {
+    this.stoneward = on;
+    this.coatMat.color.setHex(on ? STONEWARD_COAT : COAT);
+  }
+
   setSword(has: boolean) {
     this.sword.visible = has;
   }
@@ -278,7 +294,8 @@ export class Player {
       this.shielding = false;
       return 'broken';
     }
-    this.health.hp = Math.max(0, this.health.hp - a.damage);
+    const damage = a.stone && this.stoneward ? Math.ceil(a.damage / 2) : a.damage;
+    this.health.hp = Math.max(0, this.health.hp - damage);
     this.invuln = 1.2;
     this.knock.copy(toEnemy).multiplyScalar(-knock);
     this.velY = 5;

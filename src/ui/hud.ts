@@ -56,6 +56,7 @@ export class Hud {
   private dialog: HTMLElement;
   private dialogWho: HTMLElement;
   private dialogText: HTMLElement;
+  private dialogChoices: HTMLElement;
   private card: HTMLElement;
   private title: HTMLElement;
   private menu: HTMLElement;
@@ -94,7 +95,7 @@ export class Hud {
       <div class="boss-title"><div class="boss-title-name"></div><div class="boss-title-sub"></div></div>
       <div class="boss-bar hidden"><div class="boss-name"></div><div class="boss-track"><div class="boss-lag"></div><div class="boss-fill"></div><div class="boss-mark"></div></div></div>
       <div class="toast"></div>
-      <div class="dialog hidden"><div class="dialog-who"></div><div class="dialog-text"></div><div class="dialog-next">▼</div></div>
+      <div class="dialog hidden"><div class="dialog-who"></div><div class="dialog-text"></div><div class="dialog-choices"></div><div class="dialog-next">▼</div></div>
       <div class="fade"></div>
       <div class="card hidden"></div>
       <div class="title">
@@ -125,6 +126,7 @@ export class Hud {
     this.dialog = q('.dialog');
     this.dialogWho = q('.dialog-who');
     this.dialogText = q('.dialog-text');
+    this.dialogChoices = q('.dialog-choices');
     this.card = q('.card');
     this.title = q('.title');
     this.menu = q('.menu');
@@ -344,6 +346,14 @@ export class Hud {
 
   closeDialog() {
     this.dialog.classList.add('hidden');
+    this.setChoices(null);
+  }
+
+  /** The choice list under the dialog text (a question), with one highlighted; null hides it. */
+  setChoices(options: string[] | null, selected = 0) {
+    this.dialogChoices.innerHTML = options
+      ? options.map((o, i) => `<span class="dialog-choice${i === selected ? ' selected' : ''}">${escape(o)}</span>`).join('')
+      : '';
   }
 
   /** True once the current page has finished typing. */

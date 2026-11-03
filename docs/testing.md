@@ -22,7 +22,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   task, only the scenarios that cover it (table below); the full suite at a milestone's
   end, before a commit, or after shared systems (player, physics, camera, saves, game.ts)
   changed, asking the owner first. CI runs everything on every push anyway.
-- `npm run look -- <scenes>` (`--list` for names: title, field, village, grove, chest,
+- `npm run look -- <scenes>` (`--list` for names: title, field, village, mill, grove, chest,
   door, dungeon, camera, glove, landmarks, shrine, enemies, hollow, night, guard, shield, orbs, boss, boss-moves): captures named scenes to
   `look-output/` for you to inspect. Boss scenes slow time, make Wren invulnerable, park
   the camera and force moves. Add a scene when you add a place, a boss or a visual system.
@@ -47,6 +47,7 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | `shrine-keys` | `shrine-entry` | a room clearing, the amber key chest, the Cistern door, the HUD key, dying (the checkpoint rule), Continue inside |
 | `shrine-exit` | `shrine-entry` | the way out (always open) |
 | `shrine-enemies` | `shrine-entry` | sentinels and shellbacks spawn from the data; a sentinel sleeps, wakes, swings (2 half-hearts), falls to hits in its recovery and from behind; a shellback's shell turns a frontal hit, it falls from behind |
+| `village` | `field-sword` | Tobin's mill key, the mill door, sleeping (heals, clock to 18:00), the way out, buying Odo's Stoneward Tunic |
 
 **Fixtures** are real saves in `scripts/fixtures/<name>.json` (current `SAVE_VERSION`).
 `openGame(env, dir, { fixture })` plants the file in the page's localStorage before the game

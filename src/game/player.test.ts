@@ -105,6 +105,26 @@ describe('Player.receiveHit', () => {
     expect(p.receiveHit(front, { ...LIGHT, groundOnly: true })).toBe('hit');
   });
 
+  it('the Stoneward Tunic halves stone hits (rounded up) and nothing else', () => {
+    const { p, health, step } = setup();
+    step(0.5);
+    p.setStoneward(true);
+    // Hits are spaced past the 1.2 s invulnerability, with health topped up between them.
+    const again = () => { step(1.3); health.hp = 6; };
+    expect(p.receiveHit(front, { ...HEAVY, stone: true })).toBe('hit');
+    expect(health.hp).toBe(5);
+    again();
+    expect(p.receiveHit(front, { damage: 1, guard: 1, stone: true })).toBe('hit');
+    expect(health.hp).toBe(5); // 1 rounds up to 1
+    again();
+    expect(p.receiveHit(front, HEAVY)).toBe('hit');
+    expect(health.hp).toBe(4); // not stone: full damage
+    again();
+    p.setStoneward(false);
+    expect(p.receiveHit(front, { ...HEAVY, stone: true })).toBe('hit');
+    expect(health.hp).toBe(4);
+  });
+
   it('can jump with the shield up, and keeps blocking in the air', () => {
     const { p, health, step } = setup();
     step(0.5, true);

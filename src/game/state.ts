@@ -6,7 +6,7 @@ import { Drinks } from './drinks';
  * Quest progress flags. Add new ones here (they're saved by name). Keep names stable once
  * shipped: renaming one would silently drop it from existing saves.
  */
-export const FLAGS = ['metMaren', 'hasSword', 'groveChestOpened', 'shrineOpen', 'lamplighterDefeated', 'hollowVessel', 'gotGroveKey'] as const;
+export const FLAGS = ['metMaren', 'hasSword', 'groveChestOpened', 'shrineOpen', 'lamplighterDefeated', 'hollowVessel', 'gotGroveKey', 'village.millKey', 'village.stonewardTunic'] as const;
 export type Flag = (typeof FLAGS)[number];
 
 /** Items Wren can carry (the dungeon tools). Saved by id; unknown ids are dropped on load. */

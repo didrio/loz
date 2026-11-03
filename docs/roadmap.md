@@ -27,7 +27,7 @@ Next, in order:
      one greedy sweep (no softlock search); doors carry a color band, the HUD shows a colored key
      icon per key held; `SAVE_VERSION` 4. Key web in [shrine.md](shrine.md). Statues chest is now
      20 gems.
-   - **D: village** (next, no plan mode): bigger cottages; Tobin gives a house key after the
+   - ~~D: village~~ **done** (2026-11-02; Tobin's door is the windmill's, a `MillInterior` area; Odo the peddler's stall by the well; `api.ask` + `content/shop.ts` `offerWare` are what E reuses). Original brief: bigger cottages; Tobin gives a house key after the
      sword; his door leads to a small interior with a bed that sleeps to the next 06:00/18:00
      **and fully heals Wren**; a new merchant sells the **Stoneward Tunic** (100 gems; stone
      hits do half damage, rounded up; Wren's tunic changes color) via a new yes/no dialog

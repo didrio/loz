@@ -5,7 +5,7 @@ import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger }
 import { BossArena, BushField, Chest, GreatLantern, HeartVessel, Npc, StoneDoor } from '../objects';
 import { buildHollow } from './hollow';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
-import { areaNameAt, GROVE, HOLLOW, isEnemyGround, SHRINE_DOOR, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { areaNameAt, GROVE, HOLLOW, isEnemyGround, MILL, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
 import { buildBounds, buildTerrain, buildWater } from './terrain';
 import { buildVillage } from './village';
@@ -22,10 +22,14 @@ export class Overworld implements Area {
   readonly waterLevel = WATER_Y;
   readonly enemyCount = 14;
   /** Where Wren arrives from elsewhere: just outside the shrine door, facing away from it. */
-  readonly entrances = { shrineDoor: { x: SHRINE_DOOR.x - 3.5, z: SHRINE_DOOR.z, facing: -Math.PI / 2 } };
+  readonly entrances = {
+    shrineDoor: { x: SHRINE_DOOR.x - 3.5, z: SHRINE_DOOR.z, facing: -Math.PI / 2 },
+    /** On the square in front of the mill door, facing away from it. */
+    mill: { x: MILL.x + 4.4, z: MILL.z, facing: Math.PI / 2 },
+  };
   readonly interactables: Interactable[];
   readonly triggers: Trigger[];
-  readonly npcs: { maren: Npc; tobin: Npc };
+  readonly npcs: { maren: Npc; tobin: Npc; odo: Npc };
   readonly chest: Chest;
   readonly door: StoneDoor;
   /** The great lantern atop the shrine (lights up as embers return). */
@@ -73,6 +77,9 @@ export class Overworld implements Area {
         { skin: 0xe8b98f, hair: 0xc9c3b8, coat: 0x6b4c8a, pants: 0x3b3040, boots: 0x3a2a1e, accent: 0xd9a531 }),
       tobin: npc(VILLAGE.x - 17, VILLAGE.z + 4, Math.PI / 2, 1.06,
         { skin: 0xd99a6c, hair: 0xb8662a, coat: 0x8a6b3a, pants: 0x4a3a2a, boots: 0x2e2018, accent: 0xe8dfc4 }),
+      // Behind his counter, facing east to the square.
+      odo: npc(STALL.x - 1.3, STALL.z, Math.PI / 2, 1.0,
+        { skin: 0xc98a5e, hair: 0x2e2a28, coat: 0x3f6f8a, pants: 0x3a3a48, boots: 0x2e2018, accent: 0xd9a531 }),
     };
     // Its front faces down the grove road (which arrives from the southwest), locked until
     // Maren hands over the key.
@@ -86,6 +93,8 @@ export class Overworld implements Area {
     this.interactables = [
       { id: 'npc.maren', x: this.npcs.maren.x, z: this.npcs.maren.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.maren.x, this.npcs.maren.z, 2.5), enabled: always },
       { id: 'npc.tobin', x: this.npcs.tobin.x, z: this.npcs.tobin.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.tobin.x, this.npcs.tobin.z, 2.6), enabled: always },
+      { id: 'npc.odo', x: STALL.x + 1.2, z: STALL.z, r: 2.4, label: 'Talk', promptY: above(STALL.x, STALL.z, 2.7), enabled: always },
+      { id: 'door.mill', x: MILL.x + 3.3, z: MILL.z, r: 1.7, label: 'Enter', promptY: above(MILL.x + 2.6, MILL.z, 2.2), enabled: always },
       { id: 'chest.grove', x: GROVE.x, z: GROVE.z, r: 2.4, label: 'Open', promptY: above(GROVE.x, GROVE.z, 1.9), enabled: () => !this.chest.opened },
       {
         id: 'door.shrine', x: SHRINE_DOOR.x - 1.2, z: SHRINE_DOOR.z, r: 3, promptY: above(SHRINE_DOOR.x, SHRINE_DOOR.z, 3.4),
@@ -154,6 +163,7 @@ export class Overworld implements Area {
     this.bushes.update(dt);
     this.npcs.maren.update(dt, env.playerPos);
     this.npcs.tobin.update(dt, env.playerPos);
+    this.npcs.odo.update(dt, env.playerPos);
   }
 
   dispose() {

@@ -18,6 +18,9 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
   const said: Page[] = [];
   const queued: Script[] = [];
   const enemies: Enemy[] = [];
+  /** Answers `ask` will give, in order (default: the first option). */
+  const answers: number[] = [];
+  const asked: { pages: Page[]; options: string[] }[] = [];
   const travels: { area: AreaId; entrance?: string }[] = [];
   /** Every `silenceMusic` call, in order. */
   const music: boolean[] = [];
@@ -25,7 +28,7 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
   const toasts: string[] = [];
   const noop = () => {};
   const pushes: THREE.Vector3[] = [];
-  const player = { pos: new THREE.Vector3(), forward: new THREE.Vector3(0, 0, 1), teleport: noop, setSword: noop, push: (from: THREE.Vector3) => void pushes.push(from.clone()) } as unknown as Player;
+  const player = { pos: new THREE.Vector3(), forward: new THREE.Vector3(0, 0, 1), teleport: noop, setSword: noop, setStoneward: noop, push: (from: THREE.Vector3) => void pushes.push(from.clone()) } as unknown as Player;
   const sfx = new Proxy({}, { get: () => noop }) as Sfx;
   const api: ScriptApi = {
     state, sfx, player, area,
@@ -38,6 +41,11 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
     removeEnemy: (e) => void enemies.splice(enemies.indexOf(e), 1),
     run: (s) => void queued.push(s),
     say: async (pages) => void said.push(...pages),
+    ask: async (pages, options) => {
+      said.push(...pages);
+      asked.push({ pages, options });
+      return answers.shift() ?? 0;
+    },
     wait: async () => {},
     until: async () => {},
     fade: async () => {},
@@ -46,7 +54,10 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
     releaseCamera: noop,
     showAreaName: noop,
     toast: (t) => void toasts.push(t),
-    warpTime: noop,
+    warpTime: (h) => {
+      if (h <= state.hours) state.day++;
+      state.hours = h;
+    },
     respawn: noop,
     giveSword: () => state.set('hasSword'),
     silenceMusic: (on) => void music.push(on),
@@ -56,5 +67,5 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
   const runQueued = async () => {
     while (queued.length) await queued.shift()!(api);
   };
-  return { api, said, state, queued, runQueued, enemies, travels, player, pushes, music, toasts };
+  return { api, answers, asked, said, state, queued, runQueued, enemies, travels, player, pushes, music, toasts };
 }

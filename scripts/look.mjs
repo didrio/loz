@@ -58,6 +58,30 @@ const SCENES = {
     await h.wait(1500);
     await h.shot('village');
   },
+  /** The bigger cottages from the square, Odo's stall, Wren in the Stoneward Tunic, and the mill inside. */
+  async mill(h) {
+    await h.newGame();
+    await h.teleport(-52, -52, Math.atan2(-10, -6));
+    await h.wait(1200);
+    await h.shot('village-cottages');
+    await h.teleport(-63, -62, -Math.PI / 2);
+    await h.wait(1200);
+    await h.shot('stall');
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.set('village.stonewardTunic');
+      g.player.setStoneward(true);
+    });
+    await h.teleport(-77.5, -58, -Math.PI / 2); // facing the mill door (west), a few steps from it
+    await h.wait(1200);
+    await h.shot('mill-door-tunic');
+    await h.game(() => window.embervale.loadArea('mill'));
+    await h.wait(1500);
+    await h.shot('mill-inside');
+    await h.teleport(4, 3, Math.PI * 0.9);
+    await h.wait(900);
+    await h.shot('mill-bed');
+  },
   async grove(h) {
     await h.newGame();
     await h.teleport(74, -70, Math.atan2(8, -8));

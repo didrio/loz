@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Layer } from '../../core/physics';
 import { mat, uniqueMat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
-import { terrainHeight, VILLAGE } from './layout';
+import { MILL, STALL, terrainHeight, VILLAGE } from './layout';
 
 /** Thistledown: five cottages around a well, a windmill, a fence ring and lanterns. */
 export function buildVillage(b: AreaBuilder) {
@@ -10,7 +10,7 @@ export function buildVillage(b: AreaBuilder) {
   const windowMat = uniqueMat(0x2a2a3a);
   const lanternMat = new THREE.MeshBasicMaterial({ color: 0x664422 });
 
-  const house = (x: number, z: number, wall: number, roof: number, w = 6, d = 6, h = 3.2) => {
+  const house = (x: number, z: number, wall: number, roof: number, w = 8.5, d = 7.5, h = 3.4) => {
     const y = terrainHeight(x, z) - 0.2;
     const yaw = Math.atan2(cx - x, cz - z);
     const g = new THREE.Group();
@@ -60,7 +60,7 @@ export function buildVillage(b: AreaBuilder) {
   b.cylinder(cx, y0 + 0.5, cz, 0.6, 1.55);
 
   // Windmill on the west side, sails facing the square.
-  const wx = cx - 22, wz = cz;
+  const wx = MILL.x, wz = MILL.z;
   const wy = terrainHeight(wx, wz);
   b.mesh(new THREE.CylinderGeometry(1.7, 2.7, 9, 8), mat(0xe2d6bf), wx, wy + 4.5, wz);
   b.mesh(new THREE.ConeGeometry(2.2, 2.4, 8), mat(0x8a3b28), wx, wy + 10.2, wz);
@@ -82,6 +82,27 @@ export function buildVillage(b: AreaBuilder) {
   blades.add(new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 6), frame));
   b.dynamic(blades);
   b.cylinder(wx, wy + 4.5, wz, 4.5, 2.6);
+
+  // Odo's stall: a counter with an awning, wares laid out on it.
+  {
+    const { x: sx, z: sz } = STALL;
+    const sy = terrainHeight(sx, sz);
+    const counter = mat(0x8a5a2b), cloth = mat(0x3f6f8a), stripe = mat(0xe8dfc4);
+    b.mesh(new THREE.BoxGeometry(0.9, 1, 2.6), counter, sx, sy + 0.5, sz);
+    b.mesh(new THREE.BoxGeometry(1.0, 0.1, 2.8), mat(0x6b4423), sx, sy + 1.02, sz);
+    b.box(sx, sy + 0.55, sz, 0.5, 0.55, 1.4, 0, Layer.Prop);
+    for (const dz of [-1.35, 1.35]) for (const dx of [-1.9, 0.6]) {
+      b.mesh(new THREE.BoxGeometry(0.12, 2.9, 0.12), wood, sx + dx, sy + 1.45, sz + dz);
+    }
+    b.mesh(new THREE.BoxGeometry(3.4, 0.12, 3.2), cloth, sx - 0.65, sy + 2.95, sz);
+    for (const dz of [-1.0, 0, 1.0]) b.mesh(new THREE.BoxGeometry(3.42, 0.13, 0.4), stripe, sx - 0.65, sy + 2.96, sz + dz);
+    // Wares: a folded slate-blue tunic, jars and a loaf.
+    b.mesh(new THREE.BoxGeometry(0.5, 0.14, 0.6), mat(0x6b8296), sx, sy + 1.14, sz - 0.7);
+    b.mesh(new THREE.BoxGeometry(0.46, 0.1, 0.56), mat(0x7d93a6), sx, sy + 1.26, sz - 0.7);
+    for (const [dz, c] of [[0.1, 0xb4532a], [0.45, 0x4f7d4a], [0.8, 0xd9a531]] as const) {
+      b.mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.3, 7), mat(c), sx, sy + 1.2, sz + dz);
+    }
+  }
 
   // Fence ring with gaps for the two roads.
   const gaps = [Math.PI / 4, -Math.PI / 2];
