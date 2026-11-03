@@ -25,6 +25,8 @@ in `docs/` for the area you touch before you edit it.
      game code (docs/testing.md lists the known headless quirks).
 5. Don't capture or open screenshots yourself: list what needs a visual check (scenes
    and what to look for) so the caller can send `looker`.
-6. Update the docs your change affects (topic doc, AGENTS.md layout, roadmap checklist).
+6. Update the docs your change affects (topic doc, AGENTS.md layout, roadmap checklist):
+   edit them to describe how things work now. Replace wrong sentences in place; never append
+   a changelog or "fixed on" notes (git has the history).
 7. Report, briefly: files changed (one line each), tests added, checks run and their
    results, what needs a visual check, deviations from the spec, open questions.

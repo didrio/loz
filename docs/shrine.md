@@ -182,45 +182,13 @@ inside the shrine (so the "aha" lands as soon as the glove does).
 
 Each milestone ends with check + smoke (+ look) passing, so the game stays playable.
 
-1. ~~**Dungeon builder**~~ **done**: `DungeonArea` (floors, walls with door gaps, ceilings,
-   stairs with ramps and railings, drop holes, pits, pillars, blocks; doors styled by lock;
-   chests; switches; wakestones; tablets; sconces and lights; enemy spawns), indoor
-   lighting, the `dungeon` look scene with top-down floors. Known gaps for later
-   milestones: falling into a pit has no damage/respawn yet (milestone 3), only thornlings
-   spawn (4), the rooms are bare (decoration like the sleeping statues: milestone 8).
-2. ~~**Area transitions + saving the area**~~ **done**: the shrine door leads in (fade),
-   the seal cutscene on the first visit, respawn at the entrance (shutters lift, enemies
-   stay), `SAVE_VERSION` 3 with the area, items and per-dungeon progress, small-key and boss
-   doors (interact to unlock), chests and their loot (keys, boss key, drinks, the
-   glove), chests that appear when a room is cleared or a switch is pressed, fight-room
-   shutters, crystal switches struck by the sword, the exit trigger once `done`. Sentinels
-   and shellbacks are stood in by thornlings until milestone 4.
-3. ~~**Wakestones**~~ **done**: the sword slides stones a cell (grind, thunk on heavy or
-   blocked), plates press, stones fill pits, puzzle rooms reset when left, falling into a
-   pit costs a heart and returns Wren to the last solid floor, and the puzzle checker proves
-   every plate and doorway stone. The first doorway is now 2 m wide and on the grid, so its
-   stone blocks it until struck aside.
-   (The safe spot is only recorded 0.8 m or more from a pit's lip: `nearPit`; ground hanging over the edge once brought Wren back above the water.)
-4. ~~**Enemies**~~ **done**: the Dozing Sentinel and the Shellback replace the stand-in
-   thornlings (numbers in [combat.md](combat.md)); unit tests, the `enemies` look scene and
-   the `shrine-enemies` smoke scenario. Feel and sounds are untuned until the owner plays them.
-5. ~~**The Tether Glove**~~ **done** (2026-11-02): the `item` action (F / Y);
-   `DungeonArea.tether` pulls a stone one cell toward Wren (in line, up to `PULL_RANGE`,
-   nothing between; auto-aims at the stone she's in line with); the Pit Hall's bridge is a
-   **fallen column** (`world/dungeon/bridge.ts`) that swings across the pit like a drawbridge
-   (the room is too low for a toppling stone); the cord (`game/tether.ts`), throw pose, sounds,
-   HUD slot, item-get moment and hints; the `shrine-glove` smoke scenario. Owner's playtest
-   fixes: near-instant turning, stones reset only when Wren falls (not on leaving), enemies
-   take `REACTION` (0.9 s) to react on sight, and **the camera**: one
-   collision rule (a swept ball, quick in, slow out) with Wren fading when it's close, as
-   Souls and Zelda do (see [engine.md](engine.md)).
-   Not yet confirmed by eye: the cord in flight (the `glove` look scene catches the throw pose
-   but not the cord); the owner should check it and the camera in small rooms in play.
-   Original milestone text: **The Tether Glove**: the `item` action, the cord, pulling stones (through
-   `DungeonArea.moveStone`), HUD slot, the item-get cutscene. **Rethink the Pit Hall
-   first**: its pit is 4 m wide and Wren jumps ~6 m at a run, so it doesn't stop anyone.
-   Either widen it past a jump (and bridge it differently, e.g. a tall heavy stone the glove
-   topples across) or make the far side a ledge too high to jump.
+1–5. **Done**: the builder (`DungeonArea`), transitions and saving, chests/doors/switches,
+   wakestones (plates, pits, bounce-back; a fall returns Wren to the last floor ≥ 0.8 m from a
+   pit's lip, `nearPit`), the Sentinel and Shellback, the Tether Glove (`item`: F / Y; the Pit
+   Hall's fallen-column bridge in `world/dungeon/bridge.ts`; the cord in `game/tether.ts`).
+   Enemies take `REACTION` (0.9 s) to react on sight; the camera rule is in
+   [engine.md](engine.md). Not yet confirmed by eye: the cord in flight, the camera in
+   small rooms.
 6. **Gravelheart**: rig, moves, phases, arena tiles, intro and defeat cutscenes, music
    (a boss theme of its own), tests.
 7. **The Northpass**: the new road, the cut, the heavy stone, the sign and dialog, the

@@ -30,6 +30,25 @@ the Definition of done still applies in full.
    better. Don't delegate what you'll need in your own context anyway, or a two-minute
    edit.
 
+## Plan mode: when, and how
+
+With `opusplan`, plan mode is the only time the session runs on Opus, so it's the expensive
+mode. **Use it only when a task needs real design**: a new system, a dungeon or a boss, a data
+format change (e.g. the colored keys), or a choice between approaches the owner should
+approve. For documented patterns and fix lists, skip it: `/start <task>` writes the plan in
+chat on Sonnet, and the owner says go. `/start` says which of the two a task needs.
+
+**Inside plan mode, these rules override the built-in plan-mode workflow:**
+- No `Explore` or `Plan` subagents. Each one starts cold and re-reads what you're about to
+  read anyway. Read the files AGENTS.md names yourself (Grep, then offset/limit), or send
+  one `scout` if the question really spans many unknown files.
+- Ask the owner's design questions in one AskUserQuestion, up front.
+- Keep the plan file short: what changes, in which files, how it's verified. Then exit
+  plan mode, so the build runs on Sonnet.
+- If the plan spans several sessions, write it into `docs/roadmap.md` (or the topic doc)
+  before the session ends. The plan file in `~/.claude/plans/` doesn't survive `/clear`
+  as far as the next session knows.
+
 ## Commands: run them directly
 
 `npm run check` prints ~40 lines and takes ~5 s: run it in the main session, no subagent.

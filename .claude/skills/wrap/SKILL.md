@@ -16,18 +16,29 @@ which ones you skipped.
    new step for it.
 4. **Anything visible changed**: send `looker` with the scenes and what to check. Open a
    screenshot yourself only if looker flags a problem you need to see.
-5. **Docs** (this is what lets the next session start without a recap):
-   - the topic doc for what changed (behavior, decisions, new files);
-   - AGENTS.md: the layout tree if files moved or were added; **"Where things stand"**,
-     with today's date and what's next;
-   - `docs/roadmap.md`: tick checklist items done (with the date), add new risks with a
-     trigger, update tech debt; `docs/shrine.md` milestone status if relevant.
+5. **Docs** (this is what lets the next session start without a recap). Every session
+   reads AGENTS.md and the topic docs, so **edit them to describe the game as it is now:
+   replace, never append**. History lives in git; a doc isn't a changelog.
+   - **AGENTS.md "Where things stand"**: rewrite the whole paragraph (≤ 8 lines): what
+     plays today, what's next. No list of what this session did, no past fixes.
+   - **The topic doc**: change the sentences that are now wrong, in place. Add a new fact
+     where it belongs, in one or two lines. Delete what no longer holds. Don't add
+     "(fixed 2026-…)" notes or playtest stories; record a decision only if a future agent
+     could undo it by mistake (then: the rule, plus "owner's call" and the date).
+   - **Finished plans and milestones** shrink to one line ("~~B: shrine fixes~~ done") or
+     disappear. Detail that a future task still needs moves to the topic doc's
+     description of how things work.
+   - AGENTS.md layout tree only if files moved or were added. `docs/roadmap.md`: tick
+     checklist items (with the date), add new risks with a trigger.
+   - **Size check**: `wc -l AGENTS.md docs/*.md`. AGENTS.md over ~200 lines or a topic doc
+     over ~400 means prune or split it now, and say so in the report.
 6. **Report** to the owner, briefly:
    - what changed;
    - what you verified (with results);
    - what you could not verify (audio, game feel, a real GPU or gamepad): ask them to
      play or listen;
-   - where you deviated from the request;
-   - the suggested next task, and whether it needs Opus or Sonnet will do.
-7. Don't commit unless asked. Suggest `/clear` before the next task: the docs now hold the
-   state, and a fresh context is cheaper than a long one.
+   - where you deviated from the request.
+7. **End with "Next for you"**, a short list of exactly what the owner should do, in order:
+   commit if they want (don't commit unless asked), what to play-test, then `/clear`, then
+   the exact next command (e.g. `/start C: colored keys`), and whether that task wants plan
+   mode (shift+tab) or not. Plan mode only for real design work; see CLAUDE.md.

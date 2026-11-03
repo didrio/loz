@@ -17,23 +17,14 @@ The goal is a **real, full-length game (10–15 hours, 50–100× today's conten
 $5–10 **on Steam** (desktop build via Electron) with a **free browser demo on itch.io**,
 built almost entirely by AI agents. Build everything as if it will ship.
 
-## Where things stand (update this when it changes)
+## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-02: the valley (Emberfield) is playable start to finish up to the first
-dungeon. The Hollow Lamplighter mini-boss (night only), the quest thread and the music
-(day, night, village, the Lamplighter and the shrine, all built on one shared motif) are
-done. **The Waking Shrine** (first
-dungeon, 25 rooms, four themed wings) is built and playable up to the boss door: its
-build plan is in [docs/shrine.md](docs/shrine.md), milestones 1–5 done (builder; transitions,
-seal, keys, doors, chests, fight rooms; wakestones, plates, pits, bounce-back, puzzle
-checker; the Dozing Sentinel and Shellback; the Tether Glove and the column bridge; the
-Souls-style camera collision) plus drinks and the death/checkpoint rule. Pre-boss pass
-(2026-11-02): guards are diegetic (weapons/shells are armor hurtboxes: the Sentinel's maul,
-the Shellback's shell, the Lamplighter's pole), the Sentinel's reach comes from its model,
-the guard bars go red while paused, gamepad lock-on is R3 / shield LT+LB / dev sprint L3,
-and `game.ts` is split (`combat.ts`, `title.ts`). Enemy feel is untuned until the owner plays. **Next: the owner's playtest tweaks B–D** (listed in [docs/roadmap.md](docs/roadmap.md); A is done), then **shrine milestone 6** (Gravelheart, the boss, and its
-music), then 7 (the Northpass exit), 8 (polish).
-Check the scaling checklist in [docs/roadmap.md](docs/roadmap.md) first.
+As of 2026-11-02: Emberfield (the valley) plays start to finish; the Hollow Lamplighter (night
+only), the quest thread and all music are done. **The Waking Shrine** (25 rooms, four wings) is
+playable up to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy
+feel is untuned until the owner plays.
+**Next: the owner's playtest tweaks B, C, D** ([docs/roadmap.md](docs/roadmap.md), A done),
+then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
 
 ## Docs: read the one for the area you're touching
 
@@ -73,6 +64,11 @@ Check the scaling checklist in [docs/roadmap.md](docs/roadmap.md) first.
   session to one task, and leave the docs ready for a fresh session instead of relying on
   chat history.
 - Commit or push only when asked.
+- **Guide them; they follow your lead on process.** End every reply that finishes a step
+  with a short **Next for you** line saying exactly what to do: a command to type (`/wrap`,
+  `/clear`, `/start <task>`, `/model sonnet`), something to play or listen to, a question to
+  answer, or "nothing, I'm continuing". Say so when a session has run long enough that
+  `/clear` would save money, and say whether the next task wants plan mode (usually not).
 
 ## Before you start a feature
 
