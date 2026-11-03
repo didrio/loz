@@ -15,7 +15,7 @@ const LOOKAHEAD = 0.25;
 
 /** Reverb send per instrument (0 dry, 1 very wet). */
 const SEND: Record<Instrument, number> = {
-  flute: 0.35, bell: 0.5, box: 0.55, harp: 0.4, pad: 0.45, bass: 0.05, drive: 0.04, brass: 0.25, mallet: 0.3, piano: 0.2,
+  flute: 0.35, bell: 0.5, box: 0.55, harp: 0.4, pad: 0.45, bass: 0.05, drive: 0.04, brass: 0.25, mallet: 0.3, piano: 0.2, keys: 0.3,
   kick: 0.04, snare: 0.2, hat: 0.1, shaker: 0.2, tom: 0.25,
 };
 
@@ -245,6 +245,24 @@ export class MusicPlayer {
         const thump = this.gain(out);
         this.strike(thump, t, 0.03 * v, 0.03);
         this.noise(t, 0.03, this.filter('bandpass', 2500, thump, 1.5));
+        break;
+      }
+      case 'keys': {
+        // A soft, clean piano: in tune (unlike the saloon upright), a hammer that is bright
+        // for an instant then mellows, and it rings down by itself in about a second and a
+        // half however long the note is held, the way a struck string does.
+        const end = t + Math.min(1.6, d + 0.5);
+        const g = this.gain(out);
+        this.strike(g, t, 0.2 * v, end - t);
+        const lp = this.filter('lowpass', 900, g);
+        lp.frequency.setValueAtTime(Math.min(f * 7, 7000), t);
+        lp.frequency.exponentialRampToValueAtTime(Math.max(f * 2.5, 500), t + 0.5);
+        this.osc('triangle', f * 0.9993, t, end, lp);
+        this.osc('sine', f * 1.0007, t, end, lp);
+        this.osc('sine', f * 2, t, end, this.gain(lp, 0.3));
+        const thump = this.gain(out);
+        this.strike(thump, t, 0.025 * v, 0.03);
+        this.noise(t, 0.03, this.filter('bandpass', 2000, thump, 1.2));
         break;
       }
       case 'harp': {

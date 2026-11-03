@@ -13,7 +13,8 @@
     "smoke": "node scripts/smoke.mjs",
     "check": "npm run lint && npm test && npm run build",
     "look": "node scripts/look.mjs",
-    "map": "node scripts/map.mjs"
+    "map": "node scripts/map.mjs",
+    "midi": "node scripts/midi-import.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",

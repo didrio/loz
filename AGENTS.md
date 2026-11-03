@@ -123,7 +123,9 @@ src/
     physics.ts, input.ts   Rapier wrapper (layers, colliders, Character, queries); actions, bindings, glyphs
     director.ts, save.ts   game-time waits/tweens for scripts; save format, migrations, KeyValueStore, settings
     audio.ts, math.ts      sound effects + the song per mood; noise, easing, angles, seeded RNG
-    music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes
+    music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
+    midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme arranged;
+                           imported/ holds the generated notes (never edit)
   render/                  materials (shared/unique, static merging), shapes, characters, sky, particles
   world/
     area.ts, interior.ts   Area interface, Interactable, Trigger, AreaBuilder; MillInterior (Tobin's mill)
@@ -162,6 +164,8 @@ src/
 scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers
   map.mjs                  text map + problems for a dungeon (npm run map -- <id>)
+  midi-import.mjs          assets/music-src/<folder>/*.mid → src/core/imported/<folder>.ts (npm run midi -- <folder>)
+assets/music-src/          the owner's MIDI exports, one folder per song (see docs/audio.md "Importing the owner's music")
 docs/                      topic docs (table above)
 CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/, skills/ (/start, /wrap)
 ```
@@ -169,7 +173,7 @@ CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/, skills
 ## Commands
 
 `npm run dev` (then `?debug`) · `npm run check` · `npm run smoke [-- <scenarios>]` · `npm run look -- <scenes>`
-· `npm run map -- <dungeon id>`. Details in [docs/testing.md](docs/testing.md).
+· `npm run map -- <dungeon id>` · `npm run midi -- <song folder>`. Details in [docs/testing.md](docs/testing.md).
 
 ## Design decisions (don't undo without asking)
 

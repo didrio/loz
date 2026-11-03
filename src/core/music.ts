@@ -10,7 +10,8 @@
  *
  * Notation, one bar between each `|` (every bar must add up to a full bar of steps):
  * - melody: `C5*2 F5*3 G5 A5*2`: note name + octave, `*n` = lasts n steps (default 1),
- *   `.` = rest. With 2 steps per beat, a step is an eighth note.
+ *   `.` = rest. With 2 steps per beat, a step is an eighth note. A `^` after the name ties the
+ *   note to the next one if it is the same pitch (`B4^*3 | B4*8`: one held note over a barline).
  * - chords: `F | Am | Dm Gm | C7 | D6/A`: two chords in one bar split it evenly.
  * - tone patterns: `0*3 2 0*2 2*2`: numbers pick chord tones (0 root, 1 third, 2 fifth,
  *   3 root an octave up, ...), so the same pattern fits every chord.
@@ -18,7 +19,7 @@
  */
 
 export type Instrument =
-  | 'flute' | 'bell' | 'box' | 'harp' | 'pad' | 'bass' | 'drive' | 'brass' | 'mallet' | 'piano'
+  | 'flute' | 'bell' | 'box' | 'harp' | 'pad' | 'bass' | 'drive' | 'brass' | 'mallet' | 'piano' | 'keys'
   | 'kick' | 'snare' | 'hat' | 'shaker' | 'tom';
 
 export interface NoteEvent {
@@ -34,12 +35,16 @@ export interface NoteEvent {
 }
 
 export type Layer =
-  /** The section's melody, `shift` octaves up or down. */
-  | { type: 'melody'; inst: Instrument; shift?: number; vel?: number }
+  /** The section's melody (or its named `line`, see `Section.lines`), `shift` octaves up or down. */
+  | { type: 'melody'; inst: Instrument; shift?: number; vel?: number; line?: string }
   /** A tone pattern over the current chord, rooted at `octave`; repeats every bar(s) it spans. */
   | { type: 'tones'; inst: Instrument; pattern: string; octave: number; vel?: number }
-  /** The chord held for as long as it lasts, voiced close to `center` (a MIDI note). */
-  | { type: 'chord'; inst: Instrument; center: number; vel?: number }
+  /**
+   * The chord held for as long as it lasts, voiced close to `center` (a MIDI note). With a
+   * beat `pattern` for one bar (`X.x.x.x.`) it is struck again at every hit instead, each
+   * ringing until the next hit.
+   */
+  | { type: 'chord'; inst: Instrument; center: number; vel?: number; pattern?: string }
   /** A drum pattern; repeats every bar(s) it spans. */
   | { type: 'beat'; inst: Instrument; pattern: string; vel?: number };
 
@@ -47,6 +52,8 @@ export interface Section {
   name: string;
   chords: string;
   melody?: string;
+  /** More hand-written lines (a second voice, a bass line), played by `melody` layers with `line`. */
+  lines?: Record<string, string>;
   layers: Layer[];
 }
 
@@ -87,7 +94,7 @@ export function midiOf(name: string): number {
 /** Equal temperament, A4 = 440 Hz. */
 export const freqOf = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
-const QUALITIES: Record<string, number[]> = {
+export const QUALITIES: Record<string, number[]> = {
   '': [0, 4, 7],
   m: [0, 3, 7],
   '7': [0, 4, 7, 10],
@@ -194,6 +201,42 @@ export function parseChords(line: string, stepsPerBar: number): Step<Chord>[] {
 }
 
 const rest = (t: string) => (t === '.' ? null : t);
+
+/** When a chord layer sounds within one chord: once for its whole length, or at each hit of a bar pattern. */
+function chordHits(pattern: string | undefined, stepsPerBar: number, c: Step<Chord>): Array<{ step: number; steps: number; vel: number }> {
+  if (!pattern) return [{ step: c.step, steps: c.steps, vel: 1 }];
+  const chars = pattern.replace(/\s+/g, '');
+  if (chars.length !== stepsPerBar) throw new Error(`Chord pattern "${pattern}" isn't ${stepsPerBar} steps`);
+  const hits: Array<{ step: number; steps: number; vel: number }> = [];
+  for (let at = c.step; at < c.step + c.steps; at++) {
+    const vel = BEAT_VEL[chars[at % stepsPerBar]];
+    if (vel) hits.push({ step: at, steps: 0, vel });
+  }
+  hits.forEach((h, i) => (h.steps = (hits[i + 1]?.step ?? c.step + c.steps) - h.step));
+  return hits;
+}
+
+/** Joins each tied note (`B4^`) to the note right after it when that is the same pitch. */
+function mergeTies(notes: Step<string | null>[]): Step<string | null>[] {
+  const out: Step<string | null>[] = [];
+  for (const n of notes) {
+    const prev = out[out.length - 1];
+    if (prev?.item?.endsWith('^') && prev.item.slice(0, -1) === n.item?.replace(/\^$/, '')) {
+      prev.steps += n.steps;
+      prev.item = n.item;
+    } else out.push({ ...n });
+  }
+  // A tie that found no partner is just a note.
+  for (const n of out) if (n.item?.endsWith('^')) n.item = n.item.slice(0, -1);
+  return out;
+}
+
+/** Bars `from`..`from + count` of a barred line, as a new line: the way a section takes its part of a long imported part. */
+export function sliceBars(line: string, from: number, count: number): string {
+  const bars = line.split('|').map((b) => b.trim());
+  if (from < 0 || from + count > bars.length) throw new Error(`Bars ${from + 1}..${from + count} are outside the ${bars.length}-bar line`);
+  return bars.slice(from, from + count).join(' | ');
+}
 const BEAT_VEL: Record<string, number> = { X: 1, x: 0.65, o: 0.35 };
 
 /** The chord sounding at a step. */
@@ -218,9 +261,10 @@ function sectionEvents(section: Section, stepsPerBar: number) {
   for (const layer of section.layers) {
     const vel = layer.vel ?? 1;
     if (layer.type === 'melody') {
-      if (!section.melody) throw new Error(`Section "${section.name}" has a melody layer but no melody`);
-      const notes = parseLine(section.melody, stepsPerBar, rest);
-      const bars = section.melody.split('|').length;
+      const text = layer.line === undefined ? section.melody : section.lines?.[layer.line];
+      if (!text) throw new Error(`Section "${section.name}" has a melody layer but no ${layer.line ? `line "${layer.line}"` : 'melody'}`);
+      const notes = mergeTies(parseLine(text, stepsPerBar, rest));
+      const bars = text.split('|').length;
       if (bars * stepsPerBar !== total) throw new Error(`Section "${section.name}": melody has ${bars} bars, chords have ${total / stepsPerBar}`);
       for (const n of notes) {
         if (n.item) events.push({ step: n.step, steps: n.steps, midi: midiOf(n.item) + 12 * (layer.shift ?? 0), inst: layer.inst, vel });
@@ -234,7 +278,9 @@ function sectionEvents(section: Section, stepsPerBar: number) {
       });
     } else if (layer.type === 'chord') {
       for (const c of chords) {
-        for (const midi of voicing(c.item, layer.center)) events.push({ step: c.step, steps: c.steps, midi, inst: layer.inst, vel });
+        for (const hit of chordHits(layer.pattern, stepsPerBar, c)) {
+          for (const midi of voicing(c.item, layer.center)) events.push({ step: hit.step, steps: hit.steps, midi, inst: layer.inst, vel: vel * hit.vel });
+        }
       }
     } else {
       const bars = layer.pattern.split('|').map((b) => b.replace(/\s+/g, ''));

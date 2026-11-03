@@ -6,6 +6,7 @@
  * and made exotic (A–D–E♭–F♯, phrygian dominant) in the Waking Shrine.
  */
 import { compile, type CompiledSong, type Instrument, type Layer, type Song } from './music';
+import { VALLEY_DAY_SONG } from './valleyTheme';
 
 /** Which theme plays: the field by day or night, the village, a boss fight, or a dungeon. */
 export type MusicMood = 'day' | 'night' | 'village' | 'boss' | 'shrine' | 'warden';
@@ -211,7 +212,14 @@ export const WARDEN_SONG: Song = {
   ],
 };
 
-export const SONGS: Record<MusicMood, Song> = { day: DAY_SONG, night: NIGHT_SONG, village: VILLAGE_SONG, boss: BOSS_SONG, shrine: SHRINE_SONG, warden: WARDEN_SONG };
+/**
+ * The field's day theme: any of these can play. Nothing is ever deleted, so a song we move
+ * away from stays one line away. Change `ACTIVE_DAY` to switch.
+ */
+export const DAY_SONGS = { 'ember-hills': DAY_SONG, 'valley-wakes': VALLEY_DAY_SONG } as const;
+export const ACTIVE_DAY: keyof typeof DAY_SONGS = 'ember-hills';
+
+export const SONGS: Record<MusicMood, Song> = { day: DAY_SONGS[ACTIVE_DAY], night: NIGHT_SONG, village: VILLAGE_SONG, boss: BOSS_SONG, shrine: SHRINE_SONG, warden: WARDEN_SONG };
 
 const compiled: Partial<Record<MusicMood, CompiledSong>> = {};
 
