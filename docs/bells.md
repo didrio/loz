@@ -1,8 +1,8 @@
 # The keepers' bells: bell posts, fast travel, bell trials
 
-Status: posts, hanging, ringing, the travel menu, the platforming base and the Bell Shaft (the
-Lullbell's trial) work. The Morrowbell can only be had from the dev menu's "Bells:" states until the
-gorge exists. Next: **3b, the Hushing Gorge**, before the shrine's boss ([shrine.md](shrine.md)).
+Status: posts, hanging, ringing, the travel menu, the platforming base and both trials (the Bell
+Shaft and the Hushing Gorge) work: both bells can be found and hung. Next: the shrine's boss
+([shrine.md](shrine.md)).
 Design approved by the owner (2026-11-02).
 
 ## What it is
@@ -92,8 +92,8 @@ leads back to the entry, and hanging it there wakes the network.
 
 1. ~~Bells and fast travel~~ done (dev states "Bells: ...", smoke and look scene `bells`).
 2. ~~Platforming base~~ done: how it works is below.
-3. **The two trials**: ~~3a, the Bell Shaft~~ done (owner-approved by play, 2026-11-03); **3b, the
-   Hushing Gorge** is next (plan below).
+3. **The two trials**: ~~3a, the Bell Shaft~~ done (owner-approved by play, 2026-11-03); ~~3b, the
+   Hushing Gorge~~ built 2026-11-03 (below; awaiting the owner's play).
 
 ### How the platforming works
 
@@ -141,28 +141,32 @@ came from a throwaway generator; edit it by hand, `checkCourse` guards it. Dev s
 Shaft start", look scene `bellShaft` (the camera shots are hand-placed and a couple sit close to
 discs; judge the room by the doorway, climb and from-above shots), smoke `trials`.
 
-### 3b, the Hushing Gorge (next)
+### The Hushing Gorge (built, 3b)
 
 Owner calls: keep both names; difficulty gentle-to-medium (the gorge mostly teaches); always open,
-with a sign at its mouth that warns. Reuse the shaft's lessons: round discs, `movePlatforms`,
-`TRIAL_RULES`, edge stickiness (turn `edgeAssist` on inside the gorge), ledge enemies.
+with a sign (`sign.gorge`) at its mouth that warns. It reuses the shaft's lessons: round discs,
+`movePlatforms`, `TRIAL_RULES`, edge stickiness (on inside the gorge), ledge-free enemies.
 
-- **Terrain** (`world/overworld/gorge.ts`): built after the seeded scenery with its own RNG (do the
-  per-region seeds item from the roadmap here, `regionRng(name)`: the hollow keeps seed 4242, the
-  valley 1337); a carve in `terrainHeight` only (never `placementHeight`), excluded in
-  `isOpen`/`isEnemyGround`, named in `areaNameAt`, inside the bounds. `GORGE` centerline + `inGorge`
-  in `layout.ts`. A mouth near (−127, 10) winding west into the mountain ring; a corridor floor 6–8 m,
-  a ~6 m drop under the climb.
-- **Content**: a narrow corridor with 4–5 thornlings and one Dozing Sentinel at fixed spots (a
-  keeper's statue guarding the way); then a light climb over a drop (discs in `COURSES`, rock
-  pillars, a broken plank bridge); the Morrowbell on a high ledge (a `BellPickup`, interactable
-  `bell.morrow`). Content spawns the enemies on load and in `onRespawn` (territory `inGorge`) and runs
-  a `TrialFalls` inside the gorge.
-- **Fix first (test first):** `EnemyManager.removeGone` queues a random field respawn for *any*
-  outdoor Thornling that dies; mark the ones the manager spawns and respawn only those.
-- **Verify**: dev state "Bells: gorge mouth", look scene `gorge` (no jagged spots or snags in the 2 m
-  terrain grid, camera doesn't jam; fallback: a wider carve with rock-box walls), smoke `trials`; the
-  full suite at the end (ask the owner first). Then docs: world.md, the roadmap's seeds item, AGENTS.md.
+- **Terrain** (`world/overworld/layout.ts`, `gorge.ts`): `GORGE.path` is a centerline from the mouth
+  (-124, 12) winding west and north into the mountain ring (about 100 m). `carveGorge` (in `terrainHeight`
+  only, never `placementHeight`) makes a 10 m wide flat floor that climbs from the field's level to
+  7 m over the first 30 m, walls rising 11 m over it, melting into the hills by 28 m, and a pit 6 m deep
+  from 62 m in. Helpers: `gorgeFrame(x, z)` (distance and arclength), `gorgePoint(s)` (centerline point,
+  direction, normal), `inGorge`. Named "The Hushing Gorge" in `areaNameAt`; field enemies keep out
+  (`isEnemyGround`). Scenery that would land in it is filtered out *after* its random draws (`nature.ts`),
+  like the hollow, so the valley's trees stay where they were. (Plan said `isOpen`; that would have
+  shifted the seeded stream, so it isn't used.)
+- **Seeds**: `regionRng(region)` in `layout.ts` (valley 1337, hollow 4242, gorge 7301). A new region
+  adds a line there.
+- **The corridor** (`content/gorge.ts`): 5 thornlings and 1 Dozing Sentinel (facing the mouth) at fixed
+  spots (`GORGE_THORNLINGS`, `GORGE_SENTINEL`), kept on the floor by `onGorgeFloor`; they refill on load and
+  after a death (the checkpoint rule).
+- **The climb** (`gorge.ts`, `COURSES.gorge`, proved by `checkCourse` in `gorge.test.ts`): six rock pillars
+  (discs as tall as the pit is deep) with one slider across the corridor, three checkpoints; the Morrowbell
+  (`BellPickup`, interactable `bellPickup.morrow`) on the last. Falling below the pit's line puts Wren back on the
+  last checkpoint pillar (`TrialFalls`, half a heart; only checked past the pit's lip). Two stubs of a
+  broken plank bridge sit at the rim.
+- **Verify**: dev states "Bells: gorge mouth" and "Bells: gorge climb", look scene `gorge`, smoke `gorge`.
 
 ## Open questions
 

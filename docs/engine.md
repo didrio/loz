@@ -206,12 +206,12 @@ desktop build can write real files.
 - A full day is about 5 minutes (`HOURS_PER_SECOND = 1/12`); night is 18:00–6:00.
 - Materials from `mat(color)` are shared: **never mutate them**; use `uniqueMat` for
   anything that flashes or glows.
-- Overworld scenery is placed with a seeded RNG (`mulberry32(1337)`) in a fixed build
+- Overworld scenery is placed with a seeded RNG (`regionRng('valley')`, 1337) in a fixed build
   order; reordering build calls reshuffles every tree. **Adding a landmark must not move
   existing scenery**: placement checks use `placementHeight` (the terrain before later
   carve-outs), every candidate draws the same random numbers whether or not it's placed,
   spots inside the new landmark are filtered out afterwards, and the landmark's own
-  scenery uses its own RNG (see `hollow.ts`).
+  scenery uses its own RNG (`regionRng(name)` in `layout.ts`; see `hollow.ts`, `gorge.ts`).
 - Terrain is a formula (`terrainHeight`), so the mesh, collider and placement agree.
 - Floors stack in dungeons: **anything that measures distance (aggro, attacks, lock-on,
   interact range, triggers) must also check height**, and anything about seeing must check

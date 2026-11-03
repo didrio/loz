@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { mulberry32 } from '../../core/math';
 import type { Physics } from '../../core/physics';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger } from '../area';
-import { BellPost, type BellId } from '../bell';
+import { BellPickup, BellPost, type BellId } from '../bell';
 import { BossArena, BushField, Chest, GreatLantern, HeartVessel, Npc, StoneDoor } from '../objects';
+import { buildGorge, GORGE_BELL, GORGE_COURSE, gorgeAt } from './gorge';
 import { buildHollow } from './hollow';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
-import { areaNameAt, GROVE, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { areaNameAt, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
 import { buildBounds, buildTerrain, buildWater } from './terrain';
 import { buildVillage } from './village';
@@ -31,6 +31,14 @@ export class Overworld implements Area {
   /** The Morrowbell's post on Thistledown's square. */
   readonly morrowPost: BellPost;
   readonly bellPosts: Map<BellId, BellPost>;
+  /** The Morrowbell waiting at the end of the Hushing Gorge. */
+  readonly morrowBell: BellPickup;
+  /** The gorge's climb (tests and smoke read the pillars from here). */
+  readonly gorgeCourse = GORGE_COURSE;
+  /** A point on the gorge (`s` m in, `lat` m left of its centerline): for look scenes. */
+  readonly gorgeAt = gorgeAt;
+  private readonly gorgeClimb: { update(t: number): void; dispose(): void };
+  private platformT = 0;
   readonly interactables: Interactable[];
   readonly triggers: Trigger[];
   readonly npcs: { maren: Npc; tobin: Npc; odo: Npc };
@@ -51,7 +59,7 @@ export class Overworld implements Area {
   private t = 0;
 
   constructor(physics: Physics) {
-    const b = new AreaBuilder(physics, mulberry32(1337));
+    const b = new AreaBuilder(physics, regionRng('valley'));
     buildTerrain(b);
     this.water = buildWater(b);
     buildBounds(b);
@@ -69,6 +77,9 @@ export class Overworld implements Area {
     // The hollow is built after the seeded scenery and uses its own RNG (see layout.ts).
     const hollow = buildHollow(b);
     this.hollowFx = hollow;
+    const gorge = buildGorge(b);
+    this.gorgeClimb = gorge.course;
+    this.morrowBell = gorge.bell;
     this.bushes = new BushField(b, [...bushSpots(b), ...hollow.bushes]);
     for (const s of SIGNS) buildSign(b, s.x, s.z);
     this.hollow = new BossArena(b, HOLLOW.x, HOLLOW.z, HOLLOW.floor, HOLLOW.r, hollow.lamps);
@@ -112,6 +123,7 @@ export class Overworld implements Area {
         enabled: () => !door.opening,
       },
       { id: 'bellPost.morrow', x: morrow.front.x, z: morrow.front.z, r: 2.2, get label() { return morrow.label; }, promptY: morrow.y + 3.2, enabled: () => !morrow.hanging },
+      { id: 'bellPickup.morrow', x: GORGE_BELL.x, z: GORGE_BELL.z, y: GORGE_BELL.y, r: 2, label: 'Take', promptY: GORGE_BELL.y + 2.2, enabled: () => this.morrowBell.present },
       { id: 'sign.pedestal', x: shrine.pedestal.x, z: shrine.pedestal.z, r: 2.3, label: 'Read', promptY: above(shrine.pedestal.x, shrine.pedestal.z, 2), enabled: always },
       ...SIGNS.map((s) => ({ id: s.id, x: s.x, z: s.z, r: 2.3, label: 'Read', promptY: above(s.x, s.z, 2.4), enabled: always })),
     ];
@@ -158,6 +170,11 @@ export class Overworld implements Area {
     return this.bushes.cut(x, z, dirX, dirZ, reach);
   }
 
+  movePlatforms(dt: number) {
+    this.platformT += dt;
+    this.gorgeClimb.update(this.platformT);
+  }
+
   update(dt: number, env: AreaEnv) {
     const { night } = env;
     this.t += dt;
@@ -171,6 +188,7 @@ export class Overworld implements Area {
     this.hollow.update(dt);
     this.vessel.update(dt);
     this.morrowPost.update(dt);
+    this.morrowBell.update(dt);
     this.hollowFx.update(dt);
     this.bushes.update(dt);
     this.npcs.maren.update(dt, env.playerPos);
@@ -179,6 +197,7 @@ export class Overworld implements Area {
   }
 
   dispose() {
+    this.gorgeClimb.dispose();
     this.disposer();
   }
 }

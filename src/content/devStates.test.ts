@@ -19,8 +19,8 @@ describe('dev save states', () => {
     });
   }
 
-  it('lists a new game, the night outside the hollow, the shrine start, the boss door and four bell states', () => {
-    expect(DEV_STATES.map((s) => s.save?.area ?? 'new')).toEqual(['new', 'overworld', 'shrine', 'shrine', 'overworld', 'shrine', 'shrine', 'overworld']);
+  it('lists a new game, the night outside the hollow, the shrine start, the boss door and six bell states', () => {
+    expect(DEV_STATES.map((s) => s.save?.area ?? 'new')).toEqual(['new', 'overworld', 'shrine', 'shrine', 'overworld', 'shrine', 'shrine', 'overworld', 'overworld', 'overworld']);
   });
 
   it('the bell states carry or hang only known bells, never one both carried and hung', () => {

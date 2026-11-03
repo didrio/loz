@@ -43,8 +43,10 @@ recheck old text against them when you touch it.
   black trees and old iron lamp posts, with ash drifting up. Sign: "Here ends the
   lamplighter's road." The arena of the first mini-boss.
 
-- **The Hushing Gorge** (working name; bells milestone 3): a narrow cut in the western cliffs
-  between Thistledown and Glimmer Lake, where the keepers hid the Morrowbell.
+- **The Hushing Gorge** (working name; built): a winding cut in the western mountain ring, west of the
+  valley, where the keepers hid the Morrowbell. A sign at its mouth warns walkers off; a statue of a
+  keeper still stands guard in the corridor, thornlings nest below, and the way on is over a pit on
+  rock pillars.
 
 ## The keepers' bells
 

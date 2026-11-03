@@ -531,6 +531,8 @@ export class Gloomwisp extends Enemy {
 export class EnemyManager {
   readonly list: Enemy[] = [];
   private respawns: number[] = [];
+  /** The thornlings this manager spawned itself: only these come back as random field spawns. */
+  private readonly fieldBorn = new WeakSet<Enemy>();
 
   constructor(private parent: THREE.Object3D, private physics: Physics, private area: Area) {
     for (let i = 0; i < area.enemyCount; i++) this.spawnThornling(null);
@@ -550,7 +552,10 @@ export class EnemyManager {
 
   private spawnThornling(player: THREE.Vector3 | null) {
     const s = this.area.enemySpot(Math.random, player ?? undefined, player ? 40 : 0);
-    if (s) this.list.push(new Thornling(this.parent, this.physics, s.x, s.z));
+    if (!s) return;
+    const t = new Thornling(this.parent, this.physics, s.x, s.z);
+    this.fieldBorn.add(t);
+    this.list.push(t);
   }
 
   /** `cutscene`: only enemies that animate in cutscenes move, and nothing spawns. */
@@ -583,7 +588,7 @@ export class EnemyManager {
       if (!e.gone) continue;
       e.dispose();
       this.list.splice(i, 1);
-      if (e instanceof Thornling && !this.area.indoor) this.respawns.push(45);
+      if (this.fieldBorn.has(e) && !this.area.indoor) this.respawns.push(45);
     }
   }
 

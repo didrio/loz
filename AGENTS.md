@@ -24,9 +24,9 @@ only), the quest thread, all music, and the village (Tobin's mill with a bed; Od
 Stoneward Tunic and refills flasks). **The Waking Shrine** (25 rooms, four wings, plus the Bell Shaft
 trial) is playable up to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done).
 **Bells** (bonfires with fast travel, [docs/bells.md](docs/bells.md)): posts, ringing, the travel menu,
-the platforming base and the Bell Shaft (the Lullbell's trial) work; a dev menu (~ / L3) has sprint,
-invincibility, a trial-fall-damage toggle and save states. **Next: bells 3b** (the Hushing Gorge),
-then shrine milestone 6 (Gravelheart; plan mode).
+the platforming base and both trials work (the Bell Shaft; the Hushing Gorge, west of the valley,
+built and awaiting the owner's play); a dev menu (~ / L3) has sprint, invincibility, a trial-fall-damage
+toggle and save states. **Next: shrine milestone 6** (Gravelheart; plan mode).
 
 ## Docs: read the one for the area you're touching
 
@@ -134,7 +134,7 @@ src/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
-    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, index (Overworld)
+    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, index (Overworld)
     dungeon/               dungeon data format, validator, softlock solver, text map, DUNGEONS registry;
                            defs/ the dungeons; build.ts + pieces.ts turn the data into a 3D indoor Area;
                            grid.ts + puzzle.ts: rooms as 2 m grids, the wakestone puzzle checker;
@@ -160,6 +160,7 @@ src/
     overworld.ts           scripts for every overworld interactable/trigger, save restore
     mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
     bells.ts               the bell registry (BELLS) and scripts: check, hang, ring, travel, take
+    gorge.ts               the Hushing Gorge: its monsters, the trial's fall rule
     shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
     devStates.ts           dev-menu save states (new game, night by the Hollow, shrine, boss door, bells)
     fakeApi.ts             the fake ScriptApi content tests run against

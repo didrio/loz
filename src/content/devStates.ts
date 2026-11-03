@@ -1,7 +1,7 @@
 import { SAVE_VERSION, type DungeonSave, type SaveData } from '../core/save';
 import { floorY, worldPos, type DungeonDef } from '../world/dungeon/format';
 import { SHRINE } from '../world/dungeon/defs/shrine';
-import { MORROW_POST, VILLAGE } from '../world/overworld/layout';
+import { GORGE, gorgePoint, MORROW_POST, VILLAGE } from '../world/overworld/layout';
 
 /**
  * Dev-menu save states: ready-made points in the game to jump to while testing. Loading one
@@ -72,8 +72,22 @@ function bellStates(): DevState[] {
     { name: 'Bells: Morrowbell in hand, Thistledown', save: base({ flags: SWORD_AND_BED, bells: { carried: ['morrow'], hung: [] } }), at: atMorrowPost() },
     { name: 'Bells: Lullbell in hand, shrine entry', save: base({ ...late, area: 'shrine', bells: { carried: ['lull'], hung: ['morrow'] } }) },
     { name: 'Bells: Bell Shaft start', save: base({ ...late, area: 'shrine', bells: { carried: [], hung: ['morrow'] } }), at: atBellShaft() },
+    { name: 'Bells: gorge mouth', save: base({ flags: SWORD_AND_BED, bells: { carried: [], hung: [] } }), at: atGorgeMouth() },
+    { name: 'Bells: gorge climb', save: base({ flags: SWORD_AND_BED, bells: { carried: [], hung: [] } }), at: atGorgeClimb() },
     { name: 'Bells: both hung, Thistledown', save: base({ ...late, bells: { carried: [], hung: ['morrow', 'lull'] } }), at: atMorrowPost() },
   ];
+}
+
+/** Just outside the Hushing Gorge's mouth, facing in. */
+function atGorgeMouth(): DevState['at'] {
+  const p = gorgePoint(0);
+  return { x: p.x - p.dx * 6, z: p.z - p.dz * 6, facing: Math.atan2(p.dx, p.dz) };
+}
+
+/** On the first pillar of the gorge's climb (past its monsters), facing the pit. */
+function atGorgeClimb(): DevState['at'] {
+  const p = gorgePoint(GORGE.pitAt - 1);
+  return { x: p.x, z: p.z, facing: Math.atan2(p.dx, p.dz) };
 }
 
 /** Inside the Bell Shaft (the Lullbell's trial), 1.5 m in from its door, facing east at the climb. */

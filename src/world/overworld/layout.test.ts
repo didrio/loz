@@ -1,5 +1,6 @@
+import { mulberry32 } from '../../core/math';
 import { describe, expect, it } from 'vitest';
-import { BRIDGE, bridgeDeck, GROVE, isEnemyGround, isOpen, LAKE, PATHS, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
+import { areaNameAt, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, isEnemyGround, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
 
 describe('overworld layout', () => {
   it('starts the player on dry, fairly flat ground', () => {
@@ -54,5 +55,41 @@ describe('overworld layout', () => {
     expect(isOpen(VILLAGE.x, VILLAGE.z)).toBe(false);
     expect(isEnemyGround(SPAWN.x, SPAWN.z)).toBe(false);
     expect(isEnemyGround(VILLAGE.x, VILLAGE.z)).toBe(false);
+  });
+});
+
+describe('the Hushing Gorge', () => {
+  it('has a floor that climbs from the field to 7 m, flat across the corridor', () => {
+    const at = (s: number, lat = 0) => {
+      const p = gorgePoint(s);
+      return terrainHeight(p.x + p.nx * lat, p.z + p.nz * lat);
+    };
+    expect(at(0)).toBeLessThan(3);
+    for (let s = 32; s <= GORGE.pitAt - 4; s += 4) for (const lat of [-3, 0, 3]) expect(at(s, lat)).toBeCloseTo(GORGE.floor, 0);
+    for (let s = 0; s < 30; s += 2) expect(at(s + 2) - at(s)).toBeLessThan(2); // a walkable ramp
+    expect(gorgeFloor(GORGE_LENGTH)).toBeCloseTo(GORGE.floor);
+  });
+
+  it('has walls that stand well above the floor, and a pit below it', () => {
+    for (let s = 36; s < GORGE.pitAt; s += 6) {
+      const p = gorgePoint(s);
+      for (const side of [-1, 1]) expect(terrainHeight(p.x + p.nx * 11 * side, p.z + p.nz * 11 * side)).toBeGreaterThan(GORGE.floor + 8);
+    }
+    const p = gorgePoint(GORGE.pitAt + 10);
+    expect(terrainHeight(p.x, p.z)).toBeCloseTo(GORGE.floor - GORGE.pitDepth, 0);
+  });
+
+  it('is named, keeps field enemies out, and stays inside the world', () => {
+    expect(areaNameAt(gorgePoint(40).x, gorgePoint(40).z)).toBe('The Hushing Gorge');
+    expect(isEnemyGround(gorgePoint(40).x, gorgePoint(40).z)).toBe(false);
+    expect(inGorge(gorgePoint(40).x, gorgePoint(40).z)).toBe(true);
+    for (const [x, z] of GORGE.path) expect(Math.hypot(x, z) + GORGE.halfWidth + 2).toBeLessThan(WORLD_RADIUS);
+  });
+
+  it('leaves the original seeds alone (the valley and the hollow keep their layout)', () => {
+    expect(regionRng('valley')()).toBe(mulberry32(1337)());
+    expect(regionRng('hollow')()).toBe(mulberry32(4242)());
+    expect(regionRng('gorge')()).not.toBe(regionRng('valley')());
+    expect(inGorge(0, 14)).toBe(false);
   });
 });

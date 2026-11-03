@@ -1,4 +1,4 @@
-import { fbm, mix, smoothstep } from '../../core/math';
+import { fbm, mix, mulberry32, smoothstep } from '../../core/math';
 
 /**
  * The map of Emberfield and its landmarks, as pure functions of (x, z). The terrain shape is
@@ -21,6 +21,84 @@ export const SHRINE = { x: 108, z: 28 };
 export const LAKE = { x: -100, z: 100 };
 /** Gloaming Hollow: a sunken clearing at the end of the south road, the Lamplighter's arena. */
 export const HOLLOW = { x: -23, z: 127, r: 15, floor: 0.6 };
+
+/**
+ * Each region draws its scenery from its own seeded stream, so changing one region can never
+ * reshuffle another. The valley's 1337 and the hollow's 4242 are the original seeds (the layout
+ * players already know); new regions add a line here.
+ */
+const REGION_SEEDS = { valley: 1337, hollow: 4242, gorge: 7301 } as const;
+export const regionRng = (region: keyof typeof REGION_SEEDS) => mulberry32(REGION_SEEDS[region]);
+
+/**
+ * The Hushing Gorge (docs/bells.md): a winding cut into the western mountain ring, the Morrowbell's
+ * trial. `path` runs from the mouth inward; the floor climbs from the field to `floor` over the first
+ * 30 m, a pit opens at `pitAt` (the climb), and the walls rise `wall` m above the floor.
+ */
+export const GORGE = {
+  path: [[-124, 12], [-138, 8], [-150, 0], [-160, -10], [-162, -24], [-154, -36], [-142, -44], [-130, -50]] as [number, number][],
+  floor: 7,
+  pitAt: 62,
+  pitDepth: 6,
+  /** Half-width of the flat floor, then where the walls reach full height and where they melt into the hills. */
+  halfWidth: 5,
+  wallTop: 11,
+  reach: 28,
+  wall: 11,
+};
+
+const GORGE_SEGS = GORGE.path.slice(1).map((p, i) => {
+  const [ax, az] = GORGE.path[i];
+  return { ax, az, bx: p[0], bz: p[1], len: Math.hypot(p[0] - ax, p[1] - az) };
+});
+const GORGE_OFFSETS = GORGE_SEGS.reduce<number[]>((o, g) => [...o, o[o.length - 1] + g.len], [0]);
+/** Length of the gorge's centerline, m. */
+export const GORGE_LENGTH = GORGE_OFFSETS[GORGE_SEGS.length];
+
+/** The centerline point `s` meters in, its unit direction (inward) and its left-hand normal. */
+export function gorgePoint(s: number) {
+  const c = Math.max(0, Math.min(GORGE_LENGTH, s));
+  let i = GORGE_SEGS.findIndex((_, k) => c <= GORGE_OFFSETS[k + 1]);
+  if (i < 0) i = GORGE_SEGS.length - 1;
+  const g = GORGE_SEGS[i];
+  const t = (c - GORGE_OFFSETS[i]) / g.len;
+  const dx = (g.bx - g.ax) / g.len, dz = (g.bz - g.az) / g.len;
+  return { x: g.ax + (g.bx - g.ax) * t, z: g.az + (g.bz - g.az) * t, dx, dz, nx: dz, nz: -dx };
+}
+
+/** Distance `d` from the gorge's centerline and how far along it (`s`) the nearest point is. */
+export function gorgeFrame(x: number, z: number) {
+  let d = Infinity, s = 0;
+  for (let i = 0; i < GORGE_SEGS.length; i++) {
+    const g = GORGE_SEGS[i];
+    const dx = g.bx - g.ax, dz = g.bz - g.az;
+    const t = Math.max(0, Math.min(1, ((x - g.ax) * dx + (z - g.az) * dz) / (dx * dx + dz * dz)));
+    const di = Math.hypot(x - (g.ax + dx * t), z - (g.az + dz * t));
+    if (di < d) { d = di; s = GORGE_OFFSETS[i] + t * g.len; }
+  }
+  return { d, s };
+}
+
+/** The floor's height `s` meters in (before the pit): from the field's level at the mouth up to `floor`. */
+export function gorgeFloor(s: number) {
+  const [mx, mz] = GORGE.path[0];
+  return mix(placementHeight(mx, mz), GORGE.floor, smoothstep(0, 30, s));
+}
+
+/** True within `margin` meters of the gorge's carved area (or inside it). */
+export function inGorge(x: number, z: number, margin = 0) {
+  return gorgeFrame(x, z).d < GORGE.reach + margin;
+}
+
+/** The land with the gorge cut into it: a notch between walls, climbing from the mouth, with a pit near the end. */
+function carveGorge(h: number, x: number, z: number) {
+  const { d, s } = gorgeFrame(x, z);
+  if (d >= GORGE.reach) return h;
+  const pit = smoothstep(GORGE.pitAt, GORGE.pitAt + 4, s) * (1 - smoothstep(GORGE.halfWidth - 1, GORGE.halfWidth + 2, d));
+  const floor = gorgeFloor(s) - GORGE.pitDepth * pit;
+  const wall = GORGE.wall * smoothstep(GORGE.halfWidth, GORGE.wallTop, d) * smoothstep(0, 18, s);
+  return mix(floor + wall, h, smoothstep(GORGE.wallTop, GORGE.reach, d));
+}
 
 export function riverZ(x: number) {
   return 66 + 16 * Math.sin(x * 0.022) + 6 * Math.sin(x * 0.061 + 1);
@@ -82,7 +160,8 @@ export function placementHeight(x: number, z: number) {
 /** The shape of the land: a gentle field ringed by mountains, carved by a river and a lake. */
 export function terrainHeight(x: number, z: number) {
   const h = placementHeight(x, z);
-  return mix(h, HOLLOW.floor, smoothstep(HOLLOW.r + 9, HOLLOW.r, Math.hypot(x - HOLLOW.x, z - HOLLOW.z)));
+  const withHollow = mix(h, HOLLOW.floor, smoothstep(HOLLOW.r + 9, HOLLOW.r, Math.hypot(x - HOLLOW.x, z - HOLLOW.z)));
+  return carveGorge(withHollow, x, z);
 }
 
 /** True within `margin` meters of the hollow's edge (or inside it). */
@@ -97,6 +176,7 @@ export function areaNameAt(x: number, z: number) {
   if (Math.hypot(x - SHRINE.x, z - SHRINE.z) < 28) return 'The Waking Shrine';
   if (Math.hypot(x - LAKE.x, z - LAKE.z) < 38) return 'Glimmer Lake';
   if (inHollow(x, z, 3)) return 'Gloaming Hollow';
+  if (gorgeFrame(x, z).d < GORGE.wallTop) return 'The Hushing Gorge';
   return 'Emberfield';
 }
 
@@ -121,6 +201,6 @@ export function isEnemyGround(x: number, z: number) {
   if (Math.hypot(x - SPAWN.x, z - SPAWN.z) < 22) return false;
   if (Math.hypot(x - SHRINE.x, z - SHRINE.z) < 16) return false;
   if (Math.abs(z - riverZ(x)) < 12 || Math.hypot(x - LAKE.x, z - LAKE.z) < 34) return false;
-  if (inHollow(x, z, 12)) return false;
+  if (inHollow(x, z, 12) || inGorge(x, z, 6)) return false;
   return true;
 }

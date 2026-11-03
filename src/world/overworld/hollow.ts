@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { angleDiff, mulberry32 } from '../../core/math';
+import { angleDiff } from '../../core/math';
 import { Layer } from '../../core/physics';
 import { mat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
-import { HOLLOW, HOLLOW_ENTRANCE, terrainHeight } from './layout';
+import { HOLLOW, HOLLOW_ENTRANCE, regionRng, terrainHeight } from './layout';
 
 /**
  * Gloaming Hollow: a sunken, dead clearing where the south road ends. A ring of bare black
@@ -11,7 +11,7 @@ import { HOLLOW, HOLLOW_ENTRANCE, terrainHeight } from './layout';
  * Uses its own RNG so it never disturbs the rest of the seeded overworld.
  */
 export function buildHollow(b: AreaBuilder) {
-  const rand = mulberry32(4242);
+  const rand = regionRng('hollow');
   const { x: cx, z: cz, r: R, floor } = HOLLOW;
   const entrance = Math.atan2(HOLLOW_ENTRANCE.z - cz, HOLLOW_ENTRANCE.x - cx);
   const bark = mat(0x2b2520), barkLight = mat(0x3a3029);

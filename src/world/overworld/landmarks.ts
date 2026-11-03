@@ -149,5 +149,6 @@ export const SIGNS = [
   { id: 'sign.crossroads', x: SPAWN.x + 3, z: SPAWN.z - 3 },
   { id: 'sign.village', x: VILLAGE.x + 21, z: VILLAGE.z + 22 },
   { id: 'sign.grove', x: GROVE.x - 13, z: GROVE.z + 13 },
+  { id: 'sign.gorge', x: -119.5, z: 19 },
   { id: 'sign.hollow', x: HOLLOW_ENTRANCE.x + 3.5, z: HOLLOW_ENTRANCE.z - 4 },
 ];

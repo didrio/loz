@@ -17,8 +17,8 @@ Next, in order:
 0. ~~The owner's playtest tweaks A–G (2026-11-02)~~ done. Untested by play: the gem economy
    (95 in the shrine plus bushes, against the 100-gem tunic and 20 per flask refill).
 0.5. **Bells: bell posts, fast travel, bell trials** (owner's request, 2026-11-02, before the
-   shrine's boss). Done: bells, posts and the travel menu, the platforming base, the Bell Shaft.
-   **Next is 3b** (the Hushing Gorge). See [bells.md](bells.md).
+   shrine's boss). Done: bells, posts and the travel menu, the platforming base, both trials (the Bell Shaft,
+   the Hushing Gorge; the latter awaits the owner's play). See [bells.md](bells.md).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **next is milestone 6** (Gravelheart and its theme), then the
    **Northpass** valley exit the glove opens (7), polish (8).
@@ -83,12 +83,10 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   expect translations). *Trigger: before the second dungeon's content, or when
   localization is planned; at the latest before the Steam page.*
 - [ ] **Per-region scenery seeds**: each overworld region gets its own RNG so adding or
-  changing one region can't reshuffle another (today one seeded stream covers the whole
-  valley; see Conventions in [engine.md](engine.md)). *Trigger: the next new overworld
-  region or a scenery change outside the hollow.* **Fires with the Hushing Gorge (bells
-  milestone 3):** plan there is a `regionRng(name)` helper for the hollow and the gorge, with the
-  valley keeping its 1337 stream (no reshuffle); then narrow this item's trigger to "a change to
-  the valley's own scenery".
+  changing one region can't reshuffle another (see Conventions in [engine.md](engine.md)).
+  Done 2026-11-03 for the hollow and the gorge (`regionRng(name)` in `layout.ts`; the valley keeps
+  its 1337 stream). *Still open, trigger narrowed: a change to the valley's own scenery (split it
+  into per-area streams then).*
 - [ ] **Visual level editor (maybe)**: if authoring dungeons as data + text map + top-down
   renders proves slow or error-prone, build a small in-browser editor that edits the same
   data format. *Trigger: evaluate after the first dungeon; decide with the owner.*

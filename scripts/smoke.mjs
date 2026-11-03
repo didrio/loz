@@ -13,7 +13,7 @@
 // Exits non-zero if a step fails or a page logs an error. See docs/testing.md.
 import { launch, openGame } from './browser.mjs';
 
-const SCENARIOS = ['full', 'combat', 'shrine-puzzle', 'shrine-keys', 'shrine-exit', 'shrine-enemies', 'shrine-glove', 'village', 'dev-menu', 'bells', 'trials'];
+const SCENARIOS = ['full', 'combat', 'shrine-puzzle', 'shrine-keys', 'shrine-exit', 'shrine-enemies', 'shrine-glove', 'village', 'dev-menu', 'bells', 'trials', 'gorge'];
 const CONCURRENCY = 3;
 
 const wanted = process.argv.slice(2);

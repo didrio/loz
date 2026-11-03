@@ -392,6 +392,42 @@ const SCENES = {
     await h.wait(1500);
     await h.shot('shaft-top');
   },
+  /** The Hushing Gorge (the Morrowbell's trial): the mouth and its sign, the corridor, the pit and climb from above, the bell's pillar, and the game camera on the climb. */
+  async gorge(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+    /** A point on the gorge floor `s` m in and `lat` m left of the centerline (via the world's own layout). */
+    const spot = (s, lat) => h.game(([s, lat]) => window.embervale.area.gorgeAt(s, lat), [s, lat]);
+    const stand = async (s, lat, yaw) => {
+      const p = await spot(s, lat);
+      await h.teleport(p.x, p.z, yaw);
+      await h.wait(1500);
+    };
+    const cam = (eye, target) => h.game(([eye, target]) => {
+      const g = window.embervale;
+      const T = g.player.pos.constructor;
+      g.rig.shot(new T(...eye), new T(...target), true);
+    }, [eye, target]);
+    await stand(-6, 0, Math.atan2(-14, -4));
+    await h.shot('gorge-mouth');
+    await stand(24, 0, Math.atan2(-14, -4));
+    await h.shot('gorge-ramp');
+    await stand(45, 0, Math.atan2(-14, 10));
+    await h.shot('gorge-corridor');
+    const a = await spot(55, 0), b = await spot(84, 0);
+    await cam([a.x, 22, a.z], [b.x, 9, b.z]);
+    await h.wait(1200);
+    await h.shot('gorge-pit-from-above');
+    await h.game(() => window.embervale.rig.release());
+    const c = await h.game(() => window.embervale.area.gorgeCourse.platforms.filter((p) => p.checkpoint)[1]);
+    await h.teleport(c.x, c.z, 0, c.top + 0.1);
+    await h.wait(1800);
+    await h.shot('gorge-climb');
+    const bell = await h.game(() => window.embervale.area.gorgeCourse.platforms.at(-1));
+    await h.teleport(bell.x, bell.z + 1.5, 0, bell.top + 0.1);
+    await h.wait(1800);
+    await h.shot('gorge-bell');
+  },
   /** A chest with its lid open: the underside of the lid must be solid. */
   async chestOpen(h) {
     await h.newGame();
