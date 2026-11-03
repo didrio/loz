@@ -52,6 +52,42 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('field-start');
   },
+  /**
+   * The new opening (S1): the field at the start (no shield), the crossroads sign, the ruined cottage
+   * from the road in (hidden) and from the north gap (in view), the shield inside, and the scream line.
+   */
+  async opening(h) {
+    await h.newGame({ fresh: true });
+    await h.wait(1200);
+    await h.shot('field-start');
+    const sign = await h.game(() => window.embervale.area.interactables.find((i) => i.id === 'sign.crossroads'));
+    await h.teleport(sign.x - 1.5, sign.z + 1.5, Math.PI * 0.75);
+    await h.press('KeyE');
+    await h.wait(1500);
+    await h.shot('sign');
+    await h.finishScript();
+    // The road in, just outside the fence: the cottage should be out of sight behind the houses.
+    await h.teleport(-37, -31, Math.atan2(-25, -27));
+    await h.wait(1500);
+    await h.shot('road-in');
+    // Leaving through the north gap: the cottage straight ahead.
+    await h.teleport(-62, -84, Math.PI);
+    await h.wait(1500);
+    await h.shot('north-gap');
+    await h.teleport(-60, -91, Math.PI);
+    await h.wait(1000);
+    await h.shot('cottage-front');
+    // Take it: the guard page, then the scream line.
+    const p = await h.game(() => ({ x: window.embervale.area.shield.x, z: window.embervale.area.shield.z }));
+    await h.teleport(p.x, p.z + 1.6, Math.PI);
+    await h.wait(400);
+    await h.press('KeyE');
+    for (let i = 0; i < 20 && !(await h.game(() => document.querySelector('.dialog:not(.hidden)')?.textContent.includes('Ahh'))); i++) await h.press('Enter', 1, 450);
+    await h.wait(800);
+    await h.shot('scream');
+    await h.finishScript();
+    await h.shot('with-shield');
+  },
   async village(h) {
     await h.newGame();
     await h.teleport(-50, -42, Math.atan2(-12, -16));

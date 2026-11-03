@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "flags": ["metMaren", "gotGroveKey", "groveChestOpened", "hasSword"],
+  "version": 7,
+  "flags": ["metMaren", "hasShield", "village.scare", "gotGroveKey", "groveChestOpened", "hasSword"],
   "keys": 0,
   "area": "overworld",
   "items": [],

@@ -3,7 +3,7 @@ import { fbm } from '../../core/math';
 import { Layer } from '../../core/physics';
 import { mat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
-import { GROVE, inGate, inGorge, inHollow, inPass, isOpen, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
+import { GROVE, inGate, inGorge, inRuin, inHollow, inPass, isOpen, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
 
 function instanced(b: AreaBuilder, geo: THREE.BufferGeometry, material: THREE.Material, ms: THREE.Matrix4[], colors?: THREE.Color[], shadow = true) {
   const im = new THREE.InstancedMesh(geo, material, ms.length);
@@ -31,7 +31,7 @@ export function buildTrees(b: AreaBuilder) {
     const s = 0.8 + rand() * 0.7;
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rand() * Math.PI * 2, 0));
     const c1 = rand(), c2 = rand();
-    if (inHollow(x, z, 8) || inGorge(x, z, 2) || inGate(x, z, 1) || inPass(x, z, 2)) return; // the hollow's rim has its own dead trees
+    if (inHollow(x, z, 8) || inGorge(x, z, 2) || inGate(x, z, 1) || inPass(x, z, 2) || inRuin(x, z, 2)) return; // the hollow's rim has its own dead trees
     trunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 1.2 * s, z), q, new THREE.Vector3(s, s, s)));
     if (kind === 'round') {
       round.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 3.6 * s, z), q, new THREE.Vector3(s * 2.2, s * 2, s * 2.2)));
@@ -81,7 +81,7 @@ export function buildRocks(b: AreaBuilder) {
     placed++;
     const s = 0.4 + Math.pow(rand(), 2) * 2.2;
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(rand(), rand() * 6, rand()));
-    if (inHollow(x, z, 1) || inGorge(x, z, 2) || inGate(x, z) || inPass(x, z, 2)) continue;
+    if (inHollow(x, z, 1) || inGorge(x, z, 2) || inGate(x, z) || inPass(x, z, 2) || inRuin(x, z, 1)) continue;
     const y = terrainHeight(x, z) + s * 0.3;
     ms.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(s, s * 0.75, s)));
     if (s > 0.9) b.ball(x, y, z, s * 0.8, s > 1.6 ? Layer.World : Layer.Prop);
@@ -107,7 +107,7 @@ export function buildGrass(b: AreaBuilder) {
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler((rand() - 0.5) * 0.4, rand() * 6, (rand() - 0.5) * 0.4));
     const hue = rand(), light = rand(), flower = rand() < 0.18;
     const petal = flower ? palette[Math.floor(rand() * palette.length)] : 0;
-    if (inHollow(x, z, 3) || inGorge(x, z, 1) || inGate(x, z) || inPass(x, z, 1)) continue; // the hollow has its own dead grass
+    if (inHollow(x, z, 3) || inGorge(x, z, 1) || inGate(x, z) || inPass(x, z, 1) || inRuin(x, z)) continue; // the hollow has its own dead grass
     tufts.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 0.25 * s, z), q, new THREE.Vector3(s, s, s)));
     tuftC.push(new THREE.Color().setHSL(0.24 + hue * 0.07, 0.55, 0.32 + light * 0.12));
     if (flower) {
@@ -137,5 +137,5 @@ export function bushSpots(b: AreaBuilder) {
   return spots
     .filter(([x, z]) => Math.abs(z - riverZ(x)) >= 11)
     .map(([x, z]) => ({ x, z, y: terrainHeight(x, z), rot: rand() * 6 }))
-    .filter((s) => !inHollow(s.x, s.z, 1) && !inGorge(s.x, s.z, 2) && !inGate(s.x, s.z) && !inPass(s.x, s.z, 2));
+    .filter((s) => !inHollow(s.x, s.z, 1) && !inGorge(s.x, s.z, 2) && !inGate(s.x, s.z) && !inPass(s.x, s.z, 2) && !inRuin(s.x, s.z, 1));
 }

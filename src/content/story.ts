@@ -1,12 +1,10 @@
 import type { Script } from '../game/script';
 
-/** Opening narration for a new game. */
+/**
+ * A new game: no words (owner's call, 2026-11-03). Wren stands in the field outside the fence; the
+ * crossroads sign points home, and the story comes from talking to people.
+ */
 export const intro: Script = async (api) => {
-  await api.say([
-    { text: 'Last night, the lantern atop the Waking Shrine flickered, and went out.' },
-    { text: 'By morning, thornlings were crawling across Emberfield, and Thistledown had shut its gates.' },
-    { text: 'Wren, go and see Maren in *Thistledown*, up the road to the northwest.\n(Move with *WASD* or the left stick. *Click* the screen to look around with the mouse.)' },
-  ]);
   api.showAreaName('Emberfield');
 };
 

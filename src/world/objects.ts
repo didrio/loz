@@ -3,7 +3,7 @@ import { damp, lerpAngle } from '../core/math';
 import { Layer, type RAPIER } from '../core/physics';
 import { buildHumanoid, type Humanoid, type HumanoidColors } from '../render/characters';
 import { mat, uniqueMat } from '../render/materials';
-import { glow, heartGeometry } from '../render/shapes';
+import { glow, heartGeometry, shieldModel } from '../render/shapes';
 import type { AreaBuilder } from './area';
 
 /** A villager who stands in place, breathes, and turns to face you when you come close. */
@@ -359,6 +359,42 @@ export class HeartVessel {
     this.t += dt;
     this.group.rotation.y += dt * 1.8;
     this.group.position.y = this.y + 1.3 + Math.sin(this.t * 2) * 0.15;
+  }
+}
+
+/**
+ * A shield left lying somewhere (Wren's, before she has it): leaning back against a wall, with a
+ * slow glint on its boss so it catches the eye from a distance. `yaw` turns its face.
+ */
+export class ShieldPickup {
+  readonly group = new THREE.Group();
+  present = true;
+  private readonly glint: THREE.Mesh;
+  private t = 0;
+
+  constructor(b: AreaBuilder, readonly x: number, readonly y: number, readonly z: number, yaw: number) {
+    const shield = shieldModel(mat(0x8b5a2b), mat(0x9a9fa6));
+    shield.rotation.x = -0.35; // leaning back, its foot on the floor
+    shield.position.y = 0.42;
+    this.glint = glow(0xfff1c0, 0.16, 0.6);
+    this.glint.position.set(0, 0.47, 0.12);
+    this.group.add(shield, this.glint);
+    this.group.position.set(x, y, z);
+    this.group.rotation.y = yaw;
+    b.dynamic(this.group);
+  }
+
+  take() {
+    this.present = this.group.visible = false;
+  }
+
+  update(dt: number) {
+    if (!this.present) return;
+    this.t += dt;
+    // A glint every few seconds: a quick swell and fade, like light catching the iron.
+    const k = Math.max(0, Math.sin(this.t * 1.6) ** 12);
+    this.glint.scale.setScalar(0.4 + k * 1.4);
+    (this.glint.material as THREE.MeshBasicMaterial).opacity = 0.15 + k * 0.7;
   }
 }
 

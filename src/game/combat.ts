@@ -151,6 +151,7 @@ export class Combat {
       lockTarget: this.lock,
       enemies: this.g.enemies.list,
       hasSword: this.g.state.has('hasSword'),
+      hasShield: this.g.state.has('hasShield'),
       onSwing: () => sfx.swing(),
       onJump: () => sfx.jump(),
       canSurf: this.g.state.has('village.surfIdea') && !this.g.area.indoor,

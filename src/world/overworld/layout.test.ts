@@ -1,6 +1,6 @@
 import { mulberry32 } from '../../core/math';
 import { describe, expect, it } from 'vitest';
-import { areaNameAt, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
+import { areaNameAt, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
 
 describe('overworld layout', () => {
   it('starts the player on dry, fairly flat ground', () => {
@@ -131,5 +131,16 @@ describe('the Northpass', () => {
     expect(areaNameAt(passPoint(0).x, passPoint(0).z)).toBe('Emberfield');
     expect(isEnemyGround(passPoint(10).x, passPoint(10).z)).toBe(false);
     expect(regionRng('pass')()).not.toBe(regionRng('valley')());
+  });
+});
+
+describe('ruins', () => {
+  it('stand on near-flat ground (their floorboards sit on the highest corner), clear of roads and water', () => {
+    for (const r of RUINS) {
+      const hs = [[0, 0], [-3.5, -3], [3.5, -3], [-3.5, 3], [3.5, 3]].map(([dx, dz]) => terrainHeight(r.x + dx, r.z + dz));
+      expect(Math.max(...hs) - Math.min(...hs), r.id).toBeLessThan(0.35);
+      expect(pathDist(r.x, r.z), r.id).toBeGreaterThan(r.r);
+      expect(Math.min(...hs), r.id).toBeGreaterThan(WATER_Y + 1);
+    }
   });
 });

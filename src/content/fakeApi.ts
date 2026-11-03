@@ -33,7 +33,7 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
   const toasts: string[] = [];
   const noop = () => {};
   const pushes: THREE.Vector3[] = [];
-  const player = { pos: new THREE.Vector3(), forward: new THREE.Vector3(0, 0, 1), teleport: noop, setSword: noop, setStoneward: noop, push: (from: THREE.Vector3) => void pushes.push(from.clone()) } as unknown as Player;
+  const player = { pos: new THREE.Vector3(), forward: new THREE.Vector3(0, 0, 1), teleport: noop, setSword: noop, setShield: noop, setStoneward: noop, push: (from: THREE.Vector3) => void pushes.push(from.clone()) } as unknown as Player;
   const sfx = new Proxy({}, { get: () => noop }) as Sfx;
   const api: ScriptApi = {
     state, sfx, player, area,
@@ -70,6 +70,7 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
     },
     respawn: noop,
     giveSword: () => state.set('hasSword'),
+    giveShield: () => state.set('hasShield'),
     silenceMusic: (on) => void music.push(on),
     travel: async (a, entrance, _quiet, arrive) => {
       travels.push({ area: a, entrance });

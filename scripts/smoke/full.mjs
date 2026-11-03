@@ -8,13 +8,21 @@ export default async function run(t) {
     await shot('01-title');
   });
 
-  await step('new game plays the intro, then gives control', async () => {
+  await step('a new game starts in play, wordless, with no shield; the crossroads sign points home', async () => {
     await press('Enter');
-    await until(() => window.embervale.mode === 'cutscene', 30000).catch(() => {});
-    check((await state()).mode === 'cutscene', 'intro did not start');
-    await finishScript();
-    check((await state()).mode === 'play', 'still in cutscene');
+    await until(() => window.embervale.mode === 'play', 30000);
+    await wait(500);
+    check((await state()).mode === 'play', 'not in play');
+    check(await game(() => !window.embervale.player.shield.visible), 'Wren starts with the shield showing');
     await shot('02-field');
+    const sign = await game(() => window.embervale.area.interactables.find((i) => i.id === 'sign.crossroads'));
+    await teleport(sign.x - 1.5, sign.z + 1.5, Math.PI * 0.75);
+    await wait(300);
+    await press('KeyE');
+    await until(() => document.querySelector('.dialog:not(.hidden)')?.textContent.includes('Thistledown'), 10000).catch(() => {});
+    check((await page.textContent('.dialog')).includes('Thistledown'), 'sign does not point to Thistledown');
+    await finishScript();
+    await teleport(0, 14, Math.PI); // back to the spawn
   });
 
   await step('walking moves the player along the ground', async () => {
@@ -84,6 +92,23 @@ export default async function run(t) {
     await finishScript();
     const s = await state();
     check(!s.flags.includes('hasSword') && !(await game(() => window.embervale.area.chest.opened)), 'locked chest opened');
+  });
+
+  await step('the shield in the ruined cottage: the guard, then a quick scream', async () => {
+    const p = await game(() => ({ x: window.embervale.area.shield.x, z: window.embervale.area.shield.z }));
+    await teleport(p.x, p.z + 1.6, Math.PI); // in front of it, facing north
+    await until(() => document.querySelector('.prompt.show')?.textContent.includes('Take'), 15000).catch(() => {});
+    check((await page.textContent('.prompt')).includes('Take'), 'prompt does not say Take');
+    await press('KeyE');
+    await finishScript();
+    const s = await state();
+    check(s.flags.includes('hasShield') && s.flags.includes('village.scare'), JSON.stringify(s.flags));
+    check(await game(() => window.embervale.player.shield.visible), 'shield not on Wren\'s arm');
+    // The guard works now.
+    await page.keyboard.down('ShiftLeft');
+    await until(() => window.embervale.player.shielding, 5000).catch(() => {});
+    check(await game(() => window.embervale.player.shielding), 'cannot raise the shield');
+    await page.keyboard.up('ShiftLeft');
   });
 
   await step('Maren gives Wren the small key (shown in the HUD)', async () => {

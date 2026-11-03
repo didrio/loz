@@ -197,6 +197,61 @@ export class Sfx {
     this.noise(0.6, 600, 2400, 0.08, 'bandpass');
   }
 
+  /**
+   * A scream from across the village, then a tin bucket hitting the ground: a buzzy voice (sawtooth)
+   * shaped by three vowel formants ("ah"), its pitch leaping up and sagging with a nervous vibrato,
+   * muffled by distance with a faint echo; then the bucket's ring and two bounces.
+   */
+  scream() {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    const voice = (t0: number, vol: number) => {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(460, t0);
+      o.frequency.exponentialRampToValueAtTime(820, t0 + 0.18);
+      o.frequency.setValueAtTime(820, t0 + 0.5);
+      o.frequency.exponentialRampToValueAtTime(560, t0 + 1.1);
+      const vib = ctx.createOscillator();
+      vib.frequency.value = 7;
+      const depth = ctx.createGain();
+      depth.gain.value = 18;
+      vib.connect(depth).connect(o.frequency);
+      const far = ctx.createBiquadFilter();
+      far.type = 'lowpass';
+      far.frequency.value = 2600;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol, t0 + 0.07);
+      g.gain.setValueAtTime(vol, t0 + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.15);
+      far.connect(g).connect(this.master);
+      for (const [f, q, v] of [[850, 6, 1], [1250, 8, 0.6], [2850, 10, 0.3]] as const) {
+        const band = ctx.createBiquadFilter();
+        band.type = 'bandpass';
+        band.frequency.value = f;
+        band.Q.value = q;
+        const bg = ctx.createGain();
+        bg.gain.value = v;
+        o.connect(band).connect(bg).connect(far);
+      }
+      o.start(t0);
+      vib.start(t0);
+      o.stop(t0 + 1.2);
+      vib.stop(t0 + 1.2);
+    };
+    const now = ctx.currentTime;
+    voice(now, 0.5);
+    voice(now + 0.22, 0.08); // the echo off the cottages
+    // The bucket: a tinny ring and a clatter, then two smaller bounces.
+    [0.95, 1.18, 1.32].forEach((d, i) => {
+      const k = 1 / (i + 1);
+      this.tone(1480, 0.35 * k, 'sine', 0.05 * k, 1400, d);
+      this.tone(2230, 0.25 * k, 'sine', 0.035 * k, undefined, d);
+      this.noise(0.12 * k, 3200, 1200, 0.18 * k, 'bandpass', d);
+    });
+  }
+
   /** The "something just changed in the world" chime. */
   solved() {
     [587.33, 739.99, 880, 1174.7, 1480].forEach((f, i) => this.tone(f, 0.5, 'sine', 0.12, undefined, i * 0.1));

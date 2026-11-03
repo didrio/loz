@@ -13,6 +13,22 @@ export function heartGeometry(depth = 0.12) {
   return g;
 }
 
+/**
+ * Wren's round wooden shield: a plank disc, an iron rim and a boss. Its face is local +z. `wood` is
+ * passed in so the player can flash it red (a guard break).
+ */
+export function shieldModel(wood: THREE.Material, iron: THREE.Material) {
+  const g = new THREE.Group();
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.08, 12), wood);
+  disc.rotation.x = Math.PI / 2;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.04, 4, 16), iron);
+  const boss = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5), iron);
+  boss.position.z = 0.05;
+  for (const m of [disc, rim, boss]) m.castShadow = true;
+  g.add(disc, rim, boss);
+  return g;
+}
+
 /** A soft additive glow ball, for flames, sparks and magic. */
 export function glow(color: number, radius: number, opacity = 0.35) {
   return new THREE.Mesh(

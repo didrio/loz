@@ -95,12 +95,22 @@ export async function openGame(env, outDir, { fixture } = {}) {
     await until(() => window.embervale?.mode === 'title', 60000);
     await wait(800);
   };
-  /** Boots, starts a new game and skips the intro. */
-  const newGame = async () => {
+  /**
+   * Boots, starts a new game and skips the intro. Unless `fresh`, it also skips the opening (the
+   * shield and the scare), so Wren has the shield as scenes used to assume.
+   */
+  const newGame = async ({ fresh = false } = {}) => {
     await boot();
     await press('Enter');
-    await until(() => window.embervale.mode === 'cutscene', 10000);
+    await until(() => window.embervale.mode !== 'title', 10000);
     await finishScript();
+    if (fresh) return;
+    await game(() => {
+      const g = window.embervale;
+      for (const f of ['hasShield', 'village.scare']) g.state.set(f);
+      g.area.shield.take();
+      g.player.setShield(true);
+    });
   };
 
   /** Boots and presses Continue: from the fixture the page was opened with, or the game's own save. */

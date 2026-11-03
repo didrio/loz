@@ -19,6 +19,24 @@ Next, in order:
 0.5. **Bells: bell posts, fast travel, bell trials** (owner's request, 2026-11-02, before the
    shrine's boss). Done: bells, posts and the travel menu, the platforming base, both trials (the Bell Shaft,
    the Hushing Gorge; the latter awaits the owner's play). See [bells.md](bells.md).
+0.7. **Story revamp** (owner's direction, 2026-11-03; the story is in [world.md](world.md), "Story").
+   Five Sonnet sessions, no plan mode needed; run each with `/start story S<n>`:
+   - ~~S1, the shield-first opening~~ done (2026-11-03; [world.md](world.md), "The opening"). **For S2–S5:** no new story
+     cutscenes without asking (AGENTS.md design decisions); the blight lift (S2) and the prism (S5) were planned as cutscenes.
+   - [ ] **S2, the blight.** `Sky.blight` (0–1, a second palette like `gloom`), ash motes (`render/motes.ts`), blight
+     growths hidden on restore; placeholder music `blight`, `blightNight`, `blightVillage` on the valley motif (the owner
+     listens); restored field: 2 stray thornlings by day, no gloomwisps; the lift in the gate vision (blight tweens to
+     0 over ~4 s, the music crossfades). Restored = `valleyOpen`.
+   - [ ] **S3, village and ruins.** Four bigger cottages (two ruined) plus the mill; hand-placed `RUINS` across the
+     valley (`world/overworld/ruins.ts`), the shield's cottage among them; scenery filtered with `inRuin` (the `inGate`
+     pattern, so nothing reshuffles; narrow the per-region seeds trigger and tell the owner).
+   - [ ] **S4, sigils and the village's silence.** `world/sigil.ts`, `content/sigils.ts` (registry like `hints.ts`,
+     flags `sigil.<id>`), the hollow's sigil, a dungeon data kind `sigil` with `appears: { cleared }`, a "Messages" page
+     in the pause menu, villager reactions, the full text pass (lantern/thief/ward/Warden lines, Gravelheart's epithet
+     and defeat text) and the restored-valley lines.
+   - [ ] **S5, the prism.** The seal-stone becomes a floating prism held by four beams in a bigger, grander `sealRoom`
+     (`world/dungeon/prism.ts`, ids kept); the sword shatters it, the beams die, then the vision and the lift.
+     The full suite at the end (ask the owner first).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **milestone 6** (Gravelheart) is in its last part, **6D+**
    (owner's redesign, 2026-11-03, replacing the old glove-stone Northpass): beating the boss opens a
@@ -93,7 +111,8 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   landed in its own modules, `pauseMenu.ts` and `buds.ts`, and game.ts only went 594 → 604, so the
   split waited.)
 - [ ] **Split content per area and topic**: `content/overworld.ts` → `content/overworld/`
-  (village NPCs, the hollow, the shrine...). *Trigger: a content file passes ~500 lines.*
+  (village NPCs, the hollow, the shrine...). *Trigger: a content file passes ~500 lines.* (2026-11-03, S1: the
+  village's NPCs and opening moved out to `content/village.ts`, overworld.ts 447 → 305 lines; the hollow is next out.)
 - [ ] **Dialog as data**: lines in per-area data files keyed by id, scripts reference
   keys. Makes writing reviewable in one place and enables localization (Steam players
   expect translations). *Trigger: before the second dungeon's content, or when
@@ -102,7 +121,8 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   changing one region can't reshuffle another (see Conventions in [engine.md](engine.md)).
   Done 2026-11-03 for the hollow and the gorge (`regionRng(name)` in `layout.ts`; the valley keeps
   its 1337 stream). *Still open, trigger narrowed: a change to the valley's own scenery (split it
-  into per-area streams then).*
+  into per-area streams then).* (2026-11-03, S1: the first ruin only filters scenery out with `inRuin` and levels
+  a pad in `terrainHeight`, not `placementHeight`, so nothing reshuffled; S3's ruins should do the same.)
 - [ ] **Visual level editor (maybe)**: if authoring dungeons as data + text map + top-down
   renders proves slow or error-prone, build a small in-browser editor that edits the same
   data format. *Trigger: evaluate after the first dungeon; decide with the owner.*
@@ -116,6 +136,12 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 - [ ] **Docs hygiene**: if a topic doc passes ~400 lines, split it. *Trigger: as stated.*
 
 ## Known quirks and tech debt
+
+- **Lamplighter fight, unreproduced** (owner's play, 2026-11-03): after its intro Wren was at the arena's edge, couldn't
+  move for a while, then controls felt "inverted". A keyboard repro (walking in, with and without the shield held) moved
+  normally and W followed the camera. Waiting on the owner: keyboard or gamepad, what was held during the intro, what
+  "inverted" meant, whether a hit pinned Wren against the fire wall. Wren starts ~2 m inside the seal (the trigger is
+  `HOLLOW.r - 2`), by design so far.
 
 - **`npm run smoke -- shrine-keys` fails** at "dying in the shrine respawns at its entrance": 39 enemies alive after
   respawning, 38 expected (45 spawns minus 7 in beaten challenge rooms). Fails the same on the commit before surfing,

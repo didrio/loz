@@ -3,7 +3,7 @@ import { clamp, damp, easeOut, lerpAngle, mix } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
 import { buildHumanoid, type Humanoid } from '../render/characters';
 import { isSharedMaterial, mat, uniqueMat } from '../render/materials';
-import { GroundShadow } from '../render/shapes';
+import { GroundShadow, shieldModel } from '../render/shapes';
 import type { LockTarget } from './lockon';
 import type { Area } from '../world/area';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
@@ -27,6 +27,8 @@ export interface PlayerEnv {
   lockTarget: LockTarget | null;
   enemies: readonly Enemy[];
   hasSword: boolean;
+  /** Without the shield (the opening, before the ruined cottage) there's no guard and no surfing. */
+  hasShield: boolean;
   onSwing(): void;
   /** The sword reached an enemy; `result` says whether it hurt, hit a weak point or was guarded. */
   onHitEnemy(e: Enemy, result: HurtResult, at: THREE.Vector3): void;
@@ -202,14 +204,9 @@ export class Player {
     this.h.armR.add(this.sword);
 
     // A round wooden shield on the left arm (its face is local +z; `animate` sets the pose).
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.08, 12), this.shieldMat);
-    disc.rotation.x = Math.PI / 2;
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.04, 4, 16), mat(0x9a9fa6));
-    const boss = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5), mat(0x9a9fa6));
-    boss.position.z = 0.05;
-    for (const m of [disc, rim, boss]) m.castShadow = true;
-    this.shield.add(disc, rim, boss);
+    this.shield.add(shieldModel(this.shieldMat, mat(0x9a9fa6)));
     this.shield.position.copy(SHIELD_REST_POS);
+    this.shield.visible = false;
     this.h.armL.add(this.shield);
 
     this.trail = new THREE.Mesh(
@@ -277,6 +274,10 @@ export class Player {
 
   setSword(has: boolean) {
     this.sword.visible = has;
+  }
+
+  setShield(has: boolean) {
+    this.shield.visible = has;
   }
 
   /** Moves instantly, e.g. on spawn or when a script relocates the player. */
@@ -391,14 +392,15 @@ export class Player {
     this.airT = grounded ? 0 : this.airT + dt;
     this.wasGrounded = grounded;
     const wasSurfing = this.surfing;
+    const shield = c.shield && env.hasShield;
     this.surfing = surfNext({
-      surfing: this.surfing, allowed: canAct && !!env.canSurf, shield: c.shield, landedAfter,
+      surfing: this.surfing, allowed: canAct && !!env.canSurf, shield, landedAfter,
       free: this.state === 'move' && this.throwT <= 0 && !staggered,
       locked: !!(lock && lock.alive), attack: c.attack && env.hasSword, wading,
     });
     if (this.surfing && !wasSurfing) this.surfVel.copy(this.forward).multiplyScalar(this.speedXZ);
     // The shield stays up through jumps: hold it, hop, keep blocking. Not while it's under her feet.
-    this.shielding = !this.surfing && canAct && this.state === 'move' && c.shield && this.guard.canBlock && this.throwT <= 0;
+    this.shielding = !this.surfing && canAct && this.state === 'move' && shield && this.guard.canBlock && this.throwT <= 0;
     if (canAct && env.hasSword && c.attack && this.throwT <= 0 && !staggered) {
       if (this.state === 'move') this.startAttack(0, env);
       else if (this.state === 'attack' && this.t > SWINGS[this.combo].dur * 0.4 && this.combo < 2) this.queued = true;

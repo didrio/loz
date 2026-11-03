@@ -49,7 +49,7 @@ describe('save files', () => {
     const d = decodeSave(JSON.stringify({ version: 1, flags: ['metMaren', 'hasSword'], songs: ['hours', 'waking'], gems: 12, hp: 6, maxHp: 6, hours: 10, day: 2 }))!;
     expect(d.version).toBe(SAVE_VERSION);
     expect(d.keys).toBe(0);
-    expect(d.flags).toEqual(['metMaren', 'hasSword']);
+    expect(d.flags).toEqual(['metMaren', 'hasSword', 'hasShield']); // v7: past the old opening keeps the shield
     expect(d.gems).toBe(12);
     expect('songs' in d).toBe(false);
   });
@@ -116,6 +116,17 @@ describe('save files', () => {
     expect(d.version).toBe(SAVE_VERSION);
     expect(d.flasks).toEqual(['life', null]);
     expect(d.bells).toEqual({ carried: [], hung: [] });
+  });
+
+  it('migrates a v6 save: the shield comes with any progress past the old opening', () => {
+    const met = decodeSave(JSON.stringify({ version: 6, flags: ['metMaren'], flasks: ['life'] }))!;
+    expect(met.version).toBe(SAVE_VERSION);
+    expect(met.flags).toContain('hasShield');
+    expect(met.flasks).toEqual(['life']);
+    expect(decodeSave(JSON.stringify({ version: 2, flags: ['hasSword'] }))!.flags).toContain('hasShield');
+    // A fresh start finds it in the ruined cottage, and a current save is taken as it is.
+    expect(decodeSave(JSON.stringify({ version: 6, flags: [] }))!.flags).not.toContain('hasShield');
+    expect(decodeSave(JSON.stringify({ version: SAVE_VERSION, flags: ['metMaren'] }))!.flags).not.toContain('hasShield');
   });
 
   it('drops unknown bells, and a hung bell is never also carried', () => {

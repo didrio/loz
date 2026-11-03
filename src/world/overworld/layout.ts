@@ -270,7 +270,9 @@ export function placementHeight(x: number, z: number) {
 /** The shape of the land: a gentle field ringed by mountains, carved by a river and a lake. */
 export function terrainHeight(x: number, z: number) {
   const h = placementHeight(x, z);
-  const withHollow = mix(h, HOLLOW.floor, smoothstep(HOLLOW.r + 9, HOLLOW.r, Math.hypot(x - HOLLOW.x, z - HOLLOW.z)));
+  let withHollow = mix(h, HOLLOW.floor, smoothstep(HOLLOW.r + 9, HOLLOW.r, Math.hypot(x - HOLLOW.x, z - HOLLOW.z)));
+  // Each ruin sits on a level pad at its center's height, easing back into the land 6 m out.
+  for (const r of RUINS) withHollow = mix(withHollow, placementHeight(r.x, r.z), smoothstep(r.r + 6, r.r, Math.hypot(x - r.x, z - r.z)));
   return carveBeyond(raiseGateShoulders(carvePass(carveGorge(withHollow, x, z), x, z), x, z), x, z);
 }
 
@@ -297,6 +299,21 @@ function raiseGateShoulders(h: number, x: number, z: number) {
 /** True within `margin` meters of the hollow's edge (or inside it). */
 export function inHollow(x: number, z: number, margin = 0) {
   return Math.hypot(x - HOLLOW.x, z - HOLLOW.z) < HOLLOW.r + margin;
+}
+
+/**
+ * Ruined homes across the valley, left by the blight (world/overworld/ruins.ts builds them). Each faces
+ * `yaw` (its open front, local +z); `r` covers its footprint. The shield's cottage stands north of
+ * Thistledown, in line with the fence's north gap: hidden behind the houses from the road in, in plain
+ * view on the way out (owner's call, 2026-11-03).
+ */
+export const RUINS = [
+  { id: 'shieldCottage', x: VILLAGE.x + 2, z: VILLAGE.z - 39, yaw: Math.atan2(-2, 39), r: 5.5 },
+] as const;
+
+/** True within `margin` meters of a ruin's footprint (scenery stays clear, without reshuffling). */
+export function inRuin(x: number, z: number, margin = 0) {
+  return RUINS.some((r) => Math.hypot(x - r.x, z - r.z) < r.r + margin);
 }
 
 /** True within `margin` meters of the gate's arch and the ground just before it (scenery stays clear). */

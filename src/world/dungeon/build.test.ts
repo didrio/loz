@@ -19,7 +19,7 @@ function setup() {
   const p = new Player(new THREE.Scene(), physics, { hp: 6, maxHp: 6 });
   const env = {
     area: { waterLevel: null, cut: () => [] } as unknown as Area,
-    lockTarget: null, enemies: [], hasSword: false,
+    lockTarget: null, enemies: [], hasSword: false, hasShield: true,
     onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
   } satisfies PlayerEnv;
   /** Walks in a direction for `seconds` (world space, +x east, +z south). */

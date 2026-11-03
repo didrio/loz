@@ -17,7 +17,7 @@ function setup() {
   p.teleport(0, 0, 0, 0); // facing +z
   const env = {
     area: { waterLevel: null, cut: () => [] } as unknown as Area,
-    lockTarget: null, enemies: [], hasSword: true,
+    lockTarget: null, enemies: [], hasSword: true, hasShield: true as boolean,
     onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
   } satisfies PlayerEnv;
   const step = (seconds: number, shield = false, jump = false) => {
@@ -56,6 +56,15 @@ describe('Player.receiveHit', () => {
     expect(p.receiveHit(front, HEAVY)).toBe('miss');
     expect(health.hp).toBe(6);
     (health as { invincible?: boolean }).invincible = false;
+    expect(p.receiveHit(front, HEAVY)).toBe('hit');
+    expect(health.hp).toBe(4);
+  });
+
+  it('without the shield, holding the button neither raises a guard nor blocks', () => {
+    const { p, env, health, step } = setup();
+    env.hasShield = false;
+    step(0.5, true);
+    expect(p.shielding).toBe(false);
     expect(p.receiveHit(front, HEAVY)).toBe('hit');
     expect(health.hp).toBe(4);
   });
@@ -221,7 +230,7 @@ describe('Player.receiveHit', () => {
     };
     const env = {
       area: { waterLevel: null, cut: () => [] } as unknown as Area,
-      lockTarget: null, enemies: [target] as unknown as PlayerEnv['enemies'], hasSword: true,
+      lockTarget: null, enemies: [target] as unknown as PlayerEnv['enemies'], hasSword: true, hasShield: true,
       onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
     } satisfies PlayerEnv;
     const swing = () => {
@@ -252,7 +261,7 @@ describe('Player.receiveHit', () => {
     };
     const env = {
       area: { waterLevel: null, cut: () => [] } as unknown as Area,
-      lockTarget: null, enemies: [target] as unknown as PlayerEnv['enemies'], hasSword: true,
+      lockTarget: null, enemies: [target] as unknown as PlayerEnv['enemies'], hasSword: true, hasShield: true,
       onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
     } satisfies PlayerEnv;
     const swing = () => {
@@ -331,7 +340,7 @@ describe('Player on a moving platform', () => {
     p.teleport(startX, 1, 0, 0);
     const env = {
       area: { waterLevel: null, cut: () => [] } as unknown as Area,
-      lockTarget: null, enemies: [], hasSword: true,
+      lockTarget: null, enemies: [], hasSword: true, hasShield: true,
       onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
     } satisfies PlayerEnv;
     let walking = false;
@@ -416,7 +425,7 @@ describe('Edge stickiness (trial rooms)', () => {
     p.teleport(0, 1, 0, 0);
     const env = {
       area: { waterLevel: null, cut: () => [] } as unknown as Area,
-      lockTarget: null, enemies: [], hasSword: true,
+      lockTarget: null, enemies: [], hasSword: true, hasShield: true,
       onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
     } satisfies PlayerEnv;
     let t = 0, held = 0, leftAt = -1, maxX = 0, rose = false;
@@ -513,6 +522,13 @@ describe('shield surfing', () => {
   it("doesn't start without the idea", () => {
     const { p, mount } = surfSetup(false);
     mount();
+    expect(p.surfing).toBe(false);
+  });
+
+  it("doesn't start without the shield", () => {
+    const { p, env, mount } = surfSetup();
+    env.hasShield = false;
+    mount(fwd);
     expect(p.surfing).toBe(false);
   });
 

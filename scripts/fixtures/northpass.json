@@ -1,7 +1,10 @@
 {
-  "version": 6,
+  "version": 7,
   "flags": [
     "metMaren",
+    "hasShield",
+   
+    "village.scare",
     "gotGroveKey",
     "groveChestOpened",
     "hasSword",

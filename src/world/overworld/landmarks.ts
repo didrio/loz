@@ -145,6 +145,21 @@ export function buildSign(b: AreaBuilder, x: number, z: number) {
   b.cylinder(x, y + 1.0, z, 1.0, 0.3, Layer.Prop);
 }
 
+const ARROWS = ['↑', '↗', '→', '↘', '↓', '↙', '←', '↖'];
+
+/**
+ * Which way to `target` as an arrow on a sign, for someone standing in front of it reading it
+ * (signs face the spawn, so "up" is away from the spawn, through the board). One of 8 arrows.
+ */
+export function signArrow(sign: { x: number; z: number }, target: { x: number; z: number }) {
+  const fx = sign.x - SPAWN.x, fz = sign.z - SPAWN.z;
+  const dx = target.x - sign.x, dz = target.z - sign.z;
+  // The reader's right, with +x east and -z north: facing north (0, -1), right is east (1, 0).
+  const ahead = dx * fx + dz * fz, right = dx * -fz + dz * fx;
+  const a = Math.atan2(right, ahead);
+  return ARROWS[(Math.round(a / (Math.PI / 4)) + 8) % 8];
+}
+
 export const SIGNS = [
   { id: 'sign.crossroads', x: SPAWN.x + 3, z: SPAWN.z - 3 },
   { id: 'sign.village', x: VILLAGE.x + 21, z: VILLAGE.z + 22 },

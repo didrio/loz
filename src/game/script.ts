@@ -81,6 +81,7 @@ export interface ScriptApi {
   /** Fades out, loads another area (at a named entrance, or its spawn) and fades back in; `quiet` skips the area-name card (a vision, a flashback). */
   travel(area: AreaId, entrance?: string, quiet?: boolean, arrive?: () => void): Promise<void>;
   giveSword(): void;
+  giveShield(): void;
 }
 
 /** A story script or cutscene. While it runs, the player has no control. */

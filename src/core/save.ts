@@ -4,7 +4,7 @@
  * can swap localStorage for real files without touching game code.
  */
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export interface SaveData {
   version: typeof SAVE_VERSION;
@@ -107,17 +107,21 @@ export function decodeSave(raw: string | null): SaveData | null {
   // v1 saved the flute songs the player knew; the flute is gone, so they're just dropped
   // (v1 had no keys). The quest grants the key by its own flag, so nothing gets stuck.
   // v1/v2 had no areas, items or dungeons: they load in the overworld with none.
-  if (o.version !== SAVE_VERSION && o.version !== 1 && o.version !== 2 && o.version !== 3 && o.version !== 4 && o.version !== 5) return null;
+  if (o.version !== SAVE_VERSION && o.version !== 1 && o.version !== 2 && o.version !== 3 && o.version !== 4 && o.version !== 5 && o.version !== 6) return null;
   if (!Array.isArray(o.flags)) return null;
+  const flags = strings(o.flags);
+  // Before v7 Wren started with the shield. A save past the old opening (met Maren, or armed) keeps
+  // it; an earlier one plays the new opening and finds it in the ruined cottage.
+  if (o.version !== SAVE_VERSION && (flags.includes('metMaren') || flags.includes('hasSword')) && !flags.includes('hasShield')) flags.push('hasShield');
   const maxHp = isNum(o.maxHp) ? Math.max(2, Math.min(40, Math.round(o.maxHp / 2) * 2)) : 6;
   return {
     version: SAVE_VERSION,
-    flags: strings(o.flags),
+    flags,
     keys: count(o.keys),
     area: typeof o.area === 'string' && o.area ? o.area : 'overworld',
     items: strings(o.items),
     dungeons: decodeDungeons(o.dungeons),
-    flasks: o.version === 5 || o.version === SAVE_VERSION ? decodeFlasks(o.flasks) : flasksFromDrinks(o.drinks),
+    flasks: o.version === 5 || o.version === 6 || o.version === SAVE_VERSION ? decodeFlasks(o.flasks) : flasksFromDrinks(o.drinks),
     bells: decodeBells(o.bells),
     gems: isNum(o.gems) ? Math.max(0, Math.min(9999, Math.floor(o.gems))) : 0,
     maxHp,

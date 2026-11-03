@@ -23,7 +23,7 @@ const base = (o: Partial<SaveData>): SaveData => ({
   ...o,
 });
 
-const SWORD_AND_BED = ['metMaren', 'gotGroveKey', 'groveChestOpened', 'hasSword', 'village.millKey'];
+const SWORD_AND_BED = ['metMaren', 'hasShield', 'village.scare', 'gotGroveKey', 'groveChestOpened', 'hasSword', 'village.millKey'];
 const SHRINE_OPEN = [...SWORD_AND_BED, 'lamplighterDefeated', 'hollowVessel', 'shrineOpen'];
 const emptyDungeon = (): DungeonSave => ({ keys: [], bossKey: false, doors: [], chests: [], switches: [], cleared: [], done: false });
 

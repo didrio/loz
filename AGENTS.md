@@ -19,14 +19,12 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-03: Emberfield (the valley) plays start to finish (Lamplighter, quest thread, music, village), and **the Waking
-Shrine** (25 rooms, the Bell Shaft trial) through **Gravelheart**, whose defeat leads to the Keepers' Seal, which opens the magic
-gate ([docs/shrine.md](docs/shrine.md)). Beyond it the Northpass streams in and ends at **Wayfarers' Camp** (the Waybell's post);
-a canyon crossing leads to two **Cragstalkers** and the Waybell, the third fast-travel stop (D3, unplayed). **Bells** and three
-trials work ([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states (one at the opened gate).
-**Murmurbuds** (3 keepers' notes), the **pause menu** (P), **shield surfing** (Lark gives the idea; `game/surf.ts`) and the sealed gate
-(rock shoulders and invisible walls out to the rim) are built, unplayed. **Next:** the pause menu's inventory and settings
-(roadmap 2); the owner owes a play of D3, the Murmurbuds, surfing and the gate. (Gamepad: attack X/RB/RT, guard LB/LT.)
+As of 2026-11-03: Emberfield plays start to finish: a wordless start, the shield in a ruined cottage, the village, the Lamplighter,
+then **the Waking Shrine** through **Gravelheart** and the Keepers' Seal, which opens the gate to the Northpass and **Wayfarers' Camp**
+(Cragstalkers, the Waybell). Bells, trials, Murmurbuds, the pause menu (P), shield surfing and the dev menu (~ / L3) work. Unplayed by
+the owner: surfing, the sealed gate, D3. Open: a Lamplighter-fight report (stuck at the arena edge, then "inverted" controls) that
+didn't reproduce; the owner is retrying it (roadmap, "Known quirks"). **Next:** story revamp S2–S5 (roadmap 0.7), then the pause
+menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
 
@@ -133,7 +131,7 @@ src/
     bell.ts, murmurbud.ts  BELL_IDS, BellPost, BellPickup; MurmurbudLook (hint bulb: swells, sulks, opens, floating note, wisp)
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
     overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp,
-                           the crossing, the Waybell), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
+                           the crossing, the Waybell), ruins (ruined homes; the shield's cottage), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
     dungeon/               data format, validator, softlock solver, text map, DUNGEONS; defs/ the dungeons; build.ts + pieces.ts
                            (data → 3D Area); grid.ts + puzzle.ts (2 m grids, wakestone checker); landmarks.ts (statues);
                            hearth.ts (Gravelheart's arena, causeway, Heart Vessel); decor.ts (each wing's palette and light)
@@ -155,6 +153,7 @@ src/
   content/                 the game's story; what things DO
     areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death
     overworld.ts           scripts for every overworld interactable/trigger, save restore
+    village.ts             Thistledown: the villagers, the mill door, Odo's stall, the opening (the shield, the scream)
     mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
     bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
     gorge.ts, northpass.ts the Hushing Gorge (monsters, fall rule); the canyon past the camp (Cragstalkers, fall rule)
@@ -184,26 +183,23 @@ CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/, skills
 - Dungeons are data (`DungeonDef`) checked by a solver, not hand-placed geometry code.
 - Static geometry is merged; anything that changes at runtime is `dynamic`.
 - The camera passes through trees and fences (Prop) but pulls in for walls and terrain.
-- Continue starts at the spawn of the area you saved in (a dungeon's entrance inside one),
-  with at least 3 hearts.
-- **The checkpoint rule** (a Souls-leaning choice, owner's call): dying sends Wren back to the
-  area's start with full hearts; keys, items, opened chests and doors, pressed switches stay,
-  but every enemy respawns. Flasks don't refill (only Odo fills them, for gems). Shortcuts
-  matter because of it. Rooms stay cleared (their chests stay revealed).
+- Continue starts at the spawn of the area you saved in (a dungeon's entrance inside one), with at least 3 hearts.
+- **The checkpoint rule** (owner's call): dying sends Wren back to the area's start with full hearts; keys, items, opened chests
+  and doors, pressed switches and cleared rooms stay, but every enemy respawns. Flasks don't refill (only Odo fills them, for gems).
 - No map or compass (owner's call): dungeon chests hold keys, items, flasks (`game/flasks.ts`)
   and gems instead. Max hearts grow only from bosses (no heart chests in dungeons). Every interactable thing must serve
   a purpose (the puzzle checker fails a stone that doesn't).
-- A dungeon's small keys are colored (one chest, one door each) and only open that dungeon's doors. Dungeons are never sealed: the
-  entrance is an open doorway you can walk out of any time (owner's call, 2026-11-02; no
-  fight-room shutters either). Progress gates are items and keys, e.g. the glove for the Northpass.
+- A dungeon's small keys are colored (one chest, one door each) and only open that dungeon's doors. Dungeons are never sealed
+  (owner's call, 2026-11-02: an open entrance, no fight-room shutters); progress gates are items and keys.
 - Gamepad A doubles as interact and jump (context action button).
 - **Bells** (the bonfires, owner's design): travel only, never healing (only a bed rests);
   each waits at the end of a platforming trial, where falls cost nothing.
+- **Story through NPC lines, not cutscenes** (owner's call, 2026-11-03, Dark Souls-style): the opening has no words; what
+  happened comes from talking to people, whose lines change with progress. New story cutscenes only with the owner's OK.
 - Enemies and the clock freeze during dialog and cutscenes; the clock also stands still indoors.
 - The Hollow Lamplighter only appears at night (so its fight and theme are always night ones).
-- The valley's songs share one tune (the day theme's motif; night reharmonizes it darker,
-  the village plays it honky-tonk; see [docs/audio.md](docs/audio.md)). Death silences the
-  music and fades to black before the respawn, so it feels like a game over, not a teleport.
+- The valley's songs share one tune (the day theme's motif; see [docs/audio.md](docs/audio.md)). Death silences the music and
+  fades to black before the respawn, so it feels like a game over, not a teleport.
 - **One defensive system: the shield's guard.** No dodge roll, no stamina. Guard recovers
   only with the shield lowered; a guard break stops the hit but staggers Wren for 2 s.
 - Bosses share one move system (windup/active/recover) with fairness rules; weak points

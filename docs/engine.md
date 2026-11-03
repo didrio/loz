@@ -215,7 +215,7 @@ keys held in the current dungeon; the HUD shows both. Add flags to `FLAGS`; **ne
 `village.millKey` (Tobin's gift), `village.stonewardTunic` (bought from Odo),
 `village.marenBell` / `village.tobinBell` (their one line about the Morrowbell, said).
 Saves are versioned JSON (`embervale:save:0`), validated and repaired on load; bump
-`SAVE_VERSION` only with a migration in `decodeSave`. `SAVE_VERSION` is 6 (v6: `bells: { carried, hung }`, older saves load with none. v5: `flasks`, a list with one potion id or null per flask owned, replaces `drinks`; v3/v4 drinks load as a flask per kind found, full if any was left. v4: a dungeon's `keys` is a list of colors, not a count; a v3 count loads
+`SAVE_VERSION` only with a migration in `decodeSave`. `SAVE_VERSION` is 7 (v7: Wren starts without the shield (`hasShield`); an older save that met Maren or has the sword gets it. v6: `bells: { carried, hung }`, older saves load with none. v5: `flasks`, a list with one potion id or null per flask owned, replaces `drinks`; v3/v4 drinks load as a flask per kind found, full if any was left. v4: a dungeon's `keys` is a list of colors, not a count; a v3 count loads
 as none and the shrine's `restore` re-derives held keys from opened key chests whose door is still shut): v1 saves (which
 held flute songs) load with the songs dropped and 0 keys; v1/v2 load in the overworld with
 no items or dungeon progress. Saved: flags, keys, area, items, dungeons, flasks, bells, gems, hearts, clock. Not saved: position (continue starts at the saved area's spawn, e.g. a dungeon's

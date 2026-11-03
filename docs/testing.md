@@ -44,7 +44,7 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 
 | Scenario | Starts from | Covers |
 |---|---|---|
-| `full` | new game | title, intro, walking, collisions, bridge, bounds, locked chest, Maren's key, the sword, the sealed door, the Lamplighter fight and its heart vessel, the door opening, night + save/Continue, entering the shrine (no seal) |
+| `full` | new game | title, a wordless start and the crossroads sign, walking, collisions, bridge, bounds, locked chest, the shield in the ruined cottage (guard, the scream), Maren's key, the sword, the sealed door, the Lamplighter fight and its heart vessel, the door opening, night + save/Continue, entering the shrine (no seal) |
 | `combat` | `field-sword` | the shield's guard and guard break, lock-on and the sword vs a thornling |
 | `shrine-puzzle` | `shrine-entry` | pushing stones, plates, the crystal switch, the solved puzzle surviving Continue |
 | `shrine-keys` | `shrine-entry` | a room clearing, the amber key chest, the Cistern door, the HUD key, dying (the checkpoint rule: beaten challenge rooms stay empty), Continue inside |

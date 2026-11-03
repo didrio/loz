@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { Physics } from '../../core/physics';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
-import { BossArena, BushField, Chest, GreatLantern, HeartVessel, Npc, StoneDoor } from '../objects';
+import { BossArena, BushField, Chest, GreatLantern, HeartVessel, Npc, ShieldPickup, StoneDoor } from '../objects';
 import { buildCamp, CANYON_COURSE, WAYBELL_PICKUP } from './camp';
 import { Gate } from './gate';
 import { buildGorge, GORGE_BELL, GORGE_COURSE, gorgeAt } from './gorge';
@@ -13,6 +13,7 @@ import { areaNameAt, BUDS, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, 
 import { NORTHPASS } from './northpass';
 import { RegionStreamer } from './region';
 import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
+import { buildRuins } from './ruins';
 import { buildBounds, buildTerrain, buildWater } from './terrain';
 import { buildVillage } from './village';
 
@@ -57,6 +58,8 @@ export class Overworld implements Area {
   readonly npcs: { maren: Npc; tobin: Npc; odo: Npc; lark: Npc };
   readonly chest: Chest;
   readonly door: StoneDoor;
+  /** The shield in the ruined cottage north of Thistledown (Wren starts without it). */
+  readonly shield: ShieldPickup;
   /** The magic gate at the Northpass (shut until the Keepers' seal is broken). */
   readonly gate: Gate;
   /** The great lantern atop the shrine (lights up as embers return). */
@@ -106,6 +109,7 @@ export class Overworld implements Area {
     this.wayPost = camp.post;
     this.wayBell = camp.bell;
     this.canyonCrossing = camp.course;
+    this.shield = buildRuins(b).shield;
     this.bushes = new BushField(b, [...bushSpots(b), ...hollow.bushes]);
     this.buds = new Map(BUDS.map(({ id, x, z }) => [id, new MurmurbudLook(b, id, x, terrainHeight(x, z), z)]));
     for (const s of SIGNS) buildSign(b, s.x, s.z);
@@ -149,6 +153,7 @@ export class Overworld implements Area {
       { id: 'npc.lark', x: this.npcs.lark.x, z: this.npcs.lark.z, r: 2.2, label: 'Talk', promptY: above(this.npcs.lark.x, this.npcs.lark.z, 1.9), enabled: always },
       { id: 'npc.odo', x: STALL.x + 1.2, z: STALL.z, r: 2.4, label: 'Talk', promptY: above(STALL.x, STALL.z, 2.7), enabled: always },
       { id: 'door.mill', x: MILL.x + 3.3, z: MILL.z, r: 1.7, label: 'Enter', promptY: above(MILL.x + 2.6, MILL.z, 2.2), enabled: always },
+      { id: 'pickup.shield', x: this.shield.x, z: this.shield.z, r: 2.2, label: 'Take', promptY: this.shield.y + 1.6, enabled: () => this.shield.present },
       { id: 'chest.grove', x: GROVE.x, z: GROVE.z, r: 2.4, label: 'Open', promptY: above(GROVE.x, GROVE.z, 1.9), enabled: () => !this.chest.opened },
       {
         id: 'door.shrine', x: SHRINE_DOOR.x - 1.2, z: SHRINE_DOOR.z, r: 3, promptY: above(SHRINE_DOOR.x, SHRINE_DOOR.z, 3.4),
@@ -239,6 +244,7 @@ export class Overworld implements Area {
     this.gate.update(dt);
     this.hollow.update(dt);
     this.vessel.update(dt);
+    this.shield.update(dt);
     this.morrowPost.update(dt);
     this.morrowBell.update(dt);
     this.wayPost.update(dt);

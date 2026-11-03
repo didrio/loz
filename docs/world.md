@@ -61,18 +61,71 @@ struggle to reach them, at the end of climbs. Later bells take other hours. Deta
 
 ## Story
 
-- The lantern atop the shrine went dark; thornlings appeared in the field. The pedestal
-  reads: "While the lantern burns, the sleeping stone shall wake. Rekindle the lantern, and
-  the night shall break." The flame didn't go out: it was *taken*.
-- **The main quest frame: each major boss holds an ember of the stolen flame; returning
-  embers relights the great lantern** (it glows brighter with each;
-  `GreatLantern.setEmbers`).
+**Being revamped** (owner's direction, 2026-11-03; the build is roadmap item 0.7, sessions S1–S5).
+Gameplay stays as it is. The story becomes stranger and more personal. The owner is holding back
+later reveals, so **don't explain why he was exiled or how he became stone**, and don't invent more
+of his backstory without asking. Lines marked *(fill-in)* are Claude's proposals and the owner may
+change them.
+
+- **The exile.** Years ago Thistledown sent one of its own away over the Northpass. Why is unsaid.
+  Nobody speaks his name (Lark: "if you say it, he hears"), and **the game never names him**.
+  The world past the mountains had become worse than anyone in the valley knew.
+- **His return** *(fill-in: "some weeks ago")*. The night he came back, the lantern on the shrine
+  went dark (he took its flame, and old Corwin the lamplighter carried it south and became the
+  Hollow Lamplighter), a gate of floating stone sealed the Northpass, and **the blight** settled
+  over Emberfield: violet-black air and sky, thornlings, wisps, homes in ruins. Odo, a traveling
+  peddler, was passing through and is shut in with the village.
+- **The village** is afraid and paranoid. Nobody leaves the fence. Wren is one of them: everyone
+  but Odo knows Wren well, and the exact relationships stay vague (even Lark's).
+- **He waits in the shrine** and writes to Wren in floating magic symbols (code name **sigils**):
+  one in the hollow once the Lamplighter falls ("come and see me"), and three in the shrine's
+  fight rooms that tell his grievance in his own words. Once Wren has read one, the villagers
+  react, reluctantly. Tobin admits he was one of theirs.
+- **Gravelheart is him.** The player expects a man or a wizard and finds a stone giant. What
+  happened to him in there is the owner's later reveal. Epithet *(fill-in)*: "Who Came Home"
+  (it was "the Sleepless Warden"; the keepers' warden lore is dropped).
+- **The prism.** His ward is held by a prism floating in beams of light in the room past his
+  hearth. Wren shatters it with the sword: the gate falls and **the blight lifts** (owner's call:
+  at the prism, not at the boss). The valley returns to today's look and music, with no gloomwisps
+  and only a few stray thornlings. Villagers are relieved, and confused that he was stone.
+- **Kept from before**: the pedestal ("While the lantern burns, the sleeping stone shall wake.
+  Rekindle the lantern, and the night shall break."), the keepers, their bells and Murmurbuds,
+  and the quest frame: **each major boss holds an ember of the stolen flame, and returning embers
+  relights the great lantern** (`GreatLantern.setEmbers`).
+- **Storytelling style** (owner): clear to a player who's paying attention, never hand-holding.
+  Told through what people won't say, what's written in the air and what the valley looks like.
+
+### The sigils (text drafts)
+
+| Where | Appears | Text |
+|---|---|---|
+| Gloaming Hollow | the Lamplighter falls | *If you've laid old Corwin down, come and see me. I'm in the shrine.* |
+| Sentinel Cell (floor 0) | room cleared | *They sent me over the pass with nothing. Nobody cared if I came back.* |
+| Crypt (floor −1) | room cleared | *None of them knew what the world past the mountains had become, or what it did to me. They could have wondered.* |
+| The Gauntlet (floor −2) | room cleared | *THIS IS MY HOME.* |
+
+### The opening (S1, built 2026-11-03)
+
+**No cutscenes for story** (owner's call, 2026-11-03): like Dark Souls, the story comes from talking
+to people. New cutscenes need the owner's say-so; quick lines are fine.
+
+A new game starts without a word: Wren stands in the field with no sword and no shield, and the
+crossroads sign points one way, "← Thistledown Village". Until the scare, the villagers' own lines
+carry the opening: Maren scolds Wren for being out past the fence and gives nothing, Tobin is dry
+("Bold. Daft, but bold."), Odo meets Wren for the first time, and Lark whispers about a shield in the
+roofless cottage past the **north fence**. The shield lies in the ruined cottage north of the village
+(`RUINS` in layout.ts; hidden behind the houses from the road in, in plain view through the north gap on
+the way out; a glint on its boss); it can be taken any time. Taking it teaches the guard, then the
+scare (`village.scare`): a scream and a dropped bucket (`sfx.scream()`), one line ("Ahh!!!", from the
+village), and straight back to play. Afterwards the talk turns to it: Maren, shaken, gives the key
+("I threw the bucket at it"); Tobin saw it "tall, or wide, or both"; Lark brags she was right.
 
 ## The quest thread so far
 
 Each step points at the next, loosely guided:
 
-intro ("go see Maren") → the grove chest is padlocked ("someone in Thistledown might have
+a wordless start (the sign points home) → the villagers scold, Lark's tip → the shield and the scream →
+the grove chest is padlocked ("someone in Thistledown might have
 the key") → Maren gives the **Small Key** (flag `gotGroveKey`, keys +1) → the key opens the
 chest: the sword, and "head back to Thistledown" → armed, Maren and Tobin say the shrine
 door won't budge and the flame was carried south to the **Gloaming Hollow**; the door
@@ -85,7 +138,7 @@ in.
 
 ## Characters
 
-- **Wren** (hero): rust-orange coat, teal scarf, dark hair, round wooden shield; finds the
+- **Wren** (hero): rust-orange coat, teal scarf, dark hair; finds the round wooden shield in a ruined cottage and the
   **Wayfarer's Blade** in the grove.
 - **Maren**: older villager in purple by the well (warm and worried; her advice changes at night); her father locked his blade in the
   grove chest and she gives Wren the key.
@@ -93,7 +146,7 @@ in.
   Wren is armed he gives the **Mill Key** (`village.millKey`); the windmill's door (west side of
   the square) opens onto his mill, where the bed sleeps to the next 06:00/18:00 and fully
   heals.
-- **Lark**: a small kid by the well (breathless, conspiratorial). Secretly rides Tobin's flour tray down
+- **Lark**: a small kid by the well (breathless, conspiratorial). Points Wren at the shield in the ruined cottage. Secretly rides Tobin's flour tray down
   the bank behind the mill and talks Wren into riding her shield (`village.surfIdea`, then the how-to line;
   see shield surfing in [combat.md](combat.md)). After her first ride (`village.surfTried`) Lark brags about
   seeing it, by day or night.

@@ -4,6 +4,7 @@ import { GameState } from '../game/state';
 import { Overworld } from '../world/overworld';
 import { fakeApi } from './fakeApi';
 import { overworldContent } from './overworld';
+import { intro } from './story';
 
 beforeAll(async () => {
   await initPhysics();
@@ -56,6 +57,9 @@ describe('overworld content', () => {
     expect(state.has('hasSword')).toBe(false);
     expect(text()).toContain('Thistledown');
 
+    // The opening: the shield first, which sets off the scare; then Maren gives the key.
+    await scripts['pickup.shield'](api);
+    expect(state.has('village.scare')).toBe(true);
     await scripts['npc.maren'](api);
     expect(state.has('metMaren')).toBe(true);
     expect(state.keys).toBe(1);
@@ -77,6 +81,87 @@ describe('overworld content', () => {
     await scripts['door.shrine'](api);
     expect(area.door.opening).toBe(false);
     expect(state.has('shrineOpen')).toBe(false);
+    area.dispose();
+  });
+
+  it('a new game opens without words', async () => {
+    const area = new Overworld(physics);
+    const { api, said } = fakeApi(area, physics);
+    const shots: unknown[] = [];
+    api.shot = (...a) => void shots.push(a);
+    await intro(api);
+    expect(said).toHaveLength(0);
+    expect(shots).toHaveLength(0);
+    area.dispose();
+  });
+
+  it('the opening is told by talking: scolding, Lark\'s tip, the shield and a quick scream, then Maren\'s key', async () => {
+    const area = new Overworld(physics);
+    const { api, state, said } = fakeApi(area, physics);
+    const { scripts, restore } = overworldContent(area);
+    const talk = async (id: string) => {
+      said.length = 0;
+      await scripts[id](api);
+      return said.map((p) => `${p.who ?? ''}: ${p.text}`).join(' ');
+    };
+    const shots: unknown[] = [];
+    api.shot = (...a) => void shots.push(a);
+    restore(state);
+    expect(area.shield.present).toBe(true);
+
+    // Before the scare: everyone has something to say about Wren being out, and nobody hands over anything.
+    expect(await talk('npc.maren')).toMatch(/past the fence/);
+    expect(state.keys).toBe(0);
+    expect(state.has('gotGroveKey')).toBe(false);
+    expect(await talk('npc.tobin')).toMatch(/Daft, but bold/);
+    expect(await talk('npc.lark')).toMatch(/north fence/);
+    expect(await talk('npc.odo')).toMatch(/So this is Wren/);
+
+    // The shield: guard taught, then a scream and one line, with no camera work.
+    const screams: number[] = [];
+    (api as { sfx: unknown }).sfx = new Proxy({}, { get: (_, k) => (k === 'scream' ? () => void screams.push(1) : () => {}) });
+    const pickup = await talk('pickup.shield');
+    expect(state.has('hasShield')).toBe(true);
+    expect(area.shield.present).toBe(false);
+    expect(pickup).toContain('*guard*');
+    expect(pickup).toContain('Ahh!!!');
+    expect(state.has('village.scare')).toBe(true);
+    expect(screams).toHaveLength(1);
+    expect(shots).toHaveLength(0);
+
+    // Afterwards the talk turns to what came over the fence; shaken, Maren hands over the key.
+    expect(await talk('npc.tobin')).toMatch(/Tall, or wide/);
+    expect(await talk('npc.lark')).toMatch(/Told you it was real/);
+    expect(await talk('npc.maren')).toContain('bucket');
+    expect(state.keys).toBe(1);
+    expect(state.has('gotGroveKey')).toBe(true);
+    // A reload keeps the shield taken.
+    const again = new Overworld(physics);
+    overworldContent(again).restore(state);
+    expect(again.shield.present).toBe(false);
+    again.dispose();
+    area.dispose();
+  });
+
+  it('Odo greets Wren as a stranger only before the scare', async () => {
+    const area = new Overworld(physics);
+    const first = async (setup: (st: GameState) => void) => {
+      const st = new GameState();
+      setup(st);
+      const { api, said } = fakeApi(area, physics, st);
+      await overworldContent(area).scripts['npc.odo'](api);
+      return said[0]?.text ?? '';
+    };
+    expect(await first(() => {})).toMatch(/So this is Wren/);
+    expect(await first((st) => st.set('village.scare'))).not.toMatch(/So this is Wren/);
+    area.dispose();
+  });
+
+  it('the crossroads sign points one way: home', async () => {
+    const area = new Overworld(physics);
+    const { api, said } = fakeApi(area, physics);
+    await overworldContent(area).scripts['sign.crossroads'](api);
+    expect(said[0].text).toBe('← Thistledown Village');
     area.dispose();
   });
 

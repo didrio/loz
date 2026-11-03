@@ -242,6 +242,7 @@ export class Game implements ScriptApi {
   private begin(newGame: boolean) {
     this.hud.hideTitle();
     this.player.setSword(this.state.has('hasSword'));
+    this.player.setShield(this.state.has('hasShield'));
     this.player.setStoneward(this.state.has('village.stonewardTunic'));
     this.placeAtSpawn();
     this.areaName = this.area.nameAt(this.player.pos.x, this.player.pos.z);
@@ -565,6 +566,11 @@ export class Game implements ScriptApi {
     this.player.setSword(true);
   }
 
+  giveShield() {
+    this.state.set('hasShield');
+    this.player.setShield(true);
+  }
+
   /** Dev menu: jumps to a ready-made point in the game, replacing the current save. */
   loadDevState(s: DevState) {
     this.hiddenIn = null;
@@ -575,6 +581,7 @@ export class Game implements ScriptApi {
     this.player.invuln = 0; // no respawn blink: a state should look like a clean cut
     this.player.attackBoost = 0;
     this.player.setSword(this.state.has('hasSword'));
+    this.player.setShield(this.state.has('hasShield'));
     this.player.setStoneward(this.state.has('village.stonewardTunic'));
     if (s.at) {
       const y = s.at.y ?? this.physics.groundY(s.at.x, s.at.z) ?? 0;

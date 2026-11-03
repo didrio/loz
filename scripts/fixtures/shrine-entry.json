@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "flags": ["metMaren", "gotGroveKey", "groveChestOpened", "hasSword", "lamplighterDefeated", "hollowVessel", "shrineOpen"],
+  "version": 7,
+  "flags": ["metMaren", "hasShield", "village.scare", "gotGroveKey", "groveChestOpened", "hasSword", "lamplighterDefeated", "hollowVessel", "shrineOpen"],
   "keys": 0,
   "area": "shrine",
   "items": [],
