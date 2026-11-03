@@ -27,6 +27,10 @@ function setup() {
     }
   };
   const settle = () => step(0.5);
+  const frame = (move: THREE.Vector3, jump: boolean) => {
+    p.update(1 / 60, { ...NO_CONTROLS, move, jump }, env);
+    physics.step(1 / 60);
+  };
   /** Runs forward (+z) for `seconds`, optionally pressing jump on the first frame; returns the distance covered. */
   const run = (seconds: number, jump = false) => {
     const z = p.pos.z;
@@ -36,7 +40,7 @@ function setup() {
     }
     return p.pos.z - z;
   };
-  return { p, health, env, settle, step, run };
+  return { p, health, env, settle, step, run, frame };
 }
 
 const front = new THREE.Vector3(0, 0, 3);
@@ -144,6 +148,51 @@ describe('Player.receiveHit', () => {
     expect(p.shielding).toBe(true);
     expect(p.receiveHit(front, LIGHT)).toBe('blocked');
     expect(health.hp).toBe(6);
+  });
+
+  it('coyote time: a jump just after running off a ledge works, a late one does not', () => {
+    for (const [late, jumps] of [[4, true], [12, false]] as const) {
+      const { p, frame, settle } = setup();
+      p.teleport(0, 0, 29.5, 0);
+      settle();
+      let off = -1, rose = false;
+      for (let f = 0; f < 40; f++) {
+        if (off < 0 && !p.grounded) off = f;
+        const y = p.pos.y;
+        frame(new THREE.Vector3(0, 0, 1), off >= 0 && f === off + late);
+        if (f === off + late) rose = p.pos.y > y;
+      }
+      expect(off).toBeGreaterThan(0);
+      expect(rose).toBe(jumps);
+    }
+  });
+
+  it('coyote time does not give a second jump in the air', () => {
+    const { p, step, frame } = setup();
+    step(0.5);
+    frame(NO_CONTROLS.move, true);
+    for (let i = 0; i < 30; i++) frame(NO_CONTROLS.move, false); // past the apex, falling
+    const before = p.pos.y;
+    frame(NO_CONTROLS.move, true);
+    frame(NO_CONTROLS.move, false);
+    expect(p.pos.y).toBeLessThan(before); // a second jump would have launched upward again
+  });
+
+  it('jump buffer: a press just before landing jumps on landing', () => {
+    const { p, step, frame } = setup();
+    step(0.5);
+    frame(NO_CONTROLS.move, true);
+    let pressed = false, y2 = 0;
+    for (let f = 0; f < 120; f++) {
+      const falling = f > 20 && !pressed && p.pos.y < 0.6 && !p.grounded;
+      frame(NO_CONTROLS.move, falling);
+      if (falling) pressed = true;
+      if (pressed && p.grounded) break;
+    }
+    expect(pressed).toBe(true);
+    for (let i = 0; i < 6; i++) frame(NO_CONTROLS.move, false);
+    y2 = p.pos.y;
+    expect(y2).toBeGreaterThan(0.1); // airborne again instead of standing
   });
 
   it('an Ember Tonic doubles the sword\'s damage while it lasts', () => {
@@ -256,6 +305,62 @@ describe('Player dev sprint', () => {
     b.p.devSpeed = 5;
     const fast = b.run(0.5);
     expect(fast / normal).toBeGreaterThan(4);
+  });
+});
+
+describe('Player on a moving platform', () => {
+  /** Wren stands on a kinematic slab (top at y = 1) that `path(t)` moves each frame; returns per-frame stats. */
+  function ride(path: (t: number) => THREE.Vector3, seconds: number, startX = 0) {
+    const physics = new Physics();
+    physics.box(0, -0.5, 0, 30, 0.5, 30);
+    const k = physics.kinematicBox(startX, 0.75, 0, 2, 0.25, 2);
+    physics.refreshQueries();
+    const p = new Player(new THREE.Scene(), physics, { hp: 6, maxHp: 6 });
+    p.teleport(startX, 1, 0, 0);
+    const env = {
+      area: { waterLevel: null, cut: () => [] } as unknown as Area,
+      lockTarget: null, enemies: [], hasSword: true,
+      onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
+    } satisfies PlayerEnv;
+    const frame = (t: number) => {
+      const to = path(t);
+      k.moveTo(to.x, 0.75 + to.y, to.z);
+      p.update(1 / 60, NO_CONTROLS, env);
+      physics.step(1 / 60);
+    };
+    for (let i = 0; i < 30; i++) frame(0); // settle
+    const ys: number[] = [];
+    const grounded: boolean[] = [];
+    for (let i = 1; i <= seconds * 60; i++) {
+      frame(i / 60);
+      ys.push(p.pos.y - k.pos.y);
+      grounded.push(p.grounded);
+    }
+    return { p, k, ys, grounded, frame };
+  }
+
+  it('rides a horizontal mover, grounded every frame and without bobbing', () => {
+    const { p, k, ys, grounded } = ride((t) => new THREE.Vector3(2 * t, 0, 0), 3);
+    expect(grounded.every(Boolean)).toBe(true);
+    expect(Math.abs(p.pos.x - k.pos.x)).toBeLessThan(0.1);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(0.01);
+  });
+
+  it('rides a platform rising and falling', () => {
+    const { p, k, ys, grounded } = ride((t) => new THREE.Vector3(0, 1.5 * (1 - Math.cos(t * 2)), 0), 4);
+    expect(grounded.every(Boolean)).toBe(true);
+    // She stays within a few cm of the top while it rises and falls at up to 3 m/s.
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(0.1);
+    expect(Math.min(...ys)).toBeGreaterThan(0.25 - 0.1);
+    expect(Math.abs(p.pos.x - k.pos.x)).toBeLessThan(0.01);
+  });
+
+  it('does not carry Wren when she stands beside the platform', () => {
+    const r = ride((t) => new THREE.Vector3(-3 * t, 0.5 * Math.sin(t * 3), 0), 0.1);
+    r.p.teleport(10, 0, 0, 0);
+    for (let i = 0; i < 60; i++) r.frame(2 + i / 60);
+    expect(r.p.pos.x).toBeCloseTo(10, 2);
+    expect(r.p.pos.y).toBeCloseTo(0, 1);
   });
 });
 

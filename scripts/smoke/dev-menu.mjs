@@ -31,7 +31,7 @@ export default async function run(t) {
 
   await step('save states: Backspace goes back a menu; Enter loads the boss door state', async () => {
     await press('Backquote');
-    await press('ArrowDown', 2);
+    await press('ArrowDown', 3);
     await press('Enter');
     await press('Backspace');
     check((await menu()).open, 'Backspace from the submenu should return to the dev menu, not close it');
@@ -52,7 +52,7 @@ export default async function run(t) {
 
   await step('the mouse works: click Save states, click the night state', async () => {
     await press('Backquote');
-    await t.page.click('.gmenu-row >> nth=2');
+    await t.page.click('.gmenu-row >> nth=3');
     await t.page.click('.gmenu-row >> nth=1');
     await until(() => window.embervale.area.id === 'overworld', 20000);
     const g = await game(() => ({ hours: window.embervale.state.hours, z: window.embervale.player.pos.z, open: window.embervale.devMenu.isOpen }));

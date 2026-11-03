@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mulberry32 } from '../../core/math';
 import { Layer, type Physics } from '../../core/physics';
 import { disposeTree, mat, mergeStatic } from '../../render/materials';
+import { buildCourse } from '../platforming';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Spot, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
 import { Chest } from '../objects';
@@ -128,6 +129,8 @@ export class DungeonArea implements Area {
   private readonly waterMat = new THREE.MeshLambertMaterial({ color: 0x2f6f74, transparent: true, opacity: 0.75, emissive: 0x0c2a2c });
   private readonly disposer: () => void;
   private t = 0;
+  /** Platform courses of the rooms that have `platforms` (their movers are ticked in `update`). */
+  private readonly courses: { update(t: number): void; dispose(): void }[] = [];
 
   constructor(physics: Physics, readonly def: DungeonDef) {
     this.id = def.id;
@@ -195,6 +198,7 @@ export class DungeonArea implements Area {
         box(p.src.solid, pal.trim, x + 0.15, sy, z + d / 2, 0.3, sideH, d);
         box(p.src.solid, pal.trim, x + w - 0.15, sy, z + d / 2, 0.3, sideH, d);
       }
+      if (r.platforms?.length) this.courses.push(buildCourse(b, { platforms: r.platforms }, { x: r.x, y: fy, z: r.z }, pal.trim));
       // The ceiling, with holes where stairs or drops come up through it from this room.
       const above: Rect[] = [];
       for (const d of def.doors) {
@@ -769,6 +773,16 @@ export class DungeonArea implements Area {
    * Whether feet at `p` are down in a pit: inside a pit's outline and below its floor.
    * (Not "below the nearest floor": halfway up a staircase the nearest floor is the other one.)
    */
+  /** The `trial` room at `p` (any height inside its footprint, down to its pits), if any. */
+  trialRoomAt(p: THREE.Vector3): RoomDef | null {
+    for (const r of this.def.rooms) {
+      if (!r.trial || p.x < r.x || p.x > r.x + r.w || p.z < r.z || p.z > r.z + r.d) continue;
+      const fy = floorY(this.def, r.floor);
+      if (p.y > fy - PIT_DEPTH - 1 && p.y < fy + roomHeight(this.def, r)) return r;
+    }
+    return null;
+  }
+
   inPit(p: THREE.Vector3) {
     for (const r of this.def.rooms) {
       const fy = floorY(this.def, r.floor);
@@ -826,6 +840,7 @@ export class DungeonArea implements Area {
 
   update(dt: number, _env: AreaEnv) {
     this.t += dt;
+    for (const c of this.courses) c.update(this.t);
     for (const d of this.doors.values()) d.update(dt);
     for (const c of this.chests.values()) c.update(dt);
     for (const s of this.switches.values()) s.update(dt);
@@ -838,6 +853,7 @@ export class DungeonArea implements Area {
   }
 
   dispose() {
+    for (const c of this.courses) c.dispose();
     this.disposer();
   }
 }

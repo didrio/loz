@@ -3,6 +3,7 @@ import {
   landmarkRect, lockSwitches, LANDMARK_SIZE, rectContains, rectsOverlap, roomHeight, roomOpenings, roomRect, STAIR_LANDING, stairPlacement, worldPos,
   type DungeonDef, type Rect, type RoomDef, type Vec2,
 } from './format';
+import { HEADROOM } from '../platforming';
 
 /** How much clear floor a doorway needs in front of it, on both sides. */
 const DOOR_APPROACH = 1.5;
@@ -30,6 +31,14 @@ export function validateDungeon(def: DungeonDef): string[] {
     for (const f of r.features ?? []) {
       const [fx, fz, fw, fd] = f.kind === 'pillar' ? [f.x, f.z, 0, 0] : [f.x, f.z, f.w, f.d];
       if (fx < 0 || fz < 0 || fx + fw > r.w || fz + fd > r.d) errors.push(`Room "${r.id}": a ${f.kind} sticks out of the room`);
+    }
+    for (const [i, p] of (r.platforms ?? []).entries()) {
+      const range = p.move ? [p.move.by[0], p.move.by[1], p.move.by[2]] : [0, 0, 0];
+      const x0 = p.x - p.w / 2 + Math.min(0, range[0]), x1 = p.x + p.w / 2 + Math.max(0, range[0]);
+      const z0 = p.z - p.d / 2 + Math.min(0, range[2]), z1 = p.z + p.d / 2 + Math.max(0, range[2]);
+      if (x0 < 0 || z0 < 0 || x1 > r.w || z1 > r.d) errors.push(`Room "${r.id}": platform ${i} (even sliding) sticks out of the room`);
+      const top = p.top + Math.max(0, range[1]);
+      if (top + HEADROOM > roomHeight(def, r)) errors.push(`Room "${r.id}": platform ${i} is too high: less than ${HEADROOM} m of headroom under the ceiling`);
     }
   }
   // Rooms on the same floor may touch (share walls) but not overlap; a room may not reach
@@ -141,7 +150,8 @@ export function validateDungeon(def: DungeonDef): string[] {
     for (const ap of approaches) {
       if (!ap.rooms.includes(r)) continue;
       const marks = def.things.flatMap((t) => (t.kind === 'landmark' && t.room === r.id ? [{ id: `a landmark "${t.id}"`, rect: landmarkRect(r, t.at) }] : []));
-      const blockers = [...all, ...marks, ...(r.features ?? []).filter((f) => f.kind !== 'pit').map((f) => ({
+      const ledges = (r.platforms ?? []).map((p, i) => ({ id: `a platform (${i})`, rect: { x: r.x + p.x - p.w / 2, z: r.z + p.z - p.d / 2, w: p.w, d: p.d } }));
+      const blockers = [...all, ...marks, ...ledges, ...(r.features ?? []).filter((f) => f.kind !== 'pit').map((f) => ({
         id: `a ${f.kind}`,
         rect: f.kind === 'pillar' ? { x: r.x + f.x - (f.r ?? 0.7), z: r.z + f.z - (f.r ?? 0.7), w: (f.r ?? 0.7) * 2, d: (f.r ?? 0.7) * 2 } : { x: r.x + f.x, z: r.z + f.z, w: f.w, d: f.d },
       }))];

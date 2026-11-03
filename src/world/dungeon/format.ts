@@ -17,6 +17,7 @@
 
 import type { MusicMood } from '../../core/tracks';
 import type { BellId } from '../bell';
+import type { PlatformDef } from '../platforming';
 
 export type Vec2 = readonly [x: number, z: number];
 export type Dir = 'n' | 's' | 'e' | 'w';
@@ -58,6 +59,14 @@ export interface RoomDef {
   theme?: RoomTheme;
   /** Shapes inside the room; they don't affect the key/door logic. */
   features?: FeatureDef[];
+  /**
+   * A bell trial room (docs/bells.md): falling into its pits or off its platforms puts Wren
+   * back on the last checkpoint ledge, with no damage (`TRIAL_RULES`), instead of the
+   * heart-costing pit rule.
+   */
+  trial?: boolean;
+  /** Platforming ledges: x/z relative to the room's northwest corner, `top` above its floor. */
+  platforms?: PlatformDef[];
 }
 
 /** Room shapes, relative to the room's northwest corner. */

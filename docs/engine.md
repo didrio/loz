@@ -118,6 +118,9 @@ Units are meters; gravity 30 m/s² (snappier than real). Layers:
 slopes ≤ 50°, auto-steps ≤ 0.45 m, snaps to ground). Positions are **feet** positions. Call
 `move` at most once per physics step. Player: radius 0.4, 1.8 m tall, run 8.5 m/s, jump 11.
 `groundY(x, z)` and `rayDistance(...)` are the queries; gameplay never calls Rapier directly.
+Jump is forgiving: coyote time and a jump buffer (0.12 s each). Moving platforms are
+`kinematicBox` bodies; a grounded Wren is carried by the mover's per-frame delta (`carryDelta`),
+so the frame order is platform `moveTo` → player → `physics.step`. See [bells.md](bells.md).
 
 **The follow camera's collision** is one rule, indoors and out (the Souls/Zelda approach,
 chosen by the owner 2026-11-02 after a see-through-wall experiment fought with it): a

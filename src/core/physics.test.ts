@@ -115,3 +115,26 @@ describe('Physics queries', () => {
     expect(p.rayDistance(from, new THREE.Vector3(0, 0, 1), 20)).toBe(20);
   });
 });
+
+describe('Physics.kinematicBox', () => {
+  it('moveTo shows up in queries after a step and gives a rider this frame\'s delta', () => {
+    const p = setup();
+    const k = p.kinematicBox(0, 1, 0, 1, 0.25, 1);
+    p.refreshQueries();
+    expect(p.groundY(0, 0, 10, Layer.Prop)).toBeCloseTo(1.25, 3);
+    k.moveTo(0, 1.05, 0);
+    expect(p.carryDelta(new THREE.Vector3(0, 1.3, 0))?.y).toBeCloseTo(0.05, 5); // however often asked
+    expect(p.carryDelta(new THREE.Vector3(0, 1.3, 0))?.y).toBeCloseTo(0.05, 5);
+    p.step(1 / 60);
+    expect(k.pos.y).toBeCloseTo(1.05, 5);
+    expect(p.groundY(0, 0, 10, Layer.Prop)).toBeCloseTo(1.3, 3);
+    expect(p.carryDelta(new THREE.Vector3(0, 1.3, 0))?.y).toBe(0); // standing on a platform that didn't move
+    expect(p.carryDelta(new THREE.Vector3(5, 0, 5))).toBeNull();
+    k.moveTo(0, 5, 0);
+    p.step(1 / 60);
+    expect(p.groundY(0, 0, 10, Layer.Prop)).toBeCloseTo(5.25, 3);
+    k.remove();
+    p.step(1 / 60);
+    expect(p.groundY(0, 0, 10, Layer.Prop)).toBeNull();
+  });
+});

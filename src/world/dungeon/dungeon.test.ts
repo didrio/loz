@@ -87,6 +87,24 @@ describe('landmark statues', () => {
   });
 });
 
+describe('trial room platforms', () => {
+  const withPlatforms = (platforms: NonNullable<DungeonDef['rooms'][number]['platforms']>): DungeonDef => ({
+    id: 't', name: 't', goal: 'b', entrance: { room: 'a', at: [3, 12], facing: 'n' },
+    rooms: [{ id: 'a', floor: 0, x: 0, z: 0, w: 14, d: 14, trial: true, height: 8, platforms }, { id: 'b', floor: 0, x: 14, z: 0, w: 14, d: 14 }],
+    doors: [{ id: 'ab', from: 'a', to: 'b' }],
+    things: [],
+  });
+  it('accepts ledges inside the room, clear of the doorway', () => {
+    expect(validateDungeon(withPlatforms([{ x: 4, z: 4, w: 2, d: 2, top: 2 }]))).toEqual([]);
+  });
+  it('fails a ledge sticking out (even when it slides), one too high for the ceiling, or one in front of a door', () => {
+    expect(validateDungeon(withPlatforms([{ x: 1, z: 4, w: 4, d: 2, top: 2 }])).join('\n')).toContain('sticks out');
+    expect(validateDungeon(withPlatforms([{ x: 10, z: 4, w: 2, d: 2, top: 2, move: { by: [4, 0, 0], period: 4, phase: 0 } }])).join('\n')).toContain('sticks out');
+    expect(validateDungeon(withPlatforms([{ x: 4, z: 4, w: 2, d: 2, top: 6.5 }])).join('\n')).toContain('headroom');
+    expect(validateDungeon(withPlatforms([{ x: 12, z: 7, w: 2, d: 2, top: 1 }])).join('\n')).toContain('opens straight into a platform');
+  });
+});
+
 describe('bell posts and bells', () => {
   const one = (things: DungeonDef['things']): DungeonDef => ({
     id: 'b', name: 'b', goal: 'a', entrance: { room: 'a', at: [3, 8], facing: 'n' },

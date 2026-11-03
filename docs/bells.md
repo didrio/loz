@@ -1,8 +1,9 @@
 # The keepers' bells: bell posts, fast travel, bell trials
 
-Status: posts, hanging, ringing and the travel menu work; the bells can only be had from the
-dev menu's "Bells:" states until their trials exist. Next: **milestone 2** (the platforming
-base), then **3** (the two trials), before the shrine's boss ([shrine.md](shrine.md)).
+Status: posts, hanging, ringing and the travel menu work (milestone 1); the platforming base
+works (milestone 2, below). The bells can only be had from the dev menu's "Bells:" states until
+their trials exist. Next: **milestone 3** (the two trials), before the shrine's boss
+([shrine.md](shrine.md)).
 Design approved by the owner (2026-11-02).
 
 ## What it is
@@ -90,28 +91,28 @@ leads back to the entry, and hanging it there wakes the network.
 ## Milestones
 
 1. ~~Bells and fast travel~~ done (dev states "Bells: ...", smoke and look scene `bells`).
-2. **Platforming base** (`builder` for two parallel parts; `architect` only if stuck):
-   - Jump feel: coyote time (~0.12 s after leaving a ledge) and a jump buffer (~0.12 s) in
-     `game/player.ts`, unit-tested; a blob shadow under Wren, indoors and out (reuse
-     `GroundShadow` in `render/shapes.ts`). Touches the player, a shared system: the **full
-     smoke suite, asking the owner first**.
-   - Courses: `world/platforming.ts`: `PlatformDef` (box: x, z, w, d, top, look,
-     `checkpoint?`, `move?: { by: [dx, dy, dz], period, phase }`), `CourseDef` (platforms,
-     start, goal, `fallY`). Pure `jumpReach(rise)` from the player's constants (jump 11 m/s,
-     gravity 30, run 8.5, capsule radius 0.4) with a safety margin; `checkCourse` proves
-     start → every checkpoint → goal reachable (moving platforms sampled along their path)
-     and reports the hardest jump. Runs in `npm run check` for every course.
-     `buildCourse(b, course, origin, look)`: static boxes merged, movers kinematic.
-   - Moving platforms: a kinematic collider in `core/physics.ts` (position-based kinematic
-     body, `moveTo`), position as a pure function of time (tested), and **carrying**: when
-     Wren stands on a mover, its frame delta is added before Wren's own move. Platforms on
-     the Prop layer (the camera passes through). If Wren jitters or slides off after one fix
-     attempt, hand the repro to `architect`.
-   - Trial falls: a `TrialFalls` helper (last checkpoint touched; below `fallY`, or in a trial
-     room's pit → fade, back to that checkpoint, no damage), tested, used by the overworld and
-     shrine content. Dungeon rooms take `trial: true` (their pits use this rule, not the
-     heart-costing one) and `platforms: PlatformDef[]` (validator: inside the room, clear of
-     door approaches, headroom ≥ 2.2 m).
+2. ~~Platforming base~~ done 2026-11-03:
+   - Jump feel (`game/player.ts`): `COYOTE_TIME` and `JUMP_BUFFER` (0.12 s each), tested. A blob
+     shadow (`GroundShadow`, 0.4 m) under Wren, indoors and out; she casts no sun shadow (owner's call, 2026-11-03; maybe temporary).
+   - `world/platforming.ts`: `PlatformDef` (x, z = centre; w, d, top, thickness, look,
+     `checkpoint?`, `move?: { by, period, phase }`), `CourseDef`, `platformPosition(def, t)`
+     (cosine ease), `jumpReach(rise)` (85% margin; 5.3 m at rise 0, 4.5 m at +1, 6.4 m at -2;
+     `MAX_RISE` 1.71 m), `checkCourse` (start → checkpoints → goal; for a mover a hop counts if
+     its best sampled pose is in reach, i.e. Wren waits for it; also headroom ≥ 2.2 m), the
+     `COURSES` registry (each checked in `npm run check`) and `buildCourse(b, course, origin)`
+     (static boxes merged, movers kinematic; `update(t)`, `dispose()`). Its jump constants
+     mirror `player.ts` by hand.
+   - Moving platforms (`core/physics.ts`): `kinematicBox(...)` → `KinematicBody` (`moveTo`,
+     `remove`), `carryDelta(feet)`. `Player.update` adds the mover's delta when grounded. Order
+     matters: platforms `moveTo`, then the player, then `physics.step` (as `updateWorld` does).
+     Move movers by their per-frame path, never teleport them far in one frame.
+   - Falls (`game/trialFalls.ts`): `TrialFalls(checkpoints, fallY, start)`: remembers the last
+     checkpoint ledge stood on, `check` per frame, `recover(api)` fades and returns. **The fall
+     damage switch is `TRIAL_RULES.fallDamage` (0 now; the dev menu has "Trial falls cost a
+     heart")**. Dungeon rooms take `trial: true` and `platforms` (x/z from the room's NW corner,
+     `top` above its floor; validator: inside the room even when sliding, clear of door
+     approaches, 2.2 m under the ceiling); `shrineContent` applies the trial rule in trial
+     rooms. The overworld gorge will use `TrialFalls` directly.
 3. **The two trials** (main session; `looker` every pass):
    - **The Hushing Gorge** (overworld, `world/overworld/gorge.ts`): built after the seeded
      scenery with its own RNG (do the per-region seeds item from the roadmap here, without

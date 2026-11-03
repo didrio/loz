@@ -17,8 +17,8 @@ Next, in order:
 0. ~~The owner's playtest tweaks A–G (2026-11-02)~~ done. Untested by play: the gem economy
    (95 in the shrine plus bushes, against the 100-gem tunic and 20 per flask refill).
 0.5. **Bells: bell posts, fast travel, bell trials** (owner's request, 2026-11-02, before the
-   shrine's boss). Milestone 1 (bells, posts, the travel menu) done 2026-11-03; **next is
-   milestone 2** (platforming base), then 3 (the Hushing Gorge and the Bell Shaft). See
+   shrine's boss). Milestones 1 (bells, posts, the travel menu) and 2 (platforming base) done 2026-11-03; **next is
+   milestone 3** (the Hushing Gorge and the Bell Shaft). See
    [bells.md](bells.md).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **next is milestone 6** (Gravelheart and its theme), then the

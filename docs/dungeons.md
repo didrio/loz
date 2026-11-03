@@ -35,6 +35,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   Rooms on the same floor may share walls but not overlap. A room with enemies counts as
   cleared once they're beaten (chests can `appear` on that). `features`: `pit`, `block` (raised), `pillar`,
   positioned relative to the room.
+  Rooms also take `trial: true` and `platforms: PlatformDef[]` for bell trials (see [bells.md](bells.md)): falls in a trial room return Wren to the last checkpoint ledge (no damage, `TRIAL_RULES`); platforms are relative to the room's NW corner and checked by the validator.
 - **Doors** join two rooms. A normal door needs the rooms to share a wall (one room's edge
   exactly on the other's) long enough for the doorway (default 3 m wide, plus 0.5 m of
   wall at each end); it sits in the middle of the shared wall unless `offset` says

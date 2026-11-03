@@ -2,6 +2,7 @@ import { DEV_STATES, type DevState } from '../content/devStates';
 import type { Game } from './game';
 import type { Menu } from './menu';
 import { MenuDriver } from './menuDriver';
+import { TRIAL_RULES } from './trialFalls';
 
 /**
  * The dev menu (~ or L3): toggles for testing and a list of ready-made save states. Only in
@@ -44,6 +45,7 @@ export class DevMenu {
       rows: [
         { kind: 'toggle', label: 'Dev sprint (x5)', get: () => player.devSpeed !== 1, set: (on) => (player.devSpeed = on ? 5 : 1) },
         { kind: 'toggle', label: 'Invincible', get: () => state.invincible, set: (on) => (state.invincible = on) },
+        { kind: 'toggle', label: 'Trial falls cost a heart', get: () => TRIAL_RULES.fallDamage > 0, set: (on) => (TRIAL_RULES.fallDamage = on ? 1 : 0) },
         { kind: 'submenu', label: 'Save states', menu: () => this.statesMenu() },
       ],
     };

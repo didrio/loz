@@ -34,6 +34,35 @@ export function initPhysics() {
   return ready;
 }
 
+/** A box that moves (a platform). `moveTo` takes effect at the next `Physics.step`. */
+export interface KinematicBody {
+  /** Where it is headed (set by `moveTo`); the collider reaches it on the next step. */
+  readonly pos: THREE.Vector3;
+  moveTo(x: number, y: number, z: number): void;
+  remove(): void;
+}
+
+class Mover implements KinematicBody {
+  readonly pos: THREE.Vector3;
+  /** How far it has moved since the last step (what a rider takes along this frame). */
+  readonly delta = new THREE.Vector3();
+
+  constructor(readonly body: RAPIER.RigidBody, readonly collider: RAPIER.Collider, x: number, y: number, z: number, private readonly owner: Physics) {
+    this.pos = new THREE.Vector3(x, y, z);
+  }
+
+  moveTo(x: number, y: number, z: number) {
+    this.delta.set(x - this.pos.x + this.delta.x, y - this.pos.y + this.delta.y, z - this.pos.z + this.delta.z);
+    this.pos.set(x, y, z);
+    this.body.setTranslation({ x, y, z }, true);
+    this.body.setNextKinematicTranslation({ x, y, z });
+  }
+
+  remove() {
+    this.owner.removeMover(this);
+  }
+}
+
 const quatY = (a: number) => ({ x: 0, y: Math.sin(a / 2), z: 0, w: Math.cos(a / 2) });
 
 /**
@@ -44,6 +73,7 @@ export class Physics {
   readonly world: RAPIER.World;
   private readonly controller: RAPIER.KinematicCharacterController;
   private readonly ray = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 });
+  private readonly movers = new Map<number, Mover>();
 
   constructor() {
     this.world = new RAPIER.World({ x: 0, y: -30, z: 0 });
@@ -103,6 +133,37 @@ export class Physics {
     this.world.removeCollider(collider, false);
   }
 
+  // --- moving platforms ---------------------------------------------------------
+
+  /** A position-based kinematic box on `layer` (Prop by default: the camera passes through). */
+  kinematicBox(x: number, y: number, z: number, hx: number, hy: number, hz: number, layer: number = Layer.Prop): KinematicBody {
+    const body = this.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(x, y, z));
+    const collider = this.world.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz).setCollisionGroups(groups(layer, 0xffff)), body);
+    const m = new Mover(body, collider, x, y, z, this);
+    this.movers.set(collider.handle, m);
+    return m;
+  }
+
+  /** @internal Used by `KinematicBody.remove`. */
+  removeMover(m: Mover) {
+    this.movers.delete(m.collider.handle);
+    this.world.removeRigidBody(m.body);
+  }
+
+  /**
+   * How far the kinematic body standing under `feet` moved in the last step (null if none).
+   * A character adds this to its position before its own move, so it rides along. The delta is
+   * recorded by `step`, so it is the same however many times it is asked within a frame.
+   */
+  carryDelta(feet: THREE.Vector3): THREE.Vector3 | null {
+    if (this.movers.size === 0) return null;
+    this.ray.origin = { x: feet.x, y: feet.y + 0.1, z: feet.z };
+    this.ray.dir = { x: 0, y: -1, z: 0 };
+    const hit = this.world.castRay(this.ray, 0.2, true, undefined, groups(0xffff, SOLID));
+    const m = hit && this.movers.get(hit.collider.handle);
+    return m ? m.delta : null;
+  }
+
   // --- characters ---------------------------------------------------------------
 
   createCharacter(feet: THREE.Vector3, radius: number, halfHeight: number, member: number, filter: number) {
@@ -150,6 +211,7 @@ export class Physics {
   step(dt: number) {
     this.world.timestep = dt;
     this.world.step();
+    for (const m of this.movers.values()) m.delta.set(0, 0, 0);
   }
 
   /**

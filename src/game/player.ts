@@ -3,6 +3,7 @@ import { clamp, damp, easeOut, lerpAngle, mix } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
 import { buildHumanoid, type Humanoid } from '../render/characters';
 import { isSharedMaterial, mat, uniqueMat } from '../render/materials';
+import { GroundShadow } from '../render/shapes';
 import type { Area } from '../world/area';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
 import { ATTACK_BOOST } from './flasks';
@@ -96,6 +97,9 @@ export function swordTarget(boxes: Hurtbox[], pos: THREE.Vector3, forward: THREE
 /** How long a glove throw holds the arm out (and the sword back). */
 export const THROW_TIME = 0.5;
 const GRAVITY = 30;
+/** Jump forgiveness (platforming): a jump still works this long after leaving a ledge, and a press this long before landing still jumps. */
+export const COYOTE_TIME = 0.12;
+export const JUMP_BUFFER = 0.12;
 
 export class Player {
   readonly h: Humanoid;
@@ -108,6 +112,8 @@ export class Player {
   readonly guard = new Guard();
   private readonly body: Character;
   private velY = 0;
+  private coyote = 0;
+  private jumpBuffer = 0;
   private state: State = 'move';
   private t = 0;
   private combo = 0;
@@ -135,12 +141,14 @@ export class Player {
   /** Dev builds and the GitHub Pages test build only (the dev menu; `VITE_DEV_SPRINT`): multiplies run speed to cross the map quickly. Never on in the shipped game. */
   devSpeed = 1;
   private opacity = 1;
+  /** The blob under Wren's feet: how far above the ground she is matters most when platforming. */
+  private readonly shadow: GroundShadow;
   private fadeMats: THREE.Material[] | null = null;
   private readonly coatMat = uniqueMat(COAT);
   /** Wearing the Stoneward Tunic: stone hits do half damage (rounded up). */
   private stoneward = false;
 
-  constructor(scene: THREE.Scene, physics: Physics, private readonly health: Health) {
+  constructor(scene: THREE.Scene, private readonly physics: Physics, private readonly health: Health) {
     this.h = buildHumanoid({ skin: 0xf0c49c, hair: 0x2e2018, coat: COAT, pants: 0x4a4038, boots: 0x5a3a22, accent: 0x2aa198 });
     // The tunic gets its own material, so buying the Stoneward Tunic can recolor it.
     const shared = mat(COAT);
@@ -148,6 +156,7 @@ export class Player {
       if (m instanceof THREE.Mesh && m.material === shared) m.material = this.coatMat;
     });
     scene.add(this.h.root);
+    this.shadow = new GroundShadow(scene, 0.4);
     this.body = physics.createCharacter(this.pos, this.radius, 0.5, Layer.Player, SOLID | Layer.Enemy);
 
     // Sword in the right hand, blade continuing the line of the arm.
@@ -184,6 +193,11 @@ export class Player {
     );
     this.trailPivot.add(this.trail);
     scene.add(this.trailPivot);
+
+    // The blob shadow is Wren's only shadow: the sun's would double it outdoors (and not exist indoors).
+    this.h.root.traverse((m) => {
+      if (m instanceof THREE.Mesh) m.castShadow = false;
+    });
   }
 
   get hp() {
@@ -245,6 +259,8 @@ export class Player {
     this.pos.set(x, y, z);
     this.facing = facing;
     this.velY = 0;
+    this.coyote = 0;
+    this.jumpBuffer = 0;
     this.knock.set(0, 0, 0);
     this.body.teleport(this.pos);
   }
@@ -353,8 +369,14 @@ export class Player {
       else if (this.state === 'attack' && this.t > SWINGS[this.combo].dur * 0.4 && this.combo < 2) this.queued = true;
     }
     let jumped = false;
-    if (canAct && this.state === 'move' && grounded && c.jump && !staggered) {
+    // Coyote time and the jump buffer: a jump a hair late or early still counts. Only a rising
+    // body can't refill the coyote window, so a jump never gives a second one.
+    this.coyote = grounded && this.velY <= 0 ? COYOTE_TIME : Math.max(0, this.coyote - dt);
+    this.jumpBuffer = c.jump ? JUMP_BUFFER : Math.max(0, this.jumpBuffer - dt);
+    if (canAct && this.state === 'move' && this.coyote > 0 && this.jumpBuffer > 0 && !staggered) {
       this.velY = wading ? 8 : 11;
+      this.coyote = 0;
+      this.jumpBuffer = 0;
       jumped = true;
       env.onJump();
     }
@@ -395,11 +417,17 @@ export class Player {
     // Gravity: a small constant push down keeps the controller's ground detection honest.
     if (grounded && !jumped && this.velY <= 0) this.velY = -1;
     else this.velY -= GRAVITY * dt;
+    // Riding a moving platform: take its last step's displacement first (not while airborne).
+    if (grounded) {
+      const carry = this.physics.carryDelta(this.pos);
+      if (carry) this.pos.add(carry);
+    }
     const before = this.pos.y;
     const want = new THREE.Vector3(vel.x * dt, this.velY * dt, vel.z * dt);
     this.body.move(this.pos, want);
     if (this.velY > 0 && this.pos.y - before < want.y * 0.5) this.velY = 0; // bumped a ceiling
     this.speedXZ = Math.hypot(vel.x, vel.z);
+    this.shadow.place(this.pos.x, this.pos.y, this.pos.z, this.physics.groundY(this.pos.x, this.pos.z, this.pos.y + 0.5), this.opacity);
 
     this.animate(dt);
   }

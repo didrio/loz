@@ -5,7 +5,7 @@ import { NO_CONTROLS, Player, type PlayerEnv } from '../../game/player';
 import type { Area } from '../area';
 import { DungeonArea, subtractRects } from './build';
 import { SHRINE } from './defs/shrine';
-import { DROP_SIZE, PIT_DEPTH, stairPlacement } from './format';
+import { DROP_SIZE, PIT_DEPTH, stairPlacement, type DungeonDef } from './format';
 
 beforeAll(async () => {
   await initPhysics();
@@ -239,5 +239,39 @@ describe('the built shrine', () => {
     expect(physics.world.colliders.len()).toBeGreaterThan(100);
     area.dispose();
     expect(physics.world.colliders.len()).toBe(0);
+  });
+});
+
+describe('trial room platforms', () => {
+  const def: DungeonDef = {
+    id: 't', name: 't', goal: 'b', entrance: { room: 'a', at: [3, 12], facing: 'n' },
+    rooms: [
+      { id: 'a', floor: 0, x: 0, z: 0, w: 20, d: 14, trial: true, height: 8, platforms: [
+        { x: 5, z: 4, w: 3, d: 3, top: 1.5 },
+        { x: 12, z: 4, w: 3, d: 3, top: 1.5, move: { by: [0, 2, 0], period: 4, phase: 0 } },
+      ] },
+      { id: 'b', floor: 0, x: 20, z: 0, w: 14, d: 14 },
+    ],
+    doors: [{ id: 'ab', from: 'a', to: 'b' }],
+    things: [],
+  };
+
+  it('builds solid ledges, moves the sliding one, and removes its collider on dispose', () => {
+    const physics = new Physics();
+    const area = new DungeonArea(physics, def);
+    physics.refreshQueries();
+    const top = (x: number, z: number) => physics.groundY(x, z, 7, Layer.World | Layer.Prop);
+    expect(top(5, 4)).toBeCloseTo(1.5, 1);
+    expect(top(12, 4)).toBeCloseTo(1.5, 1); // phase 0: resting
+    for (let i = 0; i < 120; i++) { // 2 s = half a period: fully risen
+      area.update(1 / 60, {} as never);
+      physics.step(1 / 60);
+    }
+    expect(top(12, 4)).toBeCloseTo(3.5, 1);
+    expect(area.trialRoomAt(new THREE.Vector3(5, 0, 5))?.id).toBe('a');
+    expect(area.trialRoomAt(new THREE.Vector3(25, 0, 5))).toBeNull();
+    area.dispose();
+    physics.refreshQueries();
+    expect(top(12, 4)).toBeNull();
   });
 });

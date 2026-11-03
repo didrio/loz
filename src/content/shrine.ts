@@ -3,9 +3,10 @@ import { GroundEnemy, Thornling, type Enemy } from '../game/enemies';
 import { DozingSentinel } from '../game/sentinel';
 import { Shellback } from '../game/shellback';
 import type { Script, ScriptApi } from '../game/script';
+import { TrialFalls } from '../game/trialFalls';
 import type { DungeonProgress, GameState } from '../game/state';
 import type { DungeonArea } from '../world/dungeon/build';
-import { floorY, keyName, lockSwitches, type Condition, type Loot, type Potion } from '../world/dungeon/format';
+import { floorY, keyName, lockSwitches, type Condition, type Loot, type Potion, type RoomDef } from '../world/dungeon/format';
 import { bellContent } from './bells';
 import type { AreaContent } from './overworld';
 
@@ -40,7 +41,17 @@ export function shrineContent(area: DungeonArea): AreaContent {
   const lastSafe = new THREE.Vector3();
   let haveSafe = false;
   let falling = false;
+  /** In a bell trial room: falls return to the last checkpoint ledge instead of costing hearts. */
+  let trial: TrialFalls | null = null;
+  let trialRoom: string | null = null;
   let started = false;
+  /** The fall rule for a trial room: its checkpoint platforms, and everything below its floor is a fall. */
+  const trialFor = (r: RoomDef, start: THREE.Vector3) => {
+    const fy = floorY(def, r.floor);
+    const cps = (r.platforms ?? []).filter((p) => p.checkpoint && !p.move)
+      .map((p) => ({ x: r.x + p.x, z: r.z + p.z, hw: p.w / 2, hd: p.d / 2, top: fy + p.top }));
+    return new TrialFalls(cps, fy - 1, start);
+  };
   const progress = (s: GameState): DungeonProgress => s.dungeon(def.id);
   const plateRooms = new Set(def.things.filter((t) => t.kind === 'switch' && t.style === 'plate').map((t) => t.room));
 
@@ -268,10 +279,24 @@ export function shrineContent(area: DungeonArea): AreaContent {
       const pos = api.player.pos;
       const floorTop = floorY(def, area.floorAt(pos.y));
       // Remember solid ground; fall into a pit and come back to it, a heart lighter.
-      if (api.player.grounded && Math.abs(pos.y - floorTop) < 0.3 && area.roomAt(pos) && !area.nearPit(pos, 0.8)) {
+      const onSafe = api.player.grounded && Math.abs(pos.y - floorTop) < 0.3 && area.roomAt(pos) && !area.nearPit(pos, 0.8);
+      if (onSafe) {
         lastSafe.copy(pos);
         haveSafe = true;
-      } else if (!falling && api.player.grounded && haveSafe && area.inPit(pos)) {
+      }
+      // Bell trial rooms use the trial rule: back on the last checkpoint ledge, free of damage.
+      const tr = area.trialRoomAt(pos);
+      if ((tr?.id ?? null) !== trialRoom) {
+        trialRoom = tr?.id ?? null;
+        trial = tr ? trialFor(tr, haveSafe ? lastSafe : pos) : null;
+      }
+      if (trial) {
+        if (onSafe) trial.checkpoint.copy(pos);
+        if (trial.check(pos, api.player.grounded, area.inPit(pos))) {
+          const t = trial;
+          api.run((a) => t.recover(a));
+        }
+      } else if (!falling && !onSafe && api.player.grounded && haveSafe && area.inPit(pos)) {
         falling = true;
         api.run(async (a) => {
           a.sfx.hurt();
