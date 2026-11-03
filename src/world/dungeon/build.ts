@@ -96,6 +96,10 @@ export interface Spawn {
   leash?: { x: number; z: number; r: number };
 }
 
+/** The exit trigger's circle: its centre's distance outside the doorway, and its radius. */
+export const EXIT_OFFSET = 0.5;
+export const EXIT_RADIUS = 2.2;
+
 export class DungeonArea implements Area {
   readonly id: string;
   readonly root: THREE.Group;
@@ -125,6 +129,8 @@ export class DungeonArea implements Area {
   hearth: WardenHearth | null = null;
   /** Called when a switch is pressed: a crystal struck, or a plate under a stone (content decides what it opens). */
   onSwitch: ((id: string) => void) | null = null;
+  /** A prism took a hit (1-based count, the last one shatters it) at this world position. */
+  onPrismHit: ((hits: number, at: THREE.Vector3) => void) | null = null;
   /**
    * Called when the sword meets a stone (for sounds and effects). On `bounced`, `from` is
    * where the stone is: content knocks Wren back away from it to make room.
@@ -306,7 +312,9 @@ export class DungeonArea implements Area {
     }
     // Walking back out through the open entrance leaves the dungeon (content decides where to).
     const [ix, iz] = DIRS[def.entrance.facing];
-    this.triggers.push({ id: 'exit', x: entrance.x + ix * 0.8, z: entrance.z + iz * 0.8, y: floorY(def, er.floor), r: 1.1, enabled: () => true });
+    // The circle sits just outside the doorway and reaches past both door frames and a few metres into the
+    // void beyond, so hugging a frame or walking out at an angle can't slip by it (spawn is well clear of it).
+    this.triggers.push({ id: 'exit', x: entrance.x - ix * EXIT_OFFSET, z: entrance.z - iz * EXIT_OFFSET, y: floorY(def, er.floor), r: EXIT_RADIUS, enabled: () => true });
 
     // Walls of different floors that lie on the same line at the same heights (a tall room passing the
     // floors above or below) would be two coplanar boxes z-fighting; those segments are built as one
@@ -417,6 +425,8 @@ export class DungeonArea implements Area {
         this.interactables.push({ id: t.id, x, z, y: fy, r: 2.4, label: 'Open', promptY: fy + 1.9, enabled: () => chest.present && !chest.opened });
       } else if (t.kind === 'switch') {
         this.switches.set(t.id, new DungeonSwitch(p.dynamic, t.id, t.style ?? 'crystal', x, fy, z, b));
+        // Beyond the prism, facing away from the door (where the message it reveals is read).
+        if (t.style === 'prism') this.entrances[`${t.id}.beyond`] = { x, z: z - 4, y: fy + 0.05, facing: Math.PI };
       } else if (t.kind === 'stone' && t.role === 'bridge') {
         // Lies along +z from its spot; long enough to reach 1.5 m past the pit's far lip.
         const pit = (r.features ?? []).find((f) => f.kind === 'pit');
@@ -620,9 +630,16 @@ export class DungeonArea implements Area {
    */
   strike(x: number, y: number, z: number, dirX: number, dirZ: number, reach: number) {
     for (const s of this.switches.values()) {
-      if (s.style !== 'crystal' || s.pressed) continue;
+      if ((s.style !== 'crystal' && s.style !== 'prism') || s.pressed) continue;
       const p = s.group.position, dx = p.x - x, dz = p.z - z, d = Math.hypot(dx, dz);
       if (Math.abs(p.y - y) > 2.5 || d > reach + 0.5 || (d > 0.6 && (dx * dirX + dz * dirZ) / d < 0.2)) continue;
+      if (s.prism) {
+        // Several hits: each one is announced, the last one presses the switch.
+        const hits = s.prism.hit();
+        if (!hits) continue;
+        this.onPrismHit?.(hits, s.prism.position);
+        if (!s.prism.shattered) continue;
+      }
       s.setPressed(true);
       this.onSwitch?.(s.id);
     }

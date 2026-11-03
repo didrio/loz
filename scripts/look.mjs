@@ -1062,6 +1062,20 @@ const SCENES = {
     await h.game(([x, y, z]) => { const g = window.embervale; g.player.teleport(x, y, z, Math.PI); }, [door.x, y + 0.05, door.z - 2.5]);
     await shot('seal-room', [door.x - 3, y + 3.2, door.z - 1], [info.s.x + info.s.w / 2, y + 1.2, info.s.z + info.s.d / 2]);
     await shot('seal-room-door', [info.s.x + info.s.w / 2, y + 2.4, info.s.z + 2], [door.x, y + 1.6, door.z + 1]);
+    // The prism after one hit (a beam cut, shards orbiting) and just after the shatter.
+    const pc = await h.game(() => { const p = window.embervale.area.switches.get('sealStone').group.position; return { x: p.x, z: p.z }; });
+    await h.game(() => { window.embervale.area.switches.get('sealStone').prism.hit(); });
+    await h.wait(900);
+    await shot('seal-prism-hit', [pc.x - 5, y + 3.4, pc.z + 8], [pc.x, y + 2.4, pc.z]);
+    await h.game(() => { window.embervale.area.switches.get('sealStone').prism.hit(); });
+    for (let i = 0; i < 2; i++) {
+      await h.wait(700);
+      await h.game(() => { window.embervale.area.switches.get('sealStone').prism.hit(); });
+    }
+    await h.wait(700);
+    await h.game(() => { window.embervale.area.switches.get('sealStone').prism.hit(); });
+    await h.wait(1500);
+    await shot('seal-prism-broken', [pc.x - 5, y + 3.4, pc.z + 8], [pc.x, y + 2.4, pc.z]);
   },
   /** The shrine's enemies: a Dozing Sentinel asleep, winding up and stuck after its swing; a Shellback from front and back, and tucked to charge. */
   async enemies(h) {

@@ -114,13 +114,14 @@ export function wardenContent(area: DungeonArea) {
   };
 
   /**
-   * The seal-stone: the view cuts to the magic gate as its stones fall and the veil comes apart, then
+   * The prism (the `sealStone` switch, shattered by four sword hits): the view cuts to the magic gate as its stones fall and the veil comes apart, then
    * back to the room. `valleyOpen` is set as the ward breaks (the overworld restores the gate open).
    */
   const seal: Script = async (api) => {
     const prog = api.state.dungeon(area.def.id);
+    await api.wait(1.4); // the shards fall and the beams go dark
     api.sfx.solved();
-    await api.say([{ text: 'The stone is warm under your hand. The room falls away, and you see a gate of floating stones, far to the north.' }]);
+    await api.say([{ text: 'The prism is gone, and its light runs out through the walls. The room falls away, and you see a gate of floating stones, far to the north.' }]);
     // The shot is set as the valley loads, before the screen fades in: it is a vision, and Wren isn't standing there.
     await api.travel('overworld', 'gateView', true, () => {
       const gc = (api.area as unknown as Overworld).gate.center;
@@ -138,7 +139,8 @@ export function wardenContent(area: DungeonArea) {
     await api.until(() => ow.gate.settled);
     api.sfx.solved();
     await api.wait(1.8);
-    await api.travel('shrine', 'sealRoom', true);
+    // Back in the room, but beyond the prism, facing the message that has just appeared.
+    await api.travel('shrine', 'sealStone.beyond', true);
     api.hidePlayer(false);
     api.releaseCamera();
     api.toast('The ward is broken. The gate has fallen, and the way north is open.');

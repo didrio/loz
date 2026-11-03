@@ -116,8 +116,9 @@ export const SHRINE: DungeonDef = {
       ],
     },
     // The Keepers' Seal: a small hall north of the Hearth, behind a hidden door that opens when Gravelheart is beaten
-    // (a causeway rises across the north pit to it). One crystal, the seal-stone, breaks the ward on the valley's gate.
-    { id: 'sealRoom', name: "Keepers' Seal", floor: -2, x: 0, z: -72, w: 12, d: 12, theme: 'basalt' },
+    // (a causeway rises across the north pit to it). One prism, the seal-stone, breaks the ward on the valley's gate:
+    // it hangs between four pylons and takes three sword hits.
+    { id: 'sealRoom', name: "Keepers' Seal", floor: -2, x: -6, z: -80, w: 24, d: 20, height: 10, theme: 'basalt' },
   ],
   doors: [
     // The Sleeping Halls.
@@ -290,7 +291,7 @@ export const SHRINE: DungeonDef = {
     // ── Warden's Hearth.
     { kind: 'boss', id: 'gravelheart', room: 'boss', type: 'gravelheart' },
     // ── The Keepers' Seal: the stone that breaks the ward on the gate.
-    { kind: 'switch', id: 'sealStone', room: 'sealRoom', at: [6, 6] },
-    { kind: 'sigil', id: 'sigil.seal', room: 'sealRoom', at: [6, 3], appears: { switch: 'sealStone' } },
+    { kind: 'switch', id: 'sealStone', room: 'sealRoom', at: [12, 10], style: 'prism' },
+    { kind: 'sigil', id: 'sigil.seal', room: 'sealRoom', at: [12, 3], appears: { switch: 'sealStone' } },
   ],
 };

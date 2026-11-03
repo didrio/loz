@@ -59,7 +59,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   wall-mounted or flat; free-standing statues only go where no stone can slide.
 - **Things** sit in a room at `at` (relative to the room's corner): `chest` (with `loot`:
   `{ key: color }`, `bossKey`, `{ item }`, `{ gems }`, `{ flask: 'life' | 'attack' }` (a full flask), optionally
-  `appears` after a switch, after several (`switches`), or once a room is cleared), `switch` (`style: 'crystal'` struck
+  `appears` after a switch, after several (`switches`), or once a room is cleared), `switch` (`style: 'prism'` is the Keepers' Seal's floating prism, four sword hits, one per beam, `prism.ts`; `style: 'crystal'` struck
   with the sword, or `'plate'` held down by a stone; `needs: item` if pressing it takes a
   tool), `stone` (a 2 m wakestone, `heavy` ones only move with the glove; stones and
   plates go at odd coordinates, the centers of 2 m cells), `enemy` (`type` is an enemy

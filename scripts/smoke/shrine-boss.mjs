@@ -70,12 +70,16 @@ export default async function run(t) {
     await shot('04-seal-room');
   });
 
-  await step('the seal-stone: the vision breaks the gate, then Wren is back in the seal room', async () => {
+  await step('the prism: four sword hits shatter it, the vision breaks the gate, then Wren is back in the seal room', async () => {
     const c = await game(() => window.embervale.area.switches.get('sealStone').group.position);
     const seal = await room('sealRoom');
-    await teleport(c.x, c.z + 1.6, Math.PI, floorY(seal) + 2);
+    await teleport(c.x, c.z + 1.9, Math.PI, floorY(seal) + 2);
     await wait(500);
-    await press('KeyJ', 3, 300);
+    // One hit isn't enough: it takes four (the swings are spaced past the prism's hit cooldown).
+    await press('KeyJ', 1, 300);
+    await wait(700);
+    check(await game(() => window.embervale.mode === 'play' && window.embervale.area.switches.get('sealStone').prism.hits === 1), 'one hit should only crack the prism');
+    await press('KeyJ', 3, 700);
     // The first line of the vision is a dialog: confirm it, then the view cuts to the gate.
     await until(() => window.embervale.mode === 'cutscene', 15000);
     const end = Date.now() + 30000;

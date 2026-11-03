@@ -29,9 +29,7 @@ Next, in order:
      asks): clay **jars** in every ruin (`world/jars.ts`; one blue gem, 1-2 hearts, the rest empty; saved as `jar.<id>` flags), the Murmurbuds spread
      across the valley, a fourth note (`bud.boss`: jump the shock ring, tether a loose plate) and plainer note titles and texts.
    - ~~S4, sigils and the village's silence~~ done (2026-11-03; [world.md](world.md), "Story": the sigils, Messages page, villagers' reactions, text pass).
-   - [ ] **S5, the prism.** The seal-stone becomes a floating prism held by four beams in a bigger, grander `sealRoom`
-     (`world/dungeon/prism.ts`, ids kept, incl. `sigil.seal`, the last message, which appears when the prism is shattered: keep its `appears: { switch: 'sealStone' }` (or whichever switch id the prism sets)); the sword shatters it, the beams die, then the vision and the lift.
-     The full suite at the end (ask the owner first).
+   - ~~S5, the prism~~ done 2026-11-03 (unplayed; [shrine.md](shrine.md) D1). The full suite hasn't run since; do it at the next milestone's end.
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **milestone 6** (Gravelheart) is in its last part, **6D+**
    (owner's redesign, 2026-11-03, replacing the old glove-stone Northpass): beating the boss opens a
@@ -132,9 +130,9 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 
 ## Known quirks and tech debt
 
-- **Lamplighter fight slow** (owner's play, 2026-11-03; the shrine was fixed by pooling its lights): cause not found. The overworld
-  is ~200k tris / 320-600 draws with a 2048 sun shadow map over ~580 casters; the fight adds a light at spawn (one shader
-  rebuild). Waiting on `?debug` readings (fps, draws, tris) from the owner in the village and in the fight.
+- **Lamplighter fight perf** (owner's play, 2026-11-03): the shrine's slowness was its 34 real lights (now pooled). `?debug` in the
+  village and the fight reads 120 fps (365-1000+ draws, ~190-210k tris), so no sustained slowness. If it still hitches, suspect the
+  shader rebuild when the fight's light is added (keep light counts constant), not draw counts.
 - **Lamplighter fight, unreproduced** (owner's play, 2026-11-03): after its intro Wren was at the arena's edge, couldn't
   move for a while, then controls felt "inverted". A keyboard repro (walking in, with and without the shield held) moved
   normally and W followed the camera. Waiting on the owner: keyboard or gamepad, what was held during the intro, what

@@ -22,9 +22,9 @@ built almost entirely by AI agents. Build everything as if it will ship.
 As of 2026-11-03: Emberfield plays start to finish: a wordless start, the shield in a ruined cottage, the village, the Lamplighter,
 then **the Waking Shrine** through **Gravelheart** and the Keepers' Seal, which opens the gate to the Northpass and **Wayfarers' Camp**.
 The valley lies under **the blight** until the seal breaks. **Sigils** (messages in the air, listed under the pause menu's Messages) and the
-villagers' reactions are in; the dungeon's lights are pooled (perf). Unplayed by the owner: surfing, the sealed gate, D3. Open: a
-Lamplighter-fight report (stuck at the arena edge, "inverted" controls) that didn't reproduce, and its fight's slowness (roadmap, "Known quirks").
-**Next:** story revamp S5 (the prism, roadmap 0.7; plan mode), then the pause menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
+villagers' reactions are in; the dungeon's lights are pooled (perf). Unplayed by the owner: surfing, the sealed gate, D3, the prism. Open: a
+Lamplighter-fight report (stuck at the arena edge, "inverted" controls) that didn't reproduce (roadmap, "Known quirks").
+The Keepers' Seal is a **prism** that takes four sword hits (S5, the story revamp's last step). **Next:** the pause menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
 
@@ -136,7 +136,7 @@ src/
                            the crossing, the Waybell), ruins (ruined homes; the shield's cottage), blight (thorn growths), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
     dungeon/               data format, validator, softlock solver, text map, DUNGEONS; defs/ the dungeons; build.ts + pieces.ts
                            (data → 3D Area); grid.ts + puzzle.ts (2 m grids, wakestone checker); landmarks.ts (statues);
-                           hearth.ts (Gravelheart's arena, causeway, Heart Vessel); decor.ts (each wing's palette and light)
+                           hearth.ts (Gravelheart's arena, causeway, Heart Vessel); prism.ts (the Keepers' Seal's prism); decor.ts (each wing's palette and light)
   game/
     game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
     combat.ts, title.ts    lock-on, glove throw, hit feedback both ways, hit-stop; the title menu

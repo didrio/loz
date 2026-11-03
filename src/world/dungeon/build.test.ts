@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Layer, Physics } from '../../core/physics';
 import { NO_CONTROLS, Player, type PlayerEnv } from '../../game/player';
 import type { Area } from '../area';
-import { DungeonArea, subtractRects } from './build';
+import { DungeonArea, EXIT_OFFSET, subtractRects } from './build';
 import { SHRINE } from './defs/shrine';
 import { DROP_SIZE, PIT_DEPTH, stairPlacement, type DungeonDef } from './format';
 
@@ -403,5 +403,16 @@ describe('dungeon lighting', () => {
       for (let i = 0; i < 30; i++) area.update(0.1, { night: 0, playerPos: p });
       expect(count()).toBe(first);
     }
+  });
+
+  it('the exit trigger covers the whole doorway and the void beyond, but not the spawn', () => {
+    const physics = new Physics();
+    const area = new DungeonArea(physics, SHRINE);
+    const t = area.triggers.find((x) => x.id === 'exit')!;
+    const inside = (x: number, z: number) => Math.hypot(x - t.x, z - t.z) <= t.r;
+    // The entrance faces east, so the doorway is a wall on the x axis; its plane is EXIT_OFFSET east of the circle's centre.
+    const wallX = t.x + EXIT_OFFSET;
+    for (const dz of [-1.5, -1, 0, 1, 1.5]) for (const out of [0, 0.5, 1.5, 2]) expect(inside(wallX - out, t.z + dz), `dz ${dz}, out ${out}`).toBe(true);
+    expect(inside(area.spawn.x, area.spawn.z)).toBe(false);
   });
 });

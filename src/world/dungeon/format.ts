@@ -157,7 +157,7 @@ export type ThingDef =
    * down only while a stone rests on them, and whatever waits on them (a door, a chest)
    * needs all of its hold plates down *at the same time*; then it opens for good.
    */
-  | { kind: 'switch'; id: string; room: string; at: Vec2; style?: 'crystal' | 'plate'; needs?: string; hold?: boolean }
+  | { kind: 'switch'; id: string; room: string; at: Vec2; style?: 'crystal' | 'plate' | 'prism'; needs?: string; hold?: boolean }
   /**
    * A wakestone: a 2 m carved block that slides one cell away when struck with the sword
    * (and toward Wren when pulled, once there's a tool for that). `heavy` stones only move

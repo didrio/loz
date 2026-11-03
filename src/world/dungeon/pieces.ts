@@ -3,6 +3,7 @@ import { Layer, type RAPIER } from '../../core/physics';
 import { mat, uniqueMat } from '../../render/materials';
 import { glow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
+import { Prism } from './prism';
 import { DOOR_HEIGHT, KEY_HEX, type KeyColor, type Lock } from './format';
 
 /**
@@ -275,14 +276,22 @@ export class Wakestone {
  * `crystal`: a crystal on a short pedestal that lights up when struck.
  */
 export class DungeonSwitch {
-  readonly group = new THREE.Group();
+  readonly group: THREE.Group = new THREE.Group();
   pressed = false;
   private readonly top: THREE.Mesh;
   private readonly glowMat: THREE.MeshLambertMaterial;
   private t = Math.random() * 10;
+  /** A 'prism' switch is a floating crystal that takes several sword hits (see prism.ts); pressed = shattered. */
+  readonly prism: Prism | null = null;
 
-  constructor(parent: THREE.Object3D, readonly id: string, readonly style: 'plate' | 'crystal', x: number, y: number, z: number, b: AreaBuilder) {
+  constructor(parent: THREE.Object3D, readonly id: string, readonly style: 'plate' | 'crystal' | 'prism', x: number, y: number, z: number, b: AreaBuilder) {
     this.glowMat = uniqueMat(style === 'plate' ? 0x8a7a52 : 0x6fd8ff, { emissive: 0x000000 });
+    if (style === 'prism') {
+      this.top = new THREE.Mesh();
+      this.prism = new Prism(parent, b, x, y, z);
+      this.group = this.prism.group;
+      return;
+    }
     if (style === 'plate') {
       const rim = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.06, 1.9), mat(STONE.trim));
       rim.position.y = 0.03;
@@ -304,10 +313,15 @@ export class DungeonSwitch {
 
   setPressed(on: boolean) {
     this.pressed = on;
+    if (this.prism) {
+      if (on) this.prism.restoreShattered();
+      return;
+    }
     if (this.style === 'plate') this.top.position.y = on ? 0.03 : 0.09;
   }
 
   update(dt: number) {
+    if (this.prism) return this.prism.update(dt);
     this.t += dt;
     const k = this.pressed ? 0.9 : this.style === 'crystal' ? 0.15 + Math.sin(this.t * 2) * 0.05 : 0;
     this.glowMat.emissive.setRGB(0.3 * k, 0.75 * k, 0.7 * k);

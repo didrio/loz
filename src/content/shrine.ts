@@ -6,6 +6,7 @@ import type { Script, ScriptApi } from '../game/script';
 import { TrialFalls } from '../game/trialFalls';
 import type { DungeonProgress, GameState } from '../game/state';
 import type { DungeonArea } from '../world/dungeon/build';
+import { PRISM_HITS } from '../world/dungeon/prism';
 import { floorY, keyName, lockSwitches, type Condition, type Loot, type Potion, type RoomDef } from '../world/dungeon/format';
 import { bellContent } from './bells';
 import { readSigil } from './sigils';
@@ -237,6 +238,19 @@ export function shrineContent(area: DungeonArea): AreaContent {
       if (started) return;
       started = true;
       let heavyHinted = false;
+      // The prism: a flash and a crack on each hit; the last breaks it (its switch then plays the vision).
+      area.onPrismHit = (hits, at) => {
+        if (hits < PRISM_HITS) {
+          api.sfx.weakHit();
+          api.sfx.stoneThunk();
+          api.particles.burst(at, 0xbff0ff, 14 + hits * 6, 4 + hits, 0.9, true);
+        } else {
+          api.sfx.shatter();
+          api.sfx.rumble();
+          api.particles.burst(at, 0xffffff, 40, 8, 1.4, true);
+          api.particles.burst(at, 0x7fe6ff, 30, 5, 1.8, true);
+        }
+      };
       area.onStone = (_id, result, from) => {
         if (result === 'bounced') {
           // Struck against a wall: it bounces back and shoves Wren out of its way (no harm done).

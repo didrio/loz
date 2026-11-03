@@ -107,7 +107,7 @@ change them.
 | Sentinel Cell (floor 0) | room cleared | *They sent me over the pass with nothing. Nobody cared if I came back.* |
 | Crypt (floor −1) | room cleared | *None of them knew what the world past the mountains had become, or what it did to me. They could have wondered.* |
 | The Gauntlet (floor −2) | room cleared | *THIS IS MY HOME.* |
-| Keepers' Seal room (beside the seal-stone, later the prism) | the ward is broken (the stone, later the prism) | *(owner's text)* Something is happening to me here in the shrine; I am becoming more powerful. If you are reading this, I suppose you have felled me. In that case... well... I'm sorry for what happened. (Hints that he changed shape inside the shrine; the story's resolution.) |
+| Keepers' Seal room (beside the prism) | the ward is broken (the stone, later the prism) | *(owner's text)* Something is happening to me here in the shrine; I am becoming more powerful. If you are reading this, I suppose you have felled me. In that case... well... I'm sorry for what happened. (Hints that he changed shape inside the shrine; the story's resolution.) |
 
 **Built (S4, 2026-11-03).** `world/sigil.ts` (`SigilLook`: a slow ring of pale glyphs round a bright core, 1.7 m up; "Read"),
 `content/sigils.ts` (registry `SIGILS`, flags `sigil.<name>`, `readSigil`, `foundSigils`). The hollow's appears in the Lamplighter's

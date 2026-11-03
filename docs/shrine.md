@@ -228,16 +228,17 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
      - ~~**D1, defeat and the seal room.**~~ done (2026-11-03; the owner hasn't played it):
        - Door lock `{ cleared: room }` (`format.ts`, `solve.ts`, validator, `DoorStyle` `hidden`; tests). A cleared-lock
          door may open onto a pit (the causeway bridges it).
-       - The Keepers' Seal room (`sealRoom`, 12x12 m) north of the Hearth, door `sealDoor`; the crystal `sealStone`
-         inside. The Hearth builds the causeway (`WardenHearth.raiseCauseway`, four slabs rising out of the north pit
+       - The Keepers' Seal room (`sealRoom`, 24x20 m, S5) north of the Hearth, door `sealDoor`; the prism `sealStone`
+         inside (`world/dungeon/prism.ts`, switch `style: 'prism'`: four pylons and beams; four sword hits (one per beam), each with a flash, sfx and
+         shards, the first three snap a beam, the fourth shatters it and presses the switch; hits aren't saved, the shatter is. Beams are harmless). The Hearth builds the causeway (`WardenHearth.raiseCauseway`, four slabs rising out of the north pit
          to a flush collider) and the Heart Vessel (`hearth.vessel`, trigger `trigger.heartVessel`, flag `gravelheartVessel`).
        - The defeat script (`content/gravelheart.ts`, `falls`): the ember drifts up through the roof, a line of
          dialog, the ring sinks and the boss door opens, the vessel shows, the camera turns to the north wall, the
          causeway rises and `sealDoor` opens. The lantern's second ember is drawn when the valley next loads
          (`state.dungeon('shrine').done` → `setEmbers(2)`); there's no shot of it flying there.
-       - The seal-stone (`seal` in the same file, called from `content/shrine.ts`'s `onSwitch`): dialog, `travel`
+       - The seal-stone (`seal` in the same file, called from `content/shrine.ts`'s `onSwitch` once the prism shatters; `onPrismHit` plays the per-hit effects): a beat, dialog, `travel`
          to `overworld/gateView` (new `quiet` argument skips the area-name card), the camera on the gate, `gate.open()`,
-         flag `valleyOpen`, `travel` back to `shrine/sealRoom`. The press is saved only at the end, so quitting
+         flag `valleyOpen`, `travel` back to `shrine/sealStone.beyond` (a spot north of the prism facing the new message, not the door). The press is saved only at the end, so quitting
          mid-vision leaves the stone strikable.
        - The gate (`world/overworld/gate.ts`, `GATE` and `inGate` in `layout.ts`): two pillars, nine floating
          ember-lit stones, a veil of glowing strips, a `Bounds` wall across the cut while closed. Scenery is filtered with `inGate` after the seeded placement.
