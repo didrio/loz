@@ -41,7 +41,7 @@ should be built on it too. `MenuDriver` (`game/menuDriver.ts`) feeds one from in
 (up/down with a tick, confirm, cancel) and draws it; the game routes the HUD's mouse hover and
 click to whichever menu is open. `ChoiceMenu` is `ScriptApi.choose(title, options)`: a titled
 panel of options resolving with the index or null (backed out), shown during a cutscene instead
-of the dialog box (the bells' travel menu). The **Dev tab** of the pause menu is the old dev menu: Dev sprint,
+of the dialog box (the bells' travel menu). The pause menu's **Dev tab** holds Dev sprint,
 Invincible (`GameState.invincible`, never saved), trial falls, and Save states (`content/devStates.ts`, in play order: a new game, the gorge, the
 Morrowbell, the night before the Lamplighter, the shrine's stages, the opened gate; loading one
 replaces the current save, via `Game.loadDevState`). Every state is run through `withNotes`: it gets all the keepers' notes once Wren has

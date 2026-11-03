@@ -586,7 +586,7 @@ export class Game implements ScriptApi {
     this.player.setShield(true);
   }
 
-  /** Dev menu: jumps to a ready-made point in the game, replacing the current save. */
+  /** Dev tab: jumps to a ready-made point in the game, replacing the current save. */
   loadDevState(s: DevState) {
     this.hiddenIn = null;
     if (s.save) this.state.load(s.save);

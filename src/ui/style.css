@@ -217,7 +217,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .boss-fill { background: linear-gradient(#a8f0ff, #2f9cc4); transition: width 0.12s; }
 .boss-mark { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.6); }
 
-/* Menus (game/menu.ts): the dev menu and the pause menu */
+/* Menus (game/menu.ts): the pause menu (and the bells' travel menu) */
 .gmenu { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4, 8, 20, 0.55); pointer-events: auto; }
 .gmenu-panel {
   min-width: min(420px, 90vw); padding: 22px 26px 16px;

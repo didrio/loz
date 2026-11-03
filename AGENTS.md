@@ -23,9 +23,9 @@ As of 2026-11-03: Emberfield plays start to finish: a wordless start, the shield
 then **the Waking Shrine** through **Gravelheart** and the Keepers' **prism** (four sword hits), which opens the gate to the Northpass and **Wayfarers' Camp**.
 The valley lies under **the blight** until the prism breaks; then **Maren, Tobin and Odo vanish** and only Lark and Pip remain. Pip asks Wren to find
 the grown-ups (rescue quests come later), and Odo's stall runs on trust. **Sigils** (the pause menu's Messages tab) and a side errand
-(**Pip**'s doll, 20 gems) are in. Unplayed by the owner: surfing, the sealed gate, D3, the prism, the empty village. Open: a Lamplighter-fight
+(**Pip**'s doll, 20 gems) are in. Unplayed by the owner: the Settings tab, surfing, the sealed gate, D3, the prism, the empty village. Open: a Lamplighter-fight
 report (stuck at the arena edge, "inverted" controls) that didn't reproduce (roadmap, "Known quirks"). Villagers never name kin.
-**Next:** the pause menu's inventory tab (Settings, Hints, Messages tabs are in, Settings unplayed). (Gamepad: attack X/RB/RT, guard LB/LT.)
+**Next:** the pause menu's inventory tab (its tabs: Settings, Hints, Messages, Dev; Dev is for testing and drops from the Steam build). (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
 

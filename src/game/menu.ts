@@ -1,5 +1,5 @@
 /**
- * A stack of menus with up/down selection: the dev menu, the pause menu, and the main menu
+ * A stack of menus with up/down selection: the pause menu, the script menus, and the main menu
  * later. Pure logic (no DOM, no input devices): the game feeds it "up / down / confirm /
  * back" from the keyboard, gamepad or mouse, and the HUD draws `view()`.
  */
