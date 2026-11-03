@@ -123,12 +123,21 @@ export class Combat {
     aim.normalize();
     if (!p.throwTether(Math.atan2(aim.x, aim.z))) return;
     this.g.sfx.tetherThrow();
-    const hit = this.g.area.tether?.(p.pos.x, p.pos.y, p.pos.z, aim.x, aim.z) ?? null;
+    const hit = this.tetherBossPart(aim) ?? this.g.hazards.tetherStone(p.pos, aim) ?? this.g.area.tether?.(p.pos.x, p.pos.y, p.pos.z, aim.x, aim.z) ?? null;
     if (hit) {
       this.g.sfx.tetherLatch();
       p.facing = Math.atan2(hit.at.x - p.pos.x, hit.at.z - p.pos.z); // aim assist may have picked one behind
     }
     this.cord.fire(hit?.at ?? p.handPos().addScaledVector(aim, 9), !!hit);
+  }
+
+  /** A boss part the cord can catch (a loose plate): the first enemy that takes it. */
+  private tetherBossPart(aim: THREE.Vector3) {
+    for (const e of this.g.enemies.list) {
+      const hit = e.tetherAt(this.g.player.pos, aim);
+      if (hit) return hit;
+    }
+    return null;
   }
 
   get playerEnv(): PlayerEnv {

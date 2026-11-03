@@ -88,6 +88,8 @@ export abstract class Enemy {
   /** Particle color when it dies. */
   deathColor = 0x7a2f4a;
   protected deathT = 0;
+  /** Where its dice come from (wandering, move picks). Tests swap in a seeded one. */
+  rng: () => number = Math.random;
 
   abstract update(dt: number, env: EnemyEnv): void;
 
@@ -99,6 +101,14 @@ export abstract class Enemy {
   /** Where the sword can hit this enemy (world space). Default: one sphere around the body. */
   hurtboxes(): Hurtbox[] {
     return [{ center: this.pos.clone().setY(this.pos.y + this.lockHeight), radius: this.radius, part: 'body', priority: 0 }];
+  }
+
+  /**
+   * The Tether Glove thrown from `from` along `dir` (unit, horizontal): a boss part it can
+   * catch (a loose plate) is yanked, and the latch point is returned. Most enemies have none.
+   */
+  tetherAt(_from: THREE.Vector3, _dir: THREE.Vector3): { at: THREE.Vector3 } | null {
+    return null;
   }
 
   /** The sword connects with `part`. */
@@ -355,7 +365,7 @@ export class Thornling extends GroundEnemy {
         if (w.length() < 1 || this.t > 6) {
           // Somewhere near home, and inside its territory if it has one (dungeon enemies stay in their room).
           for (let tries = 0; tries < 8; tries++) {
-            const a = Math.random() * Math.PI * 2, r = Math.random() * 9;
+            const a = this.rng() * Math.PI * 2, r = this.rng() * 9;
             this.wanderTo.set(this.home.x + Math.cos(a) * r, this.pos.y, this.home.z + Math.sin(a) * r);
             if (this.mayWalk(this.wanderTo)) break;
             this.wanderTo.copy(this.home);

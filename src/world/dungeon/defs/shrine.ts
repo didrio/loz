@@ -101,7 +101,20 @@ export const SHRINE: DungeonDef = {
         { x: 6.5, z: 9, r: 2.4, top: 17.1, checkpoint: true, look: 0xb9b0a0 },
       ],
     },
-    { id: 'boss', name: "Warden's Hearth", floor: -2, x: 6, z: -40, w: 24, d: 20, height: 12, theme: 'basalt' },
+    // A 48 x 40 m hall (2x the first design): a ledge of floor with sheer drops along the west, north and east
+    // edges (4 m of pit each; the door's south side stays solid) and three holes in the floor. Falls cost a
+    // half-heart and put Wren back on solid floor (`trial`). The phase-two ring rises along the ledge's edge.
+    {
+      id: 'boss', name: "Warden's Hearth", floor: -2, x: -18, z: -60, w: 48, d: 40, height: 12, theme: 'basalt', trial: true,
+      features: [
+        { kind: 'pit', x: 0, z: 0, w: 4, d: 40 },
+        { kind: 'pit', x: 44, z: 0, w: 4, d: 40 },
+        { kind: 'pit', x: 4, z: 0, w: 40, d: 4 },
+        { kind: 'pit', x: 10, z: 10, w: 4, d: 6 },
+        { kind: 'pit', x: 34, z: 8, w: 4, d: 6 },
+        { kind: 'pit', x: 10, z: 28, w: 6, d: 4 },
+      ],
+    },
   ],
   doors: [
     // The Sleeping Halls.

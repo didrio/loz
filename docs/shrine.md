@@ -112,7 +112,12 @@ The shrine's guardian was meant to sleep while the lantern burned. When the flam
 stolen, the thief pushed an ember into its chest, and now it can't sleep. About 5 m of
 stacked wakestones: a blocky torso, arms that are chains of floating stones, a carved
 spiral mask with heavy-lidded eyes, the second ember glowing through cracks in its chest.
-Arena: Warden's Hearth, a 24×20 m room (12 m high) with spare wakestones set into the walls.
+Arena: Warden's Hearth, a 48×40 m room (12 m high; first drawn 24×20, doubled at the owner's request
+2026-11-03) with spare wakestones set into the walls. Wren fights on a ledge of floor: 4 m drops (pits) run
+along the west, north and east edges (the door's south side is solid) and three holes sit in the floor. It is a
+`trial` room, so a fall costs a half-heart (`TRIAL_RULES`) and puts Wren back on the last solid floor. The boss
+won't walk into a drop (`Boss.walkable`, `WardenHearth.walkable`). The phase-two ring rises along the ledge's
+edge (`WardenHearth.platform`), so the drops are walled off then.
 
 **Owner's calls (2026-11-03):** a stone slab seals the boss door when the fight starts and lifts on
 a win or a death (the boss is the one exception to "never sealed"). Phase 2's tiles don't slide:
@@ -196,14 +201,10 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
    small rooms.
 6. **Gravelheart**, in four sessions (planned 2026-11-03; each ends with check passing):
    - ~~**A, rig, arena, intro**~~ done (the owner hasn't played it): `game/bosses/gravelheart/`,
-     `world/dungeon/hearth.ts`, `content/gravelheart.ts`, `Boss.music`. Stand-ins until B–D: its only
-     move is Hammerfall, whose stuck slam opens its chest straight to the sword; the defeat just
-     settles it and opens the door. The ring rises 2.4 m (Wren jumps ~2 m). To judge in play: the
-     palette is low contrast, and the sleeping heap barely reads as kneeling.
-   - **B, phase 1**: Hammerfall, Sweep, Stone volley, Grind; loose plates; the glove on boss parts
-     (`Enemy.tetherAt`, checked in `Combat.throwTether` before `area.tether`); a thrown-`stone`
-     hazard; ember stagger; re-plating from sockets, then from landed rubble (it never runs out);
-     inject an RNG into boss move picks and Thornling/Shellback wandering (scaling item); tests.
+     `world/dungeon/hearth.ts`, `content/gravelheart.ts`, `Boss.music`. The defeat still just
+     settles it and opens the door (session D). The ring rises 2.4 m (Wren jumps ~2 m). To judge in
+     play: the palette is low contrast, and the sleeping heap barely reads as kneeling.
+   - ~~**B, phase 1**~~ done (details in [combat.md](combat.md), "Bosses"; the owner has played it and likes it).
    - **C, phase 2**: the phase move (howl, smash, ring rises, hearts drop, ember into the head);
      Cairn Roll → dazed on the ring → keystone → kneel; double sweep; faster moves; tests.
    - **D, defeat, music, smoke, docs**: the defeat script, Heart Vessel, lantern at 2 embers; the

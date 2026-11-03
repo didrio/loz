@@ -87,7 +87,8 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   impact) that costs no guard. The guard break deliberately stops the hit that broke it:
   the punishment is the stagger, not damage on top.
 - `Hazards` holds attacks that outlive their move: `shockwave` (unblockable: jump it) and
-  `orb` (homes briefly; the shield pops it for 1 slot). Cleared on respawn and area change.
+  `orb` (homes briefly; the shield pops it for 1 slot) and `stone` (a thrown wakestone: hovers, then
+  flies straight at where Wren is; `tetherStone` catches one mid-air; `onLand` leaves rubble). Cleared on respawn and area change.
   Every orb, and every Gloomwisp, casts a blob shadow (`GroundShadow` in `render/shapes.ts`):
   a dark disc on the ground below, smaller and fainter the higher it flies, so its distance
   reads at a glance. Give anything new that floats one too.
@@ -111,6 +112,14 @@ the hollow's `BossArena`, the shrine's `WardenHearth`), runs
 the intro script on the arena trigger (`wake()` → `until(ready)` → `engage()`), and its
 `onDefeated` runs the defeat script. The HUD bar, darkening (`gloom`) and boss music
 follow whichever boss is engaged. `game/boss.test.ts` shows how to test a boss headlessly.
+Dice: `Enemy.rng` (default `Math.random`; tests set a seeded `mulberry32`) feeds move picks and
+wandering. `Boss.interruptWith(name)` cuts the current move for another (a stagger).
+Boss parts the glove can catch: `Enemy.tetherAt(from, dir)`, asked by `Combat.throwTether` before
+stones in flight and `Area.tether`. Gravelheart (`bosses/gravelheart/`): a stuck Hammerfall works one of
+three chest plates loose (`loosenPlate`, ~2.4 s); the glove tears it off; with none left it plays
+`staggered` (chest open ~3 s, `chest` hits are `weak`, x2), then `replate` pulls new plates from the
+wall sockets, then from rubble (it never runs out; rubble crumbles after 7 s). Thrown stones fly at 18 m/s and
+bend toward Wren for their first 0.7 s (`homing`). `Boss.walkable` keeps a boss off drops. Sweep, Volley and Grind round out phase 1.
 
 ## Fairness rules
 

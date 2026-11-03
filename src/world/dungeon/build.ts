@@ -133,6 +133,8 @@ export class DungeonArea implements Area {
   private readonly filled = new Map<string, Set<string>>();
   private readonly floors = new Map<number, FloorParts>();
   private readonly lights: { light: THREE.PointLight; base: number; phase: number }[] = [];
+  /** In the hearth's drops: a dull ember glow far below, so the edge reads as a drop in the dark. */
+  private readonly emberMat = new THREE.MeshBasicMaterial({ color: 0x8a2e0c });
   private readonly waterMat = new THREE.MeshLambertMaterial({ color: 0x2f6f74, transparent: true, opacity: 0.75, emissive: 0x0c2a2c });
   private readonly disposer: () => void;
   private t = 0;
@@ -199,6 +201,11 @@ export class DungeonArea implements Area {
           const water = new THREE.Mesh(new THREE.BoxGeometry(w - 0.6, 0.05, d - 0.6), this.waterMat);
           water.position.set(x + w / 2, fy - 1.1, z + d / 2);
           p.src.solid.add(water);
+        }
+        if (themeOf(r) === 'basalt') {
+          const glowPlate = new THREE.Mesh(new THREE.BoxGeometry(w - 0.6, 0.05, d - 0.6), this.emberMat);
+          glowPlate.position.set(x + w / 2, fy - PIT_DEPTH + 0.03, z + d / 2);
+          p.src.solid.add(glowPlate);
         }
         const sideH = PIT_DEPTH - FLOOR_T, sy = fy - FLOOR_T - sideH / 2;
         box(p.src.solid, pal.trim, x + w / 2, sy, z + 0.15, w, sideH, 0.3);
@@ -375,7 +382,13 @@ export class DungeonArea implements Area {
           const hearth = new WardenHearth(b, p.dynamic, r, fy, door ? this.doors.get(door.id) ?? null : null);
           this.hearth = hearth;
           // Walking well into the room (3 m past the door) springs the fight, once content arms it.
-          this.triggers.push({ id: 'trigger.warden', x: hearth.center.x, z: hearth.center.z, y: fy, r: Math.min(r.w, r.d) / 2 - 3, enabled: () => hearth.armed && !hearth.sealed });
+          // (Rooms can be big: the trigger sits just inside the door, not around the room's middle.)
+          const dp = door ? this.doors.get(door.id)?.group.position : undefined;
+          // Straight in from the wall the door is in (the nearest one).
+          const walls = dp ? ([[dp.z - r.z, 0, 1], [r.z + r.d - dp.z, 0, -1], [dp.x - r.x, 1, 0], [r.x + r.w - dp.x, -1, 0]] as const) : [];
+          const inward = walls.length ? walls.reduce((m, w) => (w[0] < m[0] ? w : m)) : null;
+          const tx = dp && inward ? dp.x + inward[1] * 4.5 : hearth.center.x, tz = dp && inward ? dp.z + inward[2] * 4.5 : hearth.center.z;
+          this.triggers.push({ id: 'trigger.warden', x: tx, z: tz, y: fy, r: dp ? 3.5 : Math.min(r.w, r.d) / 2 - 3, enabled: () => hearth.armed && !hearth.sealed });
         }
         continue;
       }

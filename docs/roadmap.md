@@ -94,7 +94,7 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   little map of the valley. *Trigger: more than ~8 bells.*
 - [ ] **Quest/flag overview**: a generated list of every flag, who sets it and who reads
   it, so quest logic stays understandable across many areas. *Trigger: ~30+ flags.*
-- [ ] **Seed enemy randomness**: Thornling/Shellback wandering uses `Math.random`, so a few unit tests
+- [x] **Seed enemy randomness** (done 2026-11-03, shrine session B; `Enemy.rng`, tests seed it): Thornling/Shellback wandering uses `Math.random`, so a few unit tests
   in `thornling.test.ts` fail about 1 run in 8. Give enemies an injected RNG (as `core/math.ts` has).
   *Trigger: the next time one of them flakes in CI, or any enemy work.*
 - [ ] **Docs hygiene**: if a topic doc passes ~400 lines, split it. *Trigger: as stated.*

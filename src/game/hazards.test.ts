@@ -58,4 +58,62 @@ describe('Hazards', () => {
     expect(calls.length).toBeGreaterThan(0);
     expect(hazards.active).toBe(1);
   });
+
+  describe('thrown stones', () => {
+    it('hover, then fly at Wren and hit her once', () => {
+      const { hazards, env, calls, player } = setup();
+      player.set(0, 0, 8);
+      hazards.stone(new THREE.Vector3(0, 1.2, 0), { delay: 0.5 });
+      run(hazards, env, 0.4);
+      expect(calls.length).toBe(0); // still gathering itself
+      run(hazards, env, 1.2);
+      expect(calls.length).toBe(1);
+      expect(calls[0].guard).toBe(1);
+      expect(hazards.active).toBe(0);
+    });
+
+    it('a blocked stone lands as rubble where it hit', () => {
+      const { hazards, env, player } = setup('blocked');
+      player.set(0, 0, 8);
+      let landed: THREE.Vector3 | null = null;
+      hazards.stone(new THREE.Vector3(0, 1.2, 0), { onLand: (at) => (landed = at) });
+      run(hazards, env, 1.5);
+      expect(landed).not.toBeNull();
+    });
+
+    it('the glove catches one in flight and drops it harmless at Wren\'s feet', () => {
+      const { hazards, env, calls, player } = setup();
+      player.set(0, 0, 10);
+      env.physics.box(0, -0.5, 5, 40, 0.5, 40);
+      env.physics.refreshQueries();
+      let landed = 0;
+      hazards.stone(new THREE.Vector3(0, 1.2, 0), { speed: 6, onLand: () => landed++ });
+      run(hazards, env, 0.3);
+      const dir = new THREE.Vector3(0, 0, -1);
+      const caught = hazards.tetherStone(player, dir);
+      expect(caught).not.toBeNull();
+      run(hazards, env, 3);
+      expect(calls.length).toBe(0);
+      expect(landed).toBe(1);
+    });
+
+    it('a homing stone bends after a Wren who sidesteps; a plain one misses', () => {
+      for (const [homing, hits] of [[0, 0], [2.5, 1]] as const) {
+        const { hazards, env, calls, player } = setup();
+        player.set(0, 0, 9);
+        hazards.stone(new THREE.Vector3(0, 1.1, 0), { speed: 12, homing });
+        run(hazards, env, 0.1);
+        player.x = 1.6; // a sidestep
+        run(hazards, env, 1.2);
+        expect(calls.length, `homing ${homing}`).toBe(hits);
+      }
+    });
+
+    it('the glove ignores a stone that is still hovering or off to the side', () => {
+      const { hazards, player } = setup();
+      player.set(0, 0, 10);
+      hazards.stone(new THREE.Vector3(0, 1.2, 0), { delay: 5 });
+      expect(hazards.tetherStone(player, new THREE.Vector3(0, 0, -1))).toBeNull();
+    });
+  });
 });

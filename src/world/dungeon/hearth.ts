@@ -41,15 +41,24 @@ export class WardenHearth {
   private readonly crackMat = uniqueMat(0x2a120a, { emissive: 0x000000 });
   private ringT = 0;
   private ringDir = 0;
+  /** The ledge of floor Wren fights on: the room minus the drops along its edges (world rect). */
+  readonly platform: { x0: number; x1: number; z0: number; z1: number };
 
   constructor(b: AreaBuilder, parent: THREE.Object3D, readonly room: RoomDef, readonly floorY: number, private readonly door: DungeonDoor | null) {
     this.center = new THREE.Vector3(room.x + room.w / 2, floorY, room.z + room.d / 2);
     const rand = mulberry32(31);
+    // Edge drops (pits that run along a side of the room) shrink the ledge the ring sits on.
+    const pits = (room.features ?? []).flatMap((f) => (f.kind === 'pit' ? [f] : []));
+    const W = Math.max(0, ...pits.filter((f) => f.x === 0 && f.d >= room.d - 0.01).map((f) => f.w));
+    const E = Math.max(0, ...pits.filter((f) => f.x + f.w >= room.w - 0.01 && f.d >= room.d - 0.01).map((f) => f.w));
+    const N = Math.max(0, ...pits.filter((f) => f.z === 0 && f.x <= W + 0.01 && f.x + f.w >= room.w - E - 0.01).map((f) => f.d));
+    const S = Math.max(0, ...pits.filter((f) => f.z + f.d >= room.d - 0.01 && f.x <= W + 0.01 && f.x + f.w >= room.w - E - 0.01).map((f) => f.d));
+    this.platform = { x0: room.x + W, x1: room.x + room.w - E, z0: room.z + N, z1: room.z + room.d - S };
 
     // Spare stones, half sunk into the walls every few meters (none over the door).
     const stoneMat = mat(0x8f887c), glyph = mat(0x4fb8a4), niche = mat(0x0e0c0b);
     const along = (len: number) => {
-      const n = Math.floor(len / 4);
+      const n = Math.floor(len / 8);
       return Array.from({ length: n }, (_, i) => (i + 0.5) * (len / n));
     };
     const walls: { x: (u: number) => number; z: (u: number) => number; len: number; inward: [number, number] }[] = [
@@ -84,9 +93,10 @@ export class WardenHearth {
     // The ring: 2 m tiles all round the edge, sunk flush with the floor until phase two.
     // Prop layer, so they block Wren and the boss but the camera passes through them.
     const tileMat = mat(0x34302d);
-    for (let cx = room.x; cx < room.x + room.w; cx += 2) {
-      for (let cz = room.z; cz < room.z + room.d; cz += 2) {
-        const edge = cx < room.x + RING_WIDTH || cx >= room.x + room.w - RING_WIDTH || cz < room.z + RING_WIDTH || cz >= room.z + room.d - RING_WIDTH;
+    const pf = this.platform;
+    for (let cx = pf.x0; cx < pf.x1; cx += 2) {
+      for (let cz = pf.z0; cz < pf.z1; cz += 2) {
+        const edge = cx < pf.x0 + RING_WIDTH || cx >= pf.x1 - RING_WIDTH || cz < pf.z0 + RING_WIDTH || cz >= pf.z1 - RING_WIDTH;
         if (!edge) continue;
         const x = cx + 1, z = cz + 1;
         const mesh = new THREE.Mesh(new THREE.BoxGeometry(1.96, RING_HEIGHT, 1.96), tileMat);
@@ -129,8 +139,20 @@ export class WardenHearth {
 
   /** Whether `p` is inside the ring (in the shrunken arena), with `margin` to spare. */
   insideRing(p: THREE.Vector3, margin = 0) {
-    const r = this.room, m = RING_WIDTH + margin;
-    return p.x > r.x + m && p.x < r.x + r.w - m && p.z > r.z + m && p.z < r.z + r.d - m;
+    const f = this.platform, m = RING_WIDTH + margin;
+    return p.x > f.x0 + m && p.x < f.x1 - m && p.z > f.z0 + m && p.z < f.z1 - m;
+  }
+
+  /** Whether a body with this `margin` (its radius, say) can stand at (x, z): on the ledge, clear of the holes in it. */
+  walkable(x: number, z: number, margin = 0) {
+    const f = this.platform;
+    if (x < f.x0 + margin || x > f.x1 - margin || z < f.z0 + margin || z > f.z1 - margin) return false;
+    for (const h of this.room.features ?? []) {
+      if (h.kind !== 'pit') continue;
+      const hx = x - this.room.x, hz = z - this.room.z;
+      if (hx > h.x - margin && hx < h.x + h.w + margin && hz > h.z - margin && hz < h.z + h.d + margin) return false;
+    }
+    return true;
   }
 
   get ringUp() {

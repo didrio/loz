@@ -101,6 +101,8 @@ export abstract class Boss extends Enemy {
   gloom = 0;
   /** Set by content: called once when the boss is beaten. */
   onDefeated: (() => void) | null = null;
+  /** Where it may stand (arenas with drops): it stops rather than walk where this says no. */
+  walkable: ((x: number, z: number) => boolean) | null = null;
   /** Per-move notes ("already hit", "second salvo fired"), cleared when a move starts. */
   readonly scratch: Record<string, boolean> = {};
   /** Unit vector toward the player and the distance, refreshed every fight frame. */
@@ -217,6 +219,18 @@ export abstract class Boss extends Enemy {
     return !!m;
   }
 
+  /** Drops whatever it's doing and plays `name` now (a stagger). */
+  interruptWith(name: string) {
+    const m = this.moves().find((x) => x.name === name);
+    if (!m || !this.env) return false;
+    this.move?.exit?.(this);
+    this.move = null;
+    this.queued = null;
+    this.timers = [];
+    this.startMove(m, this.env);
+    return true;
+  }
+
   /** Runs `fn` after `seconds` of fight time (follow-up shockwaves, delayed effects). */
   later(seconds: number, fn: () => void) {
     this.timers.push({ t: seconds, fn });
@@ -306,6 +320,14 @@ export abstract class Boss extends Enemy {
     if (this.state === 'fight') this.fight(dt, env);
     if (this.state === 'dying' && this.stateT >= this.dyingDuration) this.gone = true;
 
+    if (this.walkable && (this.vel.x || this.vel.z)) {
+      const nx = this.pos.x + this.vel.x * dt, nz = this.pos.z + this.vel.z * dt;
+      if (!this.walkable(nx, nz)) {
+        if (this.walkable(nx, this.pos.z)) this.vel.z = 0;
+        else if (this.walkable(this.pos.x, nz)) this.vel.x = 0;
+        else this.vel.set(0, 0, 0);
+      }
+    }
     if (this.state !== 'dying') {
       this.velY = this.character.grounded ? -1 : this.velY - 30 * dt;
       this.character.move(this.pos, new THREE.Vector3(this.vel.x * dt, this.velY * dt, this.vel.z * dt));
@@ -374,7 +396,7 @@ export abstract class Boss extends Enemy {
     if (!options.length) options = base.filter((o) => o.w > 0);
     const total = options.reduce((s, o) => s + o.w, 0);
     if (total <= 0) return null;
-    let r = Math.random() * total;
+    let r = this.rng() * total;
     for (const o of options) {
       r -= o.w;
       if (r <= 0) return o.m;

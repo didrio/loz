@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { clamp, damp } from '../../../core/math';
+import { uniqueMat } from '../../../render/materials';
 import type { Physics } from '../../../core/physics';
 import type { WardenHearth } from '../../../world/dungeon/hearth';
 import { Boss, type Move } from '../../boss';
 import type { EnemyEnv, Hurtbox } from '../../enemies';
-import { MOVES } from './moves';
+import { MOVES, STAGGER } from './moves';
 import { blendPose, GravelheartRig, SLEEP, STAND, type Pose } from './rig';
 
 /**
@@ -13,10 +14,15 @@ import { blendPose, GravelheartRig, SLEEP, STAND, type Pose } from './rig';
  * The shrine's guardian was meant to sleep while the lantern burned. When the flame was
  * stolen, the thief pushed an ember into its chest, and now it can't sleep.
  *
- * Built in sessions (the build plan in docs/shrine.md). So far (A): the body, waking up,
- * a slow stalk and Hammerfall. Everything but its chest is solid stone (the sword clanks),
- * and the chest is in reach only while it's bent over a stuck slam.
+ * Built in sessions (the build plan in docs/shrine.md). So far (B): the body, waking up and
+ * phase 1: Hammerfall, Sweep, Stone volley and Grind. Everything is solid stone (the sword
+ * clanks). Its ember sits behind three chest plates: a stuck Hammerfall slam works one
+ * plate loose, the glove tears it off, and with all three gone it staggers with its chest
+ * open (the sword's chance). It then pulls new plates from the walls, then from rubble.
  */
+/** Seconds a landed stone lies about before it crumbles. */
+const RUBBLE_LIFE = 7;
+
 export class Gravelheart extends Boss {
   readonly title = 'Gravelheart';
   readonly epithet = 'the Sleepless Warden';
@@ -26,6 +32,13 @@ export class Gravelheart extends Boss {
   chestOpen = false;
   /** It has settled, asleep at last (content's defeat script waits for this). */
   asleep = false;
+  /** Which chest plates are on. */
+  readonly plates = [true, true, true];
+  /** The plate glowing loose (or -1) and how long it stays loose. */
+  loose = -1;
+  looseT = 0;
+  /** Stones that landed, lying about the hall: its next plates and ammunition. */
+  readonly rubble: { at: THREE.Vector3; mesh: THREE.Mesh; age: number }[] = [];
 
   readonly rig: GravelheartRig;
   private readonly cur: Pose = { ...SLEEP };
@@ -35,9 +48,13 @@ export class Gravelheart extends Boss {
   private stepPhase = 0;
   private ground = false;
 
-  constructor(parent: THREE.Object3D, physics: Physics, readonly hearth: WardenHearth | null, x: number, y: number, z: number, yaw: number) {
-    super(parent, physics, hearth, { x, y, z, yaw, hp: 40, radius: 1.5, halfHeight: 1.3, phases: [0.5] });
+  private readonly rubbleMat = uniqueMat(0x6f685d);
+  private readonly rubbleGeo = new THREE.BoxGeometry(0.8, 0.6, 0.8);
+
+  constructor(private readonly stage: THREE.Object3D, physics: Physics, readonly hearth: WardenHearth | null, x: number, y: number, z: number, yaw: number) {
+    super(stage, physics, hearth, { x, y, z, yaw, hp: 40, radius: 1.5, halfHeight: 1.3, phases: [0.5] });
     this.lockHeight = 3;
+    if (hearth) this.walkable = (px, pz) => hearth.walkable(px, pz, 2);
     this.deathColor = 0x8f887c;
     this.rig = new GravelheartRig(this.root);
     this.flashMats.push(...this.rig.flashMats);
@@ -48,13 +65,21 @@ export class Gravelheart extends Boss {
     return MOVES as Move<this>[];
   }
 
+  get platesOn() {
+    return this.plates.filter(Boolean).length;
+  }
+
   /** Stone everywhere: the sword clanks off anything but an open chest. */
   protected isGuarding(_toAttacker: THREE.Vector3, part: string) {
     return part !== 'chest';
   }
 
+  protected damageMultiplier(part: string) {
+    return part === 'chest' ? 2 : 1;
+  }
+
   protected decideDelay() {
-    return this.phase === 1 ? 1.1 + Math.random() * 0.7 : 0.6 + Math.random() * 0.5;
+    return this.phase === 1 ? 1.1 + this.rng() * 0.7 : 0.6 + this.rng() * 0.5;
   }
 
   protected baseTurnRate() {
@@ -63,6 +88,74 @@ export class Gravelheart extends Boss {
 
   protected stalk(dt: number) {
     super.stalk(dt, 1.7, 3.5, 6.5);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Plates, stones, rubble
+  // ---------------------------------------------------------------------------
+
+  /** A stuck slam works one of the plates still on loose; the glove can tear it off. */
+  loosenPlate() {
+    const on = this.plates.map((p, i) => (p ? i : -1)).filter((i) => i >= 0);
+    if (!on.length) return;
+    this.loose = on[Math.floor(this.rng() * on.length)];
+    this.looseT = 2.4;
+  }
+
+  /** The glove, thrown from `from` along `dir`: if the loose plate is in front, it tears free. */
+  tetherAt(from: THREE.Vector3, dir: THREE.Vector3) {
+    if (this.state !== 'fight' || this.loose < 0 || this.looseT <= 0) return null;
+    this.root.updateMatrixWorld(true);
+    const at = new THREE.Vector3().setFromMatrixPosition(this.rig.plates[this.loose].matrixWorld);
+    const to = at.clone().sub(from).setY(0);
+    const d = to.length();
+    if (d > 14 || to.normalize().dot(dir) < 0.9) return null;
+    const i = this.loose;
+    this.plates[i] = false;
+    this.loose = -1;
+    this.looseT = 0;
+    this.addRubble(from.clone().addScaledVector(dir, 1.8));
+    this.env?.particles.burst(at, 0x9b9486, 16, 5, 0.6);
+    this.env?.shake(0.5);
+    this.env?.sfx.boom();
+    if (!this.platesOn) this.interruptWith(STAGGER.name);
+    return { at };
+  }
+
+  /** A stone to work with: out of a wall socket, or off the floor (null: the hall has none). */
+  takeStone(near: THREE.Vector3): THREE.Vector3 | null {
+    const fromWall = this.hearth?.take(near);
+    if (fromWall) return fromWall;
+    let best = -1;
+    for (let i = 0; i < this.rubble.length; i++) {
+      if (best < 0 || this.rubble[i].at.distanceToSquared(near) < this.rubble[best].at.distanceToSquared(near)) best = i;
+    }
+    if (best < 0) return null;
+    const [r] = this.rubble.splice(best, 1);
+    this.stage.remove(r.mesh);
+    return r.at.clone().setY(r.at.y + 0.6);
+  }
+
+  /** A stone came to rest: it lies there until it is picked up again. */
+  addRubble(at: THREE.Vector3) {
+    const mesh = new THREE.Mesh(this.rubbleGeo, this.rubbleMat);
+    mesh.position.copy(at);
+    mesh.rotation.y = this.rng() * 3;
+    mesh.castShadow = true;
+    this.stage.add(mesh);
+    this.rubble.push({ at: at.clone(), mesh, age: 0 });
+    if (this.rubble.length > 8) this.stage.remove(this.rubble.shift()!.mesh);
+  }
+
+  /** New plates from the walls, then from rubble (it never runs out: the last come from nowhere). */
+  replate(env: EnemyEnv) {
+    for (let i = 0; i < this.plates.length; i++) {
+      if (this.plates[i]) continue;
+      const from = this.takeStone(this.pos) ?? this.pos.clone().setY(this.pos.y + 4);
+      env.particles.burst(from, 0x9b9486, 8, 3, 0.5);
+      this.plates[i] = true;
+    }
+    env.sfx.grind();
   }
 
   hurtboxes(): Hurtbox[] {
@@ -90,6 +183,10 @@ export class Gravelheart extends Boss {
   }
 
   protected onReset() {
+    this.plates.fill(true);
+    this.loose = -1;
+    this.looseT = 0;
+    for (const r of this.rubble.splice(0)) this.stage.remove(r.mesh);
     this.chestOpen = false;
     this.asleep = false;
     this.ground = false;
@@ -107,6 +204,19 @@ export class Gravelheart extends Boss {
     this.gloom = this.state === 'fight' ? (this.phase === 1 ? 0.25 : 0.55) : 0;
     if (this.state === 'intro') this.poseIntro(env);
     if (this.state === 'dying') this.poseDying(env);
+    // Rubble crumbles away after a while (the walls and this are its only plates and ammunition).
+    for (let i = this.rubble.length - 1; i >= 0; i--) {
+      const r = this.rubble[i];
+      r.age += dt;
+      if (r.age > RUBBLE_LIFE) {
+        this.stage.remove(r.mesh);
+        this.rubble.splice(i, 1);
+      } else if (r.age > RUBBLE_LIFE - 1) r.mesh.scale.setScalar(RUBBLE_LIFE - r.age);
+    }
+    if (this.looseT > 0) {
+      this.looseT -= dt;
+      if (this.looseT <= 0) this.loose = -1;
+    }
     super.update(dt, env);
   }
 
@@ -157,6 +267,10 @@ export class Gravelheart extends Boss {
     const sway = moving ? Math.sin(this.stepPhase) * 0.05 : 0;
     const p: Pose = { ...this.cur, hipsY: this.cur.hipsY + Math.sin(this.breath * 1.3) * 0.03 + (moving ? Math.abs(Math.sin(this.stepPhase)) * 0.05 : 0) };
     this.rig.apply(p, dt);
+    for (let i = 0; i < this.plates.length; i++) {
+      this.rig.plates[i].visible = this.plates[i];
+      this.rig.setPlateGlow(i, i === this.loose && this.looseT > 0 ? 0.65 + Math.sin(this.breath * 14) * 0.35 : 0);
+    }
     this.rig.torso.rotation.z = sway;
   }
 }

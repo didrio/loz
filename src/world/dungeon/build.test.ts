@@ -49,7 +49,8 @@ describe('the built shrine', () => {
     const { area, ground } = setup();
     for (const r of SHRINE.rooms) {
       // A spot in the room clear of stairs, holes and pits: its northwest corner area.
-      const y = ground(r.x + 1.2, r.z + 1.2, r.floor * 8 + 3);
+      // (The boss hall's is a drop, so it tries the middle of its south edge instead.)
+      const y = r.id === 'boss' ? ground(r.x + r.w / 2, r.z + r.d - 1.2, r.floor * 8 + 3) : ground(r.x + 1.2, r.z + 1.2, r.floor * 8 + 3);
       expect(y, r.id).toBeCloseTo(r.floor * 8, 1);
     }
     expect(area.spawn.y).toBeCloseTo(0.05);
@@ -310,8 +311,8 @@ describe("Warden's Hearth (Gravelheart's arena)", () => {
 
   it('raises the outer ring into a wall too tall to jump, and sinks it again', () => {
     const { area, physics } = setup();
-    const h = area.hearth!, r = h.room;
-    const tile = { x: r.x + 1, z: r.z + 9 }, middle = { x: h.center.x, z: h.center.z };
+    const h = area.hearth!;
+    const tile = { x: h.platform.x0 + 1, z: h.platform.z0 + 17 }, middle = { x: h.center.x, z: h.center.z };
     const top = () => physics.groundY(tile.x, tile.z, h.floorY + 6);
     expect(top()).toBeCloseTo(h.floorY, 1);
     h.raiseRing();
@@ -325,5 +326,33 @@ describe("Warden's Hearth (Gravelheart's arena)", () => {
     h.lowerRing(true);
     physics.refreshQueries();
     expect(top()).toBeCloseTo(h.floorY, 1);
+  });
+
+  it('is a big hall with drops along its west, north and east edges and holes in the floor', () => {
+    const { area, physics } = setup();
+    const h = area.hearth!, r = h.room;
+    expect(r.w).toBeGreaterThanOrEqual(48);
+    expect(r.trial).toBe(true); // falls cost a half-heart and put Wren back on solid floor
+    // The ledge is the room minus the 4 m drops; the south side (the door's) is solid.
+    expect(h.platform).toEqual({ x0: r.x + 4, x1: r.x + r.w - 4, z0: r.z + 4, z1: r.z + r.d });
+    const ground = (x: number, z: number) => physics.groundY(x, z, h.floorY + 3);
+    expect(ground(r.x + 2, r.z + 20)).toBeCloseTo(h.floorY - 3, 1); // the west drop
+    expect(ground(r.x + r.w / 2, r.z + 2)).toBeCloseTo(h.floorY - 3, 1); // the north drop
+    expect(ground(r.x + 12, r.z + 12)).toBeCloseTo(h.floorY - 3, 1); // a hole in the floor
+    expect(ground(h.center.x, h.center.z)).toBeCloseTo(h.floorY, 1);
+    // The boss won't walk off: the edge and the holes are out, the middle is in.
+    expect(h.walkable(h.center.x, h.center.z, 2)).toBe(true);
+    expect(h.walkable(r.x + 5, r.z + 20, 2)).toBe(false);
+    expect(h.walkable(r.x + 12, r.z + 13, 2)).toBe(false);
+    expect(h.walkable(r.x + 12, r.z + 20, 2)).toBe(true);
+  });
+
+  it('the fight starts just inside the door, not in the middle of the hall', () => {
+    const { area } = setup();
+    const trig = area.triggers.find((t) => t.id === 'trigger.warden')!;
+    const door = area.doors.get('bossDoor')!.group.position;
+    expect(Math.hypot(trig.x - door.x, trig.z - door.z)).toBeLessThan(8);
+    // Walking straight in from the doorway reaches it (the trigger is a circle of `r` around its spot).
+    expect(Math.hypot(trig.x - door.x, trig.z - (door.z - 4.5))).toBeLessThan(trig.r);
   });
 });

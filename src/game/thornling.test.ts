@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Physics } from '../core/physics';
+import { mulberry32 } from '../core/math';
 import { DungeonArea } from '../world/dungeon/build';
 import { SHRINE } from '../world/dungeon/defs/shrine';
 import { REACTION, Thornling, type EnemyEnv } from './enemies';
@@ -22,6 +23,7 @@ describe('Thornling senses', () => {
     const spawn = SHRINE.things.find((t) => t.id === 'pitThorn' && t.kind === 'enemy') as { at: readonly [number, number] };
     const pit = SHRINE.rooms.find((r) => r.id === 'pitHall')!;
     const t = new Thornling(new THREE.Group(), physics, pit.x + spawn.at[0], pit.z + spawn.at[1], -8 + 1);
+    t.rng = mulberry32(7);
     const wren = new THREE.Vector3(pit.x + spawn.at[0], 0, pit.z + spawn.at[1] - 2);
     const { env: e, hits } = env(physics, wren);
     run(t, physics, e, 8);
@@ -34,6 +36,7 @@ describe('Thornling senses', () => {
     physics.box(5, 2, 0, 0.25, 2, 10); // a wall between them
     physics.refreshQueries();
     const t = new Thornling(new THREE.Group(), physics, 0, 0);
+    t.rng = mulberry32(7);
     const wren = new THREE.Vector3(10, 0, 0);
     const { env: e, hits } = env(physics, wren);
     for (let i = 0; i < 360; i++) {
@@ -51,6 +54,7 @@ describe('Thornling senses', () => {
     physics.box(0, -0.5, 0, 200, 0.5, 200);
     physics.refreshQueries();
     const t = new Thornling(new THREE.Group(), physics, 0, 0);
+    t.rng = mulberry32(7);
     const wren = new THREE.Vector3(0, 0, 10);
     const { env: e } = env(physics, wren);
     run(t, physics, e, REACTION + 0.5); // it spots Wren and starts the chase
@@ -72,6 +76,7 @@ describe('Thornling senses', () => {
     physics.refreshQueries();
     const room = (p: THREE.Vector3) => p.x > -5 && p.x < 5 && p.z > -5 && p.z < 5;
     const t = new Thornling(new THREE.Group(), physics, 0, 0, 400, room);
+    t.rng = mulberry32(7);
     const { env: e } = env(physics, new THREE.Vector3(100, 0, 100)); // Wren far away
     for (let i = 0; i < 60 * 40; i++) {
       run(t, physics, e, 1 / 60);
@@ -85,6 +90,7 @@ describe('Thornling senses', () => {
     physics.refreshQueries();
     const room = (p: THREE.Vector3) => p.x > -8 && p.x < 8 && p.z > -8 && p.z < 8;
     const t = new Thornling(new THREE.Group(), physics, 0, 0, 400, room);
+    t.rng = mulberry32(7);
     const wren = new THREE.Vector3(0, 0, 11); // in plain view, but in the next room
     const { env: e, hits } = env(physics, wren);
     run(t, physics, e, 5);
@@ -101,6 +107,7 @@ describe('Thornling senses', () => {
     physics.box(0, -0.5, 0, 40, 0.5, 40);
     physics.refreshQueries();
     const t = new Thornling(new THREE.Group(), physics, 0, 0, 400, undefined);
+    t.rng = mulberry32(7);
     t.setWalkable((p) => p.x < 3); // a flight of stairs from x = 3 on
     const wren = new THREE.Vector3(6, 0, 0);
     const { env: e, hits } = env(physics, wren);
@@ -119,6 +126,7 @@ describe('Thornling senses', () => {
     physics.box(0, -0.5, 0, 40, 0.5, 40);
     physics.refreshQueries();
     const t = new Thornling(new THREE.Group(), physics, 0, 0);
+    t.rng = mulberry32(7);
     const wren = new THREE.Vector3(0, 0, 3.5); // right in front of it, in plain view
     const { env: e, hits } = env(physics, wren);
     run(t, physics, e, REACTION - 0.1);

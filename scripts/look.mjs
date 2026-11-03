@@ -604,13 +604,45 @@ const SCENES = {
     await park(h, { dist: 6, side: 4, height: 2.2, lookHeight: 1.6, boss: true });
     await h.wait(1200);
     await h.shot('gravelheart-hammer-stuck');
+    // Session B moves: Sweep's windup, the stone volley (stones hovering, then flying), a staggered ember.
+    await h.game(() => window.embervale.setTimeScale(0.5));
+    await h.until(() => !window.embervale.activeBoss.move, 20000);
+    await h.game(() => window.embervale.activeBoss.forceMove('sweep'));
+    await waitStep(h, 'sweep', 'windup', 0.8);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 7, side: 4, height: 2.6, lookHeight: 2.6, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart-sweep-windup');
+    await h.game(() => window.embervale.setTimeScale(0.5));
+    await h.until(() => !window.embervale.activeBoss.move, 20000);
+    await h.game(() => window.embervale.activeBoss.forceMove('volley'));
+    await waitStep(h, 'volley', 'windup', 0.9);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 9, side: 4, height: 3.2, lookHeight: 3.4, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart-volley-windup');
+    await h.game(() => window.embervale.setTimeScale(0.5));
+    await h.until(() => !window.embervale.activeBoss.move, 20000);
+    await h.game(() => window.embervale.activeBoss.interruptWith('staggered'));
+    await waitStep(h, 'staggered', 'active', 0.3);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 6, side: 3, height: 2.4, lookHeight: 2.2, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart-staggered');
     // The hall: wall stones all round, then the ring risen (phase two's wall).
     await h.game(([cx, cz, fy]) => {
       const g = window.embervale, T = g.player.pos.constructor;
-      g.rig.shot(new T(cx + 2, fy + 10, cz + 9), new T(cx, fy + 1, cz - 2), true);
+      g.rig.shot(new T(cx + 2, fy + 10.5, cz + 19), new T(cx, fy + 1, cz - 2), true);
     }, [r.x + r.w / 2, r.z + r.d / 2, y]);
     await h.wait(1200);
     await h.shot('gravelheart-hall');
+    // The drops: the west edge and a hole in the floor, from the ledge.
+    await h.game(([cx, cz, fy]) => {
+      const g = window.embervale, T = g.player.pos.constructor;
+      g.rig.shot(new T(cx - 8, fy + 5, cz + 12), new T(cx - 20, fy - 1, cz - 4), true);
+    }, [r.x + r.w / 2, r.z + r.d / 2, y]);
+    await h.wait(1200);
+    await h.shot('gravelheart-ledge');
     await h.game(() => {
       window.embervale.setTimeScale(1);
       window.embervale.area.hearth.raiseRing();
@@ -619,7 +651,7 @@ const SCENES = {
     await h.game(([cx, cz, fy]) => {
       const g = window.embervale, T = g.player.pos.constructor;
       g.setTimeScale(0.02);
-      g.rig.shot(new T(cx + 2, fy + 10, cz + 9), new T(cx, fy + 1, cz - 2), true);
+      g.rig.shot(new T(cx + 2, fy + 10.5, cz + 19), new T(cx, fy + 1, cz - 2), true);
     }, [r.x + r.w / 2, r.z + r.d / 2, y]);
     await h.wait(1200);
     await h.shot('gravelheart-ring');

@@ -159,7 +159,7 @@ export class Shellback extends GroundEnemy {
         const w = this.wanderTo.clone().sub(this.pos).setY(0);
         if (w.length() < 1 || this.t > 6) {
           for (let tries = 0; tries < 8; tries++) {
-            const a = Math.random() * Math.PI * 2, r = Math.random() * 6;
+            const a = this.rng() * Math.PI * 2, r = this.rng() * 6;
             this.wanderTo.set(this.home.x + Math.cos(a) * r, this.pos.y, this.home.z + Math.sin(a) * r);
             if (this.mayWalk(this.wanderTo)) break;
             this.wanderTo.copy(this.home);

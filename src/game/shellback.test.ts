@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics } from '../core/physics';
+import { mulberry32 } from '../core/math';
 import type { HitResult } from './enemies';
 import { enemyEnv, flatGround, runEnemy } from './enemyTestEnv';
 import { swordTarget } from './player';
@@ -13,6 +14,7 @@ beforeAll(async () => {
 function setup(wren: THREE.Vector3, result?: () => HitResult) {
   const physics = flatGround();
   const s = new Shellback(new THREE.Group(), physics, 0, 0);
+  s.rng = mulberry32(7);
   const { env, hits } = enemyEnv(physics, wren, result);
   return { s, hits, run: (sec: number, until?: () => boolean) => runEnemy(s, physics, env, sec, until) };
 }
@@ -91,7 +93,9 @@ describe('Shellback meets another enemy', () => {
   function crash() {
     const physics = flatGround();
     const a = new Shellback(new THREE.Group(), physics, 0, 0);
+    a.rng = mulberry32(7);
     const b = new Shellback(new THREE.Group(), physics, 0, 3);
+    b.rng = mulberry32(7);
     const { env } = enemyEnv(physics, new THREE.Vector3(0, 0, -60));
     physics.refreshQueries();
     const A = a as unknown as { go(s: string): void; chargeDir: THREE.Vector3; hitDone: boolean; state: string };

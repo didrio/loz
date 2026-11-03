@@ -38,6 +38,38 @@ export interface OrbOptions {
   radius?: number;
 }
 
+export interface StoneOptions {
+  /** Seconds it hovers before it flies (it aims at Wren when it launches). */
+  delay?: number;
+  /** Where it floats while it hovers (it drifts there from where it was pulled). */
+  hoverAt?: THREE.Vector3;
+  speed?: number;
+  /** How fast it bends toward Wren after launch (rad/s, for its first 0.7 s in the air). */
+  homing?: number;
+  life?: number;
+  attack?: Attack;
+  /** It came to rest (hit a wall or the floor, or was caught): rubble to build with. */
+  onLand?(at: THREE.Vector3): void;
+}
+
+interface Stone {
+  pos: THREE.Vector3;
+  vel: THREE.Vector3;
+  /** Hover time left; it flies when this runs out. */
+  hold: number;
+  launched: boolean;
+  flightT: number;
+  homing: number;
+  hoverAt: THREE.Vector3 | null;
+  t: number;
+  speed: number;
+  life: number;
+  attack: Attack | null;
+  mesh: THREE.Mesh;
+  shadow: GroundShadow;
+  onLand?(at: THREE.Vector3): void;
+}
+
 interface Wave {
   center: THREE.Vector3;
   r: number;
@@ -69,6 +101,7 @@ const WAVE_BAND = 0.55;
 export class Hazards {
   private waves: Wave[] = [];
   private orbs: Orb[] = [];
+  private stones: Stone[] = [];
   private readonly wallGeo = new THREE.CylinderGeometry(1, 1, 1, 48, 1, true);
   private readonly ringGeo = new THREE.RingGeometry(0.92, 1, 48);
   private readonly up = new THREE.Vector3(0, 1, 0);
@@ -79,7 +112,7 @@ export class Hazards {
   }
 
   get active() {
-    return this.waves.length + this.orbs.length;
+    return this.waves.length + this.orbs.length + this.stones.length;
   }
 
   /** A ring of fire expanding along the ground from `center`. Unblockable; jump over it. */
@@ -113,8 +146,47 @@ export class Hazards {
     });
   }
 
+  /**
+   * A thrown wakestone: hovers where it was pulled out of the wall, then flies at Wren
+   * (blockable, light). It can be caught mid-air with the glove (`tetherStone`).
+   */
+  stone(from: THREE.Vector3, o: StoneOptions = {}) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), new THREE.MeshLambertMaterial({ color: 0x8f887c, emissive: 0x0d3a33 }));
+    mesh.position.copy(from);
+    mesh.castShadow = true;
+    this.scene.add(mesh);
+    this.stones.push({
+      pos: from.clone(), vel: new THREE.Vector3(), hold: o.delay ?? 0, launched: false, flightT: 0, homing: o.homing ?? 0, hoverAt: o.hoverAt?.clone() ?? null, t: 0, speed: o.speed ?? 14, life: o.life ?? 3.5,
+      attack: o.attack ?? { damage: 1, guard: 1, knockback: 8, stone: true }, mesh, shadow: new GroundShadow(this.scene, 1), onLand: o.onLand,
+    });
+  }
+
+  /**
+   * The glove thrown from `from` along `dir`: catches the nearest stone in flight in front of
+   * Wren and yanks it down at her feet, harmless. Returns the latch point.
+   */
+  tetherStone(from: THREE.Vector3, dir: THREE.Vector3): { at: THREE.Vector3 } | null {
+    let best: Stone | null = null;
+    let bestD = 14;
+    for (const s of this.stones) {
+      if (!s.launched || !s.attack) continue;
+      const to = s.pos.clone().sub(from).setY(0);
+      const d = to.length();
+      if (d > bestD || d < 0.3 || to.normalize().dot(dir) < 0.93) continue;
+      best = s;
+      bestD = d;
+    }
+    if (!best) return null;
+    const at = best.pos.clone();
+    best.attack = null;
+    best.vel.copy(from).sub(best.pos).setY(0).normalize().multiplyScalar(9);
+    best.vel.y = 3;
+    return { at };
+  }
+
   update(dt: number, env: HazardEnv) {
     const p = env.playerPos;
+    this.updateStones(dt, env);
     for (let i = this.waves.length - 1; i >= 0; i--) {
       const w = this.waves[i];
       w.r += w.speed * dt;
@@ -167,6 +239,61 @@ export class Hazards {
     }
   }
 
+  private updateStones(dt: number, env: HazardEnv) {
+    const chest = env.playerPos.clone().setY(env.playerPos.y + 1.1);
+    for (let i = this.stones.length - 1; i >= 0; i--) {
+      const s = this.stones[i];
+      s.t += dt;
+      s.mesh.rotation.y += dt * (s.launched ? 7 : 1.5);
+      s.mesh.rotation.x += dt * (s.launched ? 5 : 0.8);
+      if (!s.launched && s.hold > 0) {
+        s.hold -= dt;
+        // It drifts to where it hovers (or lifts a little) as it gathers itself.
+        if (s.hoverAt) s.pos.lerp(s.hoverAt, 1 - Math.exp(-3 * dt));
+        else s.pos.y += dt * 0.35;
+      }
+      if (!s.launched && s.hold <= 0) {
+        s.launched = true;
+        s.vel.copy(chest).sub(s.pos).normalize().multiplyScalar(s.speed);
+      } else if (s.launched) {
+        // Thrown stones fly straight; a caught one drops.
+        if (!s.attack) s.vel.y -= 25 * dt;
+        s.flightT += dt;
+        if (s.attack && s.homing > 0 && s.flightT < 0.7) {
+          const want = chest.clone().sub(s.pos).normalize(), cur = s.vel.clone().normalize();
+          const angle = cur.angleTo(want), axis = cur.clone().cross(want);
+          if (angle > 1e-3 && axis.lengthSq() > 0) s.vel.applyAxisAngle(axis.normalize(), Math.min(angle, s.homing * dt));
+        }
+        const step = s.vel.clone().multiplyScalar(dt);
+        const dist = step.length();
+        const wall = dist > 0 ? env.physics.rayDistance(s.pos, step.clone().normalize(), dist + 0.45, Layer.World) : Infinity;
+        s.pos.add(step);
+        const floor = env.physics.groundY(s.pos.x, s.pos.z, s.pos.y + 0.5, Layer.World);
+        let land = s.t > s.life || wall < dist + 0.45 || (floor !== null && s.pos.y < floor + 0.45);
+        if (s.attack && !land && s.pos.distanceTo(chest) < 1.2) land = env.hitPlayer(s.pos, s.attack) !== 'miss';
+        if (land) {
+          if (floor !== null) s.pos.y = Math.max(floor + 0.45, s.pos.y);
+          env.particles.burst(s.pos, 0x8f887c, 10, 4, 0.5);
+          env.onPop?.(s.pos);
+          s.onLand?.(s.pos.clone());
+          this.removeStone(i);
+          continue;
+        }
+      }
+      s.mesh.position.copy(s.pos);
+      s.shadow.place(s.pos.x, s.pos.y, s.pos.z, env.physics.groundY(s.pos.x, s.pos.z, s.pos.y, Layer.World));
+    }
+  }
+
+  private removeStone(i: number) {
+    const s = this.stones[i];
+    this.scene.remove(s.mesh);
+    s.mesh.geometry.dispose();
+    (s.mesh.material as THREE.Material).dispose();
+    s.shadow.dispose();
+    this.stones.splice(i, 1);
+  }
+
   private removeWave(i: number) {
     const w = this.waves[i];
     this.scene.remove(w.mesh, w.ring);
@@ -191,5 +318,6 @@ export class Hazards {
   clear() {
     for (let i = this.waves.length - 1; i >= 0; i--) this.removeWave(i);
     for (let i = this.orbs.length - 1; i >= 0; i--) this.removeOrb(i);
+    for (let i = this.stones.length - 1; i >= 0; i--) this.removeStone(i);
   }
 }
