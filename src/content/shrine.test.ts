@@ -97,9 +97,11 @@ describe('shrine content', () => {
     content.start!(api);
     await runQueued();
     const chest = area.chests.get('southChest')!;
+    const sigil = area.sigils.get('sigil.cell')!;
     stand('southCell');
     content.update!(api, 1 / 60);
     expect(chest.present).toBe(false);
+    expect(sigil.present).toBe(false);
     // Beat the room's enemies (two sentinels and a thornling; stand-ins for now).
     const cell = enemies.filter((e) => e.pos.x > 14 && e.pos.x < 30 && e.pos.z > 16 && e.pos.z < 26);
     expect(cell.length).toBe(3);
@@ -108,6 +110,11 @@ describe('shrine content', () => {
     await runQueued();
     expect(p.cleared.has('southCell')).toBe(true);
     expect(chest.present).toBe(true);
+    expect(sigil.present).toBe(true); // its message is written in the air, and survives a reload
+    const later = setup(api.state);
+    later.content.restore!(later.api.state);
+    expect(later.area.sigils.get('sigil.cell')!.present).toBe(true);
+    expect(later.area.sigils.get('sigil.crypt')!.present).toBe(false);
   });
 
   it('striking the crystal raises the bars it holds, and that survives a reload', async () => {
@@ -209,6 +216,32 @@ describe('shrine content', () => {
     expect(area.stoneCell('naveStone')).toMatchObject({ i: 2, j: 6 }); // still where it was pushed
     content.onRespawn!(api);
     expect(area.stoneCell('naveStone')).toMatchObject({ i: 2, j: 5 });
+  });
+
+  it('the Gauntlet\'s sigil appears only once its six are beaten, and they stay beaten after death; the last sigil waits for the seal', async () => {
+    const { area, content, api, enemies, runQueued, p } = setup();
+    content.start!(api);
+    await runQueued();
+    const sigil = area.sigils.get('sigil.gauntlet')!;
+    const inGauntlet = () => enemies.filter((e) => e.alive && area.roomAt(e.pos)?.id === 'gauntlet');
+    expect(inGauntlet().length).toBe(6);
+    expect(sigil.present).toBe(false);
+    content.update!(api, 1 / 60);
+    expect(sigil.present).toBe(false);
+    for (const e of inGauntlet()) e.alive = false;
+    content.update!(api, 1 / 60);
+    await runQueued();
+    expect(p.cleared.has('gauntlet')).toBe(true);
+    expect(sigil.present).toBe(true);
+    content.onRespawn!(api);
+    expect(inGauntlet().length).toBe(0);
+    // The message in the seal room waits for the seal to break.
+    const last = area.sigils.get('sigil.seal')!;
+    expect(last.present).toBe(false);
+    p.switches.add('sealStone');
+    const later = setup(api.state);
+    later.content.restore!(later.api.state);
+    expect(later.area.sigils.get('sigil.seal')!.present).toBe(true);
   });
 
   it('a beaten challenge room stays empty after death and on reload; its chest stays', async () => {

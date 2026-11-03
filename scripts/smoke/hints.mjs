@@ -18,7 +18,9 @@ export default async function run(t) {
     await wait(1000);
     check((await game(() => window.embervale.state.hours)) === hours, 'the clock ran while paused');
     const m = await menu();
-    check(/No notes yet/.test(m.text), `empty page text: ${m.text}`);
+    check(/Keepers' notes/.test(m.text) && !/Messages/.test(m.text), `root text: ${m.text}`);
+    await press('Enter');
+    check(/No notes yet/.test((await menu()).text), `empty page text: ${(await menu()).text}`);
     await press('ArrowDown');
     await press('Enter'); // nothing to choose: stays open
     check((await menu()).open, 'Enter on an empty page closed it');
@@ -86,12 +88,27 @@ export default async function run(t) {
   await step('the pause menu lists the note and reads it', async () => {
     await press('KeyP');
     await until(() => window.embervale.pauseMenu.isOpen, 5000);
+    await press('Enter'); // the Keepers' notes row
     check(/The Stoneward tunic/.test((await menu()).text), 'note missing from the list');
     await press('Enter');
     check(/Stoneward/.test((await menu()).text), 'note text not shown');
     await shot('hints-04-note');
     await press('Backspace');
     check(/The Stoneward tunic/.test((await menu()).text) && (await menu()).open, 'Backspace should go back to the list');
+    await page.keyboard.press('KeyP');
+    await until(() => !window.embervale.pauseMenu.isOpen, 5000);
+  });
+
+  await step('a sigil that was read shows up under Messages', async () => {
+    await game(() => window.embervale.state.set('sigil.cell'));
+    await press('KeyP');
+    await until(() => window.embervale.pauseMenu.isOpen, 5000);
+    check(/Messages/.test((await menu()).text), 'Messages row missing once a sigil is read');
+    await press('ArrowDown');
+    await press('Enter');
+    check(/Over the pass/.test((await menu()).text), 'sigil missing from Messages');
+    await press('Enter');
+    check(/sent me over the pass/.test((await menu()).text), 'sigil text not shown');
     await page.keyboard.press('KeyP');
     await until(() => !window.embervale.pauseMenu.isOpen, 5000);
   });

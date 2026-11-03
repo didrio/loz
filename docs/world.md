@@ -86,7 +86,7 @@ change them.
   fight rooms that tell his grievance in his own words. Once Wren has read one, the villagers
   react, reluctantly. Tobin admits he was one of theirs.
 - **Gravelheart is him.** The player expects a man or a wizard and finds a stone giant. What
-  happened to him in there is the owner's later reveal. Epithet *(fill-in)*: "Who Came Home"
+  happened to him in there is the owner's later reveal. Epithet *(fill-in, in the game)*: "Who Came Home"
   (it was "the Sleepless Warden"; the keepers' warden lore is dropped).
 - **The prism.** His ward is held by a prism floating in beams of light in the room past his
   hearth. Wren shatters it with the sword: the gate falls and **the blight lifts** (owner's call:
@@ -107,6 +107,16 @@ change them.
 | Sentinel Cell (floor 0) | room cleared | *They sent me over the pass with nothing. Nobody cared if I came back.* |
 | Crypt (floor −1) | room cleared | *None of them knew what the world past the mountains had become, or what it did to me. They could have wondered.* |
 | The Gauntlet (floor −2) | room cleared | *THIS IS MY HOME.* |
+| Keepers' Seal room (beside the seal-stone, later the prism) | the ward is broken (the stone, later the prism) | *(owner's text)* Something is happening to me here in the shrine; I am becoming more powerful. If you are reading this, I suppose you have felled me. In that case... well... I'm sorry for what happened. (Hints that he changed shape inside the shrine; the story's resolution.) |
+
+**Built (S4, 2026-11-03).** `world/sigil.ts` (`SigilLook`: a slow ring of pale glyphs round a bright core, 1.7 m up; "Read"),
+`content/sigils.ts` (registry `SIGILS`, flags `sigil.<name>`, `readSigil`, `foundSigils`). The hollow's appears in the Lamplighter's
+death scene (`Overworld.sigil`); the shrine's four are dungeon things of kind `sigil` (`appears: { cleared }` for `sigil.cell|crypt|gauntlet`, which stay once
+their room is cleared; `sigil.seal` in the seal room appears once the seal-stone is broken, later the prism: `appears: { switch: 'sealStone' }`). A room with a sigil
+is a **challenge room** like one with a chest: once cleared it stays empty after death and reload. Rule: a message only appears after Wren has done something. The hollow's stands 4 m beside the Heart Vessel. The pause menu's **Messages** page lists the ones read. Villagers:
+`content/villageNews.ts` (`withNews`): each reacts once to the first sigil read (flag `village.<n>Sigil`) and once to the broken ward
+(`village.<n>Relief`), and that visit's usual talk waits until the next. Text pass: the gate sign, the ward toast, Gravelheart's
+epithet and defeat line. Texts of the sigils are the drafts above.
 
 ### The blight (S2, built 2026-11-03)
 
@@ -212,8 +222,8 @@ but not read closes again on reload.
 - **Gloomwisp**: night only, floats through walls, one hit; a boss can summon tame ones
   that orbit it.
 - **Planned for the first dungeon** (design draft, see [shrine.md](shrine.md)): Dozing
-  Sentinel and Shellback enemies, the Tether Glove, the boss Gravelheart, the Sleepless
-  Warden, and the Northpass (Emberfield's exit, sealed by a magic gate that breaks once the Warden sleeps; see [shrine.md](shrine.md)).
+  Sentinel and Shellback enemies, the Tether Glove, the boss Gravelheart, Gravelheart (Who
+  Came Home), and the Northpass (Emberfield's exit, sealed by a magic gate that breaks once the Warden sleeps; see [shrine.md](shrine.md)).
 - **Pickups**: green gem (1), blue gem (5), heart. **Heart Vessel**: +1 heart container.
   **Small Key**: opens one padlock or locked door (`GameState.keys`, shown under the gems).
 - **Flasks**: exactly two, found full in the Waking Shrine (life in the Sunken Court,

@@ -4,6 +4,7 @@ import type { Page, Script } from '../game/script';
 import type { GameState } from '../game/state';
 import type { Overworld } from '../world/overworld';
 import { offerWares, type Ware } from './shop';
+import { withNews } from './villageNews';
 
 /** The guard, taught when Wren picks up the shield. */
 export const GUARD_TUTORIAL = 'Hold [shield] to block. Each block wears down your *guard* (the green bars), which refills only while the shield is *lowered*. If it runs out, your guard breaks and you stagger.';
@@ -221,6 +222,7 @@ export function villageContent(ow: Overworld) {
     },
   };
 
+  for (const v of ['maren', 'tobin', 'lark', 'odo'] as const) scripts[`npc.${v}`] = withNews(v, scripts[`npc.${v}`]);
   return {
     scripts,
     restore(state: GameState) {

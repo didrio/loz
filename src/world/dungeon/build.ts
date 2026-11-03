@@ -6,6 +6,7 @@ import { buildCourse } from '../platforming';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Spot, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
 import { Chest } from '../objects';
+import { SigilLook } from '../sigil';
 import {
   CEIL_T, DEFAULT_DOOR_WIDTH, DIRS, DOOR_HEIGHT, doorPlacement, dropHole, FLOOR_T, floorHeightOf, floorY, landmarkRect, PIT_DEPTH,
   roomHeight, roomOpenings, roomRect, stairPlacement, worldPos,
@@ -43,6 +44,9 @@ interface StoneState {
  */
 
 const WALL_T = 0.5;
+/** Real point lights at once in a dungeon: the nearest `LIGHTS_NEAR` glow, the rest of the pool is for fading swaps. */
+const LIGHT_POOL = 8;
+const LIGHTS_NEAR = 6;
 const STEPS = 20;
 const yawOf: Record<Dir, number> = { n: Math.PI, s: 0, e: Math.PI / 2, w: -Math.PI / 2 };
 
@@ -104,6 +108,7 @@ export class DungeonArea implements Area {
   readonly triggers: Trigger[] = [];
   readonly doors = new Map<string, DungeonDoor>();
   readonly chests = new Map<string, Chest>();
+  readonly sigils = new Map<string, SigilLook>();
   readonly switches = new Map<string, DungeonSwitch>();
   readonly stones = new Map<string, Wakestone>();
   /** Fallen columns (`role: 'bridge'` stones): the glove swings them across their pits. */
@@ -132,7 +137,13 @@ export class DungeonArea implements Area {
   /** Pits filled by stones, by room: `i,j` cell keys. */
   private readonly filled = new Map<string, Set<string>>();
   private readonly floors = new Map<number, FloorParts>();
-  private readonly lights: { light: THREE.PointLight; base: number; phase: number }[] = [];
+  /**
+   * Every room's warm light, as data. Real point lights cost every pixel one pass each (the shrine has 34), so
+   * only the `LIGHT_POOL` nearest to Wren are real: a fixed pool of lights (a constant count, so no shader
+   * rebuilds) that move to the nearest sources and fade as they swap.
+   */
+  private readonly lightSources: { pos: THREE.Vector3; color: number; distance: number; base: number; phase: number; w: number }[] = [];
+  private readonly lightPool: { light: THREE.PointLight; src: number }[] = [];
   /** In the hearth's drops: a dull ember glow far below, so the edge reads as a drop in the dark. */
   private readonly emberMat = new THREE.MeshBasicMaterial({ color: 0x8a2e0c });
   private readonly waterMat = new THREE.MeshLambertMaterial({ color: 0x2f6f74, transparent: true, opacity: 0.75, emissive: 0x0c2a2c });
@@ -243,10 +254,7 @@ export class DungeonArea implements Area {
       // A tall room (a shaft) gets another light every 4.5 m up, so its upper reaches aren't black.
       const base = (10 + r.w * r.d * 0.04) * pal.lightLevel;
       for (let ly = Math.min(h - 1.2, 5); ly < h - 1.2 || ly === Math.min(h - 1.2, 5); ly += 4.5) {
-        const light = new THREE.PointLight(pal.light, 0, Math.max(r.w, r.d) * 1.4, 1.2);
-        light.position.set(r.x + r.w / 2, fy + ly, r.z + r.d / 2);
-        this.lights.push({ light, base, phase: Math.random() * 10 });
-        p.dynamic.add(light);
+        this.lightSources.push({ pos: new THREE.Vector3(r.x + r.w / 2, fy + ly, r.z + r.d / 2), color: pal.light, distance: Math.max(r.w, r.d) * 1.4, base, phase: Math.random() * 10, w: 0 });
       }
     }
 
@@ -424,6 +432,11 @@ export class DungeonArea implements Area {
       } else if (t.kind === 'sign') {
         buildTablet(b, p.dynamic, x, fy, z, faceCenter);
         this.interactables.push({ id: t.id, x, z, y: fy, r: 2.2, label: 'Read', promptY: fy + 2.1, enabled: () => true });
+      } else if (t.kind === 'sigil') {
+        const sigil = new SigilLook(b, t.id, x, fy, z);
+        if (t.appears) sigil.setPresent(false);
+        this.sigils.set(t.id, sigil);
+        this.interactables.push(sigil.interactable);
       } else if (t.kind === 'landmark') {
         buildLandmark(b, p.src.solid, t.style, themeOf(r), x, fy, z, t.facing ?? 0);
       } else if (t.kind === 'bellPost') {
@@ -907,18 +920,62 @@ export class DungeonArea implements Area {
     for (const c of this.courses) c.update(this.platformT);
   }
 
+  /** Moves the pooled lights to the sources nearest `focus`; sources fade in and out as they enter or leave the nearest few. */
+  private updateLights(dt: number, focus: THREE.Vector3) {
+    const src = this.lightSources;
+    if (!src.length) return;
+    const first = !this.lightPool.length;
+    if (first) {
+      for (let i = 0; i < LIGHT_POOL; i++) {
+        const light = new THREE.PointLight(0xffffff, 0, 10, 1.2);
+        this.root.add(light);
+        this.lightPool.push({ light, src: -1 });
+      }
+    }
+    const near = src.map((s, i) => ({ i, d: s.pos.distanceToSquared(focus) })).sort((a, b) => a.d - b.d);
+    const wanted = new Set(near.slice(0, LIGHTS_NEAR).map((n) => n.i));
+    if (first) for (const i of wanted) src[i].w = 1; // no fade-in on arrival
+    const k = Math.min(1, dt * 4);
+    src.forEach((s, i) => (s.w += ((wanted.has(i) ? 1 : 0) - s.w) * k));
+    // Keep a source in its slot while it still glows; free the slots of those that have faded out.
+    const held = new Set<number>();
+    for (const slot of this.lightPool) {
+      if (slot.src >= 0 && src[slot.src].w > 0.02) held.add(slot.src);
+      else slot.src = -1;
+    }
+    for (const n of near.slice(0, LIGHTS_NEAR)) {
+      if (held.has(n.i)) continue;
+      const slot = this.lightPool.find((s) => s.src < 0);
+      if (!slot) break;
+      slot.src = n.i;
+      held.add(n.i);
+    }
+    for (const slot of this.lightPool) {
+      const s = slot.src >= 0 ? src[slot.src] : null;
+      if (!s) {
+        slot.light.intensity = 0;
+        continue;
+      }
+      slot.light.position.copy(s.pos);
+      slot.light.color.setHex(s.color);
+      slot.light.distance = s.distance;
+      slot.light.intensity = s.base * s.w * (0.92 + Math.sin(this.t * 7 + s.phase) * 0.04 + Math.sin(this.t * 13 + s.phase) * 0.03);
+    }
+  }
+
   update(dt: number, _env: AreaEnv) {
     this.t += dt;
     for (const d of this.doors.values()) d.update(dt);
     this.hearth?.update(dt);
     for (const c of this.chests.values()) c.update(dt);
+    for (const g of this.sigils.values()) g.update(dt);
     for (const s of this.switches.values()) s.update(dt);
     for (const s of this.stones.values()) s.update(dt);
     for (const c of this.columns.values()) c.update(dt);
     for (const post of this.bellPosts.values()) post.update(dt);
     for (const bell of this.bellPickups.values()) bell.update(dt);
     this.heavyGlow.emissive.setRGB(0.1, 0.55 + Math.sin(this.t * 2.4) * 0.2, 0.5 + Math.sin(this.t * 2.4) * 0.18);
-    for (const l of this.lights) l.light.intensity = l.base * (0.92 + Math.sin(this.t * 7 + l.phase) * 0.04 + Math.sin(this.t * 13 + l.phase) * 0.03);
+    if (_env.playerPos) this.updateLights(dt, _env.playerPos);
   }
 
   dispose() {

@@ -11,7 +11,7 @@ import { HOWL, KNEEL, MOVES, STAGGER } from './moves';
 import { blendPose, GravelheartRig, SLEEP, STAND, type Pose } from './rig';
 
 /**
- * GRAVELHEART, the Sleepless Warden. Boss of the Waking Shrine (docs/shrine.md, "The boss").
+ * GRAVELHEART, Who Came Home. Boss of the Waking Shrine (docs/shrine.md, "The boss").
  *
  * The shrine's guardian was meant to sleep while the lantern burned. When the flame was
  * stolen, the thief pushed an ember into its chest, and now it can't sleep.
@@ -29,7 +29,7 @@ const RUBBLE_LIFE = 7;
 
 export class Gravelheart extends Boss {
   readonly title = 'Gravelheart';
-  readonly epithet = 'the Sleepless Warden';
+  readonly epithet = 'Who Came Home';
   readonly music: MusicMood = 'warden';
   protected readonly introDuration = 4.2;
   protected readonly dyingDuration = Infinity;

@@ -91,7 +91,7 @@ export function wardenContent(area: DungeonArea) {
     api.releaseCamera();
     hearth.clear();
     if (!api.state.has('gravelheartVessel')) hearth.vessel.show();
-    await api.say([{ text: 'Gravelheart sleeps at last. Its ember rose through the stone, toward the lantern on the eastern hill.\nThe ring sinks and the great door opens.' }]);
+    await api.say([{ text: 'Gravelheart kneels, and the stone goes quiet. Its ember rises through the roof, toward the lantern on the eastern hill.\nThe ring sinks and the great door opens.' }]);
 
     // The north wall: stones climb out of the pit, and a door that was never there grinds open.
     const door = hearth.sealDoor;
@@ -141,7 +141,7 @@ export function wardenContent(area: DungeonArea) {
     await api.travel('shrine', 'sealRoom', true);
     api.hidePlayer(false);
     api.releaseCamera();
-    api.toast('The ward on the gate is broken. The way north is open.');
+    api.toast('The ward is broken. The gate has fallen, and the way north is open.');
   };
 
   /** The Heart Vessel the Warden leaves behind. */

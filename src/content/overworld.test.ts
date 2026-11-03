@@ -32,12 +32,12 @@ describe('overworld content', () => {
     restore(state);
     expect(area.gate.isOpen).toBe(false);
     await scripts['sign.gate'](api);
-    expect(said.at(-1)!.text).toMatch(/Closed by the Keepers/);
+    expect(said.at(-1)!.text).toMatch(/gate of floating stone/);
     state.set('valleyOpen');
     restore(state);
     expect(area.gate.isOpen).toBe(true);
     await scripts['sign.gate'](api);
-    expect(said.at(-1)!.text).toMatch(/ward is broken/);
+    expect(said.at(-1)!.text).toMatch(/gate has fallen/);
   });
 
   it('lets the player stand on the ground at the spawn point', () => {

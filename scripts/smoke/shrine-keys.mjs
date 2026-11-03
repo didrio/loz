@@ -71,12 +71,12 @@ export default async function run(t) {
     check(Math.hypot(s.pos.x - spawn.x, s.pos.z - spawn.z) < 1.5 && s.hp > 0, `respawned at (${s.pos.x.toFixed(1)}, ${s.pos.z.toFixed(1)})`);
     check(await inShrine(() => window.embervale.state.dungeon('shrine').doors.has('cryptCistern') && window.embervale.area.doors.get('cryptCistern').open), 'progress lost');
     check(await inShrine(() => window.embervale.state.flasks.slots[0] === null), 'flask refilled on death');
-    const alive = await inShrine(() => window.embervale.enemies.list.filter((e) => e.alive).length);
+    const alive = await inShrine(() => window.embervale.enemies.list.filter((e) => e.alive && !('title' in e)).length);
     // Beaten challenge rooms (the ones a chest waits on) stay empty; everything else is back.
     const stayEmpty = await inShrine(() => {
       const g = window.embervale;
       const cleared = g.state.dungeon('shrine').cleared;
-      const rooms = new Set(g.area.def.things.filter((t) => t.kind === 'chest' && t.appears && 'cleared' in t.appears).map((t) => t.appears.cleared));
+      const rooms = new Set(g.area.def.things.filter((t) => (t.kind === 'chest' || t.kind === 'sigil') && t.appears && 'cleared' in t.appears).map((t) => t.appears.cleared));
       return g.area.spawns.filter((s) => s.type !== 'gravelheart' && cleared.has(s.room) && rooms.has(s.room)).length;
     });
     check(stayEmpty > 0 && alive === enemiesBefore - stayEmpty, `${alive} enemies after respawning, expected ${enemiesBefore} minus ${stayEmpty} in beaten challenge rooms`);

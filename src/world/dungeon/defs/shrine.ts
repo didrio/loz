@@ -187,6 +187,7 @@ export const SHRINE: DungeonDef = {
     { kind: 'enemy', id: 'southSentinel1', room: 'southCell', at: [4, 5], type: 'sentinel' },
     { kind: 'enemy', id: 'southSentinel2', room: 'southCell', at: [12, 5], type: 'sentinel' },
     { kind: 'enemy', id: 'southThorn', room: 'southCell', at: [8, 8], type: 'thornling' },
+    { kind: 'sigil', id: 'sigil.cell', room: 'southCell', at: [3, 8], appears: { cleared: 'southCell' } },
     { kind: 'chest', id: 'southChest', room: 'southCell', at: [8, 5], loot: { key: 'amber' }, appears: { cleared: 'southCell' } },
     // ── Barred Cell: reached last, from below. Its crystal lifts the bar into the nave.
     { kind: 'switch', id: 'northBar', room: 'northCell', at: [3, 13] },
@@ -239,6 +240,7 @@ export const SHRINE: DungeonDef = {
     { kind: 'enemy', id: 'cryptThorn2', room: 'crypt', at: [4, 17], type: 'thornling' },
     // Landmark: the fallen keeper's head, its open eye toward the foot of the stairs down.
     { kind: 'landmark', id: 'cryptHead', room: 'crypt', at: [9, 14], style: 'fallenKeeper', facing: 2.77 },
+    { kind: 'sigil', id: 'sigil.crypt', room: 'crypt', at: [11, 13], appears: { cleared: 'crypt' } },
     { kind: 'chest', id: 'cryptChest', room: 'crypt', at: [8, 4], loot: { key: 'violet' }, appears: { cleared: 'crypt' } },
     // ── Pit Hall: too wide to jump. A fallen column lies along the far ledge (from here, 12.5 m
     //    toward the back wall); the glove swings it across the pit like a drawbridge.
@@ -267,6 +269,7 @@ export const SHRINE: DungeonDef = {
     { kind: 'enemy', id: 'gauntShell2', room: 'gauntlet', at: [12, 15], type: 'shellback' },
     { kind: 'enemy', id: 'gauntThorn1', room: 'gauntlet', at: [8, 10], type: 'thornling' },
     { kind: 'enemy', id: 'gauntThorn2', room: 'gauntlet', at: [8, 17], type: 'thornling' },
+    { kind: 'sigil', id: 'sigil.gauntlet', room: 'gauntlet', at: [8, 13], appears: { cleared: 'gauntlet' } },
     // ── Key Vault: two hold plates, a light stone (the sword) and a heavy one (the glove):
     //    both held down at once, the boss key appears.
     { kind: 'stone', id: 'vaultStone', room: 'keyVault', at: [9, 5] },
@@ -288,5 +291,6 @@ export const SHRINE: DungeonDef = {
     { kind: 'boss', id: 'gravelheart', room: 'boss', type: 'gravelheart' },
     // ── The Keepers' Seal: the stone that breaks the ward on the gate.
     { kind: 'switch', id: 'sealStone', room: 'sealRoom', at: [6, 6] },
+    { kind: 'sigil', id: 'sigil.seal', room: 'sealRoom', at: [6, 3], appears: { switch: 'sealStone' } },
   ],
 };

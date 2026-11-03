@@ -52,9 +52,9 @@ checks it decodes and uses known ids); `completedDungeon(def)` builds "all done"
 from a dungeon's data.
 
 **The pause menu** (`PauseMenu`, P / Start, play mode only; the shipped game has it): pauses
-like the dev menu (the two never open over each other). For now its one page is the keepers'
-notes found (`content/hints.ts` `foundHints`, registry order; choose one to read it), or a line
-saying to look for them. P / Start close it from any depth. Gear and settings pages go in as
+like the dev menu (the two never open over each other). Its root has a **Keepers' notes**
+page (`content/hints.ts` `foundHints`, registry order; choose one to read it, or a line saying to look for them) and,
+once Wren has read a sigil, a **Messages** page (`content/sigils.ts` `foundSigils`). P / Start close it from any depth. Gear and settings pages go in as
 rows of its root later (roadmap item 2).
 
 ## Modes

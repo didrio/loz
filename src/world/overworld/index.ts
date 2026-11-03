@@ -9,6 +9,7 @@ import { Gate } from './gate';
 import { buildGorge, GORGE_BELL, GORGE_COURSE, gorgeAt } from './gorge';
 import { buildHollow } from './hollow';
 import { MurmurbudLook } from '../murmurbud';
+import { SigilLook } from '../sigil';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
 import { areaNameAt, BUDS, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { NORTHPASS } from './northpass';
@@ -75,6 +76,8 @@ export class Overworld implements Area {
   readonly jars: JarField;
   /** The blight's thorns in the field; they shrink away as the blight lifts. */
   private readonly growths: ReturnType<typeof buildBlightGrowths>;
+  /** The sigil in the hollow, once the Lamplighter falls (`sigil.hollow`). */
+  readonly sigil: SigilLook;
   /** The Murmurbuds, by id (`bud.<hint>`). */
   readonly buds: Map<string, MurmurbudLook>;
   /** A swing reached a bud (the game's bud system listens; see game/buds.ts). */
@@ -124,6 +127,8 @@ export class Overworld implements Area {
     for (const s of SIGNS) buildSign(b, s.x, s.z);
     this.hollow = new BossArena(b, HOLLOW.x, HOLLOW.z, HOLLOW.floor, HOLLOW.r, hollow.lamps);
     this.vessel = new HeartVessel(b, HOLLOW.x, HOLLOW.floor, HOLLOW.z);
+    this.sigil = new SigilLook(b, 'sigil.hollow', HOLLOW.x + 4, HOLLOW.floor, HOLLOW.z) // beside the Heart Vessel, not inside it;
+    this.sigil.setPresent(false);
 
     const npc = (x: number, z: number, yaw: number, scale: number, colors: ConstructorParameters<typeof Npc>[1]) =>
       new Npc(b, colors, x, z, terrainHeight(x, z), yaw, scale);
@@ -176,6 +181,7 @@ export class Overworld implements Area {
       { id: 'sign.pedestal', x: shrine.pedestal.x, z: shrine.pedestal.z, r: 2.3, label: 'Read', promptY: above(shrine.pedestal.x, shrine.pedestal.z, 2), enabled: always },
       ...SIGNS.map((s) => ({ id: s.id, x: s.x, z: s.z, r: 2.3, label: 'Read', promptY: above(s.x, s.z, 2.4), enabled: always })),
       ...[...this.buds.values()].map((bud) => bud.interactable),
+      this.sigil.interactable,
     ];
     this.triggers = [
       { id: 'trigger.shrineEntrance', x: SHRINE_DOOR.x, z: SHRINE_DOOR.z, r: 1.6, enabled: () => this.door.open },
@@ -270,6 +276,7 @@ export class Overworld implements Area {
     this.hollowFx.update(dt);
     this.bushes.update(dt);
     for (const bud of this.buds.values()) bud.update(dt);
+    this.sigil.update(dt);
     this.regions.update(dt);
     this.npcs.maren.update(dt, env.playerPos);
     this.npcs.tobin.update(dt, env.playerPos);

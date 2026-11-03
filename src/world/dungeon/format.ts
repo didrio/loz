@@ -174,6 +174,11 @@ export type ThingDef =
   | { kind: 'boss'; id: string; room: string; type: string }
   | { kind: 'sign'; id: string; room: string; at: Vec2; text: string }
   /**
+   * A sigil: a message written in the air (`SigilLook`, docs/world.md "Story"). Its words are content's
+   * (`content/sigils.ts`, bound by `id`, which is `sigil.<name>`). Pure story: the solver and puzzles ignore it.
+   */
+  | { kind: 'sigil'; id: string; room: string; at: Vec2; appears?: Condition }
+  /**
    * A big, lopsided statue to orient by (one per floor's central room): `LANDMARK_SIZE` m
    * square around `at`, solid like a pillar (the grid marks its cells blocked). `facing`
    * is a yaw in radians (0 = looking south, +x = toward east); each style says what it points at.

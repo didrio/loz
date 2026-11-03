@@ -386,3 +386,22 @@ describe("Warden's Hearth (Gravelheart's arena)", () => {
     expect(h.causewayUp).toBe(true);
   });
 });
+
+describe('dungeon lighting', () => {
+  it('keeps the number of real point lights constant (no shader rebuilds) and small, wherever Wren is', () => {
+    const area = new DungeonArea(new Physics(), SHRINE);
+    const count = () => {
+      let n = 0;
+      area.root.traverse((o) => o instanceof THREE.PointLight && n++);
+      return n;
+    };
+    area.update(0.1, { night: 0, playerPos: new THREE.Vector3(30, 0, 20) });
+    const first = count();
+    expect(first).toBeGreaterThan(0);
+    expect(first).toBeLessThanOrEqual(10);
+    for (const p of [new THREE.Vector3(-10, -16, -40), new THREE.Vector3(24, -8, 6)]) {
+      for (let i = 0; i < 30; i++) area.update(0.1, { night: 0, playerPos: p });
+      expect(count()).toBe(first);
+    }
+  });
+});

@@ -228,10 +228,11 @@ export function validateDungeon(def: DungeonDef): string[] {
         if (rectsOverlap({ x: ex - 1, z: ez - 1, w: 2, d: 2 }, me)) errors.push(`landmark "${t.id}" stands at the dungeon entrance`);
       }
     }
-    if (t.kind === 'chest' && t.appears) {
+    if ((t.kind === 'chest' || t.kind === 'sigil') && t.appears) {
+      const what = t.kind === 'chest' ? 'Chest' : 'Sigil';
       const waits = 'switch' in t.appears ? [t.appears.switch] : 'switches' in t.appears ? t.appears.switches : [];
-      for (const w of waits) if (!switches.has(w)) errors.push(`Chest "${t.id}" waits for unknown switch "${w}"`);
-      if ('cleared' in t.appears) room(t.appears.cleared, `Chest "${t.id}"`);
+      for (const w of waits) if (!switches.has(w)) errors.push(`${what} "${t.id}" waits for unknown switch "${w}"`);
+      if ('cleared' in t.appears) room(t.appears.cleared, `${what} "${t.id}"`);
     }
   }
 

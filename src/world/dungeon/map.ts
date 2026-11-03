@@ -88,7 +88,7 @@ function drawFloor(def: DungeonDef, rooms: Map<string, RoomDef>, floor: number) 
     if (t.kind === 'boss') put(r.x + r.w / 2, r.z + r.d / 2, 'X');
     else {
       const [x, z] = worldPos(r, t.at);
-      const ch = { chest: 'C', switch: t.kind === 'switch' && t.style === 'plate' ? 'P' : 'S', stone: t.kind === 'stone' && t.heavy ? '&' : '%', enemy: 'e', sign: '?', landmark: 'L', bellPost: 'Y', bell: 'A' }[t.kind];
+      const ch = { chest: 'C', switch: t.kind === 'switch' && t.style === 'plate' ? 'P' : 'S', stone: t.kind === 'stone' && t.heavy ? '&' : '%', enemy: 'e', sign: '?', sigil: '*', landmark: 'L', bellPost: 'Y', bell: 'A' }[t.kind];
       put(x, z, ch);
     }
   }

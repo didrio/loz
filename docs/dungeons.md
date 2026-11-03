@@ -63,7 +63,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   with the sword, or `'plate'` held down by a stone; `needs: item` if pressing it takes a
   tool), `stone` (a 2 m wakestone, `heavy` ones only move with the glove; stones and
   plates go at odd coordinates, the centers of 2 m cells), `enemy` (`type` is an enemy
-  class name like `thornling`), `boss` (stands in the middle of its room), `sign`,
+  class name like `thornling`), `boss` (stands in the middle of its room), `sign`, `sigil` (a message in the air, `SigilLook`; `appears` like a chest's; the text is in `content/sigils.ts` by id `sigil.<name>`),
   `landmark` (a big lopsided statue to orient by: `style` `lanternKeeper` / `watcher` /
   `fallenKeeper`, `facing` a yaw; a 3 m square, solid like a pillar, so the grid blocks the
   cells it touches and the validator rejects one on a doorway approach, a stair, a pit, a
@@ -100,7 +100,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
 `new DungeonArea(physics, def)` is an `Area` (indoor: see [engine.md](engine.md)). Each
 room gets a floor slab minus its holes (with 2 m seams: the wakestone grid), walls on its
 edges (shared walls built once, door gaps cut, lintels over doorways), a ceiling minus the
-shafts coming up through it, pillars and blocks, a warm point light and two wall sconces.
+shafts coming up through it, pillars and blocks, a warm light and two wall sconces. **Lights are pooled** (perf, 2026-11-03): every room's light is data, but only the 6 nearest to Wren are real point lights (a fixed pool of 8 in `DungeonArea.updateLights`, so the count never changes and nothing recompiles); the shrine had 34 real lights before, and every pixel paid for each. The `dungeon` look scene, which sees all floors from one point, is lit by the nearest few only.
 Pits have a floor 3 m down. Stairs are solid steps (looks, side collisions) with one smooth
 ramp collider on top, and railings round the shaft upstairs except at the top. Doors are
 `DungeonDoor`s styled by their lock (open frame, small-key slab, boss slab, bars for switch
@@ -173,7 +173,7 @@ are open doorways, `k` small-key door, `B` boss door, `s` switch door, `i` item 
 `> < ^ v` one-way doors (pointing the way you can go), `U`/`D` stairs up/down, `v`/`*` a
 drop hole (on the floor above) and where it lands (below), `@` entrance, `C` chest, `S`
 crystal switch, `P` floor plate, `%` wakestone, `&` heavy wakestone, `e` enemy, `X` boss,
-`?` sign, `L` landmark statue, `Y` bell post, `A` bell, `O` pit, `=` block, `I` pillar. Room ids are written in empty space inside each room. Example (`npm run map --
+`?` sign, `*` sigil, `L` landmark statue, `Y` bell post, `A` bell, `O` pit, `=` block, `I` pillar. Room ids are written in empty space inside each room. Example (`npm run map --
 example`):
 
 ```

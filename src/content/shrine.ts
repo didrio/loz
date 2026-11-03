@@ -8,6 +8,7 @@ import type { DungeonProgress, GameState } from '../game/state';
 import type { DungeonArea } from '../world/dungeon/build';
 import { floorY, keyName, lockSwitches, type Condition, type Loot, type Potion, type RoomDef } from '../world/dungeon/format';
 import { bellContent } from './bells';
+import { readSigil } from './sigils';
 import { wardenContent } from './gravelheart';
 import type { AreaContent } from './overworld';
 
@@ -63,9 +64,16 @@ export function shrineContent(area: DungeonArea): AreaContent {
     return p.cleared.has(c.cleared);
   };
 
-  /** Chests whose condition just came true pop into view (a puff of light and a chime). */
+  /** Chests and sigils whose condition just came true pop into view (a puff of light and a chime). */
   const revealChests = (api: ScriptApi) => {
     const p = progress(api.state);
+    for (const t of def.things) {
+      if (t.kind !== 'sigil' || !t.appears) continue;
+      const sigil = area.sigils.get(t.id)!;
+      if (sigil.present || !met(t.appears, p)) continue;
+      sigil.setPresent(true);
+      api.particles.burst(sigil.group.position, 0xe2d6ff, 24, 2, 1.2, false);
+    }
     for (const t of def.things) {
       if (t.kind !== 'chest' || !t.appears) continue;
       const chest = area.chests.get(t.id)!;
@@ -76,9 +84,9 @@ export function shrineContent(area: DungeonArea): AreaContent {
     }
   };
 
-  /** Rooms whose chest appears once they're cleared: beating them is permanent. */
+  /** Rooms whose chest or sigil appears once they're cleared: beating them is permanent. */
   const challengeRooms = new Set(
-    def.things.flatMap((t) => (t.kind === 'chest' && t.appears && 'cleared' in t.appears ? [t.appears.cleared] : [])),
+    def.things.flatMap((t) => ((t.kind === 'chest' || t.kind === 'sigil') && t.appears && 'cleared' in t.appears ? [t.appears.cleared] : [])),
   );
   const alive = (room: string) => (roomEnemies.get(room) ?? []).some((e) => e.alive);
 
@@ -103,6 +111,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
 
   for (const t of def.things) {
     if (t.kind === 'sign') scripts[t.id] = (api) => api.say([{ text: t.text }]);
+    if (t.kind === 'sigil') scripts[t.id] = readSigil(t.id);
     if (t.kind !== 'chest') continue;
     scripts[t.id] = async (api) => {
       const chest = area.chests.get(t.id)!;
@@ -167,7 +176,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
     roomEnemies.clear();
     const p = progress(api.state);
     for (const s of area.spawns) {
-      // A beaten challenge room (one a chest waits on) stays empty; other rooms refill.
+      // A beaten challenge room (one a chest or a sigil waits on) stays empty; other rooms refill.
       if (p.cleared.has(s.room) && challengeRooms.has(s.room)) continue;
       // Each enemy minds its own room: it ignores Wren until Wren walks in.
       const inRoom = (pos: THREE.Vector3) => area.roomAt(pos)?.id === s.room;
@@ -204,6 +213,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
         area.latched.add(id);
       }
       for (const t of def.things) {
+        if (t.kind === 'sigil') area.sigils.get(t.id)?.setPresent(met(t.appears, p));
         if (t.kind !== 'chest') continue;
         const chest = area.chests.get(t.id)!;
         if (met(t.appears, p)) chest.setPresent(true);
@@ -326,7 +336,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
       for (const [room] of roomEnemies) {
         if (p.cleared.has(room) || alive(room)) continue;
         p.cleared.add(room);
-        if (def.things.some((t) => t.kind === 'chest' && t.appears && 'cleared' in t.appears && t.appears.cleared === room)) {
+        if (challengeRooms.has(room)) {
           api.run(async (a) => {
             a.sfx.solved();
             revealChests(a);

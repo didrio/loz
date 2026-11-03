@@ -20,12 +20,11 @@ built almost entirely by AI agents. Build everything as if it will ship.
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
 As of 2026-11-03: Emberfield plays start to finish: a wordless start, the shield in a ruined cottage, the village, the Lamplighter,
-then **the Waking Shrine** through **Gravelheart** and the Keepers' Seal, which opens the gate to the Northpass and **Wayfarers' Camp**
-(Cragstalkers, the Waybell). The valley lies under **the blight** (violet sky, ash, thorns, placeholder songs the owner likes) until the
-seal breaks; then 3 stray thornlings and no wisps. Bells, trials, Murmurbuds, jars in the ruins, the pause menu (P), shield surfing and the dev menu
-(~ / L3) work. Unplayed by the owner: surfing, the sealed gate, D3. Open: a Lamplighter-fight report (stuck at the arena edge, then
-"inverted" controls) that didn't reproduce (roadmap, "Known quirks"). **Next:** story revamp S4–S5 (roadmap 0.7), then the pause
-menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
+then **the Waking Shrine** through **Gravelheart** and the Keepers' Seal, which opens the gate to the Northpass and **Wayfarers' Camp**.
+The valley lies under **the blight** until the seal breaks. **Sigils** (messages in the air, listed under the pause menu's Messages) and the
+villagers' reactions are in; the dungeon's lights are pooled (perf). Unplayed by the owner: surfing, the sealed gate, D3. Open: a
+Lamplighter-fight report (stuck at the arena edge, "inverted" controls) that didn't reproduce, and its fight's slowness (roadmap, "Known quirks").
+**Next:** story revamp S5 (the prism, roadmap 0.7; plan mode), then the pause menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
 
@@ -130,6 +129,7 @@ src/
     area.ts, interior.ts   Area interface, Interactable, Trigger, AreaBuilder; MillInterior (Tobin's mill)
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
     jars.ts                JarField: clay jars in the ruins (a sword breaks one; blue gem / heart / empty; saved as `jar.<id>` flags)
+    sigil.ts               SigilLook: a message in the air (the hollow's, the shrine's three)
     bell.ts, murmurbud.ts  BELL_IDS, BellPost, BellPickup; MurmurbudLook (hint bulb: swells, sulks, opens, floating note, wisp)
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
     overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp,
@@ -159,6 +159,7 @@ src/
     village.ts             Thistledown: the villagers, the mill door, Odo's stall, the opening (the shield, the scream)
     mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
     bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
+    sigils.ts, villageNews.ts   the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)
     gorge.ts, northpass.ts the Hushing Gorge (monsters, fall rule); the canyon past the camp (Cragstalkers, fall rule)
     shrine.ts, gravelheart.ts  the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
     devStates.ts, fakeApi.ts   dev-menu save states; the fake ScriptApi content tests run against
@@ -188,7 +189,7 @@ CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/, skills
 - The camera passes through trees and fences (Prop) but pulls in for walls and terrain.
 - Continue starts at the spawn of the area you saved in (a dungeon's entrance inside one), with at least 3 hearts.
 - **The checkpoint rule** (owner's call): dying sends Wren back to the area's start with full hearts; keys, items, opened chests
-  and doors, pressed switches and cleared rooms stay, but every enemy respawns. Flasks don't refill (only Odo fills them, for gems).
+  and doors, pressed switches and cleared rooms stay, but every enemy respawns (except in a beaten challenge room: one a chest or a sigil waits on). Flasks don't refill (only Odo fills them, for gems).
 - No map or compass (owner's call): dungeon chests hold keys, items, flasks (`game/flasks.ts`)
   and gems instead. Max hearts grow only from bosses (no heart chests in dungeons). Every interactable thing must serve
   a purpose (the puzzle checker fails a stone that doesn't).

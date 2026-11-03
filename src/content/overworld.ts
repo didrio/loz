@@ -11,6 +11,7 @@ import { bellContent } from './bells';
 import { northpassContent } from './northpass';
 import { gorgeContent } from './gorge';
 import { hintContent } from './hints';
+import { sigilContent } from './sigils';
 import { villageContent } from './village';
 
 /** What a loaded area needs from content: scripts by interactable/trigger id, and save restore. */
@@ -169,6 +170,9 @@ export function overworldContent(ow: Overworld): AreaContent {
     api.releaseCamera(true);
     await api.fade(0, 0.5);
     ow.vessel.show();
+    // Where the Lamplighter stood, something has been written in the air.
+    ow.sigil.setPresent(true);
+    api.particles.burst(ow.sigil.group.position, 0xe2d6ff, 24, 2, 1.2, false);
     await api.say([{ text: 'The flame is free. Far to the east, the great lantern holds one warm ember again, and the spiral on the shrine door has begun to glow.' }]);
   };
 
@@ -232,6 +236,7 @@ export function overworldContent(ow: Overworld): AreaContent {
 
     ...bells.scripts,
     ...hints.scripts,
+    ...sigilContent(new Map([['sigil.hollow', ow.sigil]])),
     'sign.crossroads': say(crossroads()),
     'sign.gorge': say('THE HUSHING GORGE\n"Walk soft. The stone keeps the old bell\'s hush, and what guards it does not like noise."\nBelow, in a child\'s hand: *the way up is over the gap*'),
     'sign.hollow': say('GLOAMING HOLLOW\n"Here ends the lamplighter\'s road. Lamps lit at dusk, snuffed at dawn."\nUnderneath, scratched in fresh and shaky: *TURN BACK*'),
@@ -254,7 +259,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     },
     'sign.village': say('Thistledown Village\n"Mind the windmill. Mind the thornlings more."'),
     'sign.canyon': say('WAYFARERS\' CAMP\n"Rest if you have a bed. Cross if you have the nerve. The Waybell went over the gap, and nobody has come back with it."'),
-    'sign.gate': (api) => api.say([{ text: api.state.has('valleyOpen') ? 'The Northpass\nThe old ward is broken. Mind the road: nobody has walked it in a long while.' : 'The Northpass\nClosed by the Keepers\' ward. It has not opened since the lantern went dark.' }]),
+    'sign.gate': (api) => api.say([{ text: api.state.has('valleyOpen') ? 'The Northpass\nThe gate has fallen. Mind the road: nobody has walked it in a long while.' : 'The Northpass\nA gate of floating stone rose here the night the lantern went dark. Nobody has gone through since.' }]),
     'sign.grove': say('The Whispering Grove\nThe trees here are said to remember every word ever spoken beneath them.'),
     'sign.pedestal': say('Old letters, worn by rain:\n"While the lantern burns, the sleeping stone shall wake. Rekindle the lantern, and the night shall break."'),
   };
@@ -270,6 +275,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       if (state.has('shrineOpen')) ow.door.setOpen();
       if (state.has('lamplighterDefeated')) {
         ow.hollow.clear();
+        ow.sigil.setPresent(true);
         ow.lantern.setEmbers(1, true);
         ow.door.wake(true);
         if (!state.has('hollowVessel')) ow.vessel.show();
