@@ -21,12 +21,12 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 As of 2026-11-03: Emberfield (the valley) plays start to finish: the Hollow Lamplighter (night
 only), the quest thread, all music, and the village (Tobin's mill with a bed; Odo sells the
-Stoneward Tunic and refills flasks). **The Waking Shrine** (25 rooms, four wings) is playable up
-to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). **Bells** (bonfires
-with fast travel, [docs/bells.md](docs/bells.md)): posts, ringing and the travel menu work, and
-the platforming base is built (coyote time, jump buffer, Wren's blob shadow, moving platforms,
-trial falls; no course exists in a scene yet). A dev menu (~ / L3) has sprint, invincibility,
-a trial-fall-damage toggle and save states. **The Bell Shaft (Lullbell's trial) is built** (smoke `trials`); **next: bells 3b** (the Hushing Gorge), then shrine milestone 6 (Gravelheart; plan mode).
+Stoneward Tunic and refills flasks). **The Waking Shrine** (25 rooms, four wings, plus the Bell Shaft
+trial) is playable up to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done).
+**Bells** (bonfires with fast travel, [docs/bells.md](docs/bells.md)): posts, ringing, the travel menu,
+the platforming base and the Bell Shaft (the Lullbell's trial) work; a dev menu (~ / L3) has sprint,
+invincibility, a trial-fall-damage toggle and save states. **Next: bells 3b** (the Hushing Gorge),
+then shrine milestone 6 (Gravelheart; plan mode).
 
 ## Docs: read the one for the area you're touching
 

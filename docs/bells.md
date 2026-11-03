@@ -1,10 +1,8 @@
 # The keepers' bells: bell posts, fast travel, bell trials
 
-Status: posts, hanging, ringing and the travel menu work (milestone 1); the platforming base
-works (milestone 2, below). **The Bell Shaft (the Lullbell's trial) is built** (3a, 2026-11-03);
-the Morrowbell can still only be had from the dev menu's "Bells:" states until the gorge exists.
-Next: **3b, the Hushing Gorge**, before the shrine's boss
-([shrine.md](shrine.md)).
+Status: posts, hanging, ringing, the travel menu, the platforming base and the Bell Shaft (the
+Lullbell's trial) work. The Morrowbell can only be had from the dev menu's "Bells:" states until the
+gorge exists. Next: **3b, the Hushing Gorge**, before the shrine's boss ([shrine.md](shrine.md)).
 Design approved by the owner (2026-11-02).
 
 ## What it is
@@ -93,100 +91,78 @@ leads back to the entry, and hanging it there wakes the network.
 ## Milestones
 
 1. ~~Bells and fast travel~~ done (dev states "Bells: ...", smoke and look scene `bells`).
-2. ~~Platforming base~~ done 2026-11-03:
-   - Jump feel (`game/player.ts`): `COYOTE_TIME` and `JUMP_BUFFER` (0.12 s each), tested. A blob
-     shadow (`GroundShadow`, 0.4 m) under Wren, indoors and out; she casts no sun shadow (owner's call, 2026-11-03; maybe temporary).
-   - `world/platforming.ts`: `PlatformDef` (a round disc: x, z = centre; `r`, top, thickness, look,
-     `checkpoint?`, `move?: { by, period, phase }`), `CourseDef`, `platformPosition(def, t)`
-     (cosine ease), `jumpReach(rise)` (85% margin; 5.3 m at rise 0, 4.5 m at +1, 6.4 m at -2;
-     `MAX_RISE` 1.71 m), `checkCourse` (start → checkpoints → goal; for a mover a hop counts if
-     its best sampled pose is in reach, i.e. Wren waits for it; also headroom ≥ 2.2 m), the
-     `COURSES` registry (each checked in `npm run check`) and `buildCourse(b, course, origin)`
-     (static boxes merged, movers kinematic; `update(t)`, `dispose()`). Its jump constants
-     mirror `player.ts` by hand.
-   - **Moving ledges never pass through others** (`checkCourse` fails a course where any two
-     slabs overlap in plan and height at any pose, static ones too).
-   - **Coplanar walls across floors** (the Bell Shaft passes floors -1 and 0): `build.ts` builds a
-     wall segment as one collider plus a half-thickness slab per room on its own side whenever
-     another floor's wall lies on the same line at overlapping heights (z-fighting otherwise).
-   - **Edge stickiness** (`Player.edgeAssist`, `EDGE_HOLD` 0.05 s (was 0.15: too strong, owner 2026-11-03); on only inside trial rooms,
-     set each frame by `shrineContent`): if the next step of a walk would put Wren's feet over
-     nothing, she holds at the lip until she has pushed `EDGE_HOLD` seconds, then walks off. Only
-     her *displacement* is held, never her speed (her run has no ramp-up), so a jump at the lip, or
-     within coyote time, launches at full run speed. Tested in `player.test.ts`. If it ever feels
-     like an aid, shorten `EDGE_HOLD` again; set `edgeAssist` from content only where you want it. No
-     acceleration changes: her instant start/stop is what gives fine control.
-   - **Moving platforms are fixed Rapier bodies we teleport** (`Physics.kinematicBox/Cylinder`):
-     a kinematic body under Wren froze her horizontal movement (she stood in place, jumping worked).
-   - **Enemies on a ledge** (`enemy` thing with `up`, optional `facing`): spawned in the middle of
-     the disc, turned to face the previous ledge (where the player arrives from), and leashed to the
-     disc (`Spawn.leash`; content's `walkable`).
-   - **Frame order (a real bug, fixed 2026-11-03):** `Game.frame` calls `Area.movePlatforms(dt)`
-     *before* the player updates (`DungeonArea` ticks its courses there). With the player first,
-     `physics.step` had already cleared the platforms' carry delta and Wren sank through a rising
-     one. New platform code (the gorge) must hang off `movePlatforms` too.
-   - Moving platforms (`core/physics.ts`): `kinematicBox(...)` → `KinematicBody` (`moveTo`,
-     `remove`), `carryDelta(feet)`. `Player.update` adds the mover's delta when grounded. Order
-     matters: platforms `moveTo`, then the player, then `physics.step` (`Game.frame` calls `movePlatforms` first).
-     Move movers by their per-frame path, never teleport them far in one frame.
-   - Falls (`game/trialFalls.ts`): `TrialFalls(checkpoints, fallY, start)`: remembers the last
-     checkpoint ledge stood on, `check` per frame, `recover(api)` fades and returns. **The fall
-     damage switch is `TRIAL_RULES.fallDamage` (1 now; the dev menu has "Trial falls cost a
-     half heart")**. Dungeon rooms take `trial: true` and `platforms` (x/z from the room's NW corner,
-     `top` above its floor; validator: inside the room even when sliding, clear of door
-     approaches, 2.2 m under the ceiling); `shrineContent` applies the trial rule in trial
-     rooms. The overworld gorge will use `TrialFalls` directly.
-3. **The two trials** (main session; `looker` every pass):
-   - **The Hushing Gorge** (overworld, `world/overworld/gorge.ts`): built after the seeded
-     scenery with its own RNG (do the per-region seeds item from the roadmap here, without
-     reshuffling the valley); a carve in `terrainHeight` only (never `placementHeight`),
-     excluded in `isOpen`/`isEnemyGround`, named in `areaNameAt`, inside the bounds. A mouth
-     near (−127, 10) winding west into the mountain ring; a narrow corridor with a handful of
-     thornlings and one Dozing Sentinel (a keeper's statue guarding the way); then a light
-     climb over a drop (static ledges, rock pillars, a broken plank bridge); the Morrowbell
-     on a high ledge (a `BellPickup`, interactable `bell.morrow`). A sign at the mouth.
-   - **The Bell Shaft** (shrine): a room `bellShaft` on floor −2 at x 30–44, z −20…−4 (east
-     of the Antechamber; nothing is built above it, so it can be ~15 m tall), door
-     `anteBell` in the Antechamber's east wall, basalt, an ember-lit pit floor, `trial:
-     true`. The climb spirals up the walls: static ledges, then sliding and rising
-     platforms, a thornling or two on wide ledges, the Lullbell (a `bell` thing) at the top.
-   - Verify: look scenes `gorge` and `bellShaft`, dev states at each trial's start, smoke
-     `trials` (take each bell; a fall puts Wren back at the checkpoint, hp unchanged). The
-     owner plays both for feel and difficulty.
-   - **Build plan (approved 2026-11-03).** Owner calls: keep both names; difficulty
-     gentle-to-medium (the gorge mostly teaches, the shaft adds slow movers near the top,
-     2–4 min each for a first-timer); the gorge is always open, and the sign at its mouth warns. Two
-     Sonnet sessions, `/clear` between them:
-     - **3a, the Bell Shaft first** (DONE 2026-11-03: room `bellShaft` in `defs/shrine.ts`; after the owner's first
-       play it was made ~3x longer: 28x30 m, 23 m tall (the shrine's floor-1 rooms above cap it; the climb tops out ~17 m), 30 round
-       ledges spiralling ~3 laps up over a pit, with checkpoints, sliders (4 s), 2 risers (6 s, +2 m)
-       and three **monster discs** (r 2.6 / 3.5 / 4.5) holding 1, 2 and 3 thornlings, all facing where
-       the player lands from; the Lullbell on the last ledge The ledges are generated by a throwaway
-       script (ring path, 5.6 m spacing); edit the data by hand now, `checkCourse` guards it.
-       The validator now runs `checkCourse` on every room with ≥ 2 platforms (**first = start, last
-       = goal**) and `enemy`/`bell` things take `up` to stand on a still ledge. Dev state "Bells: Bell
-       Shaft start", look scene `bellShaft` (door, climb, from above, wide ledge, top; a "bell from below" shot kept ending up looking at a ledge's underside, so it's not there), smoke `trials`. Not yet played by the owner for feel.)
-       Original plan: (it uses the dungeon format and its validator): room
-       `bellShaft` (floor −2, x 30, z −20, w 14, d 16, `height` 15: nothing on floors −1/0
-       overlaps it), basalt, `trial: true`, a pit over most of the floor; door `anteBell`
-       from `bossAnte`'s east wall. Spiral ledges: static ones for the first ~6 m
-       (a checkpoint every 3–4 hops), then sliding and rising movers (period ≥ 3 s), one wide
-       ledge with a thornling, the `bell` thing `lull` on top. Make sure check runs
-       `checkCourse` on room platforms (or register the course in `COURSES`). `npm run map --
-       shrine` clean. Dev state "Bells: Bell Shaft start", look scene `bellShaft` (looker:
-       ledges readable, bell visible from below, camera clear of walls), shrine.md updated.
-     - **3b, the Hushing Gorge**: `regionRng(name)` (the hollow keeps its seed 4242, the valley
-       keeps 1337); `GORGE` centerline + `inGorge` in `layout.ts`, carve in `terrainHeight`
-       only (corridor floor 6–8 m, a ~6 m drop under the climb), excluded in `isOpen` /
-       `isEnemyGround`, named in `areaNameAt`; `world/overworld/gorge.ts` (rocks, the course in
-       `COURSES`, the `BellPickup`, the sign, fixed spawn spots for 4–5 thornlings and one
-       Sentinel); content spawns those on load and in `onRespawn` (territory `inGorge`) and runs a
-       `TrialFalls` inside the gorge. **Fix first (test first):** `EnemyManager.removeGone`
-       queues a random field respawn for *any* outdoor Thornling that dies, so mark the ones
-       the manager spawns and only respawn those. Dev state "Bells: gorge mouth", look scene
-       `gorge` (looker: no jagged spots or snags in the 2 m terrain grid, camera doesn't
-       jam; fallback: a wider carve with rock-box walls). Smoke `trials`; the full suite at the
-       end of 3b (ask the owner first). Then docs: world.md, the roadmap's seeds item, AGENTS.md.
+2. ~~Platforming base~~ done: how it works is below.
+3. **The two trials**: ~~3a, the Bell Shaft~~ done (owner-approved by play, 2026-11-03); **3b, the
+   Hushing Gorge** is next (plan below).
+
+### How the platforming works
+
+- **Jump feel** (`game/player.ts`): `COYOTE_TIME` and `JUMP_BUFFER` (0.12 s each). A blob shadow
+  (`GroundShadow`, 0.4 m) under Wren, indoors and out; she casts no sun shadow (owner's call).
+- **Edge stickiness** (`Player.edgeAssist`, `EDGE_HOLD` 0.05 s; on only inside trial rooms, set each
+  frame by `shrineContent`): if the next step of a walk would put Wren's feet over nothing, she holds
+  at the lip until she has pushed `EDGE_HOLD` seconds, then walks off. Only her *displacement* is held,
+  never her speed (her run has no ramp-up), so a jump at the lip, or within coyote time, launches at
+  full run speed. If it ever feels like an aid, shorten `EDGE_HOLD`. No acceleration tweaks: her instant
+  start and stop is what gives fine control (owner's call).
+- **Platforms** (`world/platforming.ts`): `PlatformDef` is a round disc (x, z = centre; `r`, `top`,
+  `thickness`, `look`, `checkpoint?`, `move?: { by, period, phase }`); `CourseDef`;
+  `platformPosition(def, t)` (cosine ease); `jumpReach(rise)` (85% margin; 5.3 m at rise 0, 4.5 m at +1,
+  6.4 m at -2; `MAX_RISE` 1.71 m; the constants mirror `player.ts` by hand); `checkCourse` (start →
+  checkpoints → goal; a mover's hop counts if its best sampled pose is in reach, i.e. Wren waits for
+  it; headroom ≥ 2.2 m; **no two platforms may overlap in plan and height at any pose**, so movers
+  never pass through ledges); the `COURSES` registry (each checked in `npm run check`) and
+  `buildCourse` (static discs merged, movers moved by `update(t)`; `dispose()`).
+- **Moving platforms** (`core/physics.ts`): `kinematicBox` / `kinematicCylinder` → `KinematicBody`
+  (`moveTo`, `remove`) are *fixed* Rapier bodies we teleport (a kinematic body froze Wren's walking);
+  `carryDelta(feet)` is how a grounded Wren rides one. **Frame order matters**: `Game.frame` calls
+  `Area.movePlatforms(dt)` *before* the player updates (`DungeonArea` ticks its courses there), then
+  the player, then `physics.step`. Platform code for the gorge must hang off `movePlatforms` too. Move
+  movers by their per-frame path, never teleport them far in one frame.
+- **Falls** (`game/trialFalls.ts`): `TrialFalls(checkpoints, fallY, start)` remembers the last
+  checkpoint ledge stood on; `recover(api)` fades and returns her. `TRIAL_RULES.fallDamage` is 1
+  (half a heart; owner's call; the dev menu can switch it off). Dungeon rooms take `trial: true` and
+  `platforms` (see [dungeons.md](dungeons.md): the validator checks the room, the doorways, the
+  ceiling and runs `checkCourse` with **first platform = start, last = goal**); `shrineContent`
+  applies the trial rule. The gorge will use `TrialFalls` directly.
+- **Enemies on a ledge**: an `enemy` thing with `up` (and `facing`) spawns on its disc, stays on it
+  (`Spawn.leash`; content's `walkable`) and stands turned toward the previous ledge.
+- **Walls where a tall room passes other floors** (`build.ts`): a wall segment whose line is shared
+  with another floor's wall at overlapping heights is built as one collider plus a half-thickness
+  slab per room on its own side (coplanar boxes z-fought).
+
+### The Bell Shaft (built)
+
+Room `bellShaft` in `defs/shrine.ts`: 28×30 m, 23 m tall (the Upper Galleries above cap it), basalt, a
+pit over most of the floor; door `anteBell` from the Antechamber (offset 5). 30 round ledges spiral about
+three laps up (checkpoints, sliders of 4 s, two risers of 6 s and +2 m), with three monster discs
+(r 2.6 / 3.5 / 4.5) holding 1, 2 and 3 thornlings; the Lullbell is on the last ledge. The ledge data
+came from a throwaway generator; edit it by hand, `checkCourse` guards it. Dev state "Bells: Bell
+Shaft start", look scene `bellShaft` (the camera shots are hand-placed and a couple sit close to
+discs; judge the room by the doorway, climb and from-above shots), smoke `trials`.
+
+### 3b, the Hushing Gorge (next)
+
+Owner calls: keep both names; difficulty gentle-to-medium (the gorge mostly teaches); always open,
+with a sign at its mouth that warns. Reuse the shaft's lessons: round discs, `movePlatforms`,
+`TRIAL_RULES`, edge stickiness (turn `edgeAssist` on inside the gorge), ledge enemies.
+
+- **Terrain** (`world/overworld/gorge.ts`): built after the seeded scenery with its own RNG (do the
+  per-region seeds item from the roadmap here, `regionRng(name)`: the hollow keeps seed 4242, the
+  valley 1337); a carve in `terrainHeight` only (never `placementHeight`), excluded in
+  `isOpen`/`isEnemyGround`, named in `areaNameAt`, inside the bounds. `GORGE` centerline + `inGorge`
+  in `layout.ts`. A mouth near (−127, 10) winding west into the mountain ring; a corridor floor 6–8 m,
+  a ~6 m drop under the climb.
+- **Content**: a narrow corridor with 4–5 thornlings and one Dozing Sentinel at fixed spots (a
+  keeper's statue guarding the way); then a light climb over a drop (discs in `COURSES`, rock
+  pillars, a broken plank bridge); the Morrowbell on a high ledge (a `BellPickup`, interactable
+  `bell.morrow`). Content spawns the enemies on load and in `onRespawn` (territory `inGorge`) and runs
+  a `TrialFalls` inside the gorge.
+- **Fix first (test first):** `EnemyManager.removeGone` queues a random field respawn for *any*
+  outdoor Thornling that dies; mark the ones the manager spawns and respawn only those.
+- **Verify**: dev state "Bells: gorge mouth", look scene `gorge` (no jagged spots or snags in the 2 m
+  terrain grid, camera doesn't jam; fallback: a wider carve with rock-box walls), smoke `trials`; the
+  full suite at the end (ask the owner first). Then docs: world.md, the roadmap's seeds item, AGENTS.md.
 
 ## Open questions
 

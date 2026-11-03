@@ -17,9 +17,8 @@ Next, in order:
 0. ~~The owner's playtest tweaks A–G (2026-11-02)~~ done. Untested by play: the gem economy
    (95 in the shrine plus bushes, against the 100-gem tunic and 20 per flask refill).
 0.5. **Bells: bell posts, fast travel, bell trials** (owner's request, 2026-11-02, before the
-   shrine's boss). Milestones 1 (bells, posts, the travel menu) and 2 (platforming base) done 2026-11-03; **milestone 3a (the Bell Shaft) done 2026-11-03; next is
-   3b** (the Hushing Gorge). See
-   [bells.md](bells.md).
+   shrine's boss). Done: bells, posts and the travel menu, the platforming base, the Bell Shaft.
+   **Next is 3b** (the Hushing Gorge). See [bells.md](bells.md).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **next is milestone 6** (Gravelheart and its theme), then the
    **Northpass** valley exit the glove opens (7), polish (8).
@@ -97,6 +96,9 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   little map of the valley. *Trigger: more than ~8 bells.*
 - [ ] **Quest/flag overview**: a generated list of every flag, who sets it and who reads
   it, so quest logic stays understandable across many areas. *Trigger: ~30+ flags.*
+- [ ] **Seed enemy randomness**: Thornling/Shellback wandering uses `Math.random`, so a few unit tests
+  in `thornling.test.ts` fail about 1 run in 8. Give enemies an injected RNG (as `core/math.ts` has).
+  *Trigger: the next time one of them flakes in CI, or any enemy work.*
 - [ ] **Docs hygiene**: if a topic doc passes ~400 lines, split it. *Trigger: as stated.*
 
 ## Known quirks and tech debt
