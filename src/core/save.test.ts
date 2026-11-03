@@ -59,7 +59,7 @@ describe('save files', () => {
     s.area = 'shrine';
     s.items.add('tether');
     const d = s.dungeon('shrine');
-    d.keys = 1;
+    d.keys.add('amber');
     d.bossKey = true;
     d.doors.add('tetherDoor');
     d.chests.add('southChest');
@@ -70,11 +70,17 @@ describe('save files', () => {
     expect(loaded.area).toBe('shrine');
     expect(loaded.items.has('tether')).toBe(true);
     const l = loaded.dungeon('shrine');
-    expect([l.keys, l.bossKey, l.done]).toEqual([1, true, false]);
+    expect([[...l.keys], l.bossKey, l.done]).toEqual([['amber'], true, false]);
     expect([...l.doors, ...l.chests, ...l.switches, ...l.cleared]).toEqual(['tetherDoor', 'southChest', 'northBar', 'southCell']);
-    expect(loaded.keysHere).toBe(1); // in the shrine, its own keys count
+    expect(loaded.dungeonKeysHere).toEqual(['amber']); // in the shrine, its own keys count
     loaded.area = 'overworld';
-    expect(loaded.keysHere).toBe(0);
+    expect(loaded.dungeonKeysHere).toEqual([]);
+  });
+
+  it('migrates a v3 save: the dungeon key count is dropped (content re-derives colors from chests and doors)', () => {
+    const d = decodeSave(JSON.stringify({ version: 3, flags: [], dungeons: { shrine: { keys: 2, doors: ['a'], chests: ['southChest'] } } }))!;
+    expect(d.version).toBe(SAVE_VERSION);
+    expect(d.dungeons.shrine).toMatchObject({ keys: [], doors: ['a'], chests: ['southChest'] });
   });
 
   it('migrates a v2 save: overworld, no items, no dungeon progress', () => {
@@ -87,8 +93,8 @@ describe('save files', () => {
   });
 
   it('repairs broken dungeon progress instead of trusting it', () => {
-    const d = decodeSave(JSON.stringify({ version: SAVE_VERSION, flags: [], dungeons: { shrine: { keys: -4, doors: ['a', 7], done: 'yes' }, bad: 3 }, items: ['tether', 'nonsense'] }))!;
-    expect(d.dungeons.shrine).toMatchObject({ keys: 0, doors: ['a'], done: false, bossKey: false });
+    const d = decodeSave(JSON.stringify({ version: SAVE_VERSION, flags: [], dungeons: { shrine: { keys: ['azure', 3], doors: ['a', 7], done: 'yes' }, bad: 3 }, items: ['tether', 'nonsense'] }))!;
+    expect(d.dungeons.shrine).toMatchObject({ keys: ['azure'], doors: ['a'], done: false, bossKey: false });
     expect('bad' in d.dungeons).toBe(false);
     const s = new GameState();
     s.load(d);

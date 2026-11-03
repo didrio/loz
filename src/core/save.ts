@@ -4,7 +4,7 @@
  * can swap localStorage for real files without touching game code.
  */
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export interface SaveData {
   version: typeof SAVE_VERSION;
@@ -29,7 +29,8 @@ export interface SaveData {
 
 /** One dungeon's progress, all keyed by the ids in its data (doors, chests, switches, rooms). */
 export interface DungeonSave {
-  keys: number;
+  /** Colors of the small keys held (v4+; v3 saved a count, which loads as none: the shrine's content re-derives them from opened chests and doors). */
+  keys: string[];
   bossKey: boolean;
   doors: string[];
   chests: string[];
@@ -104,7 +105,7 @@ export function decodeSave(raw: string | null): SaveData | null {
   // v1 saved the flute songs the player knew; the flute is gone, so they're just dropped
   // (v1 had no keys). The quest grants the key by its own flag, so nothing gets stuck.
   // v1/v2 had no areas, items or dungeons: they load in the overworld with none.
-  if (o.version !== SAVE_VERSION && o.version !== 1 && o.version !== 2) return null;
+  if (o.version !== SAVE_VERSION && o.version !== 1 && o.version !== 2 && o.version !== 3) return null;
   if (!Array.isArray(o.flags)) return null;
   const maxHp = isNum(o.maxHp) ? Math.max(2, Math.min(40, Math.round(o.maxHp / 2) * 2)) : 6;
   return {
@@ -147,7 +148,7 @@ function decodeDungeons(v: unknown): Record<string, DungeonSave> {
     if (!raw || typeof raw !== 'object') continue;
     const d = raw as Record<string, unknown>;
     out[id] = {
-      keys: count(d.keys),
+      keys: strings(d.keys),
       bossKey: d.bossKey === true,
       doors: strings(d.doors),
       chests: strings(d.chests),

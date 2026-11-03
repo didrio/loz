@@ -5,10 +5,7 @@ import { checkDungeon, doorPlacement, dungeonMap, dungeonReport, DUNGEONS, explo
 /** A copy of a dungeon with some parts swapped out, for "what if the author got this wrong" tests. */
 const tweak = (base: DungeonDef, patch: Partial<DungeonDef>): DungeonDef => ({ ...structuredClone(base), ...patch });
 
-/**
- * The textbook softlock: one key, two locked doors, and one of them leads to a dead end.
- * Spend the key there and the boss key is gone for good.
- */
+/** A small dungeon: a crimson key opens the key room (boss key inside); a jade key's door leads to a dead end. */
 const SOFTLOCK: DungeonDef = {
   id: 'trap',
   name: 'Trap',
@@ -21,12 +18,13 @@ const SOFTLOCK: DungeonDef = {
     { id: 'boss', floor: 0, x: 0, z: -10, w: 10, d: 10 },
   ],
   doors: [
-    { id: 'toKeyRoom', from: 'entry', to: 'keyRoom', lock: 'small' },
-    { id: 'toDeadEnd', from: 'entry', to: 'deadEnd', lock: 'small' },
+    { id: 'toKeyRoom', from: 'entry', to: 'keyRoom', lock: { key: 'crimson' } },
+    { id: 'toDeadEnd', from: 'entry', to: 'deadEnd', lock: { key: 'jade' } },
     { id: 'toBoss', from: 'entry', to: 'boss', lock: 'boss' },
   ],
   things: [
-    { kind: 'chest', id: 'key', room: 'entry', at: [5, 2], loot: 'smallKey' },
+    { kind: 'chest', id: 'key', room: 'entry', at: [5, 2], loot: { key: 'crimson' } },
+    { kind: 'chest', id: 'jadeKey', room: 'entry', at: [3, 2], loot: { key: 'jade' } },
     { kind: 'chest', id: 'bigKey', room: 'keyRoom', at: [5, 5], loot: 'bossKey' },
   ],
 };
@@ -84,7 +82,7 @@ describe('landmark statues', () => {
   });
   it('fails one on a doorway approach, another thing, or sticking out of the room', () => {
     expect(validateDungeon(withMark([12, 7])).join('\n')).toContain('opens straight into a landmark "statue"');
-    expect(validateDungeon(withMark([5, 5], [{ kind: 'chest', id: 'c', room: 'a', at: [5, 6], loot: 'smallKey' }])).join('\n')).toContain('landmark "statue" overlaps chest "c"');
+    expect(validateDungeon(withMark([5, 5], [{ kind: 'chest', id: 'c', room: 'a', at: [5, 6], loot: { key: 'jade' } }])).join('\n')).toContain('landmark "statue" overlaps chest "c"');
     expect(validateDungeon(withMark([1, 5])).join('\n')).toContain('sticks out');
   });
 });
@@ -93,7 +91,6 @@ describe('dungeon solver', () => {
   it('finishes the example dungeon by the intended route, with no softlocks or dead content', () => {
     const r = solveDungeon(EXAMPLE_DUNGEON);
     expect(r.completable).toBe(true);
-    expect(r.softlocks).toEqual([]);
     expect(r.unreachable).toEqual([]);
     expect(r.route).toEqual(['hallWest', 'upperVault']);
   });
@@ -101,12 +98,12 @@ describe('dungeon solver', () => {
   it('respects one-way doors and switches', () => {
     // At the start: the cellar is only reachable by the ledge (one-way, from the locked west
     // room), so its switch is out of reach and the east door stays shut.
-    const start = explore(EXAMPLE_DUNGEON);
-    expect([...start.rooms].sort()).toEqual(['entry', 'hall']);
-    expect(start.smallKeysFound).toBe(1);
-    const afterWest = explore(EXAMPLE_DUNGEON, new Set(['hallWest']));
-    expect(afterWest.switches.has('cellarSwitch')).toBe(true);
-    expect(afterWest.rooms.has('upper')).toBe(true);
+    const noKey = explore(tweak(EXAMPLE_DUNGEON, { things: EXAMPLE_DUNGEON.things.filter((t) => t.id !== 'hallChest') }));
+    expect([...noKey.rooms].sort()).toEqual(['entry', 'hall']);
+    expect(noKey.switches.size).toBe(0);
+    const all = explore(EXAMPLE_DUNGEON);
+    expect(all.switches.has('cellarSwitch')).toBe(true);
+    expect(all.rooms.has('upper')).toBe(true);
   });
 
   it('drops are one-way, and plates that need an item wait for it', () => {
@@ -137,14 +134,26 @@ describe('dungeon solver', () => {
     expect(validateDungeon(tweak(d, { doors: [...d.doors, { id: 'badHole', from: 'entry', to: 'loft', kind: 'drop' }] })).join()).toMatch(/directly below/);
   });
 
-  it('catches the textbook softlock (a key spent on a dead end)', () => {
+  it('opens a key door with its own color only, in any order', () => {
+    expect(checkDungeon(SOFTLOCK)).toEqual([]);
     const r = solveDungeon(SOFTLOCK);
-    expect(r.completable).toBe(true); // it CAN be finished...
-    expect(r.softlocks).toContainEqual(['toDeadEnd']); // ...but also ruined
-    expect(checkDungeon(SOFTLOCK).join('\n')).toMatch(/Softlock: spending small keys on "toDeadEnd"/);
-    // The fix an author would make: a second key in the dead end.
-    const fixed = tweak(SOFTLOCK, { things: [...SOFTLOCK.things, { kind: 'chest', id: 'key2', room: 'deadEnd', at: [5, 5], loot: 'smallKey' }] });
-    expect(checkDungeon(fixed)).toEqual([]);
+    expect(r.completable).toBe(true);
+    expect(r.route).toEqual(['toKeyRoom', 'toDeadEnd']);
+  });
+
+  it('wants every key color to have exactly one chest and one door', () => {
+    const spare = tweak(SOFTLOCK, { things: [...SOFTLOCK.things, { kind: 'chest', id: 'jade2', room: 'entry', at: [7, 2], loot: { key: 'jade' } }] });
+    expect(validateDungeon(spare).join('\n')).toMatch(/jade key needs exactly one chest and one door \(has 2 chests, 1 door\)/);
+    const noDoor = tweak(SOFTLOCK, { doors: SOFTLOCK.doors.filter((d) => d.id !== 'toDeadEnd') });
+    expect(validateDungeon(noDoor).join('\n')).toMatch(/jade key needs exactly one chest and one door \(has 1 chest, 0 doors\)/);
+    const noChest = tweak(SOFTLOCK, { things: SOFTLOCK.things.filter((t) => t.id !== 'jadeKey') });
+    expect(validateDungeon(noChest).join('\n')).toMatch(/jade key needs exactly one chest and one door \(has 0 chests, 1 door\)/);
+  });
+
+  it('reports a key locked behind its own door as unreachable', () => {
+    const cycle = tweak(SOFTLOCK, { things: SOFTLOCK.things.map((t) => (t.id === 'key' ? { ...t, room: 'keyRoom' } : t)) });
+    expect(validateDungeon(cycle)).toEqual([]);
+    expect(checkDungeon(cycle).join('\n')).toMatch(/can't be reached/);
   });
 
   it('reports an unfinishable dungeon and content nothing can reach', () => {
@@ -161,8 +170,8 @@ describe('dungeon text map', () => {
     expect(map).toContain('Floor 0 (entrance level)');
     expect(map).toContain('Floor 1 (up)');
     for (const ch of ['@', 'k', 'B', 's', 'U', 'D', 'X', 'C', 'S', 'e', '?', 'O', 'I', '=']) expect(map, ch).toContain(ch);
-    expect(map).toMatch(/hallChest in hall: small key/);
-    expect(map).toMatch(/westChest in west: small key \(appears: west cleared\)/);
+    expect(map).toMatch(/hallChest in hall: crimson key/);
+    expect(map).toMatch(/westChest in west: azure key \(appears: west cleared\)/);
   });
 });
 

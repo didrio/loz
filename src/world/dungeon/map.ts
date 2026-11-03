@@ -5,7 +5,7 @@ import { DEFAULT_DOOR_WIDTH, doorPlacement, dropHole, lockName, stairPlacement, 
  * a layout without rendering anything. One character is 1 m east–west and one line is
  * 2 m north–south (terminal characters are about twice as tall as wide). North is up.
  *
- *   #  wall             k  small-key door    B  boss door      s  switch door
+ *   #  wall             k  key door    B  boss door      s  switch door
  *   i  item door        >  one-way door (arrow points the way you can go)
  *   U  a flight of stairs (on the lower floor)   D  its shaft (on the floor above)
  *   @  entrance         C  chest             S  crystal switch
@@ -72,7 +72,7 @@ function drawFloor(def: DungeonDef, rooms: Map<string, RoomDef>, floor: number) 
     const p = doorPlacement(a, b, d);
     if (!p) continue;
     const half = (d.width ?? DEFAULT_DOOR_WIDTH) / 2;
-    let ch = d.lock === 'small' ? 'k' : d.lock === 'boss' ? 'B' : d.lock ? ('item' in d.lock ? 'i' : 's') : ' ';
+    let ch = d.lock === 'boss' ? 'B' : d.lock ? ('key' in d.lock ? 'k' : 'item' in d.lock ? 'i' : 's') : ' ';
     if (d.oneWay) ch = p.wall === 'z' ? (b.x > a.x ? '>' : '<') : (b.z > a.z ? 'v' : '^');
     if (p.wall === 'z') {
       for (let r = row(p.z - half); r < Math.max(row(p.z - half) + 1, row(p.z + half)); r++) if (grid[r]) grid[r][col(p.x)] = ch;
@@ -109,7 +109,8 @@ function drawFloor(def: DungeonDef, rooms: Map<string, RoomDef>, floor: number) 
 }
 
 function lootName(l: Loot) {
-  if (typeof l === 'string') return { smallKey: 'small key', bossKey: 'boss key', heart: 'heart' }[l];
+  if (typeof l === 'string') return { bossKey: 'boss key', heart: 'heart' }[l];
+  if ('key' in l) return `${l.key} key`;
   if ('drink' in l) return `drink: ${l.drink}`;
   return 'item' in l ? `item: ${l.item}` : `${l.gems} gems`;
 }

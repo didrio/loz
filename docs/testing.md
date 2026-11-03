@@ -44,7 +44,7 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | `full` | new game | title, intro, walking, collisions, bridge, bounds, locked chest, Maren's key, the sword, the sealed door, the Lamplighter fight and its heart vessel, the door opening, night + save/Continue, entering the shrine (no seal) |
 | `combat` | `field-sword` | the shield's guard and guard break, lock-on and the sword vs a thornling |
 | `shrine-puzzle` | `shrine-entry` | pushing stones, plates, the crystal switch, the solved puzzle surviving Continue |
-| `shrine-keys` | `shrine-entry` | a room clearing, key chest, locked door, dying (the checkpoint rule), Continue inside |
+| `shrine-keys` | `shrine-entry` | a room clearing, the amber key chest, the Cistern door, the HUD key, dying (the checkpoint rule), Continue inside |
 | `shrine-exit` | `shrine-entry` | the way out (always open) |
 | `shrine-enemies` | `shrine-entry` | sentinels and shellbacks spawn from the data; a sentinel sleeps, wakes, swings (2 half-hearts), falls to hits in its recovery and from behind; a shellback's shell turns a frontal hit, it falls from behind |
 

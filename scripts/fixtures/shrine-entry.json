@@ -1,11 +1,11 @@
 {
-  "version": 3,
+  "version": 4,
   "flags": ["metMaren", "gotGroveKey", "groveChestOpened", "hasSword", "lamplighterDefeated", "hollowVessel", "shrineOpen"],
   "keys": 0,
   "area": "shrine",
   "items": [],
   "dungeons": {
-    "shrine": { "keys": 0, "bossKey": false, "doors": [], "chests": [], "switches": [], "cleared": [], "done": false }
+    "shrine": { "keys": [], "bossKey": false, "doors": [], "chests": [], "switches": [], "cleared": [], "done": false }
   },
   "drinks": {},
   "gems": 0,

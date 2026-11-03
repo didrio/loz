@@ -22,15 +22,32 @@ Next, in order:
      from the save), the "railing" was a statue 0.4 m past the top of the `shaftUp` stairs
      (statues now keep a 2 m landing clear of stairs), stair-trim z-fighting fixed. Smoke
      scenarios edited for the open entrance but not run (owner's call).
-   - **C: colored keys, one key per door** (Resident Evil style): `Lock`/`Loot` `{ key: color }`,
-     a validator rule that every key has exactly one chest and one door (today: 5 keys, 4
-     doors). Key web: crimson Loft → Pit Hall, azure Root Cellar → Gauntlet, jade Court →
-     Ossuary, violet Crypt → Echo Hall, amber Sentinel Cell → Cistern (new lock). Statues
-     chest's draught → 20 gems (3 gem chests). Save migration, HUD key icons, door marks.
-   - **D: village**: bigger cottages; Tobin gives a house key after the sword; his door
-     leads to a small interior with a bed that sleeps to the next 06:00/18:00; a new
-     merchant sells the **Stoneward Tunic** (100 gems; stone hits do half damage, rounded
-     up; Wren's tunic changes color) via a new yes/no dialog choice.
+   - ~~C: colored keys, one key per door~~ **done**: `Lock`/`Loot` `{ key: color }` replace the
+     counted small key; the validator wants exactly one chest and one door per color; the solver is
+     one greedy sweep (no softlock search); doors carry a color band, the HUD shows a colored key
+     icon per key held; `SAVE_VERSION` 4. Key web in [shrine.md](shrine.md). Statues chest is now
+     20 gems.
+   - **D: village** (next, no plan mode): bigger cottages; Tobin gives a house key after the
+     sword; his door leads to a small interior with a bed that sleeps to the next 06:00/18:00
+     **and fully heals Wren**; a new merchant sells the **Stoneward Tunic** (100 gems; stone
+     hits do half damage, rounded up; Wren's tunic changes color) via a new yes/no dialog
+     choice. Build the merchant and the choice dialog so E can reuse them for flask refills.
+   - **E: flasks** (after D; **plan mode**, new system + save change). Replaces the drinks that
+     refill on death (`game/drinks.ts`). Exactly two flasks exist, both found already full: a
+     life flask (red) and an attack flask (orange/yellow). Drinking empties it (empty bottle,
+     same HUD spot). Death does NOT refill them. Once Wren owns at least one flask, the merchant
+     refills empty flasks one at a time, 20 gems each, with a choice of life or attack potion.
+     Shrine data: Echo Hall's heart chest (`echoChest`) becomes one flask; the other is one of
+     the existing drink chests; remove the third drink chest (check for rooms with two chests).
+     Update the checkpoint rule in AGENTS.md, combat.md, shrine.md ("drinks refill on death"),
+     the save format (migration) and the HUD. Check the gem economy (gems now pay for refills).
+   - **F: dungeon fixes** (after E, or before it; no plan mode): (1) challenge rooms (a chest or
+     progress appears when their enemies are beaten) keep their enemies dead after death, and
+     the chest stays visible and open; plain scattered enemies still respawn. Today
+     `content/shrine.ts` respawns every enemy on death. (2) A stray sound plays after the
+     statues (sentinels) wake, matching none of their actions: trace what sentinel.ts
+     (`grind`, `heavySwing`, `stoneThunk`) and old door code (`rumble`, 3.2 s) play and when.
+     The owner has to listen to confirm (we can't hear audio).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **next is milestone 6** (Gravelheart and its theme), then the
    **Northpass** valley exit the glove opens (7), polish (8).

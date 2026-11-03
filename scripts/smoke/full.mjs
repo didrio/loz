@@ -216,12 +216,13 @@ export default async function run(t) {
     await page.keyboard.down('KeyW');
     await until(() => window.embervale.area.id === 'shrine', 20000);
     await page.keyboard.up('KeyW');
-    await wait(900);
+    // The travel fade (and the area title) run as a cutscene: wait until Wren is free, don't guess a time.
+    await until(() => window.embervale.mode === 'play', 15000).catch(() => {});
     await shot('16-shrine-entered');
     const ok = await inShrine(() => {
       const g = window.embervale;
-      return g.state.area === 'shrine' && g.mode === 'play' && g.area.indoor;
+      return { area: g.state.area, id: g.area.id, mode: g.mode, indoor: !!g.area.indoor };
     });
-    check(ok, 'not inside the shrine, free to move');
+    check(ok.area === 'shrine' && ok.mode === 'play' && ok.indoor, 'not inside the shrine, free to move: ' + JSON.stringify(ok));
   });
 }

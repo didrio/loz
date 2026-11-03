@@ -1,6 +1,6 @@
 import { ACTIONS, glyph, type Action, type Device } from '../core/input';
 import { DRINKS } from '../game/drinks';
-import type { DrinkId } from '../world/dungeon/format';
+import { KEY_HEX, type DrinkId, type KeyColor } from '../world/dungeon/format';
 
 /** A little corked bottle in a drink's color. */
 const bottle = (color: string) => `<svg class="bottle" viewBox="0 0 16 22" width="16" height="22" aria-hidden="true">
@@ -19,9 +19,11 @@ const gloveIcon = `<svg class="glove" viewBox="0 0 18 22" width="18" height="22"
 const KEY_SHAPE = `
   <circle cx="7" cy="8" r="4.6" fill="none" stroke-width="3"/>
   <path d="M11.5 8 H25 M20 8 V12.5 M24 8 V11.5" fill="none" stroke-width="3" stroke-linecap="square"/>`;
-const SMALL_KEY_SVG = `<svg class="key-icon" viewBox="0 0 28 16" width="28" height="16" aria-hidden="true">
+const keyIcon = (cls: string, color: string, label = '') => `<svg class="${cls}" viewBox="0 0 28 16" width="28" height="16" ${label ? `aria-label="${label}"` : 'aria-hidden="true"'}>
   <g stroke="#3a2608" transform="translate(0 0.8)">${KEY_SHAPE.replace(/stroke-width="3"/g, 'stroke-width="5"')}</g>
-  <g stroke="#f1c24a">${KEY_SHAPE}</g></svg>`;
+  <g stroke="${color}">${KEY_SHAPE}</g></svg>`;
+const SMALL_KEY_SVG = keyIcon('key-icon', '#f1c24a');
+const hexCss = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
 const BOSS_SHAPE = `
   <circle cx="9" cy="10" r="6.2" fill="none" stroke-width="3.4"/>
   <circle cx="9" cy="10" r="1.8" stroke="none" fill="currentColor"/>
@@ -42,6 +44,7 @@ export class Hud {
   private guardFlashT = 0;
   private gems: HTMLElement;
   private keys: HTMLElement;
+  private heldKeys = '';
   private drinks: HTMLElement;
   private drinksHtml = '';
   private prompt: HTMLElement;
@@ -77,7 +80,7 @@ export class Hud {
       <div class="hud-top-left">
         <div class="hearts"></div>
         <div class="gems"><span class="gem-icon"></span><span class="gem-count">0</span></div>
-        <div class="keys hidden">${SMALL_KEY_SVG}<span class="key-count">×0</span>${BOSS_KEY_SVG}</div>
+        <div class="keys hidden">${SMALL_KEY_SVG}<span class="key-count">×0</span><span class="color-keys"></span>${BOSS_KEY_SVG}</div>
         <div class="drinks"></div>
       </div>
       <div class="hud-top-right">
@@ -215,14 +218,22 @@ export class Hud {
     if (this.gems.textContent !== s) this.gems.textContent = s;
   }
 
-  /** Small keys usable here (and the dungeon's boss key, if held); hidden when there are none. */
-  setKeys(n: number, bossKey = false) {
-    this.keys.classList.toggle('hidden', n <= 0 && !bossKey);
+  /**
+   * Plain small keys usable here (the field's), the dungeon's colored keys held, and its boss
+   * key if held; hidden when there are none.
+   */
+  setKeys(n: number, colors: readonly KeyColor[], bossKey = false) {
+    this.keys.classList.toggle('hidden', n <= 0 && !colors.length && !bossKey);
     this.keys.querySelector('.key-icon')!.classList.toggle('hidden', n <= 0);
     const count = this.keys.querySelector('.key-count')!;
     count.classList.toggle('hidden', n <= 0);
     const s = `×${n}`;
     if (count.textContent !== s) count.textContent = s;
+    const held = colors.join(',');
+    if (held !== this.heldKeys) {
+      this.heldKeys = held;
+      this.keys.querySelector('.color-keys')!.innerHTML = colors.map((c) => keyIcon('color-key', hexCss(KEY_HEX[c]), `${c} key`)).join('');
+    }
     this.keys.querySelector('.boss-key')!.classList.toggle('hidden', !bossKey);
   }
 

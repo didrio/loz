@@ -26,29 +26,29 @@ export default async function run(t) {
     await press('KeyE');
     await until(() => window.embervale.area.chests.get('southChest').opened, 30000);
     await finishScript();
-    check(await inShrine(() => window.embervale.state.keysHere === 1), 'no key from the chest: ' + await inShrine(() => { const x = window.embervale; const c = x.area.chests.get('southChest'); return JSON.stringify({ keys: x.state.keysHere, opened: c.opened, present: c.present, mode: x.mode, pos: x.player.pos.toArray().map((v) => +v.toFixed(1)), chest: c.group.position.toArray(), prompt: document.querySelector('.prompt').textContent, show: document.querySelector('.prompt').classList.contains('show') }); }));
-    check(await page.isVisible('.keys'), 'key not shown in the HUD');
+    check(await inShrine(() => window.embervale.state.dungeonKeysHere.join() === 'amber'), 'no amber key from the chest: ' + await inShrine(() => { const x = window.embervale; const c = x.area.chests.get('southChest'); return JSON.stringify({ keys: x.state.dungeonKeysHere, opened: c.opened, present: c.present, mode: x.mode, pos: x.player.pos.toArray().map((v) => +v.toFixed(1)), chest: c.group.position.toArray(), prompt: document.querySelector('.prompt').textContent, show: document.querySelector('.prompt').classList.contains('show') }); }));
+    check(await page.isVisible('.keys') && await page.isVisible('.color-key'), 'key not shown in the HUD');
   });
 
-  await step('the key unlocks a locked door downstairs', async () => {
-    // The crypt's door to the Pit Hall (clear the crypt first).
+  await step('the amber key unlocks the Cistern door downstairs', async () => {
+    // The crypt's door to the Cistern (clear the crypt first).
     await inShrine(() => {
       const g = window.embervale;
       for (const e of g.enemies.list) if (g.area.roomAt(e.pos)?.id === 'crypt') e.alive = false;
     });
     const c = await shrineRoom('crypt');
-    await teleport(c.x + 1.6, c.z + 16, -Math.PI / 2, -7);
+    await teleport(c.x + 8, c.z + 18.4, 0, -7);
     // Clearing it plays a short reveal (its chest appears): wait for that to finish.
     await until(() => window.embervale.state.dungeon('shrine').cleared.has('crypt'), 30000);
     await finishScript();
     await until(() => window.embervale.mode === 'play', 30000);
     // The prompt updates on game frames: under parallel load that takes well over 300 ms.
     await until(() => document.querySelector('.prompt.show')?.textContent.includes('Unlock'), 15000).catch(() => {});
-    check((await page.textContent('.prompt')).includes('Unlock'), 'no Unlock prompt at the locked door: ' + await inShrine(() => { const x = window.embervale; return JSON.stringify({ prompt: document.querySelector('.prompt').textContent, show: document.querySelector('.prompt').classList.contains('show'), mode: x.mode, pos: x.player.pos.toArray().map((v) => +v.toFixed(1)), door: x.area.doors.get('cryptPit').open, keys: x.state.keysHere }); }));
+    check((await page.textContent('.prompt')).includes('Unlock'), 'no Unlock prompt at the locked door: ' + await inShrine(() => { const x = window.embervale; return JSON.stringify({ prompt: document.querySelector('.prompt').textContent, show: document.querySelector('.prompt').classList.contains('show'), mode: x.mode, pos: x.player.pos.toArray().map((v) => +v.toFixed(1)), door: x.area.doors.get('cryptCistern').open, keys: x.state.dungeonKeysHere }); }));
     await press('KeyE');
-    await until(() => window.embervale.area.doors.get('cryptPit').opening || window.embervale.area.doors.get('cryptPit').open, 30000);
+    await until(() => window.embervale.area.doors.get('cryptCistern').opening || window.embervale.area.doors.get('cryptCistern').open, 30000);
     await finishScript();
-    check(await inShrine(() => window.embervale.state.keysHere === 0 && window.embervale.state.dungeon('shrine').doors.has('cryptPit')), 'key not spent');
+    check(await inShrine(() => window.embervale.state.dungeonKeysHere.length === 0 && window.embervale.state.dungeon('shrine').doors.has('cryptCistern')), 'key not spent');
   });
 
   await step('dying in the shrine respawns at its entrance: progress kept, drinks refilled, enemies back', async () => {
@@ -69,7 +69,7 @@ export default async function run(t) {
     const s = await state();
     const spawn = await inShrine(() => window.embervale.area.spawn);
     check(Math.hypot(s.pos.x - spawn.x, s.pos.z - spawn.z) < 1.5 && s.hp > 0, `respawned at (${s.pos.x.toFixed(1)}, ${s.pos.z.toFixed(1)})`);
-    check(await inShrine(() => window.embervale.state.dungeon('shrine').doors.has('cryptPit') && window.embervale.area.doors.get('cryptPit').open), 'progress lost');
+    check(await inShrine(() => window.embervale.state.dungeon('shrine').doors.has('cryptCistern') && window.embervale.area.doors.get('cryptCistern').open), 'progress lost');
     check(await inShrine(() => window.embervale.state.drinks.left.get('restore') === 1), 'drink not refilled');
     const alive = await inShrine(() => window.embervale.enemies.list.filter((e) => e.alive).length);
     check(alive === enemiesBefore, `${alive} enemies after respawning, expected all ${enemiesBefore}`);
@@ -82,7 +82,7 @@ export default async function run(t) {
     await wait(800);
     const ok = await inShrine(() => {
       const g = window.embervale;
-      return g.area.id === 'shrine' && g.mode === 'play' && g.area.doors.get('cryptPit').open;
+      return g.area.id === 'shrine' && g.mode === 'play' && g.area.doors.get('cryptCistern').open;
     });
     check(ok, 'did not resume inside the shrine with its progress');
     await shot('19-shrine-continued');

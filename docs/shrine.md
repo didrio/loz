@@ -36,9 +36,12 @@ Sleepers, the head turned, a glowing emissive lantern, no light), the Long Galle
 the Crypt's *fallen keeper* (a huge head toppled on one cheek, one eye open, moss and a sapling
 over one side). Data kind `landmark` (see [dungeons.md](dungeons.md)); `npm run look -- landmarks`.
 
-**Route** (the solver checks every key order; `npm run map -- shrine`): doorway stone → the
+**Keys** (colored, one chest and one door each): crimson (Loft) → Pit Hall; azure (Root Cellar) →
+Gauntlet; jade (Sunken Court) → Ossuary; violet (Crypt) → Echo Hall; amber (Sentinel Cell) → Cistern.
+
+**Route** (`npm run map -- shrine`): doorway stone → the
 Nave's plate opens the stairwell; the Sentinel Cell and the Sunken Court each give a key;
-the Gallery of Statues a Restoring Draught, the Sunken Court an Ember Tonic. Upstairs, the Crystal Walk's
+the Gallery of Statues 20 gems, the Sunken Court an Ember Tonic. Upstairs, the Crystal Walk's
 three crystals open the Glove Shrine (fight → the glove); the Loft's heavy stone gives a key.
 Downstairs, keys open the Pit Hall and the Ossuary; the glove crosses the Pit Hall to the
 Root Cellar (a key); the Ossuary's stairs lead to the Deep Hearth, where a key opens the
@@ -52,7 +55,7 @@ heart), the Lookout and Cistern chests (gems), the Ossuary (a heart).
 The shrine leans a little toward a Souls-like feel: dying sends Wren back to the Hall of
 Sleepers; keys, the glove, opened chests and doors, pressed switches and plates stay, but
 **every enemy respawns** and **every drink found refills** (cleared rooms stay cleared). Chests hold two single-use drinks instead of a map and compass: the **Restoring
-Draught** (Gallery of Statues, Key Vault) and the **Ember Tonic** (Sunken Court). Every
+Draught** (Key Vault) and the **Ember Tonic** (Sunken Court). Every
 stone has a purpose (the checker proves it), stones can't get stuck (bounce-back), and
 heavy stones look nothing like light ones (dark violet, bronze bands, glowing teal spirals).
 The Hall of Plates and the Key Vault use **hold plates**: two stones resting on two plates

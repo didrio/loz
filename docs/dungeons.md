@@ -46,7 +46,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   way. Two flights can share a footprint in separate lanes (the shrine's stairwell). `oneWay: true` is passable only `from` → `to`
   (ledges). A bar that lifts from one side and then stays open is better modeled as a
   switch door with the switch on the far side (see `naveNorth` in the shrine).
-- **Locks**: `'small'` (spends a small key; stays open), `'boss'` (needs the boss key),
+- **Locks**: `{ key: color }` (the small key of that color, `crimson`/`azure`/`jade`/`violet`/`amber`: `KEY_COLORS` in `format.ts`; spent on use, the door stays open), `'boss'` (needs the boss key),
   `{ switch: id }` (opens when that switch is pressed), `{ switches: [ids] }` (opens when
   all of them are pressed), `{ item: id }` (needs a tool).
 - **`theme`** (per room): `sandstone` / `marble` / `moss` / `basalt`, the look of its
@@ -54,7 +54,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   rooms, so keep one theme per floor (a wing). Decoration in rooms with stones is
   wall-mounted or flat; free-standing statues only go where no stone can slide.
 - **Things** sit in a room at `at` (relative to the room's corner): `chest` (with `loot`:
-  `smallKey`, `bossKey`, `heart`, `{ item }`, `{ gems }`, `{ drink }`, optionally
+  `{ key: color }`, `bossKey`, `heart`, `{ item }`, `{ gems }`, `{ drink }`, optionally
   `appears` after a switch, after several (`switches`), or once a room is cleared), `switch` (`style: 'crystal'` struck
   with the sword, or `'plate'` held down by a stone; `needs: item` if pressing it takes a
   tool), `stone` (a 2 m wakestone, `heavy` ones only move with the glove; stones and
@@ -139,18 +139,16 @@ chests block stones.
 
 ## What the solver guarantees
 
-`solveDungeon` tries **every order** of spending small keys (everything else, like walking
-through open doors, opening chests, pressing switches and using the boss key or items, is
-free and done greedily) and reports:
+`solveDungeon` is one greedy sweep (walk through open doors, open chests, press switches,
+use items and keys, repeat until nothing changes), because **colored keys can't be misspent**:
+each color has exactly one chest and one door (the validator fails a dungeon that breaks that),
+so there is no order of choices to search and no softlock from keys. It reports:
 
-- **completable**: some order reaches the goal room,
-- **softlocks**: orders that leave Wren stuck (keys spent so the goal is unreachable and
-  nothing is left to open). The classic case is two locked doors and one key, with one door
-  leading to a dead end; the fix is usually a key in the dead end, or making that door a
-  switch door,
-- **unreachable**: rooms or things no order reaches (forgotten doors, chests behind
-  nothing),
-- **route**: one winning order of small-key doors (handy when describing the dungeon).
+- **completable**: the goal room is reached,
+- **unreachable**: rooms or things nothing reaches (forgotten doors, chests behind nothing, a
+  key whose chest sits behind its own door),
+- **route**: the key doors in the order a playthrough can open them (handy when describing the
+  dungeon).
 
 Its simplifications: switches stay pressed, a plate counts as pressed once its room is
 reached (plus its `needs` item), enemies can always be beaten, rooms count as

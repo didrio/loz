@@ -53,7 +53,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .bottle { display: block; }
 .boost { position: absolute; left: 0; right: 0; bottom: -6px; height: 3px; background: rgba(0, 0, 0, 0.4); border-radius: 2px; overflow: hidden; }
 .boost span { display: block; height: 100%; background: #ffb02e; box-shadow: 0 0 4px #ff8a00; }
-.key-icon { display: block; }
+.key-icon, .color-key { display: block; }
+.color-keys { display: flex; gap: 4px; }
 .boss-key { display: block; margin-left: 8px; filter: drop-shadow(0 0 4px rgba(255, 200, 80, 0.7)); }
 .key-icon.hidden, .boss-key.hidden { display: none; }
 

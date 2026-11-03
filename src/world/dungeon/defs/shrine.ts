@@ -90,18 +90,18 @@ export const SHRINE: DungeonDef = {
     { id: 'lookoutDrop', from: 'lookout', to: 'sunkenCourt', kind: 'drop' },
     // The glove waits behind the Crystal Walk: all three crystals lit raise these bars.
     { id: 'tetherDoor', from: 'gallery', to: 'tetherRoom', lock: { switches: ['crystalA', 'crystalB', 'crystalC'] } },
-    { id: 'echoDoor', from: 'tetherRoom', to: 'echoHall', lock: 'small' },
+    { id: 'echoDoor', from: 'tetherRoom', to: 'echoHall', lock: { key: 'violet' } },
     // The Undercroft.
-    { id: 'cryptPit', from: 'crypt', to: 'pitHall', lock: 'small', offset: 16 },
+    { id: 'cryptPit', from: 'crypt', to: 'pitHall', lock: { key: 'crimson' }, offset: 16 },
     // The pit is too wide to jump; only the glove bridges it.
     { id: 'pitRoots', from: 'pitHall', to: 'rootCellar', lock: { item: 'tether' } },
-    { id: 'cryptOssuary', from: 'crypt', to: 'ossuary', lock: 'small', offset: 18 },
-    { id: 'cryptCistern', from: 'crypt', to: 'cistern' },
+    { id: 'cryptOssuary', from: 'crypt', to: 'ossuary', lock: { key: 'jade' }, offset: 18 },
+    { id: 'cryptCistern', from: 'crypt', to: 'cistern', lock: { key: 'amber' } },
     { id: 'deepStairs', from: 'ossuary', to: 'emberHall', kind: 'stairs', at: [7, 17], up: 'n' },
     { id: 'shaftUp', from: 'deepShaft', to: 'northCell', kind: 'stairs', at: [12.5, 14], up: 'n' },
     { id: 'shaftDown', from: 'deepShaft', to: 'bossAnte', kind: 'stairs', at: [3.5, 2], up: 's' },
     // The Deep Hearth.
-    { id: 'emberGauntlet', from: 'emberHall', to: 'gauntlet', lock: 'small' },
+    { id: 'emberGauntlet', from: 'emberHall', to: 'gauntlet', lock: { key: 'azure' } },
     { id: 'emberVault', from: 'emberHall', to: 'keyVault' },
     { id: 'gauntletAnte', from: 'gauntlet', to: 'bossAnte' },
     { id: 'bossDoor', from: 'bossAnte', to: 'boss', lock: 'boss' },
@@ -123,12 +123,12 @@ export const SHRINE: DungeonDef = {
     { kind: 'enemy', id: 'statueSentinel1', room: 'statueGallery', at: [3, 7], type: 'sentinel' },
     { kind: 'enemy', id: 'statueSentinel2', room: 'statueGallery', at: [11, 7], type: 'sentinel' },
     { kind: 'enemy', id: 'statueSentinel3', room: 'statueGallery', at: [7, 11], type: 'sentinel' },
-    { kind: 'chest', id: 'statueChest', room: 'statueGallery', at: [7, 7], loot: { drink: 'restore' }, appears: { cleared: 'statueGallery' } },
+    { kind: 'chest', id: 'statueChest', room: 'statueGallery', at: [7, 7], loot: { gems: 20 }, appears: { cleared: 'statueGallery' } },
     // ── Sentinel Cell: a key.
     { kind: 'enemy', id: 'southSentinel1', room: 'southCell', at: [4, 5], type: 'sentinel' },
     { kind: 'enemy', id: 'southSentinel2', room: 'southCell', at: [12, 5], type: 'sentinel' },
     { kind: 'enemy', id: 'southThorn', room: 'southCell', at: [8, 8], type: 'thornling' },
-    { kind: 'chest', id: 'southChest', room: 'southCell', at: [8, 5], loot: 'smallKey', appears: { cleared: 'southCell' } },
+    { kind: 'chest', id: 'southChest', room: 'southCell', at: [8, 5], loot: { key: 'amber' }, appears: { cleared: 'southCell' } },
     // ── Barred Cell: reached last, from below. Its crystal lifts the bar into the nave.
     { kind: 'switch', id: 'northBar', room: 'northCell', at: [3, 13] },
     // ── Hall of Plates: two stones, two hold plates, a pillar in the way. Both held down at
@@ -141,7 +141,7 @@ export const SHRINE: DungeonDef = {
     // ── Sunken Court: a pit runs the length of the court; push two stones in to make a path.
     { kind: 'stone', id: 'courtStoneA', room: 'sunkenCourt', at: [7, 7] },
     { kind: 'stone', id: 'courtStoneB', room: 'sunkenCourt', at: [3, 7] },
-    { kind: 'chest', id: 'courtChest', room: 'sunkenCourt', at: [16, 9], loot: 'smallKey' },
+    { kind: 'chest', id: 'courtChest', room: 'sunkenCourt', at: [16, 9], loot: { key: 'jade' } },
     { kind: 'chest', id: 'courtDrinkChest', room: 'sunkenCourt', at: [16, 3], loot: { drink: 'attack' } },
     // ── Long Gallery.
     // Landmark: the watcher, in the middle of the hall facing east, its arm pointing north along the gallery.
@@ -172,7 +172,7 @@ export const SHRINE: DungeonDef = {
     // ── Stone Loft: the glove's first puzzle. Pull the heavy stone onto the plate: a key.
     { kind: 'stone', id: 'loftStone', room: 'loft', at: [3, 9], heavy: true },
     { kind: 'switch', id: 'loftPlate', room: 'loft', at: [13, 9], style: 'plate', needs: 'tether' },
-    { kind: 'chest', id: 'loftChest', room: 'loft', at: [8, 4], loot: 'smallKey', appears: { switch: 'loftPlate' } },
+    { kind: 'chest', id: 'loftChest', room: 'loft', at: [8, 4], loot: { key: 'crimson' }, appears: { switch: 'loftPlate' } },
     // ── Crypt: shellbacks; a key when it's cleared.
     { kind: 'enemy', id: 'cryptShell1', room: 'crypt', at: [4, 6], type: 'shellback' },
     { kind: 'enemy', id: 'cryptShell2', room: 'crypt', at: [6, 14], type: 'shellback' },
@@ -180,14 +180,14 @@ export const SHRINE: DungeonDef = {
     { kind: 'enemy', id: 'cryptThorn2', room: 'crypt', at: [4, 17], type: 'thornling' },
     // Landmark: the fallen keeper's head, its open eye toward the foot of the stairs down.
     { kind: 'landmark', id: 'cryptHead', room: 'crypt', at: [9, 14], style: 'fallenKeeper', facing: 2.77 },
-    { kind: 'chest', id: 'cryptChest', room: 'crypt', at: [8, 4], loot: 'smallKey', appears: { cleared: 'crypt' } },
+    { kind: 'chest', id: 'cryptChest', room: 'crypt', at: [8, 4], loot: { key: 'violet' }, appears: { cleared: 'crypt' } },
     // ── Pit Hall: too wide to jump. A fallen column lies along the far ledge (from here, 12.5 m
     //    toward the back wall); the glove swings it across the pit like a drawbridge.
     { kind: 'stone', id: 'bridgeStone', room: 'pitHall', at: [1, 7], heavy: true, role: 'bridge' },
     { kind: 'enemy', id: 'pitThorn', room: 'pitHall', at: [14, 16], type: 'thornling' },
     // ── Root Cellar: a wall of roots with one gap, plugged by a heavy stone: pull it out.
     { kind: 'stone', id: 'rootStone', room: 'rootCellar', at: [7, 11], heavy: true },
-    { kind: 'chest', id: 'rootChest', room: 'rootCellar', at: [3, 3], loot: 'smallKey' },
+    { kind: 'chest', id: 'rootChest', room: 'rootCellar', at: [3, 3], loot: { key: 'azure' } },
     // ── Ossuary: shellbacks and a sentinel among the bones, then the stairs down.
     { kind: 'enemy', id: 'ossShell1', room: 'ossuary', at: [3, 4], type: 'shellback' },
     { kind: 'enemy', id: 'ossShell2', room: 'ossuary', at: [11, 4], type: 'shellback' },

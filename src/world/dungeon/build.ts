@@ -236,7 +236,7 @@ export class DungeonArea implements Area {
       const w = d.width ?? DEFAULT_DOOR_WIDTH;
       gap(pl.wall === 'x' ? `${a.floor}:x:${pl.z}` : `${a.floor}:z:${pl.x}`, pl.wall === 'x' ? pl.x : pl.z, w);
       const fy = floorY(def, a.floor);
-      const door = new DungeonDoor(b, part(a.floor).dynamic, d.id, doorStyle(d.lock), pl.x, fy, pl.z, pl.wall, w);
+      const door = new DungeonDoor(b, part(a.floor).dynamic, d.id, doorStyle(d.lock), pl.x, fy, pl.z, pl.wall, w, d.lock && typeof d.lock === 'object' && 'key' in d.lock ? d.lock.key : undefined);
       this.doors.set(d.id, door);
       if (door.style !== 'open') {
         const label = door.style === 'bars' ? 'Check' : 'Unlock';

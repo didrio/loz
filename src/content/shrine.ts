@@ -5,7 +5,7 @@ import { Shellback } from '../game/shellback';
 import type { Script, ScriptApi } from '../game/script';
 import type { DungeonProgress, GameState } from '../game/state';
 import type { DungeonArea } from '../world/dungeon/build';
-import { floorY, lockSwitches, type Condition, type Loot } from '../world/dungeon/format';
+import { floorY, keyName, lockSwitches, type Condition, type Loot } from '../world/dungeon/format';
 import type { AreaContent } from './overworld';
 
 /**
@@ -17,7 +17,6 @@ import type { AreaContent } from './overworld';
  */
 
 const LOOT_TEXT: Record<string, string> = {
-  smallKey: 'You found a *Small Key*!\nIt opens one locked door in this shrine.',
   bossKey: 'You found the *Boss Key*!\nIts great teeth fit the door to the shrine\'s keeper.',
   heart: 'A *Heart*! You feel completely restored.',
   restore: 'You found a *Restoring Draught*!\nDrink it ([drinkRestore]) to restore every heart. Once drunk it\'s gone... until you fall, when every drink you\'ve found fills again.',
@@ -63,6 +62,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
 
   const lootMessage = (loot: Loot) => {
     if (typeof loot === 'string') return LOOT_TEXT[loot];
+    if ('key' in loot) return `You found the *${keyName(loot.key)}*!\nIt opens one locked door in this shrine, the one marked ${loot.key}.`;
     if ('item' in loot) return LOOT_TEXT[loot.item] ?? `You got the *${loot.item}*!`;
     if ('drink' in loot) return LOOT_TEXT[loot.drink];
     return `You found ${loot.gems} gems!`;
@@ -87,9 +87,9 @@ export function shrineContent(area: DungeonArea): AreaContent {
       api.sfx.fanfare();
       api.particles.burst(chest.group.position.clone().setY(chest.group.position.y + 1.2), 0xfff1a8, 30, 4, 1.2, false);
       const loot = t.loot;
-      if (loot === 'smallKey') p.keys++;
-      else if (loot === 'bossKey') p.bossKey = true;
+      if (loot === 'bossKey') p.bossKey = true;
       else if (loot === 'heart') api.state.heal(api.state.maxHp);
+      else if ('key' in loot) p.keys.add(loot.key);
       else if ('item' in loot) {
         if (loot.item === 'tether') {
           // The dungeon's item gets its own moment: close on Wren, the cord flaring teal.
@@ -115,9 +115,10 @@ export function shrineContent(area: DungeonArea): AreaContent {
     if (!door || door.style === 'open') continue;
     scripts[d.id] = async (api) => {
       const p = progress(api.state);
-      if (door.style === 'small') {
-        if (p.keys <= 0) return api.say([{ text: 'It\'s locked tight. A *Small Key* would open it.' }]);
-        p.keys--;
+      if (door.style === 'key') {
+        const color = door.keyColor!;
+        if (!p.keys.has(color)) return api.say([{ text: `It's locked tight. It needs the *${keyName(color)}*.` }]);
+        p.keys.delete(color);
       } else if (door.style === 'boss') {
         if (!p.bossKey) return api.say([{ text: 'A heavy door, sealed with a great iron lock.\nIt needs the shrine\'s *Boss Key*.' }]);
       } else {
@@ -174,6 +175,13 @@ export function shrineContent(area: DungeonArea): AreaContent {
         const chest = area.chests.get(t.id)!;
         if (met(t.appears, p)) chest.setPresent(true);
         if (p.chests.has(t.id)) chest.open(true);
+        // Keys are derived from what the save says happened (this also covers v3 saves, which kept a count):
+        // an opened key chest whose door hasn't been unlocked means that key is still held.
+        const loot = t.loot;
+        if (p.chests.has(t.id) && typeof loot === 'object' && 'key' in loot) {
+          const door = def.doors.find((d) => d.lock && typeof d.lock === 'object' && 'key' in d.lock && d.lock.key === loot.key);
+          if (door && !p.doors.has(door.id)) p.keys.add(loot.key);
+        }
       }
       // Switch doors stay open once their switch is pressed (even if the save missed the door).
       for (const d of def.doors) {

@@ -1,4 +1,5 @@
 import { SAVE_VERSION, type DungeonSave, type SaveData } from '../core/save';
+import { KEY_COLORS, type KeyColor } from '../world/dungeon/format';
 import { Drinks } from './drinks';
 
 /**
@@ -17,8 +18,8 @@ export type Item = (typeof ITEMS)[number];
  * door or chest never needs a hand-added flag.
  */
 export class DungeonProgress {
-  /** Small keys: in genre tradition, a dungeon's keys only open that dungeon's doors. */
-  keys = 0;
+  /** Colored small keys held: each opens one door, and only in this dungeon. Spent when the door opens. */
+  readonly keys = new Set<KeyColor>();
   bossKey = false;
   /** Doors opened for good (unlocked, raised by a switch, the boss door). */
   readonly doors = new Set<string>();
@@ -32,7 +33,7 @@ export class DungeonProgress {
 
   toSave(): DungeonSave {
     return {
-      keys: this.keys, bossKey: this.bossKey,
+      keys: [...this.keys], bossKey: this.bossKey,
       doors: [...this.doors], chests: [...this.chests], switches: [...this.switches], cleared: [...this.cleared],
       done: this.done,
     };
@@ -40,7 +41,8 @@ export class DungeonProgress {
 
   static from(d: DungeonSave) {
     const p = new DungeonProgress();
-    Object.assign(p, { keys: d.keys, bossKey: d.bossKey, done: d.done });
+    Object.assign(p, { bossKey: d.bossKey, done: d.done });
+    for (const c of KEY_COLORS) if (d.keys.includes(c)) p.keys.add(c);
     for (const id of d.doors) p.doors.add(id);
     for (const id of d.chests) p.chests.add(id);
     for (const id of d.switches) p.switches.add(id);
@@ -84,9 +86,14 @@ export class GameState {
     return d;
   }
 
-  /** Small keys usable where Wren is: the dungeon's own keys inside one, the field's outside. */
+  /** Plain small keys usable where Wren is: the field's, outside dungeons (a dungeon's keys are colored: `dungeonKeysHere`). */
   get keysHere() {
-    return this.dungeons.get(this.area)?.keys ?? (this.area === 'overworld' ? this.keys : 0);
+    return this.dungeons.has(this.area) ? 0 : this.area === 'overworld' ? this.keys : 0;
+  }
+
+  /** The colored keys Wren holds in the dungeon they're in (empty elsewhere). */
+  get dungeonKeysHere(): KeyColor[] {
+    return [...(this.dungeons.get(this.area)?.keys ?? [])];
   }
 
   get isNight() {

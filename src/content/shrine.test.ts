@@ -45,22 +45,36 @@ describe('shrine content', () => {
     expect(travels).toEqual([{ area: 'overworld', entrance: 'shrineDoor' }]);
   });
 
-  it('chest keys belong to the shrine and open its locked doors', async () => {
+  it('each colored key opens only its own door, and is spent', async () => {
     const { area, content, api, p, said } = setup();
     await content.scripts.cryptPit(api);
     expect(area.doors.get('cryptPit')!.opening).toBe(false);
-    expect(said.at(-1)!.text).toMatch(/Small Key/);
+    expect(said.at(-1)!.text).toMatch(/Crimson Key/);
     p.cleared.add('southCell'); // pretend the fight is won, so its chest is there
     content.restore(api.state);
     await content.scripts.southChest(api);
-    expect(p.keys).toBe(1);
+    expect([...p.keys]).toEqual(['amber']);
+    expect(said.at(-1)!.text).toMatch(/Amber Key/);
     expect(api.state.keys).toBe(0); // not a field key
-    expect(api.state.keysHere).toBe(1);
-    await content.scripts.cryptPit(api);
-    expect(p.keys).toBe(0);
-    expect(p.doors.has('cryptPit')).toBe(true);
-    expect(area.doors.get('cryptPit')!.opening).toBe(true);
+    expect(api.state.dungeonKeysHere).toEqual(['amber']);
+    await content.scripts.cryptPit(api); // the amber key doesn't fit the crimson door
+    expect(area.doors.get('cryptPit')!.opening).toBe(false);
+    expect(said.at(-1)!.text).toMatch(/Crimson Key/);
+    await content.scripts.cryptCistern(api);
+    expect(p.keys.size).toBe(0);
+    expect(p.doors.has('cryptCistern')).toBe(true);
+    expect(area.doors.get('cryptCistern')!.opening).toBe(true);
   });
+
+  it('a save that opened a key chest but not its door still holds the key', () => {
+    const { content, api, p } = setup();
+    p.chests.add('loftChest');
+    p.chests.add('rootChest');
+    p.doors.add('emberGauntlet'); // azure already spent
+    content.restore(api.state);
+    expect([...p.keys]).toEqual(['crimson']);
+  });
+
 
   it('the boss door wants the boss key; the glove chest gives the Tether Glove', async () => {
     const { area, content, api, p, toasts } = setup();

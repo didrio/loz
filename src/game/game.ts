@@ -341,7 +341,7 @@ export class Game implements ScriptApi {
     hud.setHearts(state.hp, state.maxHp);
     hud.setGems(state.gems);
     hud.setDrinks(DRINK_ORDER.filter((id) => (state.drinks.found.get(id) ?? 0) > 0).map((id) => ({ id, left: state.drinks.left.get(id) ?? 0 })), player.attackBoost / ATTACK_BOOST_SECONDS, state.items.has('tether'));
-    hud.setKeys(state.keysHere, !!state.dungeons.get(state.area)?.bossKey);
+    hud.setKeys(state.keysHere, state.dungeonKeysHere, !!state.dungeons.get(state.area)?.bossKey);
     hud.setClock(state.hours, state.day);
     if (this.mode !== 'play') hud.setActions([]);
     const mood = boss ? 'boss' : this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day');

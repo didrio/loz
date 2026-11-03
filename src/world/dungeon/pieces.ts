@@ -3,7 +3,7 @@ import { Layer, type RAPIER } from '../../core/physics';
 import { mat, uniqueMat } from '../../render/materials';
 import { glow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
-import { DOOR_HEIGHT, type Lock } from './format';
+import { DOOR_HEIGHT, KEY_HEX, type KeyColor, type Lock } from './format';
 
 /**
  * The moving and changing parts of a dungeon, built from primitives: doors with their
@@ -29,17 +29,17 @@ export const STONE = {
 /**
  * A doorway's door. Open doorways get only a frame; locked ones get a slab (or bars) that
  * blocks the way until `open()`:
- * - small key: a stone slab with an iron keyhole plate,
+ * - key: a stone slab with a keyhole plate and a band in the key's color,
  * - boss key: a taller, darker slab with a gold spiral and studs,
  * - switch: iron bars that slide up into the lintel,
  * Item locks have no door: the obstacle is in the room (a pit, a heavy stone).
  */
-export type DoorStyle = 'open' | 'small' | 'boss' | 'bars';
+export type DoorStyle = 'open' | 'key' | 'boss' | 'bars';
 
 export function doorStyle(lock: Lock | undefined): DoorStyle {
   if (!lock) return 'open';
-  if (lock === 'small') return 'small';
   if (lock === 'boss') return 'boss';
+  if ('key' in lock) return 'key';
   return 'item' in lock ? 'open' : 'bars';
 }
 
@@ -57,7 +57,7 @@ export class DungeonDoor {
    * `wall`: `x` if the wall runs east–west (the door faces north/south), `z` if north–south.
    * (x, y, z) is the center of the doorway at floor level.
    */
-  constructor(b: AreaBuilder, parent: THREE.Object3D, readonly id: string, readonly style: DoorStyle, x: number, y: number, z: number, wall: 'x' | 'z', width: number) {
+  constructor(b: AreaBuilder, parent: THREE.Object3D, readonly id: string, readonly style: DoorStyle, x: number, y: number, z: number, wall: 'x' | 'z', width: number, readonly keyColor?: KeyColor) {
     this.group.position.set(x, y, z);
     if (wall === 'z') this.group.rotation.y = Math.PI / 2;
     parent.add(this.group);
@@ -100,8 +100,12 @@ export class DungeonDoor {
       slab.castShadow = true;
       leaf.add(slab);
       for (const face of [-1, 1]) {
-        if (style === 'small') {
-          const plate = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.06), mat(STONE.iron));
+        if (style === 'key') {
+          const tint = mat(KEY_HEX[keyColor!]);
+          const band = new THREE.Mesh(new THREE.BoxGeometry(width, 0.35, 0.06), tint);
+          band.position.set(0, DOOR_HEIGHT - 0.7, face * 0.21);
+          leaf.add(band);
+          const plate = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.06), tint);
           plate.position.set(0, 1.3, face * 0.22);
           const hole = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.25, 0.04), mat(0x111111));
           hole.position.set(0, 1.25, face * 0.26);

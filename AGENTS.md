@@ -23,7 +23,7 @@ As of 2026-11-02: Emberfield (the valley) plays start to finish; the Hollow Lamp
 only), the quest thread and all music are done. **The Waking Shrine** (25 rooms, four wings) is
 playable up to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy
 feel is untuned until the owner plays.
-**Next: the owner's playtest tweaks C, D** ([docs/roadmap.md](docs/roadmap.md), A and B done),
+**Next: the owner's playtest tweak D, the village**, then E (flasks) and F (dungeon fixes) ([docs/roadmap.md](docs/roadmap.md), A–C done),
 then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
 
 ## Docs: read the one for the area you're touching
@@ -178,7 +178,7 @@ CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/ (scout,
 - No map or compass (owner's call): dungeon chests hold keys, items, drinks (single-use,
   refilled on death: `game/drinks.ts`) and gems instead. Every interactable thing must serve
   a purpose (the puzzle checker fails a stone that doesn't).
-- A dungeon's small keys only open that dungeon's doors. Dungeons are never sealed: the
+- A dungeon's small keys are colored (one chest, one door each) and only open that dungeon's doors. Dungeons are never sealed: the
   entrance is an open doorway you can walk out of any time (owner's call, 2026-11-02; no
   fight-room shutters either). Progress gates are items and keys, e.g. the glove for the Northpass.
 - Gamepad A doubles as interact and jump (context action button).

@@ -141,14 +141,15 @@ logic: waits must follow game time.
 ## State and saves (`game/state.ts`, `core/save.ts`)
 
 `GameState` holds quest `FLAGS`, the field's small `keys`, the current `area`, carried
-`items` (`ITEMS`), per-dungeon progress (`dungeon(id)`: its own keys, boss key, and sets of opened doors, opened chests, pressed switches and cleared rooms, all
+`items` (`ITEMS`), per-dungeon progress (`dungeon(id)`: its colored keys held (a set of `KeyColor`), boss key, and sets of opened doors, opened chests, pressed switches and cleared rooms, all
 keyed by the dungeon's data ids, plus `done`), hearts, gems and the clock. It's
-mutated in place (systems keep references). `keysHere` is what the HUD shows: the
-dungeon's keys inside one, the field's outside. Add flags to `FLAGS`; **never rename a shipped flag**
+mutated in place (systems keep references). `keysHere` is the field's plain key count (0 inside a dungeon) and `dungeonKeysHere` the colored
+keys held in the current dungeon; the HUD shows both. Add flags to `FLAGS`; **never rename a shipped flag**
 (old saves would silently lose it). New flags use a namespaced name, `<area>.<thing>`
 (e.g. `shrine.bigKey`); the original seven overworld flags keep their plain names forever.
 Saves are versioned JSON (`embervale:save:0`), validated and repaired on load; bump
-`SAVE_VERSION` only with a migration in `decodeSave`. `SAVE_VERSION` is 3: v1 saves (which
+`SAVE_VERSION` only with a migration in `decodeSave`. `SAVE_VERSION` is 4 (v4: a dungeon's `keys` is a list of colors, not a count; a v3 count loads
+as none and the shrine's `restore` re-derives held keys from opened key chests whose door is still shut): v1 saves (which
 held flute songs) load with the songs dropped and 0 keys; v1/v2 load in the overworld with
 no items or dungeon progress. Saved: flags, keys, area, items, dungeons, drinks (found and left;
 added within v3, absent means none), gems, hearts, clock. Not saved: position (continue starts at the saved area's spawn, e.g. a dungeon's

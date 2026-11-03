@@ -70,19 +70,29 @@ export type FeatureDef =
 
 /**
  * What it takes to pass a door:
- * - `small`: spend one small key (the door stays open afterwards),
+ * - `{ key }`: the key of that color opens it (one key, one door; the door stays open afterwards),
  * - `boss`: have the dungeon's boss key (not spent),
  * - `{ switch }`: that switch has been pressed (switches stay pressed),
  * - `{ item }`: Wren has that item (a tool found in the dungeon).
  */
-export type Lock = 'small' | 'boss' | { switch: string } | { switches: string[] } | { item: string };
+export type Lock = 'boss' | { key: KeyColor } | { switch: string } | { switches: string[] } | { item: string };
+
+/**
+ * Small keys come in colors: each color has exactly one chest and opens exactly one door in
+ * its dungeon (colors repeat across dungeons, since keys never leave theirs). Add a color here.
+ */
+export const KEY_COLORS = ['crimson', 'azure', 'jade', 'violet', 'amber'] as const;
+export type KeyColor = (typeof KEY_COLORS)[number];
+/** What each color looks like (door bands, chest-found text, the HUD's key icons). */
+export const KEY_HEX: Record<KeyColor, number> = { crimson: 0xd0384a, azure: 0x3d8fe0, jade: 0x3cc47c, violet: 0x9a58e0, amber: 0xf0a830 };
+export const keyName = (c: KeyColor) => `${c[0].toUpperCase()}${c.slice(1)} Key`;
 
 /** The shrine's wings each have a look: sandstone halls, marble galleries, mossy undercroft, basalt hearth. */
 export type RoomTheme = 'sandstone' | 'marble' | 'moss' | 'basalt';
 
 /** The switches a lock waits for (all of them), if it's a switch lock. */
 export function lockSwitches(lock: Lock | undefined): string[] {
-  if (!lock || typeof lock === 'string') return [];
+  if (!lock || typeof lock === 'string' || 'key' in lock) return [];
   if ('switch' in lock) return [lock.switch];
   return 'switches' in lock ? lock.switches : [];
 }
@@ -118,7 +128,7 @@ export interface DoorDef {
 /** The single-use drinks found in dungeon chests (see `game/drinks.ts`). */
 export type DrinkId = 'restore' | 'attack';
 
-export type Loot = 'smallKey' | 'bossKey' | 'heart' | { item: string } | { gems: number } | { drink: DrinkId };
+export type Loot = { key: KeyColor } | 'bossKey' | 'heart' | { item: string } | { gems: number } | { drink: DrinkId };
 
 /** When something appears: after a switch (or all of several) is pressed, or once a room is cleared of enemies. */
 export type Condition = { switch: string } | { switches: string[] } | { cleared: string };
@@ -330,7 +340,8 @@ export function worldPos(room: RoomDef, at: Vec2): Vec2 {
 /** A short label for a lock, used in error messages and the text map legend. */
 export function lockName(lock: Lock | undefined) {
   if (!lock) return 'open';
-  if (typeof lock === 'string') return lock === 'small' ? 'small key' : 'boss key';
+  if (lock === 'boss') return 'boss key';
+  if (typeof lock === 'object' && 'key' in lock) return `${lock.key} key`;
   if ('switch' in lock) return `switch ${lock.switch}`;
   return 'switches' in lock ? `switches ${lock.switches.join(' + ')}` : `item ${lock.item}`;
 }

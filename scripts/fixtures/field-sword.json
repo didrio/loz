@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "flags": ["metMaren", "gotGroveKey", "groveChestOpened", "hasSword"],
   "keys": 0,
   "area": "overworld",

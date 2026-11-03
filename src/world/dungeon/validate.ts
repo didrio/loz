@@ -209,6 +209,17 @@ export function validateDungeon(def: DungeonDef): string[] {
     }
   }
 
+  // Colored keys: one chest and one door per color, so a key can never be spare or missing.
+  const keyColors = new Set<string>([
+    ...def.doors.flatMap((d) => (d.lock && typeof d.lock === 'object' && 'key' in d.lock ? [d.lock.key] : [])),
+    ...def.things.flatMap((t) => (t.kind === 'chest' && typeof t.loot === 'object' && 'key' in t.loot ? [t.loot.key] : [])),
+  ]);
+  for (const c of keyColors) {
+    const doors = def.doors.filter((d) => d.lock && typeof d.lock === 'object' && 'key' in d.lock && d.lock.key === c).length;
+    const chests = def.things.filter((t) => t.kind === 'chest' && typeof t.loot === 'object' && 'key' in t.loot && t.loot.key === c).length;
+    if (doors !== 1 || chests !== 1) errors.push(`The ${c} key needs exactly one chest and one door (has ${chests} chest${chests === 1 ? '' : 's'}, ${doors} door${doors === 1 ? '' : 's'})`);
+  }
+
   const entry = room(def.entrance.room, 'The entrance');
   if (entry) inside(entry, def.entrance.at, 'The entrance');
   room(def.goal, 'The goal');
