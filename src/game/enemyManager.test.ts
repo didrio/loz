@@ -38,3 +38,23 @@ describe('EnemyManager respawns', () => {
     expect(m.list.length).toBe(0);
   });
 });
+
+describe('EnemyManager population', () => {
+  it('spawns the given number of thornlings instead of the area\'s', () => {
+    const m = new EnemyManager(new THREE.Group(), flatGround(), field(14), { thornlings: 3, wisps: false });
+    expect(m.list.length).toBe(3);
+  });
+
+  it('spawns no night wisps when the population has none', () => {
+    const physics = flatGround();
+    const env = { ...enemyEnv(physics, new THREE.Vector3(0, 0, 0)).env, night: true };
+    const quiet = new EnemyManager(new THREE.Group(), physics, field(0), { thornlings: 0, wisps: false });
+    const usual = new EnemyManager(new THREE.Group(), physics, field(0));
+    for (let i = 0; i < 200; i++) {
+      quiet.update(0.5, env);
+      usual.update(0.5, env);
+    }
+    expect(quiet.list.length).toBe(0);
+    expect(usual.list.length).toBeGreaterThan(0);
+  });
+});

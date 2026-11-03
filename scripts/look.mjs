@@ -47,6 +47,30 @@ const SCENES = {
     await h.boot();
     await h.shot('title');
   },
+  /** The blight (game/blight.ts): sick field by day and night, the village, mid-lift, and the restored valley. */
+  async blight(h) {
+    await h.newGame();
+    const hours = (n) => h.game((n) => (window.embervale.state.hours = n), n);
+    await hours(12);
+    await h.wait(1500);
+    await h.shot('blight-day');
+    await hours(0);
+    await h.wait(1500);
+    await h.shot('blight-night');
+    await hours(12);
+    await h.teleport(-62, -40, Math.PI);
+    await h.wait(1500);
+    await h.shot('blight-village');
+    // The seal breaks: the blight eases out over ~4 s.
+    await h.game(() => window.embervale.state.set('valleyOpen'));
+    await h.wait(2000);
+    await h.shot('blight-lifting');
+    await h.wait(4000);
+    await h.shot('blight-lifted-village');
+    await h.teleport(0, 14, Math.PI);
+    await h.wait(1200);
+    await h.shot('blight-lifted-field');
+  },
   async field(h) {
     await h.newGame();
     await h.wait(1200);

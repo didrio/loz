@@ -8,12 +8,14 @@ import { Director } from '../core/director';
 import { Input, type Action } from '../core/input';
 import type { Physics } from '../core/physics';
 import { decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings } from '../core/save';
+import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
 import { Sky } from '../render/sky';
 import { Hud } from '../ui/hud';
 import { nearestInteractable, sameLevel, type Area } from '../world/area';
 import { Boss } from './boss';
 import { CameraRig } from './camera';
+import { blighted, blightMood, fieldPopulation, stepBlight } from './blight';
 import { Combat } from './combat';
 import { Debug } from './debug';
 import { BudSystem } from './buds';
@@ -59,6 +61,7 @@ export class Game implements ScriptApi {
   readonly particles: Particles;
   readonly pickups: Pickups;
   readonly sky: Sky;
+  private readonly motes: Motes;
   readonly player: Player;
   readonly rig: CameraRig;
   readonly hazards: Hazards;
@@ -104,6 +107,7 @@ export class Game implements ScriptApi {
     this.input = new Input(canvas);
     this.dialog = new Dialog(this.hud, this.sfx);
     this.sky = new Sky(this.scene);
+    this.motes = new Motes(this.scene);
     this.particles = new Particles(this.scene);
     this.pickups = new Pickups(this.scene);
     this.player = new Player(this.scene, physics, this.state);
@@ -160,7 +164,11 @@ export class Game implements ScriptApi {
     this.physics.refreshQueries();
     this.sky.setIndoor(!!area.indoor);
     this.rig.dist = area.indoor ? 7 : 9;
-    this.enemies = new EnemyManager(area.root, this.physics, area);
+    const valleyOpen = this.state.has('valleyOpen');
+    this.enemies = new EnemyManager(area.root, this.physics, area, fieldPopulation(area, valleyOpen));
+    // A loaded area starts at its blight level; only a lift in front of the player eases.
+    this.sky.blight = blighted(area, valleyOpen) ? 1 : 0;
+    this.area.setBlight?.(this.sky.blight);
     this.state.area = id;
     this.placeAtSpawn(entrance);
     if (this.mode !== 'title') {
@@ -378,13 +386,17 @@ export class Game implements ScriptApi {
     hud.setBoss(boss && this.mode !== 'title' ? { name: boss.title, hp: boss.hp, maxHp: boss.maxHp, marks: [0.5] } : null);
     const gloomTarget = Math.max(0, ...this.enemies.list.map((e) => (e instanceof Boss ? e.gloom : 0)));
     this.sky.gloom += (gloomTarget - this.sky.gloom) * Math.min(1, rawDt * 1.5);
+    const isBlighted = blighted(this.area, state.has('valleyOpen'));
+    this.sky.blight = stepBlight(this.sky.blight, isBlighted ? 1 : 0, rawDt);
+    this.area.setBlight?.(this.sky.blight);
+    this.motes.update(rawDt, player.pos, this.sky.blight);
     hud.setHearts(state.hp, state.maxHp);
     hud.setGems(state.gems);
     hud.setFlasks(state.flasks.slots, player.attackBoost / ATTACK_BOOST_SECONDS, state.items.has('tether'));
     hud.setKeys(state.keysHere, state.dungeonKeysHere, !!state.dungeons.get(state.area)?.bossKey);
     hud.setClock(state.hours, state.day);
     if (this.mode !== 'play') hud.setActions([]);
-    const mood = boss ? boss.music : this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day');
+    const mood = boss ? boss.music : blightMood(this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day'), isBlighted);
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced);
     if (input.pressed('music')) {
       this.sfx.musicOn = this.settings.music = !this.settings.music;

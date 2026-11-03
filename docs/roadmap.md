@@ -23,10 +23,7 @@ Next, in order:
    Five Sonnet sessions, no plan mode needed; run each with `/start story S<n>`:
    - ~~S1, the shield-first opening~~ done (2026-11-03; [world.md](world.md), "The opening"). **For S2–S5:** no new story
      cutscenes without asking (AGENTS.md design decisions); the blight lift (S2) and the prism (S5) were planned as cutscenes.
-   - [ ] **S2, the blight.** `Sky.blight` (0–1, a second palette like `gloom`), ash motes (`render/motes.ts`), blight
-     growths hidden on restore; placeholder music `blight`, `blightNight`, `blightVillage` on the valley motif (the owner
-     listens); restored field: 2 stray thornlings by day, no gloomwisps; the lift in the gate vision (blight tweens to
-     0 over ~4 s, the music crossfades). Restored = `valleyOpen`.
+   - ~~S2, the blight~~ done (2026-11-03; [world.md](world.md), "The blight"). Music is placeholder (owner listens); the restored field has 3 strays and no wisps (owner's call).
    - [ ] **S3, village and ruins.** Four bigger cottages (two ruined) plus the mill; hand-placed `RUINS` across the
      valley (`world/overworld/ruins.ts`), the shield's cottage among them; scenery filtered with `inRuin` (the `inGate`
      pattern, so nothing reshuffles; narrow the per-region seeds trigger and tell the owner).

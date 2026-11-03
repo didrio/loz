@@ -41,7 +41,7 @@ export const BUDS = [
  * reshuffle another. The valley's 1337 and the hollow's 4242 are the original seeds (the layout
  * players already know); new regions add a line here.
  */
-const REGION_SEEDS = { valley: 1337, hollow: 4242, gorge: 7301, pass: 9157 } as const;
+const REGION_SEEDS = { valley: 1337, hollow: 4242, gorge: 7301, pass: 9157, blight: 5521 } as const;
 export const regionRng = (region: keyof typeof REGION_SEEDS) => mulberry32(REGION_SEEDS[region]);
 
 /**

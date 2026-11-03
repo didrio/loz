@@ -23,7 +23,7 @@ As of 2026-11-03: Emberfield plays start to finish: a wordless start, the shield
 then **the Waking Shrine** through **Gravelheart** and the Keepers' Seal, which opens the gate to the Northpass and **Wayfarers' Camp**
 (Cragstalkers, the Waybell). Bells, trials, Murmurbuds, the pause menu (P), shield surfing and the dev menu (~ / L3) work. Unplayed by
 the owner: surfing, the sealed gate, D3. Open: a Lamplighter-fight report (stuck at the arena edge, then "inverted" controls) that
-didn't reproduce; the owner is retrying it (roadmap, "Known quirks"). **Next:** story revamp S2–S5 (roadmap 0.7), then the pause
+didn't reproduce; the owner is retrying it (roadmap, "Known quirks"). The blight (S2) lies on the valley until the seal breaks (music is placeholder). **Next:** story revamp S3–S5 (roadmap 0.7), then the pause
 menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
@@ -124,14 +124,14 @@ src/
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme arranged;
                            imported/ holds the generated notes (never edit)
-  render/                  materials (shared/unique, static merging), shapes, characters, sky, particles
+  render/                  materials (shared/unique, static merging), shapes, characters, sky (incl. the blight look), particles, motes (ash)
   world/
     area.ts, interior.ts   Area interface, Interactable, Trigger, AreaBuilder; MillInterior (Tobin's mill)
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
     bell.ts, murmurbud.ts  BELL_IDS, BellPost, BellPickup; MurmurbudLook (hint bulb: swells, sulks, opens, floating note, wisp)
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
     overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp,
-                           the crossing, the Waybell), ruins (ruined homes; the shield's cottage), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
+                           the crossing, the Waybell), ruins (ruined homes; the shield's cottage), blight (thorn growths), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
     dungeon/               data format, validator, softlock solver, text map, DUNGEONS; defs/ the dungeons; build.ts + pieces.ts
                            (data → 3D Area); grid.ts + puzzle.ts (2 m grids, wakestone checker); landmarks.ts (statues);
                            hearth.ts (Gravelheart's arena, causeway, Heart Vessel); decor.ts (each wing's palette and light)
@@ -146,6 +146,7 @@ src/
     surf.ts                shield surfing's rule (when a ride starts and ends; SURF_SPEED)
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
     sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
+    blight.ts              the blight's rules (where it lies, the lift, the restored field's strays, its songs)
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss)
     lockon.ts, trialFalls.ts   what lock-on picks (enemies, closed buds: LockTarget); bell trials' fall rule
     flasks.ts              the two flasks (life / attack potion; drinking empties one, Odo refills it)

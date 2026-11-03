@@ -55,6 +55,8 @@ export interface Area {
    * it every frame with the player's position, and before placing her anywhere.
    */
   streamAt?(x: number, z: number): void;
+  /** The sky's blight level (0–1) each frame, for scenery that grows or shrinks with it (the overworld's thorns). */
+  setBlight?(level: number): void;
   update(dt: number, env: AreaEnv): void;
   /**
    * Moves the area's moving platforms. The game calls it *before* the player updates, so a

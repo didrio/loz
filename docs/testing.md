@@ -23,7 +23,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   end, before a commit, or after shared systems (player, physics, camera, saves, game.ts)
   changed, asking the owner first. CI runs everything on every push anyway.
 - `npm run look -- <scenes>` (`--list` for names: title, field, village, mill, grove, chest,
-  door, dungeon, camera, glove, landmarks, buds, bells, bellShaft, gorge, shrine, enemies, hollow, night, guard, shield, surf, orbs, boss, boss-moves, gravelheart, gravelheart2, gate, northpass, camp, wardenIntro, seal): captures named scenes to
+  door, dungeon, camera, glove, landmarks, buds, bells, bellShaft, gorge, shrine, enemies, hollow, night, guard, shield, surf, orbs, boss, boss-moves, gravelheart, gravelheart2, gate, northpass, camp, wardenIntro, seal, blight): captures named scenes to
   `look-output/` for you to inspect. Boss scenes slow time, make Wren invulnerable, park
   the camera and force moves. Add a scene when you add a place, a boss or a visual system.
 - Both scripts share `scripts/browser.mjs` (dev server, Chrome, `newGame`, `teleport`,

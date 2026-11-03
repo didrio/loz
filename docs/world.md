@@ -104,6 +104,20 @@ change them.
 | Crypt (floor −1) | room cleared | *None of them knew what the world past the mountains had become, or what it did to me. They could have wondered.* |
 | The Gauntlet (floor −2) | room cleared | *THIS IS MY HOME.* |
 
+### The blight (S2, built 2026-11-03)
+
+The valley is sick from the first frame until the Keepers' seal breaks (`valleyOpen`); the rules live in
+`game/blight.ts` (tested), everything else follows them. Dungeons and interiors are never blighted.
+- **Sky** (`Sky.blight`, 0–1): a violet-black sky and fog, weaker sun, dim stars; the same weight by day and night
+  (the night sinks as far as the night sky does). Boss gloom stacks on top.
+- **Ash motes** (`render/motes.ts`) drift around the player; **thorn growths** (`world/overworld/blight.ts`, own RNG
+  `blight`, no colliders) stand in the open field and shrink away as the blight lifts.
+- **Music**: placeholder `blight`, `blightNight`, `blightVillage` ([audio.md](audio.md)); the owner listens.
+- **The lift**: when `valleyOpen` is set in the gate vision, the level eases to 0 over ~4 s (`BLIGHT_RATE`) and the
+  music crossfades. A loaded area starts at its level (no easing). Not a new cutscene: it happens inside the existing vision.
+- **Restored field** (owner's call): `STRAY_THORNLINGS` = 3 thornlings, day and night, and **no gloomwisps** any more.
+  Blighted: 14 thornlings and night wisps as before. The Lamplighter still only walks at night.
+
 ### The opening (S1, built 2026-11-03)
 
 **No cutscenes for story** (owner's call, 2026-11-03): like Dark Souls, the story comes from talking

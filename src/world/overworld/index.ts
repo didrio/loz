@@ -14,6 +14,7 @@ import { NORTHPASS } from './northpass';
 import { RegionStreamer } from './region';
 import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
 import { buildRuins } from './ruins';
+import { buildBlightGrowths } from './blight';
 import { buildBounds, buildTerrain, buildWater } from './terrain';
 import { buildVillage } from './village';
 
@@ -69,6 +70,8 @@ export class Overworld implements Area {
   readonly vessel: HeartVessel;
   private readonly hollowFx: { update(dt: number): void };
   private readonly bushes: BushField;
+  /** The blight's thorns in the field; they shrink away as the blight lifts. */
+  private readonly growths: ReturnType<typeof buildBlightGrowths>;
   /** The Murmurbuds, by id (`bud.<hint>`). */
   readonly buds: Map<string, MurmurbudLook>;
   /** A swing reached a bud (the game's bud system listens; see game/buds.ts). */
@@ -110,6 +113,7 @@ export class Overworld implements Area {
     this.wayBell = camp.bell;
     this.canyonCrossing = camp.course;
     this.shield = buildRuins(b).shield;
+    this.growths = buildBlightGrowths(b, regionRng('blight'));
     this.bushes = new BushField(b, [...bushSpots(b), ...hollow.bushes]);
     this.buds = new Map(BUDS.map(({ id, x, z }) => [id, new MurmurbudLook(b, id, x, terrainHeight(x, z), z)]));
     for (const s of SIGNS) buildSign(b, s.x, s.z);
@@ -179,6 +183,11 @@ export class Overworld implements Area {
     this.root = done.root;
     this.disposer = done.dispose;
     this.regions = new RegionStreamer([NORTHPASS], physics, this);
+  }
+
+  /** The sky's blight level, 0–1 (the game feeds it every frame). */
+  setBlight(level: number) {
+    this.growths.setLevel(level);
   }
 
   streamAt(x: number, z: number) {

@@ -544,8 +544,9 @@ export class EnemyManager {
   /** The thornlings this manager spawned itself: only these come back as random field spawns. */
   private readonly fieldBorn = new WeakSet<Enemy>();
 
-  constructor(private parent: THREE.Object3D, private physics: Physics, private area: Area) {
-    for (let i = 0; i < area.enemyCount; i++) this.spawnThornling(null);
+  /** `population` overrides the area's usual one (the restored valley: a few strays, no wisps; see game/blight.ts). */
+  constructor(private parent: THREE.Object3D, private physics: Physics, private area: Area, private population?: { thornlings: number; wisps: boolean }) {
+    for (let i = 0; i < (population?.thornlings ?? area.enemyCount); i++) this.spawnThornling(null);
   }
 
   add(e: Enemy) {
@@ -585,7 +586,7 @@ export class EnemyManager {
     }
     if (this.area.indoor) return; // no wandering field enemies or night wisps indoors
     const wisps = this.list.filter((e): e is Gloomwisp => e instanceof Gloomwisp && e.nocturnal && !e.leaving);
-    if (env.night && wisps.length < 5 && Math.random() < dt * 0.5) {
+    if (env.night && this.population?.wisps !== false && wisps.length < 5 && Math.random() < dt * 0.5) {
       const s = this.area.enemySpot(Math.random, env.playerPos, 22, 34);
       if (s) this.list.push(new Gloomwisp(this.parent, this.physics, s.x, s.z));
     }

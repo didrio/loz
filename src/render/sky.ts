@@ -56,10 +56,19 @@ export class Sky {
   night = 0;
   /** Boss-fight darkness, 0–1: dims the lights, pulls the fog in and tints it violet. */
   gloom = 0;
+  /**
+   * The valley's sickness, 0–1 (game/blight.ts): a violet-black sky and fog, weaker light, dim stars,
+   * the same by day and by night. Outdoors only; boss gloom stacks on top of it.
+   */
+  blight = 0;
   /** Indoors: no sky, no sun shadows, a dim warm fill and close dark fog (see `setIndoor`). */
   private indoor = false;
   private readonly indoorFog = new THREE.Color(0x0a0c10);
   private readonly gloomFog = new THREE.Color(0x120e1c);
+  private readonly blightTop = new THREE.Color(0x2a1a3c);
+  private readonly blightHorizon = new THREE.Color(0x56345f);
+  private readonly blightSun = new THREE.Color(0x9a6aa8);
+  private readonly blightGround = new THREE.Color(0x2e1c40);
 
   constructor(private scene: THREE.Scene) {
     this.dome = new THREE.Mesh(
@@ -143,29 +152,34 @@ export class Sky {
     sample(hours, 'horizon', this.uniforms.horizon.value);
     const fog = this.scene.fog as THREE.Fog;
     const g = this.gloom;
-    this.uniforms.top.value.lerp(this.gloomFog, g * 0.8);
-    this.uniforms.horizon.value.lerp(this.gloomFog, g * 0.85);
-    fog.color.copy(this.uniforms.horizon.value);
-    fog.near = 70 - 55 * g;
-    fog.far = 290 - 220 * g;
-
+    const bl = this.blight;
     const a = ((hours - 6) / 24) * Math.PI * 2;
     const sunDir = new THREE.Vector3(Math.cos(a), Math.sin(a), 0.35).normalize();
     const moonDir = sunDir.clone().negate();
     const lightDir = sunDir.y > -0.04 ? sunDir : moonDir;
     this.night = smoothstep(0.15, -0.12, sunDir.y);
+    // The blight's sky is the same colour all day; at night it sinks as far as the night sky does.
+    const dim = 1 - 0.55 * this.night;
+    this.uniforms.top.value.lerp(tmpA.copy(this.blightTop).multiplyScalar(dim), bl * 0.85);
+    this.uniforms.horizon.value.lerp(tmpA.copy(this.blightHorizon).multiplyScalar(dim), bl * 0.85);
+    this.uniforms.top.value.lerp(this.gloomFog, g * 0.8);
+    this.uniforms.horizon.value.lerp(this.gloomFog, g * 0.85);
+    fog.color.copy(this.uniforms.horizon.value);
+    fog.near = 70 - 55 * g - 45 * bl * (1 - g);
+    fog.far = 290 - 220 * g - 150 * bl * (1 - g);
 
-    this.sun.color.copy(sample(hours, 'sun', new THREE.Color()));
-    this.sun.intensity = sampleNum(hours, 'sunI') * (1 - 0.8 * g);
-    this.hemi.intensity = sampleNum(hours, 'hemiI') * (1 - 0.6 * g);
-    this.hemi.color.set(0xcfe6ff).lerp(tmpA.set(0x6a7ad0), this.night);
+    this.sun.color.copy(sample(hours, 'sun', new THREE.Color())).lerp(this.blightSun, bl * 0.85);
+    this.sun.intensity = sampleNum(hours, 'sunI') * (1 - 0.8 * g) * (1 - 0.5 * bl);
+    this.hemi.intensity = sampleNum(hours, 'hemiI') * (1 - 0.6 * g) * (1 - 0.3 * bl);
+    this.hemi.color.set(0xcfe6ff).lerp(tmpA.set(0x6a7ad0), this.night).lerp(tmpA.set(0x8a62b0), bl * 0.75);
+    this.hemi.groundColor.lerp(this.blightGround, bl * 0.7);
     this.sun.position.copy(focus).addScaledVector(lightDir, 120);
     this.sun.target.position.copy(focus);
 
     this.dome.position.copy(camPos);
     this.stars.position.copy(camPos);
     this.stars.rotation.y = hours * 0.05;
-    (this.stars.material as THREE.PointsMaterial).opacity = Math.max(this.night, g * 0.6);
+    (this.stars.material as THREE.PointsMaterial).opacity = Math.max(this.night, g * 0.6) * (1 - 0.6 * bl);
     this.sunDisc.position.copy(camPos).addScaledVector(sunDir, 500);
     this.sunDisc.lookAt(camPos);
     this.moonDisc.position.copy(camPos).addScaledVector(moonDir, 500);

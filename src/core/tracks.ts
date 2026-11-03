@@ -9,7 +9,7 @@ import { compile, type CompiledSong, type Instrument, type Layer, type Song } fr
 import { VALLEY_DAY_SONG } from './valleyTheme';
 
 /** Which theme plays: the field by day or night, the village, a boss fight, or a dungeon. */
-export type MusicMood = 'day' | 'night' | 'village' | 'boss' | 'shrine' | 'warden';
+export type MusicMood = 'day' | 'night' | 'village' | 'boss' | 'shrine' | 'warden' | 'blight' | 'blightNight' | 'blightVillage';
 /** Boss fights' songs: they crossfade in fast, with the fight. */
 export const BOSS_MOODS: ReadonlySet<MusicMood> = new Set<MusicMood>(['boss', 'warden']);
 
@@ -212,6 +212,46 @@ export const WARDEN_SONG: Song = {
   ],
 };
 
+// --- The blight: three placeholders (the owner listens and judges) -------------------------
+// The valley's tune while the blight lies on it, and until the seal breaks. Each keeps its
+// song's melody and strips what made it warm: slower, a music box or a lone bell for a lead,
+// a pad instead of the harp and drums, no swing in the village.
+
+const blightBed: Layer[] = [
+  { type: 'chord', inst: 'pad', center: 57, vel: 0.65 },
+  { type: 'tones', inst: 'bass', pattern: '0*8', octave: 2, vel: 0.4 },
+];
+
+export const BLIGHT_SONG: Song = {
+  name: 'Ash on the Hills', bpm: 78, stepsPerBeat: 2, beatsPerBar: 4, loopFrom: 1,
+  sections: [
+    { name: 'intro', chords: 'Bm9 | Gmaj9', layers: blightBed },
+    { name: 'A', chords: NIGHT_A, melody: DAY_MELODY_A, layers: [melody('box'), ...blightBed] },
+    { name: "A'", chords: NIGHT_A, melody: DAY_MELODY_A, layers: [melody('box'), melody('flute', -1, 0.4), ...blightBed] },
+  ],
+};
+
+export const BLIGHT_NIGHT_SONG: Song = {
+  name: 'Nobody Sleeps', bpm: 62, stepsPerBeat: 2, beatsPerBar: 4, loopFrom: 1,
+  sections: [
+    { name: 'intro', chords: 'Bm9 | Cmaj9', layers: blightBed },
+    { name: 'A', chords: NIGHT_A, melody: DAY_MELODY_A, layers: [melody('bell', -1, 0.8), ...blightBed] },
+    { name: "A'", chords: NIGHT_A, melody: DAY_MELODY_A, layers: [melody('bell', -1, 0.8), melody('flute', -1, 0.35), ...blightBed] },
+  ],
+};
+
+/** Almost nothing under it: a lone piano and a faint pad, so it feels like a village holding its breath. */
+const hushedBed: Layer[] = [{ type: 'chord', inst: 'pad', center: 60, vel: 0.28 }];
+
+export const BLIGHT_VILLAGE_SONG: Song = {
+  name: 'Thistledown, Doors Shut', bpm: 68, stepsPerBeat: 2, beatsPerBar: 4, loopFrom: 1,
+  sections: [
+    { name: 'intro', chords: 'D6 | A7', layers: hushedBed },
+    { name: 'A', chords: VILLAGE_A, melody: VILLAGE_MELODY_A, layers: [melody('piano', 0, 0.7), ...hushedBed] },
+    { name: "A'", chords: VILLAGE_A, melody: VILLAGE_MELODY_A, layers: [melody('piano', 0, 0.6), melody('box', 1, 0.2), ...hushedBed] },
+  ],
+};
+
 /**
  * The field's day theme: any of these can play. Nothing is ever deleted, so a song we move
  * away from stays one line away. Change `ACTIVE_DAY` to switch.
@@ -219,7 +259,8 @@ export const WARDEN_SONG: Song = {
 export const DAY_SONGS = { 'ember-hills': DAY_SONG, 'valley-wakes': VALLEY_DAY_SONG } as const;
 export const ACTIVE_DAY: keyof typeof DAY_SONGS = 'ember-hills';
 
-export const SONGS: Record<MusicMood, Song> = { day: DAY_SONGS[ACTIVE_DAY], night: NIGHT_SONG, village: VILLAGE_SONG, boss: BOSS_SONG, shrine: SHRINE_SONG, warden: WARDEN_SONG };
+export const SONGS: Record<MusicMood, Song> = { day: DAY_SONGS[ACTIVE_DAY], night: NIGHT_SONG, village: VILLAGE_SONG, boss: BOSS_SONG, shrine: SHRINE_SONG, warden: WARDEN_SONG,
+  blight: BLIGHT_SONG, blightNight: BLIGHT_NIGHT_SONG, blightVillage: BLIGHT_VILLAGE_SONG };
 
 const compiled: Partial<Record<MusicMood, CompiledSong>> = {};
 
