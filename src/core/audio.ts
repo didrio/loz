@@ -86,6 +86,8 @@ export class Sfx {
   cut() { this.noise(0.18, 3500, 900, 0.22); }
   hurt() { this.tone(330, 0.25, 'sawtooth', 0.15, 140); }
   jump() { this.tone(300, 0.12, 'sine', 0.08, 520); }
+  /** Getting on the shield: a soft wooden scuff and a low scrape. */
+  surf() { this.noise(0.28, 900, 250, 0.22, 'lowpass'); this.tone(150, 0.18, 'triangle', 0.06, 110); }
   enemyDie() { this.noise(0.4, 1200, 100, 0.3, 'lowpass'); this.tone(500, 0.35, 'square', 0.06, 60); }
   gem() { this.tone(1318.5, 0.08, 'sine', 0.15); this.tone(1975.5, 0.18, 'sine', 0.15, undefined, 0.07); }
   heart() { this.tone(880, 0.1, 'triangle', 0.15); this.tone(1174.7, 0.2, 'triangle', 0.15, undefined, 0.09); }

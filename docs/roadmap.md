@@ -28,7 +28,7 @@ Next, in order:
 2. **Pause menu**: started 2026-11-03 (P / Start, `game/pauseMenu.ts`): its first page lists the keepers'
    notes (Murmurbuds, [world.md](world.md)). Still to come: inventory, settings (mouse sensitivity, invert Y,
    volumes). (No dungeon map or compass by design.)
-2.5. **Shield surfing** (owner's idea, 2026-11-03; *needs plan mode*: a new movement system on `player.ts`).
+2.5. ~~**Shield surfing**~~ built 2026-11-03, unplayed (rules in [combat.md](combat.md); Lark in [world.md](world.md)). Tune `SURF_SPEED`, the carve and the dust by play. The original brief:
    A small kid in Thistledown does one thing: puts the idea of riding your shield in Wren's head (flag;
    then a short tutorial line: how to do it). Then: jump, raise the shield (or raise it, then jump), and land
    *while still holding shield* → Wren rides the shield along the ground for as long as shield is held, 2–3×

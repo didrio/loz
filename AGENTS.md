@@ -24,8 +24,8 @@ Shrine** (25 rooms, the Bell Shaft trial) through **Gravelheart**, whose defeat 
 gate ([docs/shrine.md](docs/shrine.md)). Beyond it the Northpass streams in and ends at **Wayfarers' Camp** (the Waybell's post);
 a canyon crossing leads to two **Cragstalkers** and the Waybell, the third fast-travel stop (D3, unplayed). **Bells** and three
 trials work ([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states (one at the opened gate).
-**Murmurbuds** (hint bulbs, 3 keepers' notes) and the **pause menu** (P; music moved to M) are built, unplayed ([docs/world.md](docs/world.md)).
-**Next: shield surfing** (roadmap 2.5, plan mode); the owner still owes a play of D3 and the Murmurbuds' rhythm and sounds.
+**Murmurbuds** (3 keepers' notes), the **pause menu** (P) and **shield surfing** (Lark gives the idea; `game/surf.ts`) are built, unplayed.
+**Next:** the pause menu's inventory and settings (roadmap 2); the owner owes a play of D3, the Murmurbuds and surfing's feel.
 
 ## Docs: read the one for the area you're touching
 
@@ -119,60 +119,45 @@ in them; `content` (story, dialog, quest logic) binds behavior to world objects 
 src/
   main.ts                  boot: init Rapier, create Game, expose window.embervale (dev/?debug)
   core/                    engine-level, no game knowledge
-    physics.ts             Rapier wrapper: layers, static colliders, Character, ray and sphere queries
-    input.ts               actions (keyboard/mouse/gamepad), bindings, button glyphs
-    director.ts            game-time waits/conditions/tweens for scripts (replaces setTimeout)
-    save.ts                save format + migrations, validation, KeyValueStore, settings
-    audio.ts               synthesized sound effects; picks the background song per mood
+    physics.ts, input.ts   Rapier wrapper (layers, colliders, Character, queries); actions, bindings, glyphs
+    director.ts, save.ts   game-time waits/tweens for scripts; save format, migrations, KeyValueStore, settings
+    audio.ts, math.ts      sound effects + the song per mood; noise, easing, angles, seeded RNG
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes
-    math.ts                noise, easing, angles, seeded RNG
   render/                  materials (shared/unique, static merging), shapes, characters, sky, particles
   world/
-    interior.ts            MillInterior: Tobin's mill (a one-room indoor area)
-    bell.ts                the keepers' bells: BELL_IDS, BellPost (hang, ring), BellPickup (looks only)
-    area.ts                Area interface, Interactable, Trigger, AreaBuilder
+    area.ts, interior.ts   Area interface, Interactable, Trigger, AreaBuilder; MillInterior (Tobin's mill)
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
-    murmurbud.ts           MurmurbudLook: the hint bulb's looks (swells, sulks, opens on a note)
+    bell.ts, murmurbud.ts  BELL_IDS, BellPost, BellPickup; MurmurbudLook (hint bulb: swells, sulks, opens, floating note, wisp)
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
-    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp, the canyon crossing, the Waybell), gate (the magic gate),
-                           region (RegionStreamer: parts that stream in by distance), northpass (the first region), index (Overworld)
-    dungeon/               dungeon data format, validator, softlock solver, text map, DUNGEONS registry;
-                           defs/ the dungeons; build.ts + pieces.ts turn the data into a 3D indoor Area;
-                           grid.ts + puzzle.ts: rooms as 2 m grids, the wakestone puzzle checker;
-                           landmarks.ts: the three big landmark statues; hearth.ts: Gravelheart's arena (and the causeway, the Heart Vessel);
-                           decor.ts: each wing's palette, light and decoration
+    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp,
+                           the crossing, the Waybell), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
+    dungeon/               data format, validator, softlock solver, text map, DUNGEONS; defs/ the dungeons; build.ts + pieces.ts
+                           (data → 3D Area); grid.ts + puzzle.ts (2 m grids, wakestone checker); landmarks.ts (statues);
+                           hearth.ts (Gravelheart's arena, causeway, Heart Vessel); decor.ts (each wing's palette and light)
   game/
     game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
     combat.ts, title.ts    lock-on, glove throw, hit feedback both ways, hit-stop; the title menu
-    menu.ts, devMenu.ts    MenuStack (reusable menus: rows, submenus, toggles, body text); the dev menu (~ / L3)
-    pauseMenu.ts           the pause menu (P / Start): the keepers' notes found
-    murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, the gauge, opens → script)
-    menuDriver.ts          MenuDriver (input → MenuStack → HUD, shared) and ChoiceMenu (api.choose)
+    menu.ts, menuDriver.ts MenuStack (rows, submenus, toggles, body text); MenuDriver (input → menu → HUD), ChoiceMenu (api.choose)
+    devMenu.ts, pauseMenu.ts   the dev menu (~ / L3); the pause menu (P / Start: the keepers' notes found)
+    murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, sounds, the gauge)
     script.ts              ScriptApi + Script + Page (the contract content uses)
     player.ts, guard.ts    Wren (movement, sword, shield, stagger); the shield's guard
+    surf.ts                shield surfing's rule (when a ride starts and ends; SURF_SPEED)
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
-    sentinel.ts, shellback.ts  the shrine's Dozing Sentinel and Shellback (on GroundEnemy)
-    cragstalker.ts         the Northpass's Cragstalker (circles, crouches, lunges; on GroundEnemy)
-    enemyTestEnv.ts        the stand-in game enemy unit tests run against
+    sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss)
-    lockon.ts              which enemy lock-on picks (same level, in sight)
-    trialFalls.ts          bell trials' fall rule (TRIAL_RULES.fallDamage switch, last checkpoint ledge)
+    lockon.ts, trialFalls.ts   what lock-on picks (enemies, closed buds: LockTarget); bell trials' fall rule
     flasks.ts              the two flasks (life / attack potion; drinking empties one, Odo refills it)
-    camera.ts, dialog.ts (say + ask: yes/no choices), pickups.ts, state.ts, debug.ts
+    camera.ts, dialog.ts (say + ask), pickups.ts, state.ts, debug.ts, enemyTestEnv.ts (enemy unit tests' stand-in game)
   content/                 the game's story; what things DO
-    areas.ts               createArea(id): builds an area and binds its content
+    areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death
     overworld.ts           scripts for every overworld interactable/trigger, save restore
     mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
-    bells.ts               the bell registry (BELLS) and scripts: check, hang, ring, travel, take
-    hints.ts               the keepers' notes (HINTS) in Murmurbuds: scripts, restore, foundHints
-    gorge.ts               the Hushing Gorge: its monsters, the trial's fall rule
-    northpass.ts           the canyon beyond Wayfarers' Camp: the Cragstalker (spawns while the region is built), the crossing's fall rule
-    shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
-    gravelheart.ts         the shrine's boss encounter: spawn, the seal, the intro, the defeat, the Keepers' Seal vision
-    devStates.ts           dev-menu save states (new game, night by the Hollow, shrine, boss door, bells)
-    fakeApi.ts             the fake ScriptApi content tests run against
-    story.ts               intro, death
-  ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, interact prompt, dialog, cards, title menu
+    bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
+    gorge.ts, northpass.ts the Hushing Gorge (monsters, fall rule); the canyon past the camp (Cragstalkers, fall rule)
+    shrine.ts, gravelheart.ts  the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
+    devStates.ts, fakeApi.ts   dev-menu save states; the fake ScriptApi content tests run against
+  ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title
 scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers
   map.mjs                  text map + problems for a dungeon (npm run map -- <id>)

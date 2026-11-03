@@ -37,6 +37,17 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   2026-11-02: a swing's lunge carried Wren out of the crawl). The shield droops and flashes
   red; slots refill meanwhile since it's down. The shield stays
   up through jumps (Space works while holding Shift).
+- **Shield surfing** (`game/surf.ts`, owner's design 2026-11-03): once Lark has given Wren the idea
+  (`village.surfIdea`), landing from a jump (at least `SURF_MIN_AIR` in the air) with the shield held
+  puts her on it, **outdoors only** (`!area.indoor`). She rides at `SURF_SPEED` (20, about 2.4× running speed)
+  while it's held. The stick steers with a soft carve. Let go of the stick and she coasts to a stop, still
+  on the shield. A jump is a hop that keeps the ride. Riding off a ledge works too. Slopes act like running.
+  **It isn't a guard**: while surfing `shielding` is false, so every hit lands (normal damage and knockback)
+  and knocks her off. The guard gauge is frozen (it neither drains nor refills). The ride ends at once on
+  letting go of the shield, lock-on, a swing (which then starts), wading-depth water, a hit, the glove or a
+  guard break. With surfing learned, raising the shield in mid-air doesn't slow the jump to the guard walk.
+  `PlayerEnv.onSurf` drives the dust (a puff every ~1.5 m) and the mount scrape (`sfx.surf`). The first ride
+  sets `village.surfTried`.
 - The **guard gauge** floats beside Wren on screen (three 10 px bars, gray behind; the fill
   is the same bright green for up and refilling slots, rising from the bottom; a slot that
   is down turns its fill red while the shield is up, `Guard.paused`, since it won't refill

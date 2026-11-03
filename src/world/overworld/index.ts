@@ -54,7 +54,7 @@ export class Overworld implements Area {
   private platformT = 0;
   readonly interactables: Interactable[];
   readonly triggers: Trigger[];
-  readonly npcs: { maren: Npc; tobin: Npc; odo: Npc };
+  readonly npcs: { maren: Npc; tobin: Npc; odo: Npc; lark: Npc };
   readonly chest: Chest;
   readonly door: StoneDoor;
   /** The magic gate at the Northpass (shut until the Keepers' seal is broken). */
@@ -122,6 +122,9 @@ export class Overworld implements Area {
       // Behind his counter, facing east to the square.
       odo: npc(STALL.x - 1.3, STALL.z, Math.PI / 2, 1.0,
         { skin: 0xc98a5e, hair: 0x2e2a28, coat: 0x3f6f8a, pants: 0x3a3a48, boots: 0x2e2018, accent: 0xd9a531 }),
+      // A small kid on the far side of the well from Maren, facing the square (shield surfing).
+      lark: npc(VILLAGE.x - 3, VILLAGE.z + 4.5, Math.PI * 0.8, 0.66,
+        { skin: 0xf0c49a, hair: 0x7a4a24, coat: 0x5e8a4a, pants: 0x6b5a3a, boots: 0x3a2a1e, accent: 0xe0b84a }),
     };
     // Its front faces down the grove road (which arrives from the southwest), locked until
     // Maren hands over the key.
@@ -143,6 +146,7 @@ export class Overworld implements Area {
     this.interactables = [
       { id: 'npc.maren', x: this.npcs.maren.x, z: this.npcs.maren.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.maren.x, this.npcs.maren.z, 2.5), enabled: always },
       { id: 'npc.tobin', x: this.npcs.tobin.x, z: this.npcs.tobin.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.tobin.x, this.npcs.tobin.z, 2.6), enabled: always },
+      { id: 'npc.lark', x: this.npcs.lark.x, z: this.npcs.lark.z, r: 2.2, label: 'Talk', promptY: above(this.npcs.lark.x, this.npcs.lark.z, 1.9), enabled: always },
       { id: 'npc.odo', x: STALL.x + 1.2, z: STALL.z, r: 2.4, label: 'Talk', promptY: above(STALL.x, STALL.z, 2.7), enabled: always },
       { id: 'door.mill', x: MILL.x + 3.3, z: MILL.z, r: 1.7, label: 'Enter', promptY: above(MILL.x + 2.6, MILL.z, 2.2), enabled: always },
       { id: 'chest.grove', x: GROVE.x, z: GROVE.z, r: 2.4, label: 'Open', promptY: above(GROVE.x, GROVE.z, 1.9), enabled: () => !this.chest.opened },
@@ -246,6 +250,7 @@ export class Overworld implements Area {
     this.npcs.maren.update(dt, env.playerPos);
     this.npcs.tobin.update(dt, env.playerPos);
     this.npcs.odo.update(dt, env.playerPos);
+    this.npcs.lark.update(dt, env.playerPos);
   }
 
   dispose() {

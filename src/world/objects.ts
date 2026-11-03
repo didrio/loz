@@ -126,9 +126,17 @@ export class StoneDoor {
   private sink = 0;
   private t = 0;
 
-  constructor(b: AreaBuilder, readonly x: number, readonly z: number, private readonly baseY: number) {
-    this.mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4.6, 3.6), mat(0x77736a));
-    this.mesh.position.set(x, baseY + 2.3, z);
+  /** Half the door's height, and how far it sinks (a little more than its height, so none of it shows). */
+  private readonly half: number;
+  private readonly drop: number;
+
+  /** A slab `width` wide and `height` tall, standing on `baseY`; size it to fill its doorway (the shrine's is 4 × 6.3). */
+  constructor(b: AreaBuilder, readonly x: number, readonly z: number, private readonly baseY: number, width = 4, height = 6.3) {
+    this.half = height / 2;
+    this.drop = height + 0.1;
+    // Its bottom edge starts a hair under the ground so no gap shows on a slope.
+    this.mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, height, width), mat(0x77736a));
+    this.mesh.position.set(x, baseY + this.half - 0.1, z);
     this.mesh.castShadow = true;
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.12, 6, 18), this.glyphMat);
     ring.rotation.y = Math.PI / 2;
@@ -137,7 +145,7 @@ export class StoneDoor {
     dot.position.set(-0.34, 0.3, 0);
     this.mesh.add(ring, dot);
     b.dynamic(this.mesh);
-    this.collider = b.box(x, baseY + 2.3, z, 0.3, 2.3, 1.8);
+    this.collider = b.box(x, baseY + this.half - 0.1, z, 0.3, this.half, width / 2);
   }
 
   startOpening() {
@@ -148,7 +156,7 @@ export class StoneDoor {
   setOpen() {
     this.opening = this.open = true;
     this.sink = 1;
-    this.mesh.position.y = this.baseY + 2.3 - 4.7;
+    this.mesh.position.y = this.baseY + this.half - 0.1 - this.drop;
     this.collider.setEnabled(false);
   }
 
@@ -166,7 +174,7 @@ export class StoneDoor {
     this.glyphMat.color.setHSL(0.47, 0.15 + 0.7 * this.glow, 0.08 + (pulse - 0.08) * this.glow);
     if (!this.opening || this.open) return;
     this.sink = Math.min(1, this.sink + dt / 3.2);
-    this.mesh.position.y = this.baseY + 2.3 - this.sink * 4.7;
+    this.mesh.position.y = this.baseY + this.half - 0.1 - this.sink * this.drop;
     this.mesh.position.z = this.z + Math.sin(this.t * 40) * 0.03 * (1 - this.sink);
     if (this.sink >= 1) this.setOpen();
   }

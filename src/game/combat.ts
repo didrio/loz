@@ -41,6 +41,8 @@ export class Combat {
   /** Real seconds left of hit-stop: a few frozen frames that make hits land with weight. */
   hitStop = 0;
   private readonly cord: TetherCord;
+  /** Where the last puff of surf dust rose. */
+  private readonly surfDust = new THREE.Vector3();
   private readonly marker = new THREE.Group();
 
   constructor(private readonly g: CombatHost) {
@@ -151,6 +153,17 @@ export class Combat {
       hasSword: this.g.state.has('hasSword'),
       onSwing: () => sfx.swing(),
       onJump: () => sfx.jump(),
+      canSurf: this.g.state.has('village.surfIdea') && !this.g.area.indoor,
+      onSurf: (at, speed, mounted) => {
+        if (mounted) {
+          sfx.surf();
+          this.g.state.set('village.surfTried'); // the kid wants to hear about it
+        }
+        // A light puff of earth from under the shield every ~1.5 m: dust, not a smoke trail.
+        else if (speed < 3 || at.distanceToSquared(this.surfDust) < 1.5 * 1.5) return;
+        this.surfDust.copy(at);
+        particles.burst(at.clone().setY(at.y + 0.1), 0xa8916a, mounted ? 8 : 3, 2.5, 0.45);
+      },
       onHitEnemy: (e, result, at) => this.onSwordHit(e, result, at),
       onCutBush: (at) => {
         sfx.cut();

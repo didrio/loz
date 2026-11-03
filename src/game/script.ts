@@ -55,7 +55,8 @@ export interface ScriptApi {
    * Call again to retarget (it glides there), or pass `cut` to jump.
    */
   shot(from: THREE.Vector3, lookAt: THREE.Vector3, cut?: boolean): void;
-  releaseCamera(): void;
+  /** Gives the camera back to the player. `snap`: jump straight behind them (use under a fade, after a shot far from them). */
+  releaseCamera(snap?: boolean): void;
   /** Hides Wren (or shows her again): for a vision of a place she isn't standing in. */
   hidePlayer(hidden: boolean): void;
   /** Big area-name title. */

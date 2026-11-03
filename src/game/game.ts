@@ -493,8 +493,9 @@ export class Game implements ScriptApi {
     this.hiddenIn = hidden ? this.area.id : null;
   }
 
-  releaseCamera() {
+  releaseCamera(snap = false) {
     this.rig.release();
+    if (snap) this.rig.snap(this.player.pos, this.player.facing);
   }
 
   showAreaName(name: string) {

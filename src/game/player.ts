@@ -9,6 +9,7 @@ import type { Area } from '../world/area';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
 import { ATTACK_BOOST } from './flasks';
 import { Guard } from './guard';
+import { SURF_SPEED, surfNext } from './surf';
 
 /** What the player wants to do this frame, in world space. Built from input, or by scripts. */
 export interface Controls {
@@ -31,6 +32,10 @@ export interface PlayerEnv {
   onHitEnemy(e: Enemy, result: HurtResult, at: THREE.Vector3): void;
   onCutBush(at: THREE.Vector3): void;
   onJump(): void;
+  /** Shield surfing is learned and the area is outdoors (see surf.ts). Off when absent. */
+  canSurf?: boolean;
+  /** Each grounded frame of a ride, for the dust: where her feet are, how fast, and whether she just got on. */
+  onSurf?(at: THREE.Vector3, speed: number, mounted: boolean): void;
 }
 
 /** Hearts live in the save state; the player just reads and writes them. */
@@ -60,6 +65,10 @@ const SHIELD_REST_POS = new THREE.Vector3(0.14, -0.4, 0.02);
 const SHIELD_REST_YAW = 1.4;
 /** The shield raised: its center in front of the chest (body space, before the character's scale). */
 const SHIELD_BLOCK_POS = new THREE.Vector3(0.05, 1.2, 0.62);
+/** Surfing: the shield flat under her feet (body space; the pivot is raised by `SURF_LIFT` to stand on it). */
+const SHIELD_SURF_POS = new THREE.Vector3(0, -0.05, 0);
+const SHIELD_SURF_ROT = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
+const SURF_LIFT = 0.12;
 /** How far the sword reaches (from Wren's centre to a hurtbox's surface). */
 export const SWORD_REACH = 2.6;
 
@@ -115,6 +124,12 @@ export class Player {
   facing = Math.PI;
   invuln = 0;
   shielding = false;
+  /** Riding the shield (surf.ts): fast, no guard, a hit knocks her off. */
+  surfing = false;
+  /** The ride's horizontal velocity: it eases toward the stick, so she carves and coasts. */
+  private readonly surfVel = new THREE.Vector3();
+  private airT = 0;
+  private wasGrounded = true;
   /** The shield's three guard slots (see guard.ts). */
   readonly guard = new Guard();
   private readonly body: Character;
@@ -272,6 +287,7 @@ export class Player {
     this.coyote = 0;
     this.jumpBuffer = 0;
     this.knock.set(0, 0, 0);
+    this.surfing = false;
     this.body.teleport(this.pos);
   }
 
@@ -361,19 +377,28 @@ export class Player {
     this.attackBoost = Math.max(0, this.attackBoost - dt);
     const ember = this.attackBoost > 0 ? 0.7 + Math.sin(this.attackBoost * 8) * 0.25 : 0;
     this.bladeMat.emissive.setRGB(1 * ember, 0.45 * ember, 0.1 * ember);
-    // Guard slots only recover while the shield is lowered (last frame's state).
-    this.guard.update(dt, this.shielding);
+    // Guard slots only recover while the shield is lowered (last frame's state); surfing freezes them.
+    this.guard.update(dt, this.shielding || this.surfing);
     const water = env.area.waterLevel;
     const wading = water !== null && this.pos.y < water - 0.35;
     const lock = env.lockTarget;
     const grounded = this.body.grounded;
     const canAct = this.alive;
     const move = canAct ? c.move : NO_CONTROLS.move;
-    // The shield stays up through jumps: hold it, hop, keep blocking.
-    this.shielding = canAct && this.state === 'move' && c.shield && this.guard.canBlock && this.throwT <= 0;
-
     // Staggered (guard broken): no sword either. A swing's lunge would carry Wren out of the crawl.
     const staggered = this.guard.broken > 0;
+    const landedAfter = grounded && !this.wasGrounded ? this.airT : 0;
+    this.airT = grounded ? 0 : this.airT + dt;
+    this.wasGrounded = grounded;
+    const wasSurfing = this.surfing;
+    this.surfing = surfNext({
+      surfing: this.surfing, allowed: canAct && !!env.canSurf, shield: c.shield, landedAfter,
+      free: this.state === 'move' && this.throwT <= 0 && !staggered,
+      locked: !!(lock && lock.alive), attack: c.attack && env.hasSword, wading,
+    });
+    if (this.surfing && !wasSurfing) this.surfVel.copy(this.forward).multiplyScalar(this.speedXZ);
+    // The shield stays up through jumps: hold it, hop, keep blocking. Not while it's under her feet.
+    this.shielding = !this.surfing && canAct && this.state === 'move' && c.shield && this.guard.canBlock && this.throwT <= 0;
     if (canAct && env.hasSword && c.attack && this.throwT <= 0 && !staggered) {
       if (this.state === 'move') this.startAttack(0, env);
       else if (this.state === 'attack' && this.t > SWINGS[this.combo].dur * 0.4 && this.combo < 2) this.queued = true;
@@ -395,7 +420,17 @@ export class Player {
     this.t += dt;
     switch (this.state) {
       case 'move': {
-        const speed = (this.shielding ? 3.2 : wading ? 5 : RUN_SPEED) * (staggered ? STAGGER_SPEED : 1) * this.devSpeed;
+        if (this.surfing) {
+          // Steering eases in (a carve); with the stick let go she coasts to a stop, still on the shield.
+          const target = move.clone().multiplyScalar(SURF_SPEED * this.devSpeed);
+          this.surfVel.lerp(target, damp(move.lengthSq() > 0.01 ? 5 : 1.2, dt));
+          vel.copy(this.surfVel);
+          if (this.surfVel.lengthSq() > 1) this.facing = Math.atan2(this.surfVel.x, this.surfVel.z);
+          break;
+        }
+        // With surfing learned, raising the shield in the air doesn't slow the jump: she's getting on.
+        const guardWalk = this.shielding && (grounded || !env.canSurf);
+        const speed = (guardWalk ? 3.2 : wading ? 5 : RUN_SPEED) * (staggered ? STAGGER_SPEED : 1) * this.devSpeed;
         vel.copy(move).multiplyScalar(speed);
         if (!lock && move.lengthSq() > 0.01 && !this.shielding) {
           this.facing = lerpAngle(this.facing, Math.atan2(move.x, move.z), damp(40, dt)); // near-instant: turning shouldn't cost a step
@@ -421,7 +456,7 @@ export class Player {
       this.facing = lerpAngle(this.facing, Math.atan2(to.x, to.z), damp(16, dt));
     }
 
-    this.edgeStick(vel, grounded && !jumped && this.state === 'move' && !this.shielding, dt);
+    this.edgeStick(vel, grounded && !jumped && this.state === 'move' && !this.shielding && !this.surfing, dt);
     vel.add(this.knock);
     this.knock.multiplyScalar(Math.exp(-8 * dt));
 
@@ -438,6 +473,8 @@ export class Player {
     this.body.move(this.pos, want);
     if (this.velY > 0 && this.pos.y - before < want.y * 0.5) this.velY = 0; // bumped a ceiling
     this.speedXZ = Math.hypot(vel.x, vel.z);
+    // The mounting frame always reports (it began grounded), even if the step just lifted her off a bump.
+    if (this.surfing && (!wasSurfing || this.body.grounded)) env.onSurf?.(this.pos, this.speedXZ, !wasSurfing);
     this.shadow.place(this.pos.x, this.pos.y, this.pos.z, this.physics.groundY(this.pos.x, this.pos.z, this.pos.y + 0.5), this.opacity);
 
     this.animate(dt);
@@ -560,6 +597,21 @@ export class Player {
       const inv = h.armL.quaternion.clone().invert();
       this.shield.quaternion.copy(inv);
       this.shield.position.copy(SHIELD_BLOCK_POS).sub(h.armL.position).applyQuaternion(inv);
+    }
+    if (this.surfing) {
+      // Riding: turned half side-on like a board rider (enough to read from the chase camera), a low
+      // crouch leaning into the ride, feet apart, arms up and out for balance, a little sway.
+      const sway = Math.sin(this.t * 3) * 0.06;
+      h.pivot.position.y = 0.9 + SURF_LIFT - 0.12;
+      h.pivot.rotation.set(0.22, -0.8, sway);
+      h.legL.rotation.set(-0.35, 0, 0.3);
+      h.legR.rotation.set(0.25, 0, -0.3);
+      h.armL.rotation.set(-0.5, 0, 1.35 - sway);
+      h.armR.rotation.set(-0.5, 0, -1.35 - sway);
+      h.armL.updateMatrix();
+      const inv = h.armL.quaternion.clone().invert();
+      this.shield.quaternion.copy(inv).multiply(SHIELD_SURF_ROT);
+      this.shield.position.copy(SHIELD_SURF_POS).sub(h.armL.position).applyQuaternion(inv);
     }
     // Guard broken: the shield arm hangs, the shield droops and flashes red until it recovers.
     const broken = this.guard.broken;

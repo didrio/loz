@@ -178,7 +178,10 @@ of that was built. The boss, not the glove, opens the way out of the valley.
 
 - **The magic gate**: at the valley's north edge, at the mouth of the Northpass (a new road north
   from the field, between Thistledown and the grove), a rune arch of floating ember-lit stones holds
-  a glowing veil across the cut. It's visible from the start of the game and can't be passed.
+  a glowing veil across the cut. It's visible from the start of the game and can't be passed, **nor
+walked around or climbed over** (owner's call, 2026-11-03): invisible `Bounds` walls run from both pillars
+along the gate's latitude out to the valley's rim, and stay after the ward breaks (`world/overworld/gate.ts`,
+`FLANK_REACH`; a test rays along the whole line, on foot and at hill height). Nothing of the valley lies north of that line except the pass.
   Lore (proposal, ask the owner to confirm): the thief who stole the lantern's flame sealed the pass
   with a ward fed by the ember pushed into Gravelheart. While the Warden can't sleep, the ward holds.
 - **The defeat**: Gravelheart settles, asleep at last. Its ember drifts out and up toward the

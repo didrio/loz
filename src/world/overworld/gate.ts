@@ -9,6 +9,8 @@ import { GATE, terrainHeight } from './layout';
 const STONES = 9;
 const STRIPS = 12;
 const PILLAR_H = 7.5;
+/** How far the flank walls run from the gate's centre: beyond the valley's ring wall (WORLD_RADIUS 172) at this latitude. */
+const FLANK_REACH = 140;
 /** How long the veil takes to unravel, and the stones to fall, once the ward breaks. */
 const UNRAVEL = 2.6;
 const GRAVITY = 16;
@@ -26,7 +28,8 @@ interface FloatingStone {
 /**
  * The magic gate at the mouth of the Northpass (docs/shrine.md, "After the boss"): two pillars,
  * an arch of floating ember-lit stones and a shimmering veil across the cut. While `closed` it is a wall
- * (an invisible `Bounds` box across the opening); `open()` lets the stones fall and the veil unravel,
+ * (an invisible `Bounds` box across the opening, with flank walls from the pillars to the valley's rim, so
+ * there is no way around it); `open()` lets the stones fall and the veil unravel,
  * `setOpen()` shows it already broken (restoring a save).
  */
 export class Gate {
@@ -90,6 +93,13 @@ export class Gate {
     b.dynamic(this.group);
     // The ward is a wall (nothing walks through, the camera stays on its side).
     this.wall = b.box(x, gy + 6, z, h + 0.2, 8, 0.6, 0, Layer.Bounds);
+    // And the ground around it is no way past either: from each pillar a tall invisible wall runs out to
+    // the valley's rim (past the ring of world bounds), so the pillars can't be walked around nor the
+    // hills above them climbed over. These stay after the ward breaks; only the opening between the pillars does.
+    for (const side of [-1, 1]) {
+      const from = x + side * (h + 0.8), to = x + side * FLANK_REACH;
+      b.box((from + to) / 2, 40, z, Math.abs(to - from) / 2, 80, 0.5, 0, Layer.Bounds);
+    }
   }
 
   get isOpen() {

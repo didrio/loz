@@ -58,6 +58,27 @@ const SCENES = {
     await h.wait(1500);
     await h.shot('village');
   },
+  /** Shield surfing: Wren mid-ride on the road with dust, then Lark (the kid who gives the idea) by the well. */
+  async surf(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.state.set('village.surfIdea'));
+    await h.teleport(-30, -30, Math.atan2(-12, -16));
+    await h.wait(600);
+    await h.page.keyboard.down('KeyW');
+    await h.page.keyboard.down('ShiftLeft');
+    await h.press('Space');
+    await h.until(() => window.embervale.player.surfing, 10000);
+    await h.wait(700);
+    await h.shot('surf-ride');
+    await h.page.keyboard.up('KeyW');
+    await h.wait(500);
+    await h.shot('surf-coast');
+    await h.page.keyboard.up('ShiftLeft');
+    // A few steps off, turned a little so Wren doesn't stand in front of the kid.
+    await h.teleport(-62 - 3, -58 + 4.5 + 4.5, Math.PI + 0.35);
+    await h.wait(1200);
+    await h.shot('surf-lark');
+  },
   /** The bigger cottages from the square, Odo's stall, Wren in the Stoneward Tunic, and the mill inside. */
   async mill(h) {
     await h.newGame();
@@ -131,6 +152,20 @@ const SCENES = {
     await h.teleport(d.x - 2.2, d.z, Math.PI / 2);
     await h.wait(800);
     await h.shot('door-awake');
+    // The end of the lantern cutscene's shot (its start is door-awake's neighbour: spiral height, 11 m back), then pulled back and up.
+    const shotAt = async (name, from, at) => {
+      await h.game(([f, a]) => {
+        const g = window.embervale;
+        const V = g.player.pos.constructor; // the page has no THREE global
+        g.rig.shot(new V(...f), new V(...a), true);
+      }, [from, at]);
+      await h.wait(600);
+      await h.shot(name);
+    };
+    const gy = await h.game(() => window.embervale.area.door.mesh.position.y - 3.05); // the door's base (a ray from above would land on the lintel)
+    await shotAt('door-cut', [d.x - 11, gy + 2.7, d.z + 2.5], [d.x - 0.8, gy + 3.4, d.z]);
+    await shotAt('door-pullback', [d.x - 15, gy + 4.9, d.z + 1.5], [d.x - 0.8, gy + 6.4, d.z]);
+    await h.game(() => window.embervale.rig.release());
   },
   async dungeon(h) {
     // The Waking Shrine built from its data: a few rooms at eye level, then a top-down view

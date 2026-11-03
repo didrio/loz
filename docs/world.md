@@ -93,6 +93,10 @@ in.
   Wren is armed he gives the **Mill Key** (`village.millKey`); the windmill's door (west side of
   the square) opens onto his mill, where the bed sleeps to the next 06:00/18:00 and fully
   heals.
+- **Lark**: a small kid by the well (breathless, conspiratorial). Secretly rides Tobin's flour tray down
+  the bank behind the mill and talks Wren into riding her shield (`village.surfIdea`, then the how-to line;
+  see shield surfing in [combat.md](combat.md)). After her first ride (`village.surfTried`) Lark brags about
+  seeing it, by day or night.
 - **Odo the Peddler**: warm, wry (he remarks on a sword without armor, and on the tunic by day or night); a stall beside the well. Refills empty flasks and sells the **Stoneward Tunic**
   (50 gems; stone hits do half damage, rounded up; Wren's tunic turns slate-blue). Flask
   refills (roadmap E) will be sold here through the same `offerWare`.

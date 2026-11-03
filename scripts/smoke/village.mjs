@@ -1,4 +1,4 @@
-// The village: Tobin's mill key, the mill (bed, exit), Odo's Stoneward Tunic and flask refills.
+// The village: Lark and shield surfing, Tobin's mill key, the mill (bed, exit), Odo's Stoneward Tunic and flask refills.
 export const fixture = 'field-sword';
 
 export default async function run(t) {
@@ -10,6 +10,28 @@ export default async function run(t) {
     const it = g.area.interactables.find((i) => i.id === id);
     return { x: it.x, z: it.z };
   }, id);
+
+  await step('Lark gives the idea; a shield-held landing rides fast, letting go steps off', async () => {
+    const p = await at('npc.lark');
+    await teleport(p.x + 1.2, p.z, -Math.PI / 2);
+    await press('KeyE');
+    await until(() => window.embervale.mode === 'cutscene', 5000);
+    await finishScript();
+    check((await state()).flags.includes('village.surfIdea'), 'no surf idea');
+    // Out on the road to the village, running south with the shield held, one jump.
+    await teleport(-40, -38, 0);
+    await wait(300);
+    const { page } = t;
+    await page.keyboard.down('KeyW');
+    await page.keyboard.down('ShiftLeft');
+    await press('Space');
+    await until(() => window.embervale.player.surfing, 10000);
+    await until(() => window.embervale.player.speedXZ > 12, 10000);
+    check((await state()).flags.includes('village.surfTried'), 'riding did not set village.surfTried');
+    await page.keyboard.up('ShiftLeft');
+    await until(() => !window.embervale.player.surfing, 5000);
+    await page.keyboard.up('KeyW');
+  });
 
   await step('Tobin gives the mill key once Wren is armed', async () => {
     const p = await at('npc.tobin');
@@ -26,6 +48,7 @@ export default async function run(t) {
     await press('KeyE');
     await until(() => window.embervale.area.id === 'mill', 15000);
     await finishScript();
+    check(!(await game(() => window.embervale.combat.playerEnv.canSurf)), 'surfing allowed indoors');
     const b = await at('bed');
     await teleport(b.x, b.z, 0, 2);
     await press('KeyE');

@@ -170,7 +170,7 @@ Code reads **actions**, never keys. Bindings:
 | Action | Keyboard / mouse | Gamepad (standard mapping) |
 |---|---|---|
 | move / camera | WASD / mouse (click to capture) or arrows | left stick / right stick |
-| attack · shield | Click or J · Shift or right-click | X · LT/LB (both for now; owner to pick one) |
+| attack · shield | Click or J · Shift or right-click | X, RB or RT · LT or LB (both hands work out of the box; owner may pick later) |
 | jump | Space | A |
 | lock on | Q or Tab | R3 (right stick click) |
 | interact | E (or Enter) | A |
@@ -193,8 +193,10 @@ it changes (the shrine door says "Check" while asleep, "Open" once awake).
 ## Scripts and cutscenes (`game/script.ts`, `core/director.ts`, `content/`)
 
 Story beats are `async` functions taking a `ScriptApi`: `say`, `wait`, `until`, `tween`,
-`fade`, `card`, `shot(from, at, cut?)`/`releaseCamera` (camera moves and cuts; shots never
-end up inside geometry, as long as the look-at point isn't inside a collider),
+`fade`, `card`, `shot(from, at, cut?)`/`releaseCamera(snap?)` (camera moves and cuts; shots never
+end up inside geometry, as long as the look-at point isn't inside a collider). **Don't glide a shot
+across the map or through scenery**: cut under a `fade`, and give the camera back with `releaseCamera(true)`
+(snaps behind the player) when the last shot is far from them (the Lamplighter's cutscene does both),
 `setTimeScale` (slow motion), `showBossTitle`, `addEnemy`, `run` (queue another script),
 `warpTime`, `giveSword`, `respawn`, plus `state`, `sfx`, `player`, `particles`, `area`,
 `physics`. `Game.run(script)` switches to cutscene mode, and when the script ends it

@@ -40,7 +40,7 @@ function setup() {
     }
     return p.pos.z - z;
   };
-  return { p, health, env, settle, step, run, frame };
+  return { p, health, env, physics, settle, step, run, frame };
 }
 
 const front = new THREE.Vector3(0, 0, 3);
@@ -463,5 +463,68 @@ describe('Player.setOpacity', () => {
     const faded: number[] = [];
     p['h'].root.traverse((o) => { if (o instanceof THREE.Mesh) faded.push((o.material as THREE.Material).opacity); });
     expect(faded.filter((o) => o === 0.4).length).toBeGreaterThan(5);
+  });
+});
+
+describe('shield surfing', () => {
+  /** A setup where surfing is learned (or not), and a frame with the shield held. */
+  function surfSetup(canSurf = true) {
+    const s = setup();
+    const env: PlayerEnv = { ...s.env, canSurf };
+    const tick = (c: { shield?: boolean; jump?: boolean; move?: THREE.Vector3 } = {}) => {
+      s.p.update(1 / 60, { ...NO_CONTROLS, shield: c.shield ?? true, jump: !!c.jump, move: c.move ?? NO_CONTROLS.move }, env);
+      s.physics.step(1 / 60);
+    };
+    /** Jumps with the shield up and holds it until she's riding (or ~1.5 s pass). */
+    const mount = (move?: THREE.Vector3) => {
+      tick({ jump: true, move });
+      for (let i = 0; i < 90 && !s.p.surfing; i++) tick({ move });
+    };
+    s.settle();
+    return { ...s, env, tick, mount };
+  }
+  const fwd = new THREE.Vector3(0, 0, 1);
+
+  it('landing from a jump with the shield held starts a fast ride; letting go ends it', () => {
+    const { p, tick, mount } = surfSetup();
+    mount(fwd);
+    expect(p.surfing).toBe(true);
+    expect(p.shielding).toBe(false);
+    for (let i = 0; i < 30; i++) tick({ move: fwd });
+    const z = p.pos.z;
+    for (let i = 0; i < 60; i++) tick({ move: fwd });
+    expect(p.pos.z - z).toBeGreaterThan(12); // well past running speed (8.5 m/s)
+    tick({ shield: false, move: fwd });
+    expect(p.surfing).toBe(false);
+  });
+
+  it('reports the mount exactly once, then grounded ride frames for the dust', () => {
+    const { p, tick, mount, env } = surfSetup();
+    const calls: boolean[] = [];
+    env.onSurf = (_at, _speed, mounted) => calls.push(mounted);
+    mount(fwd);
+    for (let i = 0; i < 30; i++) tick({ move: fwd });
+    expect(p.surfing).toBe(true);
+    expect(calls.filter(Boolean)).toHaveLength(1);
+    expect(calls[0]).toBe(true);
+    expect(calls.length).toBeGreaterThan(20);
+  });
+
+  it("doesn't start without the idea", () => {
+    const { p, mount } = surfSetup(false);
+    mount();
+    expect(p.surfing).toBe(false);
+  });
+
+  it('a hit while surfing is never blocked, knocks her off and leaves the guard alone', () => {
+    const { p, health, tick, mount } = surfSetup();
+    mount();
+    expect(p.surfing).toBe(true);
+    const ahead = p.pos.clone().add(p.forward.multiplyScalar(2));
+    expect(p.receiveHit(ahead, LIGHT)).toBe('hit');
+    expect(health.hp).toBe(5);
+    tick();
+    expect(p.surfing).toBe(false);
+    expect(p.guard.slots).toBe(3);
   });
 });

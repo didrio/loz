@@ -34,11 +34,12 @@ const KEYS: Record<Action, string[]> = {
 /**
  * Standard gamepad mapping: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 Back, 9 Start,
  * 10 L3, 11 R3 (stick clicks), 12–15 d-pad up/down/left/right. A both talks and jumps: the
- * game checks "interact" first. Lock-on is the right stick click, Souls-style; the shield is
- * on both left shoulders (LT and LB) until the owner picks one.
+ * game checks "interact" first. Lock-on is the right stick click, Souls-style. So both hands
+ * work out of the box (owner's call, 2026-11-03, may change): attack is X and both right
+ * shoulders (RB, RT); the shield is both left shoulders (LB, LT).
  */
 const PAD: Record<Action, number[]> = {
-  attack: [2],
+  attack: [2, 5, 7],
   shield: [6, 4],
   jump: [0],
   lock: [11],
@@ -61,7 +62,7 @@ const KEY_GLYPH: Record<Action, string> = {
 };
 
 const PAD_GLYPH: Record<Action, string> = {
-  attack: 'X', shield: 'LT', jump: 'A', lock: 'R3', interact: 'A',
+  attack: 'X / RT', shield: 'LT / LB', jump: 'A', lock: 'R3', interact: 'A',
   confirm: 'A', cancel: 'B', pause: 'Start', music: 'Back', menuUp: '↑', menuDown: '↓', flask1: '←', flask2: '→', item: 'Y', devMenu: 'L3',
 };
 

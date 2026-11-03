@@ -221,7 +221,8 @@ export function bridgeDeck(z: number) {
 }
 
 /** The door of the shrine, on the west face of the shrine house. */
-export const SHRINE_DOOR = { x: SHRINE.x - 4.2, z: SHRINE.z };
+/** The doorway's plane: the pillars and lintel in `buildShrine` stand at SHRINE.x - 3.6; the door sits in it. */
+export const SHRINE_DOOR = { x: SHRINE.x - 3.6, z: SHRINE.z };
 
 export const PATHS: [number, number][][] = [
   [[SPAWN.x, SPAWN.z], [-20, -15], [-40, -38], [VILLAGE.x + 14, VILLAGE.z + 14], [VILLAGE.x + 4, VILLAGE.z + 4]],
@@ -270,7 +271,27 @@ export function placementHeight(x: number, z: number) {
 export function terrainHeight(x: number, z: number) {
   const h = placementHeight(x, z);
   const withHollow = mix(h, HOLLOW.floor, smoothstep(HOLLOW.r + 9, HOLLOW.r, Math.hypot(x - HOLLOW.x, z - HOLLOW.z)));
-  return carveBeyond(carvePass(carveGorge(withHollow, x, z), x, z), x, z);
+  return carveBeyond(raiseGateShoulders(carvePass(carveGorge(withHollow, x, z), x, z), x, z), x, z);
+}
+
+/** The gate's pillars stand 5 m either side of its middle, each 1.7 m wide: the outer faces are at this offset. */
+const GATE_PILLAR_EDGE = GATE.halfOpening + 0.8 + 0.85;
+/** How high the rock shoulders beside the gate rise. */
+const SHOULDER_RISE = 9;
+
+/**
+ * Rock shoulders hugging the gate's pillars (owner's call, 2026-11-03: no person-wide gaps beside it). Steep
+ * outcrops start right at each pillar's outer face and reach `SHOULDER_RISE` within a couple of metres, then ease
+ * back into the land by ~17 m out. They taper away toward the field to the south (the sign stands clear of them)
+ * and fade into the pass's own walls to the north.
+ */
+function raiseGateShoulders(h: number, x: number, z: number) {
+  const a = Math.abs(x - GATE.x) - GATE_PILLAR_EDGE;
+  if (a > 17 || a < -1.2) return h;
+  const dz = z - GATE.z;
+  const along = dz > 0 ? 1 - smoothstep(2, 10, dz) : 1 - smoothstep(4, 14, -dz);
+  if (along <= 0) return h;
+  return h + SHOULDER_RISE * smoothstep(-1.2, 2, a) * (1 - smoothstep(5, 17, a)) * along;
 }
 
 /** True within `margin` meters of the hollow's edge (or inside it). */

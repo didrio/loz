@@ -7,7 +7,7 @@ import { Flasks } from './flasks';
  * Quest progress flags. Add new ones here (they're saved by name). Keep names stable once
  * shipped: renaming one would silently drop it from existing saves.
  */
-export const FLAGS = ['metMaren', 'hasSword', 'groveChestOpened', 'shrineOpen', 'lamplighterDefeated', 'hollowVessel', 'gravelheartVessel', 'valleyOpen', 'gotGroveKey', 'village.millKey', 'village.stonewardTunic', 'village.marenBell', 'village.tobinBell', 'hint.tunic', 'hint.flasks', 'hint.bells'] as const;
+export const FLAGS = ['metMaren', 'hasSword', 'groveChestOpened', 'shrineOpen', 'lamplighterDefeated', 'hollowVessel', 'gravelheartVessel', 'valleyOpen', 'gotGroveKey', 'village.millKey', 'village.stonewardTunic', 'village.marenBell', 'village.tobinBell', 'village.surfIdea', 'village.surfTried', 'hint.tunic', 'hint.flasks', 'hint.bells'] as const;
 export type Flag = (typeof FLAGS)[number];
 
 /** Items Wren can carry (the dungeon tools). Saved by id; unknown ids are dropped on load. */

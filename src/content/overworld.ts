@@ -137,12 +137,27 @@ export function overworldContent(ow: Overworld): AreaContent {
     ow.lantern.setEmbers(1);
     api.sfx.solved();
     await api.wait(1.6);
-    // Down to the door below: its spiral wakes in the lantern's light.
-    const door = doorFace(ow);
-    api.shot(new THREE.Vector3(door.x - 9, door.y + 2, door.z + 5), door);
+    // Down to the door below: its spiral wakes in the lantern's light. A fade covers the cut (a glide
+    // from the roof would sweep through the pillars), then the camera eases back and up from the
+    // spiral until the lit roof comes into view above the door.
+    const spiral = doorFace(ow, 0.4);
+    const x = ow.door.x, z = ow.door.z;
+    await api.fade(1, 0.4);
+    api.shot(new THREE.Vector3(x - 11, spiral.y - 0.4, z + 2.5), spiral, true);
+    await api.fade(0, 0.5);
     ow.door.wake();
-    await api.wait(2.4);
-    api.releaseCamera();
+    await api.tween(3.4, (t) => {
+      const e = easeInOut(t);
+      api.shot(
+        new THREE.Vector3(x - 11 - e * 4, spiral.y - 0.4 + e * 2.2, z + 2.5 - e),
+        new THREE.Vector3(spiral.x, spiral.y + e * 3, spiral.z),
+      );
+    });
+    await api.wait(0.6);
+    // Back to Wren, far across the valley: fade out and put the camera behind them, not a flight over the map.
+    await api.fade(1, 0.5);
+    api.releaseCamera(true);
+    await api.fade(0, 0.5);
     ow.vessel.show();
     await api.say([{ text: 'The flame is free. Far to the east, the great lantern holds one warm ember again, and the spiral on the shrine door has begun to glow.' }]);
   };
@@ -253,6 +268,28 @@ export function overworldContent(ow: Overworld): AreaContent {
         api.sfx.fanfare();
         await api.say([{ text: 'You got the *Mill Key*!\nIt opens Tobin\'s mill, where you can sleep until morning or evening and wake fully rested.' }]);
       }
+    },
+
+    // Lark gives Wren the idea of riding her shield (game/surf.ts), then wants to hear how it went.
+    async 'npc.lark'(api) {
+      const { state } = api;
+      const who = 'Lark';
+      if (!state.has('village.surfIdea')) {
+        await api.say([
+          { who, text: 'Is that a real shield? I ride Tobin\'s flour tray down the bank behind the mill. He doesn\'t know. Don\'t tell him.' },
+          { who, text: 'You could ride that one! Jump, get it under your feet before you land, and don\'t let go. That\'s the whole trick.' },
+        ]);
+        state.set('village.surfIdea');
+        await api.say([{ text: 'Hold [shield] while you jump and land to *ride your shield*, much faster than running. Keep holding [shield] to ride; let go to step off. It only works outdoors, and enemies can still knock you off.' }]);
+        return;
+      }
+      if (!state.has('village.surfTried')) {
+        await api.say([{ who, text: 'Did you try it yet? Jump, shield under your feet, land on it. Don\'t think about it too much. That\'s how you fall off.' }]);
+        return;
+      }
+      await api.say([{ who, text: state.isNight
+        ? 'I saw you go past in the dark in a cloud of dust. Mum says I\'m too little to ride at night. She says that about the daytime too.'
+        : 'I saw you! You went right past the well! Tobin\'s tray is slower. Don\'t tell him I said that either.' }]);
     },
 
     async 'door.mill'(api) {
