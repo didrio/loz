@@ -5,7 +5,7 @@ import { foundSigils } from './sigils';
 /**
  * How the villagers take the big news, once each (docs/world.md "Story"). First, that Wren has read
  * a sigil: they react reluctantly, and never say his name. Later, that the ward is broken and the
- * blight has lifted: relief, and confusion that he was stone. Either one pre-empts the villager's
+ * blight has lifted, and the grown-ups with it: the kids tell Wren (RELIEF). Either one pre-empts the villager's
  * usual talk for one visit; they go back to it afterwards.
  */
 export type Villager = 'maren' | 'tobin' | 'lark' | 'odo' | 'pip';
@@ -41,35 +41,47 @@ const SIGIL: Record<Villager, string[]> = {
   ],
 };
 
-const RELIEF: Record<Villager, string[]> = {
-  maren: [
-    'Wren, look at the sky. It\'s the right color. I\'d forgotten it was ever the right color.',
-    'They say he was stone, all that time. Stone! I don\'t know whether to be glad or to be sick.',
-  ],
-  tobin: [
-    'Sun on the sails. First time since... well. First time.',
-    'Stone, they tell me. All that time we were afraid of a man, and he was a rock. It doesn\'t make me less afraid. It makes me sadder, and I don\'t care for it.',
-  ],
-  lark: [
-    'The purple\'s gone! Maren let me out to the well, and nobody even shouted!',
-    'Is it true he was a rock? A big one? Did he say anything at the end?',
-  ],
-  odo: [
-    'The pass is open, the sky is blue, and I still have a full cart. Friend, this is the best week of my career.',
-    'Stone, all that time. Well. The road past the mountains will have stories, I expect. Mind it.',
-  ],
-  pip: [
-    'The sky\'s the right color! Button always said it would come back. Well. I said it. She agreed.',
-    'Was he really stone the whole time? Button thinks that\'s sad. So do I, a bit.',
-  ],
+/**
+ * The ward breaks and the blight lifts, and Maren, Tobin and Odo vanish with it (docs/world.md "Story"):
+ * only the kids are left to say so. Lark is glad, then not; Pip, the shy one, asks Wren to find them
+ * (`village.searchAsked`, which the rescue quests will start from).
+ */
+const RELIEF: Partial<Record<Villager, { flag: Flag; lines: string[] }>> = {
+  lark: {
+    flag: 'village.larkRelief',
+    lines: [
+      'Wren! The purple\'s gone! I ran all the way round the fence and nobody even shouted!',
+      '...Nobody shouted because nobody\'s here. Maren, Tobin, Odo. When the sky went blue they just weren\'t anywhere. I looked in the mill. I looked under Odo\'s stall.',
+      'Pip wants to ask you something. She keeps asking me to ask you. Go on, she\'s by the cottage.',
+    ],
+  },
+  pip: {
+    flag: 'village.searchAsked',
+    lines: [
+      'The sky\'s the right color. I ran to tell Maren, and she wasn\'t at the well. Nobody was anywhere.',
+      'It was like the purple went away and took them with it.',
+      'Lark says they\'re hiding. Grown-ups don\'t hide. Not all at once.',
+      'You go out there. Past the fence, past everywhere. Could you... look for them? Please?',
+    ],
+  },
 };
+
+/** Gone with the blight: from the moment the ward breaks until Wren brings them home (later quests). */
+export const VANISHED = ['maren', 'tobin', 'odo'] as const satisfies readonly Villager[];
+
+export function adultsGone(state: GameState) {
+  return state.has('valleyOpen');
+}
 
 /** What this villager has to say about the news, if there's any they haven't said yet. */
 export function newsFor(villager: Villager, state: GameState): News | null {
   const who = NAMES[villager];
-  const relief: Flag = `village.${villager}Relief`;
   const sigil: Flag = `village.${villager}Sigil`;
-  if (state.has('valleyOpen') && !state.has(relief)) return { flag: relief, who, lines: RELIEF[villager] };
+  // Once the blight lifts, the old whispers about the sigils are stale: the only news is who's missing.
+  if (adultsGone(state)) {
+    const relief = RELIEF[villager];
+    return relief && !state.has(relief.flag) ? { flag: relief.flag, who, lines: relief.lines } : null;
+  }
   if (foundSigils(state).length && !state.has(sigil)) return { flag: sigil, who, lines: SIGIL[villager] };
   return null;
 }

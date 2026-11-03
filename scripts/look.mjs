@@ -137,6 +137,20 @@ const SCENES = {
     await h.wait(1500);
     await h.shot('village');
   },
+  /** After the prism: the blight gone and Thistledown with only Lark and Pip; Odo's stall unattended. */
+  async emptyVillage(h) {
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.set('valleyOpen');
+      g.state.hours = 12;
+      g.loadArea('overworld');
+    });
+    await h.wait(2500);
+    await h.teleport(-50, -42, Math.atan2(-12, -16));
+    await h.wait(1500);
+    await h.shot('empty-village');
+  },
   /** Shield surfing: Wren mid-ride on the road with dust, then Lark (the kid who gives the idea) by the well. */
   async surf(h) {
     await h.newGame();

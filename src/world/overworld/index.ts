@@ -164,12 +164,14 @@ export class Overworld implements Area {
     const above = (x: number, z: number, h: number) => terrainHeight(x, z) + h;
     const door = this.door;
     const way = this.wayPost;
+    const odo = this.npcs.odo;
     this.interactables = [
-      { id: 'npc.maren', x: this.npcs.maren.x, z: this.npcs.maren.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.maren.x, this.npcs.maren.z, 2.5), enabled: always },
-      { id: 'npc.tobin', x: this.npcs.tobin.x, z: this.npcs.tobin.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.tobin.x, this.npcs.tobin.z, 2.6), enabled: always },
+      { id: 'npc.maren', x: this.npcs.maren.x, z: this.npcs.maren.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.maren.x, this.npcs.maren.z, 2.5), enabled: () => this.npcs.maren.present },
+      { id: 'npc.tobin', x: this.npcs.tobin.x, z: this.npcs.tobin.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.tobin.x, this.npcs.tobin.z, 2.6), enabled: () => this.npcs.tobin.present },
       { id: 'npc.lark', x: this.npcs.lark.x, z: this.npcs.lark.z, r: 2.2, label: 'Talk', promptY: above(this.npcs.lark.x, this.npcs.lark.z, 1.9), enabled: always },
       { id: 'npc.pip', x: this.npcs.pip.x, z: this.npcs.pip.z, r: 2.1, label: 'Talk', promptY: above(this.npcs.pip.x, this.npcs.pip.z, 1.75), enabled: always },
-      { id: 'npc.odo', x: STALL.x + 1.2, z: STALL.z, r: 2.4, label: 'Talk', promptY: above(STALL.x, STALL.z, 2.7), enabled: always },
+      // The stall stays open without Odo (content/village.ts: Wren leaves the gems).
+      { id: 'npc.odo', x: STALL.x + 1.2, z: STALL.z, r: 2.4, get label() { return odo.present ? 'Talk' : 'Browse'; }, promptY: above(STALL.x, STALL.z, 2.7), enabled: always },
       { id: 'door.mill', x: MILL.x + 3.3, z: MILL.z, r: 1.7, label: 'Enter', promptY: above(MILL.x + 2.6, MILL.z, 2.2), enabled: always },
       { id: 'pickup.shield', x: this.shield.x, z: this.shield.z, r: 2.2, label: 'Take', promptY: this.shield.y + 1.6, enabled: () => this.shield.present },
       { id: 'chest.grove', x: GROVE.x, z: GROVE.z, r: 2.4, label: 'Open', promptY: above(GROVE.x, GROVE.z, 1.9), enabled: () => !this.chest.opened },

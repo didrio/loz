@@ -157,6 +157,62 @@ describe('overworld content', () => {
     area.dispose();
   });
 
+  it('when the ward breaks, the grown-ups vanish: the kids stay, Pip asks once, the stall and the mill stay open', async () => {
+    const area = new Overworld(physics);
+    const st = new GameState();
+    st.set('hasSword');
+    st.set('hasShield');
+    st.set('village.surfIdea');
+    st.set('village.surfTried');
+    const { api, said, asked, answers, travels } = fakeApi(area, physics, st);
+    const { scripts, restore } = overworldContent(area);
+    const talk = async (id: string) => {
+      said.length = 0;
+      await scripts[id](api);
+      return said.map((p) => p.text).join(' ');
+    };
+    const enabled = (id: string) => area.interactables.find((it) => it.id === id)!.enabled();
+    restore(st);
+    expect(['maren', 'tobin', 'odo'].every((v) => area.npcs[v as 'maren'].present)).toBe(true);
+    expect(await talk('door.mill')).toContain('locked');
+
+    st.set('valleyOpen');
+    restore(st);
+    for (const v of ['maren', 'tobin', 'odo'] as const) expect(area.npcs[v].present, v).toBe(false);
+    expect(area.npcs.lark.present && area.npcs.pip.present).toBe(true);
+    expect(enabled('npc.maren') || enabled('npc.tobin')).toBe(false);
+    expect(enabled('npc.odo')).toBe(true);
+    expect(area.interactables.find((it) => it.id === 'npc.odo')!.label).toBe('Browse');
+
+    // Lark tells it and points at Pip; Pip asks, once; then their usual talk misses the grown-ups.
+    expect(await talk('npc.lark')).toMatch(/nobody's here.*Pip wants to ask you/);
+    expect(st.has('village.searchAsked')).toBe(false);
+    expect(await talk('npc.pip')).toContain('look for them');
+    expect(st.has('village.searchAsked')).toBe(true);
+    st.hours = 12;
+    expect(await talk('npc.pip')).not.toContain('look for them');
+    expect(await talk('npc.lark')).toContain('What if they come back');
+
+    // The mill opens without Tobin's key.
+    await talk('door.mill');
+    expect(travels.at(-1)!.area).toBe('mill');
+
+    // Odo's stall: same wares, nobody behind the counter.
+    st.gems = 100;
+    st.flasks.add('life');
+    st.flasks.drink(0);
+    answers.push(1); // the first potion, after the tunic
+    expect(await talk('npc.odo')).toContain('leave 20 gems in the cashbox');
+    expect(asked.at(-1)!.pages[0].text).toContain('You leave the gems in his cashbox');
+    expect(asked.at(-1)!.pages.some((p) => p.who)).toBe(false);
+    expect(st.gems).toBe(80);
+    answers.push(0);
+    expect(await talk('npc.odo')).toContain('take the *Stoneward Tunic*');
+    expect(st.has('village.stonewardTunic')).toBe(true);
+    expect(await talk('npc.odo')).toContain('nothing here you need');
+    area.dispose();
+  });
+
   it('the crossroads sign points one way: home', async () => {
     const area = new Overworld(physics);
     const { api, said } = fakeApi(area, physics);
@@ -205,18 +261,20 @@ describe('overworld content', () => {
     expect(await talk('npc.pip')).toMatch(/dark tonight.*Glimmer Lake/);
     st.set('hasSword');
     st.set('valleyOpen');
-    st.set('village.pipRelief');
-    expect(await talk('npc.pip')).toMatch(/right color again.*Glimmer Lake/);
+    st.set('village.searchAsked');
+    expect(await talk('npc.pip')).toMatch(/Everyone's away.*Glimmer Lake/);
     // Breaking the jar: she's named now Wren has met her.
     expect(await talk('jar.doll')).toContain('You found *Button*');
     expect(st.has('village.dollFound')).toBe(true);
     // News waits: the doll goes back first, and only once.
-    st.flags.delete('village.pipRelief');
+    st.flags.delete('village.searchAsked');
     const gems = st.gems;
     expect(await talk('npc.pip')).toContain('Pip gives you *20 gems*');
     expect(st.gems).toBe(gems + 20);
-    expect(await talk('npc.pip')).toContain('right color!'); // the news, now
-    expect(await talk('npc.pip')).toContain('grass grows back');
+    expect(await talk('npc.pip')).toContain('look for them'); // the news, now
+    expect(await talk('npc.pip')).toContain('listening for the mill');
+    st.hours = 12;
+    expect(await talk('npc.pip')).toContain('Odo\'s stall');
     expect(st.gems).toBe(gems + 20);
     area.dispose();
   });

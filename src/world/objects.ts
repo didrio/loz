@@ -11,6 +11,9 @@ export class Npc {
   readonly h: Humanoid;
   private yaw: number;
   private t = Math.random() * 10;
+  private readonly collider: RAPIER.Collider;
+  /** False once the villager is gone (content decides who and when). */
+  present = true;
 
   constructor(b: AreaBuilder, colors: HumanoidColors, readonly x: number, readonly z: number, y: number, private readonly baseYaw: number, scale = 1) {
     this.h = buildHumanoid(colors, scale);
@@ -18,7 +21,13 @@ export class Npc {
     this.h.root.position.set(x, y, z);
     this.h.root.rotation.y = baseYaw;
     b.dynamic(this.h.root);
-    b.cylinder(x, y + 0.9, z, 0.9, 0.45, Layer.Prop);
+    this.collider = b.cylinder(x, y + 0.9, z, 0.9, 0.45, Layer.Prop);
+  }
+
+  setPresent(on: boolean) {
+    this.present = on;
+    this.h.root.visible = on;
+    this.collider.setEnabled(on);
   }
 
   update(dt: number, player: THREE.Vector3) {

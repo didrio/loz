@@ -95,7 +95,14 @@ change them.
 - **The prism.** His ward is held by a prism floating in beams of light in the room past his
   hearth. Wren shatters it with the sword: the gate falls and **the blight lifts** (owner's call:
   at the prism, not at the boss). The valley returns to today's look and music, with no gloomwisps
-  and only a few stray thornlings. Villagers are relieved, and confused that he was stone.
+  and only a few stray thornlings.
+- **The empty village** (owner's call, 2026-11-03). The moment the prism breaks, **Maren, Tobin and Odo vanish**
+  with the blight; nobody saw them go and nothing is left behind. Only the kids, Lark and Pip, remain: glad the sky is
+  back, scared and confused about the grown-ups. Lark tells Wren and points at Pip; **Pip, the shy one, asks Wren to
+  find them** (`village.searchAsked`). Odo's stall stays open on trust (Wren leaves the gems in his cashbox) and the
+  mill is unlocked. *Later (not built):* the major story quests out in the world find the three and bring them home
+  (Odo back at his stall); the kids' lines keep changing with the world. Code: `adultsGone`/`VANISHED` in
+  `content/villageNews.ts`, `Npc.setPresent`, `honorStall` in `content/village.ts`.
 - **Kept from before**: the pedestal ("While the lantern burns, the sleeping stone shall wake.
   Rekindle the lantern, and the night shall break."), the keepers, their bells and Murmurbuds,
   and the quest frame: **each major boss holds an ember of the stolen flame, and returning embers
@@ -118,8 +125,8 @@ change them.
 death scene (`Overworld.sigil`); the shrine's four are dungeon things of kind `sigil` (`appears: { cleared }` for `sigil.cell|crypt|gauntlet`, which stay once
 their room is cleared; `sigil.seal` in the seal room appears once the seal-stone is broken, later the prism: `appears: { switch: 'sealStone' }`). A room with a sigil
 is a **challenge room** like one with a chest: once cleared it stays empty after death and reload. Rule: a message only appears after Wren has done something. The hollow's stands 4 m beside the Heart Vessel. The pause menu's **Messages** page lists the ones read. Villagers:
-`content/villageNews.ts` (`withNews`): each reacts once to the first sigil read (flag `village.<n>Sigil`) and once to the broken ward
-(`village.<n>Relief`), and that visit's usual talk waits until the next. Text pass: the gate sign, the ward toast, Gravelheart's
+`content/villageNews.ts` (`withNews`): each reacts once to the first sigil read (flag `village.<n>Sigil`) and, once the ward
+breaks, only the kids speak: Lark once (`village.larkRelief`), Pip's ask (`village.searchAsked`); the adults are gone (above), and that visit's usual talk waits until the next. Text pass: the gate sign, the ward toast, Gravelheart's
 epithet and defeat line. Texts of the sigils are the drafts above.
 
 ### The blight (S2, built 2026-11-03)
@@ -172,9 +179,9 @@ in.
 
 - **Wren** (hero): rust-orange coat, teal scarf, dark hair; finds the round wooden shield in a ruined cottage and the
   **Wayfarer's Blade** in the grove.
-- **Maren**: older villager in purple by the well (warm and worried; her advice changes at night); old Bram (who kept the fence
+- **Maren** (gone after the prism): older villager in purple by the well (warm and worried; her advice changes at night); old Bram (who kept the fence
   before the blight, now gone) locked his blade in the grove chest, and she gives Wren the key.
-- **Tobin the Miller**: dry humor, runs the windmill; saw the flame carried off south. Once
+- **Tobin the Miller** (gone after the prism; the mill stays unlocked): dry humor, runs the windmill; saw the flame carried off south. Once
   Wren is armed he gives the **Mill Key** (`village.millKey`); the windmill's door (west side of
   the square) opens onto his mill, where the bed sleeps to the next 06:00/18:00 and fully
   heals.
@@ -182,7 +189,7 @@ in.
   the bank behind the mill and talks Wren into riding her shield (`village.surfIdea`, then the how-to line;
   see shield surfing in [combat.md](combat.md)). After her first ride (`village.surfTried`) Lark brags about
   seeing it, by day or night.
-- **Odo the Peddler**: warm, wry (he remarks on a sword without armor, and on the tunic by day or night); a stall beside the well. Refills empty flasks and sells the **Stoneward Tunic**
+- **Odo the Peddler** (gone after the prism; his stall runs on trust): warm, wry (he remarks on a sword without armor, and on the tunic by day or night); a stall beside the well. Refills empty flasks and sells the **Stoneward Tunic**
   (50 gems; stone hits do half damage, rounded up; Wren's tunic turns slate-blue). Flask
   refills (roadmap E) will be sold here through the same `offerWare`.
 - **Pip**: a smaller kid east of the well (shy, solemn; talks about her patched doll **Button** as if she were a person).

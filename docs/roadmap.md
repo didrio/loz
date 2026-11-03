@@ -30,6 +30,8 @@ Next, in order:
      across the valley, a fourth note (`bud.boss`: jump the shock ring, tether a loose plate) and plainer note titles and texts.
    - ~~S4, sigils and the village's silence~~ done (2026-11-03; [world.md](world.md), "Story": the sigils, Messages page, villagers' reactions, text pass).
    - ~~S5, the prism~~ done 2026-11-03 (unplayed; [shrine.md](shrine.md) D1). The full suite hasn't run since; do it at the next milestone's end.
+   - ~~The empty village~~ done 2026-11-03 (owner's ask; unplayed; [world.md](world.md) "The empty village"). **Later:** the rescue quests for Maren, Tobin and Odo
+     (major story quests out in the world; Odo back at his stall), and the kids' lines changing with them.
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **milestone 6** (Gravelheart) is in its last part, **6D+**
    (owner's redesign, 2026-11-03, replacing the old glove-stone Northpass): beating the boss opens a

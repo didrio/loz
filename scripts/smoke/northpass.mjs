@@ -1,5 +1,6 @@
 // The Northpass (shrine D3): two Cragstalkers guard the far side of the canyon, the crossing returns a fall to its
 // last ledge, the Waybell can be taken from behind it and hung on the camp's post, and the post joins the network.
+// Back home with the blight gone: only Lark and Pip are left, Pip asks Wren to find the others, Odo's stall runs on trust.
 export const fixture = 'northpass';
 
 export default async function run(t) {
@@ -86,5 +87,34 @@ export default async function run(t) {
     await finishScript();
     const r = await game(() => { const g = window.embervale, e = g.area.entrances['bell.way']; return { d: Math.hypot(g.player.pos.x - e.x, g.player.pos.z - e.z), y: g.player.pos.y }; });
     check(r.d < 1.5 && Math.abs(r.y - 12) < 1, `arrived ${r.d.toFixed(2)} m from the post's spot at y ${r.y.toFixed(1)}`);
+  });
+
+  await step('Thistledown without its grown-ups: only the kids, Pip asks, Odo\'s stall takes the gems on trust', async () => {
+    const v = await game(() => {
+      const g = window.embervale, n = g.area.npcs;
+      return { gone: ['maren', 'tobin', 'odo'].filter((k) => !n[k].present && !n[k].h.root.visible), kids: n.lark.present && n.pip.present };
+    });
+    check(v.gone.length === 3 && v.kids, `gone ${v.gone}, kids ${v.kids}`);
+    const pip = await game(() => window.embervale.area.interactables.find((i) => i.id === 'npc.pip'));
+    await teleport(pip.x + 1.2, pip.z, -Math.PI / 2);
+    await wait(500);
+    await press('KeyE');
+    await until(() => window.embervale.mode === 'cutscene', 5000);
+    await finishScript();
+    check(await game(() => window.embervale.state.has('village.searchAsked')), 'Pip did not ask');
+    const stall = await game(() => window.embervale.area.interactables.find((i) => i.id === 'npc.odo'));
+    await game(() => {
+      const s = window.embervale.state;
+      s.gems = 50;
+      s.flasks.add('attack');
+      s.flasks.drink(0);
+    });
+    await teleport(stall.x + 0.3, stall.z, -Math.PI / 2);
+    await wait(500);
+    await press('KeyE');
+    await until(() => window.embervale.mode === 'cutscene', 5000);
+    await finishScript(); // Enter picks the first potion: Life
+    const r = await game(() => ({ gems: window.embervale.state.gems, slot: window.embervale.state.flasks.slots[0] }));
+    check(r.slot === 'life' && r.gems === 30, `flask ${r.slot}, gems ${r.gems}`);
   });
 }

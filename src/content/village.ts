@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { POTIONS, REFILL_PRICE, type Potion } from '../game/flasks';
-import type { Page, Script } from '../game/script';
+import type { Page, Script, ScriptApi } from '../game/script';
 import type { GameState } from '../game/state';
 import type { Overworld } from '../world/overworld';
 import { offerWares, type Ware } from './shop';
-import { withNews } from './villageNews';
+import { adultsGone, VANISHED, withNews } from './villageNews';
 
 /** The guard, taught when Wren picks up the shield. */
 export const GUARD_TUTORIAL = 'Hold [shield] to block. Each block wears down your *guard* (the green bars), which refills only while the shield is *lowered*. If it runs out, your guard breaks and you stagger.';
@@ -19,6 +19,9 @@ export const GUARD_TUTORIAL = 'Hold [shield] to block. Each block wears down you
  * time) sets off a scream in the village; afterwards everyone talks about what came over the fence,
  * and Maren, shaken, gives Wren the key to old Bram's blade. Pip misses her doll, left in a jar at the
  * lake house; bringing it back earns 20 gems.
+ *
+ * When the ward breaks, Maren, Tobin and Odo vanish with the blight (`adultsGone`): only Lark and Pip
+ * are left, Pip asks Wren to find them, and Odo's stall works on trust (Wren leaves the gems).
  *
  * Villagers never name kin (owner's rule, 2026-11-03): they're neighbors, not family. They can
  * remember people who are gone (old Bram, old Hesper, Corwin).
@@ -164,6 +167,12 @@ export function villageContent(ow: Overworld) {
         await api.say([{ who, text: 'Did you try it yet? Jump, shield under your feet, land on it. Don\'t think about it too much. That\'s how you fall off.' }]);
         return;
       }
+      if (adultsGone(state)) {
+        await api.say([{ who, text: state.isNight
+          ? 'I\'m sleeping by the well tonight. If anybody comes back over the fence, I\'ll hear them first.'
+          : 'I can go anywhere I want now. I keep not going. What if they come back and nobody\'s at the well?' }]);
+        return;
+      }
       await api.say([{ who, text: state.isNight
         ? 'I saw you go past in the dark in a cloud of dust. Maren says I\'m too little to ride at night. She says that about the daytime too.'
         : 'I saw you! You went right past the well! Tobin\'s tray is slower. Don\'t tell him I said that either.' }]);
@@ -176,8 +185,10 @@ export function villageContent(ow: Overworld) {
       const who = 'Pip';
       state.set('village.metPip');
       if (state.has('village.dollReturned')) {
-        await api.say([{ who, text: state.has('valleyOpen')
-          ? 'Button wants to see the lake again, now the sky\'s the right color. I said when the grass grows back over the path.'
+        await api.say([{ who, text: adultsGone(state)
+          ? state.isNight
+            ? 'Button can\'t sleep. She keeps listening for the mill. It doesn\'t creak when Tobin isn\'t there.'
+            : 'Button and me still sweep Odo\'s stall in the mornings. So it\'s nice for when he gets back.'
           : state.isNight
             ? 'Shh. Button\'s asleep. She hasn\'t slept properly since the lake house. Neither have I.'
             : 'Button says thank you again. She says it every morning. She\'s very polite.' }]);
@@ -196,9 +207,9 @@ export function villageContent(ow: Overworld) {
         return;
       }
       const where = 'She\'s at my old house by *Glimmer Lake*, far southwest, past the river. In one of the jars. I hid her there to keep dry.';
-      if (state.has('valleyOpen')) {
+      if (adultsGone(state)) {
         await api.say([
-          { who, text: 'The sky\'s the right color again. Button will have seen it, even from inside a jar.' },
+          { who, text: 'Everyone\'s away, and Button\'s away too. I don\'t like anybody being away.' },
           { who, text: where },
         ]);
       } else if (state.isNight) {
@@ -230,7 +241,8 @@ export function villageContent(ow: Overworld) {
     },
 
     async 'door.mill'(api) {
-      if (!api.state.has('village.millKey')) {
+      // With Tobin gone, nobody locks it.
+      if (!api.state.has('village.millKey') && !adultsGone(api.state)) {
         await api.say([{ text: 'The mill\'s door is locked. Tobin the Miller keeps the key.' }]);
         return;
       }
@@ -238,6 +250,7 @@ export function villageContent(ow: Overworld) {
     },
 
     async 'npc.odo'(api) {
+      if (adultsGone(api.state)) return honorStall(api);
       const { state } = api;
       const who = 'Odo the Peddler';
       const tunic = !state.has('village.stonewardTunic');
@@ -294,6 +307,38 @@ export function villageContent(ow: Overworld) {
     scripts,
     restore(state: GameState) {
       if (state.has('hasShield')) ow.shield.take();
+      for (const v of VANISHED) ow.npcs[v].setPresent(!adultsGone(state));
     },
   };
+}
+
+/** Odo's stall with Odo gone: the same wares, and Wren leaves the gems in his cashbox until he's back. */
+async function honorStall(api: ScriptApi) {
+  const { state } = api;
+  const tunic = !state.has('village.stonewardTunic');
+  const empty = state.flasks.firstEmpty();
+  if (!tunic && empty < 0) {
+    await api.say([{ text: 'Odo\'s stall. No one minds it. There\'s nothing here you need, and the cashbox is waiting for him.' }]);
+    return;
+  }
+  const wares: (Ware & { potion?: Potion })[] = [];
+  if (tunic) wares.push({ label: 'Stoneward Tunic', price: 50 });
+  if (empty >= 0) for (const potion of ['life', 'attack'] as const) wares.push({ label: POTIONS[potion].name, potion, price: REFILL_PRICE });
+  const result = await offerWares(api, [{ text: 'Odo\'s stall. No one minds it. You leave the gems in his cashbox.' }], wares);
+  if (result === 'declined') return;
+  if ('short' in result) {
+    await api.say([{ text: `That's ${result.short.price} gems, and you have ${state.gems}. Odo wouldn't mind. You would.` }]);
+    return;
+  }
+  const potion = wares[result.bought].potion;
+  if (potion) {
+    state.flasks.fill(empty, potion);
+    api.sfx.heart();
+    await api.say([{ text: `You fill your flask from Odo's jug of *${POTIONS[potion].name}* and leave ${REFILL_PRICE} gems in the cashbox.` }]);
+  } else {
+    state.set('village.stonewardTunic');
+    api.player.setStoneward(true);
+    api.sfx.fanfare();
+    await api.say([{ text: 'You leave 50 gems in the cashbox and take the *Stoneward Tunic*!\nStone hits (statues, shells) do half damage. Your tunic turns slate-blue.' }]);
+  }
 }

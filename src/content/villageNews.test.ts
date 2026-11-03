@@ -17,26 +17,29 @@ describe('villagers\' news', () => {
     }
   });
 
-  it('relief comes once the ward is broken, and takes precedence', () => {
+  it('once the ward breaks, only the kids have news (Pip\'s is the ask), once; the sigil whispers are dropped', () => {
     for (const v of VILLAGERS) {
       const state = new GameState();
       state.set('sigil.hollow');
       state.set('valleyOpen');
-      const first = newsFor(v, state)!;
-      expect(first.flag).toBe(`village.${v}Relief`);
-      state.set(first.flag);
-      expect(newsFor(v, state)!.flag).toBe(`village.${v}Sigil`);
+      const news = newsFor(v, state);
+      if (v === 'maren' || v === 'tobin' || v === 'odo') {
+        expect(news, v).toBeNull();
+        continue;
+      }
+      expect(news!.flag).toBe(v === 'pip' ? 'village.searchAsked' : 'village.larkRelief');
+      state.set(news!.flag);
+      expect(newsFor(v, state)).toBeNull();
     }
   });
 
   it('nobody speaks his name', () => {
     for (const v of VILLAGERS) {
       const state = new GameState();
-      state.set('valleyOpen');
       state.set('sigil.hollow');
       const text = [newsFor(v, state)!.lines];
-      state.set(newsFor(v, state)!.flag);
-      text.push(newsFor(v, state)!.lines);
+      state.set('valleyOpen');
+      text.push(newsFor(v, state)?.lines ?? []);
       expect(text.flat().join(' ')).not.toMatch(/\bhis name is\b/i);
     }
   });
