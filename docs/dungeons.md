@@ -63,7 +63,12 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   `landmark` (a big lopsided statue to orient by: `style` `lanternKeeper` / `watcher` /
   `fallenKeeper`, `facing` a yaw; a 3 m square, solid like a pillar, so the grid blocks the
   cells it touches and the validator rejects one on a doorway approach, a stair, a pit, a
-  pillar or another thing; models in `landmarks.ts`, emissive only, no light).
+  pillar or another thing; models in `landmarks.ts`, emissive only, no light),
+  `bellPost` (a keeper's bell post: `bell` is the bell that fits it, `facing` a yaw, default
+  toward the room's center; it gets an entrance named by its id, where travelers arrive) and
+  `bell` (a bell waiting at the end of its trial, on a plinth). Both are solid (a 1 m
+  footprint: stones stop against them, wall decoration keeps a step clear); a dungeon can hold
+  one of each per bell. See [bells.md](bells.md).
 - **`music`**: the dungeon's theme (a mood in `core/tracks.ts`), played while inside.
 - **`entrance`** (room, spot, facing) and **`goal`** (the room that finishes it, normally
   the boss room).
@@ -164,7 +169,7 @@ are open doorways, `k` small-key door, `B` boss door, `s` switch door, `i` item 
 `> < ^ v` one-way doors (pointing the way you can go), `U`/`D` stairs up/down, `v`/`*` a
 drop hole (on the floor above) and where it lands (below), `@` entrance, `C` chest, `S`
 crystal switch, `P` floor plate, `%` wakestone, `&` heavy wakestone, `e` enemy, `X` boss,
-`?` sign, `L` landmark statue, `O` pit, `=` block, `I` pillar. Room ids are written in empty space inside each room. Example (`npm run map --
+`?` sign, `L` landmark statue, `Y` bell post, `A` bell, `O` pit, `=` block, `I` pillar. Room ids are written in empty space inside each room. Example (`npm run map --
 example`):
 
 ```

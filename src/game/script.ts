@@ -34,6 +34,12 @@ export interface ScriptApi {
   say(pages: Page[]): Promise<void>;
   /** Like `say`, but the last page ends in a choice list; resolves with the index picked. */
   ask(pages: Page[], options: string[]): Promise<number>;
+  /**
+   * A titled menu of options in a panel of its own (built on `MenuStack`); resolves with
+   * the index chosen, or null if the player backs out. For lists, like the bells' travel
+   * menu; a yes/no under a dialog line is `ask`.
+   */
+  choose(title: string, options: string[]): Promise<number | null>;
   /** Waits for game time to pass. */
   wait(seconds: number): Promise<void>;
   /** Waits until a condition holds (checked once per frame). */

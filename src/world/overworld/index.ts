@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import { mulberry32 } from '../../core/math';
 import type { Physics } from '../../core/physics';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger } from '../area';
+import { BellPost, type BellId } from '../bell';
 import { BossArena, BushField, Chest, GreatLantern, HeartVessel, Npc, StoneDoor } from '../objects';
 import { buildHollow } from './hollow';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
-import { areaNameAt, GROVE, HOLLOW, isEnemyGround, MILL, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { areaNameAt, GROVE, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
 import { buildBounds, buildTerrain, buildWater } from './terrain';
 import { buildVillage } from './village';
@@ -22,11 +23,14 @@ export class Overworld implements Area {
   readonly waterLevel = WATER_Y;
   readonly enemyCount = 14;
   /** Where Wren arrives from elsewhere: just outside the shrine door, facing away from it. */
-  readonly entrances = {
+  readonly entrances: Record<string, { x: number; z: number; facing: number }> = {
     shrineDoor: { x: SHRINE_DOOR.x - 3.5, z: SHRINE_DOOR.z, facing: -Math.PI / 2 },
     /** On the square in front of the mill door, facing away from it. */
     mill: { x: MILL.x + 4.4, z: MILL.z, facing: Math.PI / 2 },
   };
+  /** The Morrowbell's post on Thistledown's square. */
+  readonly morrowPost: BellPost;
+  readonly bellPosts: Map<BellId, BellPost>;
   readonly interactables: Interactable[];
   readonly triggers: Trigger[];
   readonly npcs: { maren: Npc; tobin: Npc; odo: Npc };
@@ -85,6 +89,12 @@ export class Overworld implements Area {
     // Maren hands over the key.
     this.chest = new Chest(b, GROVE.x, GROVE.z, terrainHeight(GROVE.x, GROVE.z), Math.atan2(-6, 6), true);
     this.door = new StoneDoor(b, SHRINE_DOOR.x, SHRINE_DOOR.z, terrainHeight(SHRINE_DOOR.x, SHRINE_DOOR.z));
+    // Facing the well, so it's in view from the square.
+    const morrow = new BellPost(b, 'morrow', MORROW_POST.x, terrainHeight(MORROW_POST.x, MORROW_POST.z), MORROW_POST.z, Math.atan2(VILLAGE.x - MORROW_POST.x, VILLAGE.z - MORROW_POST.z));
+    b.dynamic(morrow.group);
+    this.morrowPost = morrow;
+    this.bellPosts = new Map([['morrow', morrow]]);
+    this.entrances['bell.morrow'] = morrow.arrival();
 
     const always = () => true;
     /** The prompt floats this high above the ground at a spot. */
@@ -101,6 +111,7 @@ export class Overworld implements Area {
         get label() { return door.awake ? 'Open' : 'Check'; },
         enabled: () => !door.opening,
       },
+      { id: 'bellPost.morrow', x: morrow.front.x, z: morrow.front.z, r: 2.2, get label() { return morrow.label; }, promptY: morrow.y + 3.2, enabled: () => !morrow.hanging },
       { id: 'sign.pedestal', x: shrine.pedestal.x, z: shrine.pedestal.z, r: 2.3, label: 'Read', promptY: above(shrine.pedestal.x, shrine.pedestal.z, 2), enabled: always },
       ...SIGNS.map((s) => ({ id: s.id, x: s.x, z: s.z, r: 2.3, label: 'Read', promptY: above(s.x, s.z, 2.4), enabled: always })),
     ];
@@ -159,6 +170,7 @@ export class Overworld implements Area {
     this.lantern.update(dt);
     this.hollow.update(dt);
     this.vessel.update(dt);
+    this.morrowPost.update(dt);
     this.hollowFx.update(dt);
     this.bushes.update(dt);
     this.npcs.maren.update(dt, env.playerPos);

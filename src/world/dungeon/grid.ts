@@ -31,6 +31,12 @@ export interface RoomGrid {
 
 export const cellKey = (c: Cell) => `${c.i},${c.j}`;
 
+/** A bell post or a bell's plinth: a small solid footprint (stones stop against it). */
+export function bellRect(room: RoomDef, at: readonly [number, number]): Rect {
+  const [x, z] = worldPos(room, at);
+  return { x: x - 0.5, z: z - 0.5, w: 1, d: 1 };
+}
+
 export function cellCenter(room: RoomDef, c: Cell): [number, number] {
   return [room.x + c.i * CELL + CELL / 2, room.z + c.j * CELL + CELL / 2];
 }
@@ -56,7 +62,11 @@ export function roomGrid(def: DungeonDef, room: RoomDef): RoomGrid {
       solids.push({ x: room.x + f.x - r, z: room.z + f.z - r, w: r * 2, d: r * 2 });
     } else if (f.kind === 'block') solids.push({ x: room.x + f.x, z: room.z + f.z, w: f.w, d: f.d });
   }
-  for (const t of def.things) if (t.kind === 'landmark' && t.room === room.id) solids.push(landmarkRect(room, t.at));
+  for (const t of def.things) {
+    if (t.room !== room.id) continue;
+    if (t.kind === 'landmark') solids.push(landmarkRect(room, t.at));
+    else if (t.kind === 'bellPost' || t.kind === 'bell') solids.push(bellRect(room, t.at));
+  }
   const { holes, stairs } = roomOpenings(def, room);
   for (const h of holes) if (h.kind !== 'pit') solids.push(h.rect);
   for (const s of stairs) solids.push(s.rect);

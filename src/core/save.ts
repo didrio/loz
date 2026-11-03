@@ -4,7 +4,7 @@
  * can swap localStorage for real files without touching game code.
  */
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 export interface SaveData {
   version: typeof SAVE_VERSION;
@@ -19,6 +19,8 @@ export interface SaveData {
   dungeons: Record<string, DungeonSave>;
   /** Flasks owned, in order: the potion id each holds, or null when empty (v5+; v3/v4 saved drinks found and left by id, which load as one flask each). */
   flasks: (string | null)[];
+  /** The keepers' bells by id: found and carried, or hung on their posts (v6+; before: none). */
+  bells: { carried: string[]; hung: string[] };
   gems: number;
   hp: number;
   maxHp: number;
@@ -105,7 +107,7 @@ export function decodeSave(raw: string | null): SaveData | null {
   // v1 saved the flute songs the player knew; the flute is gone, so they're just dropped
   // (v1 had no keys). The quest grants the key by its own flag, so nothing gets stuck.
   // v1/v2 had no areas, items or dungeons: they load in the overworld with none.
-  if (o.version !== SAVE_VERSION && o.version !== 1 && o.version !== 2 && o.version !== 3 && o.version !== 4) return null;
+  if (o.version !== SAVE_VERSION && o.version !== 1 && o.version !== 2 && o.version !== 3 && o.version !== 4 && o.version !== 5) return null;
   if (!Array.isArray(o.flags)) return null;
   const maxHp = isNum(o.maxHp) ? Math.max(2, Math.min(40, Math.round(o.maxHp / 2) * 2)) : 6;
   return {
@@ -115,7 +117,8 @@ export function decodeSave(raw: string | null): SaveData | null {
     area: typeof o.area === 'string' && o.area ? o.area : 'overworld',
     items: strings(o.items),
     dungeons: decodeDungeons(o.dungeons),
-    flasks: o.version === SAVE_VERSION ? decodeFlasks(o.flasks) : flasksFromDrinks(o.drinks),
+    flasks: o.version === 5 || o.version === SAVE_VERSION ? decodeFlasks(o.flasks) : flasksFromDrinks(o.drinks),
+    bells: decodeBells(o.bells),
     gems: isNum(o.gems) ? Math.max(0, Math.min(9999, Math.floor(o.gems))) : 0,
     maxHp,
     hp: isNum(o.hp) ? Math.max(1, Math.min(maxHp, Math.floor(o.hp))) : maxHp,
@@ -144,6 +147,13 @@ function flasksFromDrinks(v: unknown): (string | null)[] {
     if (count(d.found) > 0) out.push(count(d.left) > 0 ? potion : null);
   }
   return out;
+}
+
+/** v6 bells; anything missing or malformed (and every older save) loads as no bells. */
+function decodeBells(v: unknown): { carried: string[]; hung: string[] } {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return { carried: [], hung: [] };
+  const b = v as Record<string, unknown>;
+  return { carried: strings(b.carried), hung: strings(b.hung) };
 }
 
 function decodeDungeons(v: unknown): Record<string, DungeonSave> {

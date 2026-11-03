@@ -1,6 +1,7 @@
 import { SAVE_VERSION, type DungeonSave, type SaveData } from '../core/save';
 import { floorY, worldPos, type DungeonDef } from '../world/dungeon/format';
 import { SHRINE } from '../world/dungeon/defs/shrine';
+import { MORROW_POST, VILLAGE } from '../world/overworld/layout';
 
 /**
  * Dev-menu save states: ready-made points in the game to jump to while testing. Loading one
@@ -17,7 +18,7 @@ export interface DevState {
 
 const base = (o: Partial<SaveData>): SaveData => ({
   version: SAVE_VERSION,
-  flags: [], keys: 0, area: 'overworld', items: [], dungeons: {}, flasks: [],
+  flags: [], keys: 0, area: 'overworld', items: [], dungeons: {}, flasks: [], bells: { carried: [], hung: [] },
   gems: 0, hp: 6, maxHp: 6, hours: 9, day: 1, savedAt: 0,
   ...o,
 });
@@ -57,6 +58,23 @@ function shrineAtBossDoor(): DevState {
   };
 }
 
+/** On Thistledown's square, 3 m from the Morrowbell's post toward the well, facing it. */
+function atMorrowPost(): DevState['at'] {
+  const dx = VILLAGE.x - MORROW_POST.x, dz = VILLAGE.z - MORROW_POST.z, len = Math.hypot(dx, dz);
+  return { x: MORROW_POST.x + (dx / len) * 3, z: MORROW_POST.z + (dz / len) * 3, facing: Math.atan2(-dx, -dz) };
+}
+
+/** The bells (docs/bells.md): the first one in hand by its post, the second (the travel menu wakes), and both hung. */
+function bellStates(): DevState[] {
+  const { progress, gems } = completedDungeon(SHRINE);
+  const late = { flags: SHRINE_OPEN, items: ['tether'], dungeons: { shrine: progress }, flasks: ['life', 'attack'], gems, hp: 8, maxHp: 8, hours: 10 };
+  return [
+    { name: 'Bells: Morrowbell in hand, Thistledown', save: base({ flags: SWORD_AND_BED, bells: { carried: ['morrow'], hung: [] } }), at: atMorrowPost() },
+    { name: 'Bells: Lullbell in hand, shrine entry', save: base({ ...late, area: 'shrine', bells: { carried: ['lull'], hung: ['morrow'] } }) },
+    { name: 'Bells: both hung, Thistledown', save: base({ ...late, bells: { carried: [], hung: ['morrow', 'lull'] } }), at: atMorrowPost() },
+  ];
+}
+
 export const DEV_STATES: DevState[] = [
   { name: 'New game', save: null },
   {
@@ -70,4 +88,5 @@ export const DEV_STATES: DevState[] = [
     save: base({ flags: SHRINE_OPEN, area: 'shrine', dungeons: { shrine: emptyDungeon() }, hp: 8, maxHp: 8, hours: 10 }),
   },
   shrineAtBossDoor(),
+  ...bellStates(),
 ];

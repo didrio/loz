@@ -1,6 +1,7 @@
 import { DEV_STATES, type DevState } from '../content/devStates';
 import type { Game } from './game';
-import { MenuStack, type Menu } from './menu';
+import type { Menu } from './menu';
+import { MenuDriver } from './menuDriver';
 
 /**
  * The dev menu (~ or L3): toggles for testing and a list of ready-made save states. Only in
@@ -8,21 +9,14 @@ import { MenuStack, type Menu } from './menu';
  * pauses the game; B / Backspace / Esc go back a menu, and out of the first one.
  */
 export class DevMenu {
-  private readonly stack = new MenuStack();
+  readonly menu: MenuDriver;
 
   constructor(private readonly game: Game, private readonly enabled: () => boolean) {
-    const { hud } = game;
-    hud.onMenuHover = (i) => this.stack.isOpen && this.stack.select(i);
-    hud.onMenuClick = (i) => {
-      if (!this.stack.isOpen) return;
-      this.stack.select(i);
-      this.stack.confirm();
-      this.draw();
-    };
+    this.menu = new MenuDriver(game);
   }
 
   get isOpen() {
-    return this.stack.isOpen;
+    return this.menu.isOpen;
   }
 
   /**
@@ -31,32 +25,16 @@ export class DevMenu {
    * is both "choose" here and "interact" there.
    */
   update(): boolean {
-    const { input, sfx } = this.game;
-    if (!this.stack.isOpen) {
+    const { input } = this.game;
+    if (!this.menu.isOpen) {
       if (!this.enabled() || this.game.mode !== 'play' || !input.pressed('devMenu')) return false;
-      this.stack.open(this.root());
-      document.exitPointerLock?.();
-      sfx.init();
-      sfx.select();
+      this.menu.open(this.root());
     } else if (input.pressed('devMenu')) {
-      this.stack.close();
+      this.menu.close();
     } else {
-      if (input.pressed('menuUp')) this.step(-1);
-      if (input.pressed('menuDown')) this.step(1);
-      if (input.pressed('confirm')) this.stack.confirm();
-      else if (input.pressed('cancel')) this.stack.back();
+      this.menu.update();
     }
-    this.draw();
     return true;
-  }
-
-  private step(dir: -1 | 1) {
-    this.stack.move(dir);
-    this.game.sfx.select();
-  }
-
-  private draw() {
-    this.game.hud.setMenu(this.stack.view());
   }
 
   private root(): Menu {
@@ -78,7 +56,7 @@ export class DevMenu {
         kind: 'action' as const,
         label: s.name,
         run: () => {
-          this.stack.close();
+          this.menu.close();
           this.game.loadDevState(s);
           this.game.hud.showToast(`Loaded: ${s.name}`);
         },

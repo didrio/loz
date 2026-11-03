@@ -36,7 +36,11 @@ orbit and the menu; `Game` acts on its choice). Scripts reach them as `g.combat.
 submenu; up/down wraps, confirm chooses, back pops (from the first menu it closes). It is
 pure logic: the owner of the menu feeds it input (keyboard, d-pad/stick, mouse hover and
 click via `Hud.onMenuHover/onMenuClick`) and `Hud.setMenu(view)` draws it. The pause and
-main menus should be built on it. `DevMenu` is the first user (~ / L3): Dev sprint,
+main menus should be built on it. `MenuDriver` (`game/menuDriver.ts`) feeds one from input
+(up/down with a tick, confirm, cancel) and draws it; the game routes the HUD's mouse hover and
+click to whichever menu is open. `ChoiceMenu` is `ScriptApi.choose(title, options)`: a titled
+panel of options resolving with the index or null (backed out), shown during a cutscene instead
+of the dialog box (the bells' travel menu). `DevMenu` is the first user (~ / L3): Dev sprint,
 Invincible (`GameState.invincible`, never saved) and Save states (`content/devStates.ts`:
 New game, night outside the Hollow, shrine start, shrine at the boss door; loading one
 replaces the current save, via `Game.loadDevState`). While a menu is open `Game.frame` runs
@@ -168,18 +172,19 @@ logic: waits must follow game time.
 ## State and saves (`game/state.ts`, `core/save.ts`)
 
 `GameState` holds quest `FLAGS`, the field's small `keys`, the current `area`, carried
-`items` (`ITEMS`), per-dungeon progress (`dungeon(id)`: its colored keys held (a set of `KeyColor`), boss key, and sets of opened doors, opened chests, pressed switches and cleared rooms, all
+`items` (`ITEMS`), the keepers' `bells` (carried and hung sets, [bells.md](bells.md)), per-dungeon progress (`dungeon(id)`: its colored keys held (a set of `KeyColor`), boss key, and sets of opened doors, opened chests, pressed switches and cleared rooms, all
 keyed by the dungeon's data ids, plus `done`), hearts, gems and the clock. It's
 mutated in place (systems keep references). `keysHere` is the field's plain key count (0 inside a dungeon) and `dungeonKeysHere` the colored
 keys held in the current dungeon; the HUD shows both. Add flags to `FLAGS`; **never rename a shipped flag**
 (old saves would silently lose it). New flags use a namespaced name, `<area>.<thing>`
 (e.g. `shrine.bigKey`); the original seven overworld flags keep their plain names forever. Village flags so far:
-`village.millKey` (Tobin's gift), `village.stonewardTunic` (bought from Odo).
+`village.millKey` (Tobin's gift), `village.stonewardTunic` (bought from Odo),
+`village.marenBell` / `village.tobinBell` (their one line about the Morrowbell, said).
 Saves are versioned JSON (`embervale:save:0`), validated and repaired on load; bump
-`SAVE_VERSION` only with a migration in `decodeSave`. `SAVE_VERSION` is 5 (v5: `flasks`, a list with one potion id or null per flask owned, replaces `drinks`; v3/v4 drinks load as a flask per kind found, full if any was left. v4: a dungeon's `keys` is a list of colors, not a count; a v3 count loads
+`SAVE_VERSION` only with a migration in `decodeSave`. `SAVE_VERSION` is 6 (v6: `bells: { carried, hung }`, older saves load with none. v5: `flasks`, a list with one potion id or null per flask owned, replaces `drinks`; v3/v4 drinks load as a flask per kind found, full if any was left. v4: a dungeon's `keys` is a list of colors, not a count; a v3 count loads
 as none and the shrine's `restore` re-derives held keys from opened key chests whose door is still shut): v1 saves (which
 held flute songs) load with the songs dropped and 0 keys; v1/v2 load in the overworld with
-no items or dungeon progress. Saved: flags, keys, area, items, dungeons, flasks, gems, hearts, clock. Not saved: position (continue starts at the saved area's spawn, e.g. a dungeon's
+no items or dungeon progress. Saved: flags, keys, area, items, dungeons, flasks, bells, gems, hearts, clock. Not saved: position (continue starts at the saved area's spawn, e.g. a dungeon's
 entrance, with at least 3 hearts), enemies, cut bushes, where stones were pushed. Autosave: after every script, every 30 s of play, and on page
 hide. Settings (`embervale:settings`): music. Storage goes through `KeyValueStore` so the
 desktop build can write real files.

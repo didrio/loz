@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { decodeSave } from '../core/save';
 import { FLAGS, ITEMS } from '../game/state';
 import { DUNGEONS } from '../world/dungeon';
+import { BELL_IDS } from '../world/bell';
 import { SHRINE } from '../world/dungeon/defs/shrine';
 import { AREA_IDS } from './areas';
 import { completedDungeon, DEV_STATES } from './devStates';
@@ -18,8 +19,16 @@ describe('dev save states', () => {
     });
   }
 
-  it('lists a new game, the night outside the hollow, the shrine start and the boss door', () => {
-    expect(DEV_STATES.map((s) => s.save?.area ?? 'new')).toEqual(['new', 'overworld', 'shrine', 'shrine']);
+  it('lists a new game, the night outside the hollow, the shrine start, the boss door and three bell states', () => {
+    expect(DEV_STATES.map((s) => s.save?.area ?? 'new')).toEqual(['new', 'overworld', 'shrine', 'shrine', 'overworld', 'shrine', 'overworld']);
+  });
+
+  it('the bell states carry or hang only known bells, never one both carried and hung', () => {
+    for (const s of DEV_STATES.slice(4)) {
+      const { carried, hung } = s.save!.bells;
+      for (const b of [...carried, ...hung]) expect(BELL_IDS as readonly string[]).toContain(b);
+      expect(carried.filter((b) => hung.includes(b))).toEqual([]);
+    }
   });
 
   it('the boss-door state has everything done but the boss door: boss key, both flasks full, the glove', () => {

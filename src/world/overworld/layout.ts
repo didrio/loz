@@ -12,6 +12,8 @@ export const SPAWN = { x: 0, z: 14, facing: Math.PI };
 export const VILLAGE = { x: -62, z: -58, r: 30 };
 /** Tobin's windmill on the village's west side; its door faces east, onto the square. */
 export const MILL = { x: VILLAGE.x - 22, z: VILLAGE.z };
+/** The Morrowbell's post on the square, between the east and northeast cottages (clear of both doors), facing the well (docs/bells.md). */
+export const MORROW_POST = { x: VILLAGE.x + 9.4, z: VILLAGE.z - 5.7 };
 /** Odo the merchant's stall: his counter runs north-south, customers stand on its east side. */
 export const STALL = { x: VILLAGE.x - 5.4, z: VILLAGE.z - 4 };
 export const GROVE = { x: 82, z: -78 };

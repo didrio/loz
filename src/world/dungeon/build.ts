@@ -2,14 +2,15 @@ import * as THREE from 'three';
 import { mulberry32 } from '../../core/math';
 import { Layer, type Physics } from '../../core/physics';
 import { disposeTree, mat, mergeStatic } from '../../render/materials';
-import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger } from '../area';
+import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Spot, type Trigger } from '../area';
+import { BellPickup, BellPost, type BellId } from '../bell';
 import { Chest } from '../objects';
 import {
   CEIL_T, DEFAULT_DOOR_WIDTH, DIRS, DOOR_HEIGHT, doorPlacement, dropHole, FLOOR_T, floorHeightOf, floorY, landmarkRect, PIT_DEPTH,
   roomHeight, roomOpenings, roomRect, stairPlacement, worldPos,
   type Dir, type DungeonDef, type Rect, type RoomDef,
 } from './format';
-import { CELL, cellAt, cellCenter, roomGrid, type Cell, type RoomGrid } from './grid';
+import { bellRect, CELL, cellAt, cellCenter, roomGrid, type Cell, type RoomGrid } from './grid';
 import { buildLandmark } from './landmarks';
 import { FallenColumn } from './bridge';
 import { PULL_RANGE } from './puzzle';
@@ -101,6 +102,13 @@ export class DungeonArea implements Area {
   readonly stones = new Map<string, Wakestone>();
   /** Fallen columns (`role: 'bridge'` stones): the glove swings them across their pits. */
   readonly columns = new Map<string, FallenColumn>();
+  /** Bell posts by the bell that fits them, and by their data id (content binds by id). */
+  readonly bellPosts = new Map<BellId, BellPost>();
+  readonly bellPostsById = new Map<string, BellPost>();
+  /** Bells waiting at the end of their trials, by data id. */
+  readonly bellPickups = new Map<string, BellPickup>();
+  /** Where travelers arrive: in front of each bell post, named by its id. */
+  readonly entrances: Record<string, Spot> = {};
   readonly spawns: Spawn[] = [];
   /** Called when a switch is pressed: a crystal struck, or a plate under a stone (content decides what it opens). */
   onSwitch: ((id: string) => void) | null = null;
@@ -352,6 +360,18 @@ export class DungeonArea implements Area {
         this.interactables.push({ id: t.id, x, z, y: fy, r: 2.2, label: 'Read', promptY: fy + 2.1, enabled: () => true });
       } else if (t.kind === 'landmark') {
         buildLandmark(b, p.src.solid, t.style, themeOf(r), x, fy, z, t.facing ?? 0);
+      } else if (t.kind === 'bellPost') {
+        const post = new BellPost(b, t.bell, x, fy, z, t.facing ?? faceCenter);
+        p.dynamic.add(post.group);
+        this.bellPosts.set(t.bell, post);
+        this.bellPostsById.set(t.id, post);
+        this.entrances[t.id] = { ...post.arrival(), y: fy + 0.05 };
+        this.interactables.push({ id: t.id, x: post.front.x, z: post.front.z, y: fy, r: 2.2, get label() { return post.label; }, promptY: fy + 3.2, enabled: () => !post.hanging });
+      } else if (t.kind === 'bell') {
+        const pickup = new BellPickup(b, t.bell, x, fy, z);
+        p.dynamic.add(pickup.group);
+        this.bellPickups.set(t.id, pickup);
+        this.interactables.push({ id: t.id, x, z, y: fy, r: 2, label: 'Take', promptY: fy + 2.2, enabled: () => pickup.present });
       } else if (t.kind === 'enemy') {
         this.spawns.push({ id: t.id, type: t.type, room: r.id, x, y: fy, z });
       }
@@ -433,7 +453,15 @@ export class DungeonArea implements Area {
       if (f.kind === 'pillar') solids.push({ x: r.x + f.x - 1, z: r.z + f.z - 1, w: 2, d: 2 });
       else solids.push({ x: r.x + f.x, z: r.z + f.z, w: f.w, d: f.d });
     }
-    for (const t of def.things) if (t.kind === 'landmark' && t.room === r.id) solids.push(landmarkRect(r, t.at));
+    for (const t of def.things) {
+      if (t.room !== r.id) continue;
+      if (t.kind === 'landmark') solids.push(landmarkRect(r, t.at));
+      // Keep wall decoration a step clear of bell posts and plinths.
+      else if (t.kind === 'bellPost' || t.kind === 'bell') {
+        const q = bellRect(r, t.at);
+        solids.push({ x: q.x - 1, z: q.z - 1, w: q.w + 2, d: q.d + 2 });
+      }
+    }
     const walls: [string, number, number, number, 'x' | 'z', number][] = [
       [`${r.floor}:x:${r.z}`, r.x, r.x + r.w, r.z + inset, 'x', 0],
       [`${r.floor}:x:${r.z + r.d}`, r.x, r.x + r.w, r.z + r.d - inset, 'x', Math.PI],
@@ -803,6 +831,8 @@ export class DungeonArea implements Area {
     for (const s of this.switches.values()) s.update(dt);
     for (const s of this.stones.values()) s.update(dt);
     for (const c of this.columns.values()) c.update(dt);
+    for (const post of this.bellPosts.values()) post.update(dt);
+    for (const bell of this.bellPickups.values()) bell.update(dt);
     this.heavyGlow.emissive.setRGB(0.1, 0.55 + Math.sin(this.t * 2.4) * 0.2, 0.5 + Math.sin(this.t * 2.4) * 0.18);
     for (const l of this.lights) l.light.intensity = l.base * (0.92 + Math.sin(this.t * 7 + l.phase) * 0.04 + Math.sin(this.t * 13 + l.phase) * 0.03);
   }

@@ -87,6 +87,25 @@ describe('landmark statues', () => {
   });
 });
 
+describe('bell posts and bells', () => {
+  const one = (things: DungeonDef['things']): DungeonDef => ({
+    id: 'b', name: 'b', goal: 'a', entrance: { room: 'a', at: [3, 8], facing: 'n' },
+    rooms: [{ id: 'a', floor: 0, x: 0, z: 0, w: 10, d: 10 }], doors: [], things,
+  });
+  it('accepts a post and a bell, draws them as Y and A, and counts them as content to reach', () => {
+    const d = one([{ kind: 'bellPost', id: 'p', room: 'a', at: [3, 3], bell: 'lull' }, { kind: 'bell', id: 'b', room: 'a', at: [7, 3], bell: 'morrow' }]);
+    expect(validateDungeon(d)).toEqual([]);
+    expect(dungeonMap(d)).toMatch(/Y[^\n]*A/);
+    expect(solveDungeon(d).unreachable).toEqual([]);
+  });
+  it('fails two posts (or two bells) for the same bell', () => {
+    const posts = one([{ kind: 'bellPost', id: 'p', room: 'a', at: [3, 3], bell: 'lull' }, { kind: 'bellPost', id: 'q', room: 'a', at: [7, 3], bell: 'lull' }]);
+    expect(validateDungeon(posts).join()).toContain('Two posts for the bell "lull"');
+    const bells = one([{ kind: 'bell', id: 'p', room: 'a', at: [3, 3], bell: 'morrow' }, { kind: 'bell', id: 'q', room: 'a', at: [7, 3], bell: 'morrow' }]);
+    expect(validateDungeon(bells).join()).toContain('Two bells for the bell "morrow"');
+  });
+});
+
 describe('dungeon solver', () => {
   it('finishes the example dungeon by the intended route, with no softlocks or dead content', () => {
     const r = solveDungeon(EXAMPLE_DUNGEON);

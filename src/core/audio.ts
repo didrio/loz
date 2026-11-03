@@ -168,6 +168,20 @@ export class Sfx {
     this.tone(1318.5, 0.9, 'sine', 0.08, undefined, 0.39);
   }
 
+  /**
+   * A keeper's bell (docs/bells.md): a cast bell's inharmonic partials (hum, prime, minor
+   * tierce, quint, nominal...), the high ones dying first. `gain` < 1 and a `delay` make a
+   * far-off bell answering. The Morrowbell rings A4, the Lullbell the D below it (the
+   * valley's key, a fifth apart).
+   */
+  bell(freq: number, gain = 1, delay = 0) {
+    const partials: [ratio: number, vol: number, dur: number][] = [
+      [0.5, 0.1, 4.5], [1, 0.14, 4], [1.19, 0.07, 2.6], [1.5, 0.05, 2.2], [2, 0.08, 2.4], [2.52, 0.035, 1.4], [3.01, 0.03, 1.1], [4.1, 0.015, 0.7],
+    ];
+    for (const [r, v, d] of partials) this.tone(freq * r, d, 'sine', v * gain, undefined, delay);
+    this.noise(0.05, 4200, 1800, 0.08 * gain, 'bandpass', delay); // the clapper's strike
+  }
+
   /** The "something just changed in the world" chime. */
   solved() {
     [587.33, 739.99, 880, 1174.7, 1480].forEach((f, i) => this.tone(f, 0.5, 'sine', 0.12, undefined, i * 0.1));

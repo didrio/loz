@@ -16,6 +16,7 @@
  */
 
 import type { MusicMood } from '../../core/tracks';
+import type { BellId } from '../bell';
 
 export type Vec2 = readonly [x: number, z: number];
 export type Dir = 'n' | 's' | 'e' | 'w';
@@ -163,7 +164,15 @@ export type ThingDef =
    * square around `at`, solid like a pillar (the grid marks its cells blocked). `facing`
    * is a yaw in radians (0 = looking south, +x = toward east); each style says what it points at.
    */
-  | { kind: 'landmark'; id: string; room: string; at: Vec2; style: LandmarkStyle; facing?: number };
+  | { kind: 'landmark'; id: string; room: string; at: Vec2; style: LandmarkStyle; facing?: number }
+  /**
+   * A keeper's bell post (docs/bells.md): `bell` is the one that fits its hook. Travelers
+   * following a bell's answer arrive in front of it, at an entrance named by its id.
+   * `facing` is its yaw (0 = facing south); default: toward the room's center. Solid.
+   */
+  | { kind: 'bellPost'; id: string; room: string; at: Vec2; bell: BellId; facing?: number }
+  /** A bell waiting at the end of its trial, on a small plinth (solid); Wren takes it. */
+  | { kind: 'bell'; id: string; room: string; at: Vec2; bell: BellId };
 
 /** The shrine's landmark statues: the Nave's, the Long Gallery's and the Crypt's. */
 export type LandmarkStyle = 'lanternKeeper' | 'watcher' | 'fallenKeeper';

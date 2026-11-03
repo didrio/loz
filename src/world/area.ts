@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { RAPIER } from '../core/physics';
 import { Layer, Physics } from '../core/physics';
 import type { MusicMood } from '../core/tracks';
+import type { BellId, BellPost } from './bell';
 import { disposeTree, mergeStatic } from '../render/materials';
 
 /**
@@ -15,6 +16,8 @@ export interface Area {
   readonly spawn: Spot;
   /** Named places to arrive at from elsewhere (e.g. `shrineDoor`: just outside the shrine). */
   readonly entrances?: Record<string, Spot>;
+  /** The keepers' bell posts standing here, by the bell that fits each (docs/bells.md). */
+  readonly bellPosts?: ReadonlyMap<BellId, BellPost>;
   /** Water surface height, if the area has water (for wading). */
   readonly waterLevel: number | null;
   readonly interactables: Interactable[];

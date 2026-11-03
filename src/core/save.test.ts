@@ -101,6 +101,32 @@ describe('save files', () => {
     expect([...s.items]).toEqual(['tether']);
   });
 
+  it('round-trips the bells (v6): carried and hung', () => {
+    const s = new GameState();
+    s.bells.carried.add('lull');
+    s.bells.hung.add('morrow');
+    const loaded = new GameState();
+    loaded.load(decodeSave(JSON.stringify(s.toSave()))!);
+    expect([...loaded.bells.carried]).toEqual(['lull']);
+    expect([...loaded.bells.hung]).toEqual(['morrow']);
+  });
+
+  it('migrates a v5 save: flasks kept, no bells', () => {
+    const d = decodeSave(JSON.stringify({ version: 5, flags: [], flasks: ['life', null] }))!;
+    expect(d.version).toBe(SAVE_VERSION);
+    expect(d.flasks).toEqual(['life', null]);
+    expect(d.bells).toEqual({ carried: [], hung: [] });
+  });
+
+  it('drops unknown bells, and a hung bell is never also carried', () => {
+    const d = decodeSave(JSON.stringify({ version: SAVE_VERSION, flags: [], bells: { carried: ['morrow', 'lull', 7, 'nope'], hung: ['lull', 'nope'] } }))!;
+    const s = new GameState();
+    s.load(d);
+    expect([...s.bells.carried]).toEqual(['morrow']);
+    expect([...s.bells.hung]).toEqual(['lull']);
+    expect(decodeSave(JSON.stringify({ version: SAVE_VERSION, flags: [], bells: 'lots' }))!.bells).toEqual({ carried: [], hung: [] });
+  });
+
   it('always continues with at least three hearts', () => {
     const s = new GameState();
     s.load({ ...new GameState().toSave(), hp: 1 });

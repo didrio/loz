@@ -36,6 +36,13 @@ describe('landmark statues in the grid', () => {
     const d = box([{ kind: 'landmark', id: 'm', room: 'a', at: [5, 5], style: 'watcher' }]);
     expect(roomGrid(d, d.rooms[0]).blocked[2][2]).toBe(true);
   });
+
+  it('bell posts and bells block their cell too (a stone stops against one)', () => {
+    const d = box([{ kind: 'bellPost', id: 'p', room: 'a', at: [5, 5], bell: 'lull' }, { kind: 'bell', id: 'b', room: 'a', at: [1, 1], bell: 'morrow' }]);
+    const g = roomGrid(d, d.rooms[0]);
+    expect([g.blocked[2][2], g.blocked[0][0], g.blocked[1][2]]).toEqual([true, true, false]);
+    expect(roomGrid(SHRINE, room('entry')).blocked[5][4]).toBe(true); // the Lullbell's post at (10, 9)
+  });
 });
 
 describe('wakestone puzzles', () => {

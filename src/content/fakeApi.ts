@@ -21,6 +21,9 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
   /** Answers `ask` will give, in order (default: the first option). */
   const answers: number[] = [];
   const asked: { pages: Page[]; options: string[] }[] = [];
+  /** Answers `choose` will give, in order (default: null, backing out). */
+  const choices: (number | null)[] = [];
+  const chosen: { title: string; options: string[] }[] = [];
   const travels: { area: AreaId; entrance?: string }[] = [];
   /** Every `silenceMusic` call, in order. */
   const music: boolean[] = [];
@@ -46,6 +49,10 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
       asked.push({ pages, options });
       return answers.shift() ?? 0;
     },
+    choose: async (title, options) => {
+      chosen.push({ title, options });
+      return choices.length ? choices.shift()! : null;
+    },
     wait: async () => {},
     until: async () => {},
     fade: async () => {},
@@ -67,5 +74,5 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
   const runQueued = async () => {
     while (queued.length) await queued.shift()!(api);
   };
-  return { api, answers, asked, said, state, queued, runQueued, enemies, travels, player, pushes, music, toasts };
+  return { api, answers, asked, choices, chosen, said, state, queued, runQueued, enemies, travels, player, pushes, music, toasts };
 }

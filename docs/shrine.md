@@ -192,8 +192,8 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
 6. **Gravelheart**: rig, moves, phases, arena tiles, intro and defeat cutscenes, music
    (a boss theme of its own), tests.
 7. **The Northpass**: the new road, the cut, the heavy stone, the sign and dialog, the
-   lake grotto (minding the seeded-scenery rules; do the per-region seeds scaling item
-   here).
+   lake grotto (minding the seeded-scenery rules; the per-region seeds scaling item is done
+   first by the bells' Hushing Gorge, see [bells.md](bells.md)).
 8. **Polish**: decoration passes, smoke scenarios for the dungeon. (Dungeon music is done:
    "The Sleeping Stones".) **No map or compass** (owner's call, 2026-11-02): those chests hold
    the flasks instead.

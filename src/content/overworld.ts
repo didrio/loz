@@ -7,6 +7,7 @@ import { glow } from '../render/shapes';
 import type { Overworld } from '../world/overworld';
 import { HOLLOW, HOLLOW_ENTRANCE } from '../world/overworld/layout';
 import { POTIONS, REFILL_PRICE, type Potion } from '../game/flasks';
+import { bellContent } from './bells';
 import { offerWares, type Ware } from './shop';
 
 /** What a loaded area needs from content: scripts by interactable/trigger id, and save restore. */
@@ -56,6 +57,7 @@ function arc(a: THREE.Vector3, mid: THREE.Vector3, b: THREE.Vector3, t: number) 
 
 export function overworldContent(ow: Overworld): AreaContent {
   let lamplighter: HollowLamplighter | null = null;
+  const bells = bellContent({ 'bellPost.morrow': ow.morrowPost });
 
   /** Waking the Lamplighter: the ring of cold fire seals the hollow, and it turns around. */
   const lamplighterWakes: Script = async (api) => {
@@ -167,6 +169,12 @@ export function overworldContent(ow: Overworld): AreaContent {
     async 'npc.maren'(api) {
       const { state } = api;
       const who = 'Maren';
+      // Once, after the Morrowbell is back on its post (it's the freshest news in the village).
+      if (state.has('gotGroveKey') && state.bells.hung.has('morrow') && !state.has('village.marenBell')) {
+        state.set('village.marenBell');
+        await api.say([{ who, text: 'That bell on the square... My mother said the shrine\'s keepers rang it every dawn, and the whole valley got up with it. I never thought I\'d hear it myself.' }]);
+        return;
+      }
       if (!state.has('gotGroveKey')) {
         await api.say([
           { who, text: 'Wren! You\'re up at last. Did you see the shrine? The lantern on the eastern hill went dark last night. It has burned there since my grandmother\'s grandmother, and now the thornlings are all over Emberfield.' },
@@ -224,6 +232,10 @@ export function overworldContent(ow: Overworld): AreaContent {
             'Nights feel longer since the lantern went out. Or maybe I\'m just getting old.']
           : ['The mill doesn\'t need wind, you know. It turns because it\'s always turned. Don\'t ask me how.',
             'Cut the bushes around the fence if you need gems. They grow back. Everything here grows back. Except my hair.'];
+      }
+      if (state.bells.hung.has('morrow') && !state.has('village.tobinBell')) {
+        state.set('village.tobinBell');
+        lines = ['Heard that bell ring out over the square. Haven\'t heard it since I was a boy. I thought it was a story my father made up to get me out of bed.'];
       }
       await api.say(lines.map((text) => ({ who, text })));
       // Once Wren is armed, Tobin trusts them with the mill (whichever thing he talked about).
@@ -327,6 +339,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       await api.travel('shrine');
     },
 
+    ...bells.scripts,
     'sign.crossroads': say('NORTHWEST: Thistledown Village\nNORTHEAST: The Whispering Grove\nEAST: The Waking Shrine\nSOUTH: over the bridge to the Gloaming Hollow\nSOUTHWEST: Glimmer Lake'),
     'sign.hollow': say('GLOAMING HOLLOW\n"Here ends the lamplighter\'s road. Lamps lit at dusk, snuffed at dawn."\nUnderneath, scratched in fresh and shaky: *TURN BACK*'),
     async 'trigger.hollow'(api) {
@@ -354,6 +367,7 @@ export function overworldContent(ow: Overworld): AreaContent {
   return {
     scripts,
     restore(state) {
+      bells.restore(state);
       if (state.has('groveChestOpened')) ow.chest.open(true);
       if (state.has('shrineOpen')) ow.door.setOpen();
       if (state.has('lamplighterDefeated')) {

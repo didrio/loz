@@ -43,6 +43,20 @@ recheck old text against them when you touch it.
   black trees and old iron lamp posts, with ash drifting up. Sign: "Here ends the
   lamplighter's road." The arena of the first mini-boss.
 
+- **The Hushing Gorge** (working name; bells milestone 3): a narrow cut in the western cliffs
+  between Thistledown and Glimmer Lake, where the keepers hid the Morrowbell.
+
+## The keepers' bells
+
+While the great lantern burned, the shrine's keepers rang its hours from bells on crooked posts
+around the valley, all cast from one bronze warmed at the lantern's flame, so each answers the
+others (and a keeper could follow the answer from post to post: fast travel). Each bell is named
+for the hour it rang: the **Morrowbell** rang the dawn and Thistledown woke to it (its post is on
+the square); the **Lullbell** rang dusk to tell the shrine's stones to sleep (its post is in the
+Hall of Sleepers). When the flame was stolen the keepers hid the bells where a thief would
+struggle to reach them, at the end of climbs. Later bells take other hours. Details and rules:
+[bells.md](bells.md).
+
 ## Story
 
 - The lantern atop the shrine went dark; thornlings appeared in the field. The pedestal

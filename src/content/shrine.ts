@@ -6,6 +6,7 @@ import type { Script, ScriptApi } from '../game/script';
 import type { DungeonProgress, GameState } from '../game/state';
 import type { DungeonArea } from '../world/dungeon/build';
 import { floorY, keyName, lockSwitches, type Condition, type Loot, type Potion } from '../world/dungeon/format';
+import { bellContent } from './bells';
 import type { AreaContent } from './overworld';
 
 /**
@@ -77,11 +78,13 @@ export function shrineContent(area: DungeonArea): AreaContent {
     return `You found ${loot.gems} gems!`;
   };
 
+  const bells = bellContent(Object.fromEntries(area.bellPostsById), Object.fromEntries(area.bellPickups));
   const scripts: Record<string, Script> = {
     // Leaving: the entrance is always open.
     async exit(api) {
       await api.travel('overworld', 'shrineDoor');
     },
+    ...bells.scripts,
   };
 
   for (const t of def.things) {
@@ -175,6 +178,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
     scripts,
 
     restore(state) {
+      bells.restore(state);
       const p = progress(state);
       for (const id of p.doors) area.doors.get(id)?.setOpen();
       for (const id of p.switches) {

@@ -209,6 +209,16 @@ export function validateDungeon(def: DungeonDef): string[] {
     }
   }
 
+  // A bell has one post and one resting place in the whole game; a dungeon can't hold two.
+  for (const kind of ['bellPost', 'bell'] as const) {
+    const seen = new Set<string>();
+    for (const t of def.things) {
+      if (t.kind !== kind) continue;
+      if (seen.has(t.bell)) errors.push(`Two ${kind === 'bell' ? 'bells' : 'posts'} for the bell "${t.bell}"`);
+      seen.add(t.bell);
+    }
+  }
+
   // Colored keys: one chest and one door per color, so a key can never be spare or missing.
   const keyColors = new Set<string>([
     ...def.doors.flatMap((d) => (d.lock && typeof d.lock === 'object' && 'key' in d.lock ? [d.lock.key] : [])),

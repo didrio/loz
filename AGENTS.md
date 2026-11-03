@@ -19,13 +19,14 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-02: Emberfield (the valley) plays start to finish: the Hollow Lamplighter (night
+As of 2026-11-03: Emberfield (the valley) plays start to finish: the Hollow Lamplighter (night
 only), the quest thread, all music, and the village (Tobin's mill with a bed; Odo sells the
 Stoneward Tunic and refills flasks). **The Waking Shrine** (25 rooms, four wings) is playable up
-to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done), with the game's two
-flasks in it. A dev menu (~ / L3; dev and Pages builds) has sprint, invincibility and four save
-states. Enemy feel and the gem economy are untuned until played. **Next: shrine milestone
-6** (Gravelheart and its music; plan mode), then 7 (the Northpass), 8 (polish).
+to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). **Bells** (bonfires
+with fast travel, [docs/bells.md](docs/bells.md)): posts, hanging, ringing and the travel menu
+work (milestone 1); the bells themselves come from dev states until their trials exist. A dev
+menu (~ / L3) has sprint, invincibility and seven save states. **Next: bells milestone 2**
+(platforming base), 3 (the two trials), then shrine milestone 6 (Gravelheart; plan mode).
 
 ## Docs: read the one for the area you're touching
 
@@ -36,6 +37,7 @@ states. Enemy feel and the gem economy are untuned until played. **Next: shrine 
 | [docs/combat.md](docs/combat.md) | touching the sword, shield/guard, enemies, hazards or bosses (incl. boss fairness rules) |
 | [docs/dungeons.md](docs/dungeons.md) | designing or building a dungeon (the data format, solver, text map) |
 | [docs/shrine.md](docs/shrine.md) | working on the first dungeon: its design, item, enemies, boss, the Northpass gate, build plan |
+| [docs/bells.md](docs/bells.md) | bell posts (bonfires), fast travel, bell trials and platforming: lore, rules, the recipe for a new bell site, build plan |
 | [docs/world.md](docs/world.md) | writing dialog, quests, places, characters (world bible and the quest thread) |
 | [docs/audio.md](docs/audio.md) | touching sound effects or music |
 | [docs/testing.md](docs/testing.md) | verifying anything: smoke, look scenes, unit test patterns, debug tools |
@@ -128,6 +130,7 @@ src/
   render/                  materials (shared/unique, static merging), shapes, characters, sky, particles
   world/
     interior.ts            MillInterior: Tobin's mill (a one-room indoor area)
+    bell.ts                the keepers' bells: BELL_IDS, BellPost (hang, ring), BellPickup (looks only)
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
     overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, index (Overworld)
@@ -140,6 +143,7 @@ src/
     game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
     combat.ts, title.ts    lock-on, glove throw, hit feedback both ways, hit-stop; the title menu
     menu.ts, devMenu.ts    MenuStack (reusable menus: rows, submenus, toggles); the dev menu (~ / L3)
+    menuDriver.ts          MenuDriver (input → MenuStack → HUD, shared) and ChoiceMenu (api.choose)
     script.ts              ScriptApi + Script + Page (the contract content uses)
     player.ts, guard.ts    Wren (movement, sword, shield, stagger); the shield's guard
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
@@ -153,8 +157,9 @@ src/
     areas.ts               createArea(id): builds an area and binds its content
     overworld.ts           scripts for every overworld interactable/trigger, save restore
     mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
+    bells.ts               the bell registry (BELLS) and scripts: check, hang, ring, travel, take
     shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
-    devStates.ts           dev-menu save states (new game, night by the Hollow, shrine start, boss door)
+    devStates.ts           dev-menu save states (new game, night by the Hollow, shrine, boss door, bells)
     fakeApi.ts             the fake ScriptApi content tests run against
     story.ts               intro, death
   ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, interact prompt, dialog, cards, title menu
@@ -162,8 +167,7 @@ scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers
   map.mjs                  text map + problems for a dungeon (npm run map -- <id>)
 docs/                      topic docs (table above)
-CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/ (scout, looker, builder,
-                           architect), skills/ (/start, /wrap), settings.json
+CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/, skills/ (/start, /wrap)
 ```
 
 ## Commands
@@ -184,8 +188,8 @@ CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/ (scout,
   with at least 3 hearts.
 - **The checkpoint rule** (a Souls-leaning choice, owner's call): dying sends Wren back to the
   area's start with full hearts; keys, items, opened chests and doors, pressed switches stay,
-  but every enemy respawns. Flasks don't refill (only Odo fills them, for gems). Shortcuts matter because of it.
-  Rooms stay cleared (their chests stay revealed).
+  but every enemy respawns. Flasks don't refill (only Odo fills them, for gems). Shortcuts
+  matter because of it. Rooms stay cleared (their chests stay revealed).
 - No map or compass (owner's call): dungeon chests hold keys, items, flasks (`game/flasks.ts`)
   and gems instead. Max hearts grow only from bosses (no heart chests in dungeons). Every interactable thing must serve
   a purpose (the puzzle checker fails a stone that doesn't).
@@ -193,14 +197,13 @@ CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/ (scout,
   entrance is an open doorway you can walk out of any time (owner's call, 2026-11-02; no
   fight-room shutters either). Progress gates are items and keys, e.g. the glove for the Northpass.
 - Gamepad A doubles as interact and jump (context action button).
+- **Bells** (the bonfires, owner's design): travel only, never healing (only a bed rests);
+  each waits at the end of a platforming trial, where falls cost nothing.
 - Enemies and the clock freeze during dialog and cutscenes; the clock also stands still indoors.
 - The Hollow Lamplighter only appears at night (so its fight and theme are always night ones).
 - The valley's songs share one tune (the day theme's motif; night reharmonizes it darker,
-  the village plays it honky-tonk; see [docs/audio.md](docs/audio.md)). The owner retired
-  the old Gmaj7 → Dmaj7 rule on 2026-11-02. Death silences the music and fades to black before the
-  respawn, so it feels like a game over, not a teleport.
-- No instrument/song mechanic. Progress gates are keys, items and boss outcomes; the
-  shrine opens only after the Lamplighter falls.
+  the village plays it honky-tonk; see [docs/audio.md](docs/audio.md)). Death silences the
+  music and fades to black before the respawn, so it feels like a game over, not a teleport.
 - **One defensive system: the shield's guard.** No dodge roll, no stamina. Guard recovers
   only with the shield lowered; a guard break stops the hit but staggers Wren for 2 s.
 - Bosses share one move system (windup/active/recover) with fairness rules; weak points

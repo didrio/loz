@@ -1,4 +1,5 @@
 import { SAVE_VERSION, type DungeonSave, type SaveData } from '../core/save';
+import { isBellId, type BellId } from '../world/bell';
 import { KEY_COLORS, type KeyColor } from '../world/dungeon/format';
 import { Flasks } from './flasks';
 
@@ -6,7 +7,7 @@ import { Flasks } from './flasks';
  * Quest progress flags. Add new ones here (they're saved by name). Keep names stable once
  * shipped: renaming one would silently drop it from existing saves.
  */
-export const FLAGS = ['metMaren', 'hasSword', 'groveChestOpened', 'shrineOpen', 'lamplighterDefeated', 'hollowVessel', 'gotGroveKey', 'village.millKey', 'village.stonewardTunic'] as const;
+export const FLAGS = ['metMaren', 'hasSword', 'groveChestOpened', 'shrineOpen', 'lamplighterDefeated', 'hollowVessel', 'gotGroveKey', 'village.millKey', 'village.stonewardTunic', 'village.marenBell', 'village.tobinBell'] as const;
 export type Flag = (typeof FLAGS)[number];
 
 /** Items Wren can carry (the dungeon tools). Saved by id; unknown ids are dropped on load. */
@@ -65,6 +66,12 @@ export class GameState {
   readonly dungeons = new Map<string, DungeonProgress>();
   /** Flasks found in chests: emptied by drinking, refilled only at Odo's stall. */
   readonly flasks = new Flasks();
+  /**
+   * The keepers' bells (docs/bells.md): found at the end of a trial (`carried`, no HUD),
+   * then hung on their own post (`hung`, and no longer carried). Two or more hung bells
+   * answer each other: ringing one offers to travel to the others.
+   */
+  readonly bells = { carried: new Set<BellId>(), hung: new Set<BellId>() };
   gems = 0;
   maxHp = 6;
   hp = 6;
@@ -131,6 +138,8 @@ export class GameState {
     this.items.clear();
     this.dungeons.clear();
     this.flasks.clear();
+    this.bells.carried.clear();
+    this.bells.hung.clear();
     this.gems = 0;
     this.maxHp = this.hp = 6;
     this.hours = 9;
@@ -146,6 +155,7 @@ export class GameState {
       items: [...this.items],
       dungeons: Object.fromEntries([...this.dungeons].map(([id, d]) => [id, d.toSave()])),
       flasks: this.flasks.toSave(),
+      bells: { carried: [...this.bells.carried], hung: [...this.bells.hung] },
       gems: this.gems,
       hp: this.hp,
       maxHp: this.maxHp,
@@ -155,7 +165,7 @@ export class GameState {
     };
   }
 
-  /** Restores from a (validated) save. Unknown flags are dropped. */
+  /** Restores from a (validated) save. Unknown flags, items and bells are dropped. */
   load(d: SaveData) {
     this.reset();
     for (const f of d.flags) if ((FLAGS as readonly string[]).includes(f)) this.flags.add(f as Flag);
@@ -164,6 +174,9 @@ export class GameState {
     for (const i of d.items) if ((ITEMS as readonly string[]).includes(i)) this.items.add(i as Item);
     for (const [id, ds] of Object.entries(d.dungeons)) this.dungeons.set(id, DungeonProgress.from(ds));
     this.flasks.load(d.flasks);
+    for (const id of d.bells.hung) if (isBellId(id)) this.bells.hung.add(id);
+    // A hung bell isn't carried any more (a hand-edited save could say both).
+    for (const id of d.bells.carried) if (isBellId(id) && !this.bells.hung.has(id)) this.bells.carried.add(id);
     this.gems = d.gems;
     this.maxHp = d.maxHp;
     // Like the classics: you always continue with at least three hearts.

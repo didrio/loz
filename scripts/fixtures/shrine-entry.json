@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "flags": ["metMaren", "gotGroveKey", "groveChestOpened", "hasSword", "lamplighterDefeated", "hollowVessel", "shrineOpen"],
   "keys": 0,
   "area": "shrine",
@@ -8,6 +8,7 @@
     "shrine": { "keys": [], "bossKey": false, "doors": [], "chests": [], "switches": [], "cleared": [], "done": false }
   },
   "flasks": [],
+  "bells": { "carried": [], "hung": [] },
   "gems": 0,
   "hp": 8,
   "maxHp": 8,

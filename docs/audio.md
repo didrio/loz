@@ -6,6 +6,14 @@ Sound effects are small functions in `core/audio.ts` (`Sfx`); background music i
 played by `core/synth.ts`. An agent can't hear any of it: render to WAV, measure levels,
 and ask the owner to listen.
 
+**The keepers' bells** (`Sfx.bell(freq, gain, delay)`, [bells.md](bells.md)): a cast bell
+from sine partials at bell ratios (hum 0.5, prime 1, minor tierce 1.19, quint 1.5, nominal 2,
+then 2.52, 3.01, 4.1), the high ones dying first (4.5 s down to 0.7 s), plus a short noise tick
+for the clapper. The Morrowbell rings A4 (440 Hz), the Lullbell D4 (293.66 Hz): a fifth apart in
+the valley's key, so two bells answering each other sound like the day tune's opening fourth
+turned around. A far bell answering is the same call at `gain` 0.3 with a delay. Not yet heard
+by the owner.
+
 ## Music (`core/music.ts`, `core/synth.ts`, `core/tracks.ts`)
 
 Songs are written as data, like an arrangement in a DAW: **sections** (intro, A, A', B...)

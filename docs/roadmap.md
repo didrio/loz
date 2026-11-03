@@ -16,6 +16,10 @@ Next, in order:
 
 0. ~~The owner's playtest tweaks A–G (2026-11-02)~~ done. Untested by play: the gem economy
    (95 in the shrine plus bushes, against the 100-gem tunic and 20 per flask refill).
+0.5. **Bells: bell posts, fast travel, bell trials** (owner's request, 2026-11-02, before the
+   shrine's boss). Milestone 1 (bells, posts, the travel menu) done 2026-11-03; **next is
+   milestone 2** (platforming base), then 3 (the Hushing Gorge and the Bell Shaft). See
+   [bells.md](bells.md).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **next is milestone 6** (Gravelheart and its theme), then the
    **Northpass** valley exit the glove opens (7), polish (8).
@@ -82,10 +86,15 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 - [ ] **Per-region scenery seeds**: each overworld region gets its own RNG so adding or
   changing one region can't reshuffle another (today one seeded stream covers the whole
   valley; see Conventions in [engine.md](engine.md)). *Trigger: the next new overworld
-  region or a scenery change outside the hollow.*
+  region or a scenery change outside the hollow.* **Fires with the Hushing Gorge (bells
+  milestone 3):** plan there is a `regionRng(name)` helper for the hollow and the gorge, with the
+  valley keeping its 1337 stream (no reshuffle); then narrow this item's trigger to "a change to
+  the valley's own scenery".
 - [ ] **Visual level editor (maybe)**: if authoring dungeons as data + text map + top-down
   renders proves slow or error-prone, build a small in-browser editor that edits the same
   data format. *Trigger: evaluate after the first dungeon; decide with the owner.*
+- [ ] **The travel menu at scale**: group bells by region, mark where Wren is, maybe a
+  little map of the valley. *Trigger: more than ~8 bells.*
 - [ ] **Quest/flag overview**: a generated list of every flag, who sets it and who reads
   it, so quest logic stays understandable across many areas. *Trigger: ~30+ flags.*
 - [ ] **Docs hygiene**: if a topic doc passes ~400 lines, split it. *Trigger: as stated.*

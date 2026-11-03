@@ -110,6 +110,8 @@ export const SHRINE: DungeonDef = {
     // ── Hall of Sleepers: teach. A stone fills the doorway; one strike from the side clears it.
     { kind: 'sign', id: 'entrySign', room: 'entry', at: [4, 2], text: 'Sleep, stones, while the lantern burns. Wake, and keep the way.' },
     { kind: 'stone', id: 'entryStone', room: 'entry', at: [13, 7] },
+    // The Lullbell's post, in view as you come in; the bell itself waits by the boss door (docs/bells.md).
+    { kind: 'bellPost', id: 'lullPost', room: 'entry', at: [10, 9], bell: 'lull' },
     // ── The Nave: test. Slide the stone onto the plate (with thornlings about) to open the stairwell.
     { kind: 'enemy', id: 'naveThorn1', room: 'nave', at: [4, 8], type: 'thornling' },
     { kind: 'enemy', id: 'naveThorn2', room: 'nave', at: [12, 14], type: 'thornling' },

@@ -302,6 +302,60 @@ const SCENES = {
     await h.wait(600);
     await h.shot('entrance-threshold');
   },
+  /** The keepers' bell posts (docs/bells.md): empty, hung, ringing; the travel menu; the shrine's post in its hall. */
+  async bells(h) {
+    /** Camera in front of a post and off to one side, looking at its hook. */
+    const closeUp = (bell, dist = 4.2, side = 1.6) =>
+      h.game(([bell, dist, side]) => {
+        const g = window.embervale;
+        const post = g.area.bellPosts.get(bell);
+        const at = post.bellWorld();
+        const T = at.constructor;
+        const out = new T(post.front.x - post.x, 0, post.front.z - post.z).normalize();
+        g.rig.shot(new T(at.x + out.x * dist - out.z * side, at.y + 0.6, at.z + out.z * dist + out.x * side), at, true);
+      }, [bell, dist, side]);
+    await h.newGame();
+    const p = await h.game(() => {
+      const post = window.embervale.area.bellPosts.get('morrow');
+      return { x: post.x, z: post.z, fx: post.front.x, fz: post.front.z };
+    });
+    // From the well's side of the square, facing the post.
+    const dx = p.fx - p.x, dz = p.fz - p.z, len = Math.hypot(dx, dz);
+    await h.teleport(p.x + (dx / len) * 6, p.z + (dz / len) * 6, Math.atan2(-dx, -dz));
+    await h.wait(1200);
+    await h.shot('village-empty');
+    await closeUp('morrow');
+    await h.wait(500);
+    await h.shot('village-empty-close');
+    await h.game(() => window.embervale.area.bellPosts.get('morrow').setHung());
+    await h.wait(400);
+    await h.shot('village-hung');
+    await h.game(() => window.embervale.area.bellPosts.get('morrow').ring());
+    await h.wait(450);
+    await h.shot('village-ringing');
+    await h.game(() => void window.embervale.choose('Follow the answer', ['Hall of Sleepers', 'Stay'])); // never answered: just drawn
+    await h.wait(300);
+    await h.shot('menu');
+    await h.game(() => window.embervale.choice.driver.close());
+
+    await h.game(() => {
+      const g = window.embervale;
+      g.rig.release();
+      g.loadArea('shrine');
+    });
+    await h.wait(1200);
+    await h.shot('shrine-entry');
+    await closeUp('lull', 4.6, 1.8);
+    await h.wait(500);
+    await h.shot('shrine-empty-close');
+    await h.game(() => {
+      const post = window.embervale.area.bellPosts.get('lull');
+      post.setHung();
+      post.ring();
+    });
+    await h.wait(450);
+    await h.shot('shrine-ringing');
+  },
   /** A chest with its lid open: the underside of the lid must be solid. */
   async chestOpen(h) {
     await h.newGame();

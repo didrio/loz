@@ -23,7 +23,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   end, before a commit, or after shared systems (player, physics, camera, saves, game.ts)
   changed, asking the owner first. CI runs everything on every push anyway.
 - `npm run look -- <scenes>` (`--list` for names: title, field, village, mill, grove, chest,
-  door, dungeon, camera, glove, landmarks, shrine, enemies, hollow, night, guard, shield, orbs, boss, boss-moves): captures named scenes to
+  door, dungeon, camera, glove, landmarks, bells, shrine, enemies, hollow, night, guard, shield, orbs, boss, boss-moves): captures named scenes to
   `look-output/` for you to inspect. Boss scenes slow time, make Wren invulnerable, park
   the camera and force moves. Add a scene when you add a place, a boss or a visual system.
 - Both scripts share `scripts/browser.mjs` (dev server, Chrome, `newGame`, `teleport`,
@@ -52,6 +52,7 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | `shrine-enemies` | `shrine-entry` | sentinels and shellbacks spawn from the data; a sentinel sleeps, wakes, swings (2 half-hearts), falls to hits in its recovery and from behind; a shellback's shell turns a frontal hit, it falls from behind |
 | `dev-menu` | `field-sword` | ~ opens and pauses, toggles stay open, Backspace goes back/closes, loading the boss-door and night states by keyboard and mouse |
 | `village` | `field-sword` | Tobin's mill key, the mill door, sleeping (heals, clock to 18:00), the way out, buying Odo's Stoneward Tunic |
+| `bells` | `field-sword` | the empty Thistledown post, hanging the Morrowbell (nothing answers), the travel menu to the shrine's post and back, Stay, hearts unchanged |
 
 **Fixtures** are real saves in `scripts/fixtures/<name>.json` (current `SAVE_VERSION`).
 `openGame(env, dir, { fixture })` plants the file in the page's localStorage before the game
@@ -95,6 +96,9 @@ Tests live next to their modules (`*.test.ts`).
   shrine; no noticing through walls; the leash; dungeon-room territory).
   `game/lockon.test.ts`: lock-on skips enemies on other floors and behind walls.
 - `core/music.test.ts` checks that every theme compiles (bars add up, sensible loop).
+- `content/bells.test.ts`: every bell has one post and an arrival entrance; the empty post's
+  lines; hanging the first bell (no answer) and the second (answer, menu, travel); Stay and
+  backing out; hearts never change; taking a bell. `game/menuDriver.test.ts`: `ChoiceMenu`.
 
 ## Debugging in the browser
 

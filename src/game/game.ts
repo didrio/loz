@@ -17,6 +17,7 @@ import { CameraRig } from './camera';
 import { Combat } from './combat';
 import { Debug } from './debug';
 import { DevMenu } from './devMenu';
+import { ChoiceMenu } from './menuDriver';
 import { Dialog } from './dialog';
 import { EnemyManager, type Enemy } from './enemies';
 import { Hazards } from './hazards';
@@ -75,6 +76,8 @@ export class Game implements ScriptApi {
   private autosaveT = AUTOSAVE_SECONDS;
   private readonly title: TitleMenu;
   readonly devMenu: DevMenu;
+  /** Script menus (`choose`): the bells' travel menu. */
+  private readonly choice: ChoiceMenu;
   /** Slow motion for cutscenes (1 = normal). */
   private timeScale = 1;
   /** The music is off (Wren just died). */
@@ -112,6 +115,11 @@ export class Game implements ScriptApi {
     document.addEventListener('visibilitychange', () => document.hidden && this.save());
     this.debug = new URLSearchParams(location.search).has('debug') ? new Debug(this) : null;
     this.devMenu = new DevMenu(this, () => !!(import.meta.env.DEV || import.meta.env.VITE_DEV_SPRINT || this.debug));
+    this.choice = new ChoiceMenu(this);
+    // The mouse works whichever menu is open.
+    const openMenu = () => (this.devMenu.isOpen ? this.devMenu.menu : this.choice.isOpen ? this.choice.driver : null);
+    this.hud.onMenuHover = (i) => openMenu()?.hover(i);
+    this.hud.onMenuClick = (i) => openMenu()?.click(i);
   }
 
   start() {
@@ -187,7 +195,8 @@ export class Game implements ScriptApi {
         if (this.warpTo !== null) this.advanceClock(dt); // sleeping: a script warps the clock
         this.player.update(dt, NO_CONTROLS, this.combat.playerEnv);
         this.enemies.update(dt, this.combat.enemyEnv, true);
-        this.dialog.update(this.input.pressed('confirm'), this.menuStep());
+        if (this.choice.isOpen) this.choice.update();
+        else this.dialog.update(this.input.pressed('confirm'), this.menuStep());
         break;
     }
 
@@ -431,6 +440,10 @@ export class Game implements ScriptApi {
 
   ask(pages: Page[], options: string[]) {
     return this.dialog.show(pages, options);
+  }
+
+  choose(title: string, options: string[]) {
+    return this.choice.ask(title, options);
   }
 
   wait(seconds: number) {
