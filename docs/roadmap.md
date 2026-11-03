@@ -20,8 +20,11 @@ Next, in order:
    shrine's boss). Done: bells, posts and the travel menu, the platforming base, both trials (the Bell Shaft,
    the Hushing Gorge; the latter awaits the owner's play). See [bells.md](bells.md).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
-   in [shrine.md](shrine.md)); **next is milestone 6** (Gravelheart and its theme), then the
-   **Northpass** valley exit the glove opens (7), polish (8).
+   in [shrine.md](shrine.md)); **milestone 6** (Gravelheart) is in its last part, **6D+**
+   (owner's redesign, 2026-11-03, replacing the old glove-stone Northpass): beating the boss opens a
+   hidden room whose seal-stone breaks the magic gate at the valley's north edge; beyond it, the
+   Northpass (streamed in, one continuous world), the Cragstalker, a third bell and a camp. Three
+   sessions, **D1 (done, unplayed), D2, D3**, in [shrine.md](shrine.md) "Build plan". Then polish (8).
 2. **Pause menu** (build it on `MenuStack`, `game/menu.ts`): inventory, settings (mouse sensitivity, invert Y, volumes). (No dungeon
    map or compass by design.)
 3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later.
@@ -71,6 +74,15 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   scenarios in parallel pages, each from a save fixture (`scripts/fixtures/`, validated by a
   unit test). See [testing.md](testing.md). Add shrine/enemy steps as scenarios.
 
+### Triggered by the Northpass (shrine milestone 6D+)
+
+- [ ] **Overworld streaming (regions)**: the overworld stays one area (owner's call, 2026-11-03: one
+  continuous world, no loading between field regions; dungeons and interiors still load). The valley
+  stays loaded; other regions (first: the Northpass and its camp) build when Wren is within ~70 m of
+  their bounds and dispose past ~110 m. Each region has its own `AreaBuilder`, seed, terrain chunk
+  (same `terrainHeight`, same 2 m grid, so seams match), interactables, bell posts and entrances;
+  `Area.streamAt(x, z)` loads synchronously before anything places Wren. *Do it in session D2.*
+
 ### Later triggers
 
 - [ ] **Split `game/game.ts` again** if it grows back: next out would be areas/transitions
@@ -100,6 +112,9 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 - [ ] **Docs hygiene**: if a topic doc passes ~400 lines, split it. *Trigger: as stated.*
 
 ## Known quirks and tech debt
+
+- (Once regions exist, D2.) A streamed region builds in one frame: a hitch at the streaming point.
+  Spread the build over frames when regions get big.
 
 - Two roads ford ponds: the grove road (11 m of road, ≤ 0.44 m deep) and the shrine road
   (14 m, ≤ 1.03 m). Walkable since there's no swimming; revisit when swimming lands.

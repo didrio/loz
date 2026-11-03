@@ -19,6 +19,11 @@ export const STALL = { x: VILLAGE.x - 5.4, z: VILLAGE.z - 4 };
 export const GROVE = { x: 82, z: -78 };
 export const SHRINE = { x: 108, z: 28 };
 export const LAKE = { x: -100, z: 100 };
+/**
+ * The magic gate at the valley's north edge, at the mouth of the Northpass (shrine session D1; the pass
+ * itself is carved in D2). The arch faces south; `halfOpening` is half the width of the cut it closes.
+ */
+export const GATE = { x: 8, z: -121, halfOpening: 4.2 };
 /** Gloaming Hollow: a sunken clearing at the end of the south road, the Lamplighter's arena. */
 export const HOLLOW = { x: -23, z: 127, r: 15, floor: 0.6 };
 
@@ -167,6 +172,11 @@ export function terrainHeight(x: number, z: number) {
 /** True within `margin` meters of the hollow's edge (or inside it). */
 export function inHollow(x: number, z: number, margin = 0) {
   return Math.hypot(x - HOLLOW.x, z - HOLLOW.z) < HOLLOW.r + margin;
+}
+
+/** True within `margin` meters of the gate's arch and the ground just before it (scenery stays clear). */
+export function inGate(x: number, z: number, margin = 0) {
+  return Math.abs(x - GATE.x) < GATE.halfOpening + 3 + margin && Math.abs(z - GATE.z) < 7 + margin;
 }
 
 /** Which named place a point is in (shown as a title when you walk in). */

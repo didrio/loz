@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { clamp, damp } from '../../../core/math';
+import type { MusicMood } from '../../../core/tracks';
 import { uniqueMat } from '../../../render/materials';
 import type { Physics } from '../../../core/physics';
 import type { WardenHearth } from '../../../world/dungeon/hearth';
@@ -27,6 +28,7 @@ const RUBBLE_LIFE = 7;
 export class Gravelheart extends Boss {
   readonly title = 'Gravelheart';
   readonly epithet = 'the Sleepless Warden';
+  readonly music: MusicMood = 'warden';
   protected readonly introDuration = 4.2;
   protected readonly dyingDuration = Infinity;
   /** Its chest can be struck right now (the punish window of a stuck slam). */

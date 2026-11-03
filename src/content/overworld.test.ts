@@ -24,6 +24,21 @@ describe('overworld content', () => {
     for (const it of [...ow.interactables, ...ow.triggers]) expect(scripts[it.id], it.id).toBeTypeOf('function');
   });
 
+  it('the gate stays shut until the Keepers\' seal is broken, then stays open; its sign says which', async () => {
+    const area = new Overworld(physics);
+    const { api, state, said } = fakeApi(area, physics);
+    const { scripts, restore } = overworldContent(area);
+    restore(state);
+    expect(area.gate.isOpen).toBe(false);
+    await scripts['sign.gate'](api);
+    expect(said.at(-1)!.text).toMatch(/Closed by the Keepers/);
+    state.set('valleyOpen');
+    restore(state);
+    expect(area.gate.isOpen).toBe(true);
+    await scripts['sign.gate'](api);
+    expect(said.at(-1)!.text).toMatch(/ward is broken/);
+  });
+
   it('lets the player stand on the ground at the spawn point', () => {
     const y = physics.groundY(ow.spawn.x, ow.spawn.z);
     expect(y).not.toBeNull();

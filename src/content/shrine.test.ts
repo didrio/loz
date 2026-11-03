@@ -1,5 +1,7 @@
+import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Physics } from '../core/physics';
+import { Gravelheart } from '../game/bosses/gravelheart';
 import { GameState } from '../game/state';
 import { DungeonArea } from '../world/dungeon/build';
 import { SHRINE } from '../world/dungeon/defs/shrine';
@@ -294,5 +296,50 @@ describe('shrine content', () => {
     s = setup(state);
     await s.content.scripts.exit(s.api);
     expect(s.travels).toEqual([{ area: 'overworld', entrance: 'shrineDoor' }]);
+  });
+
+  it('beating Gravelheart opens the way: the ember leaves, a Heart Vessel appears, the hidden door opens', async () => {
+    const s = setup();
+    s.content.start!(s.api);
+    const boss = s.enemies.find((e) => e instanceof Gravelheart) as Gravelheart;
+    boss.asleep = true;
+    boss.onDefeated!();
+    await s.runQueued();
+    expect(s.p.done).toBe(true);
+    expect(s.p.cleared.has('boss')).toBe(true);
+    expect(s.p.doors.has('sealDoor')).toBe(true);
+    expect(s.area.doors.get('sealDoor')!.opening).toBe(true);
+    expect(s.area.hearth!.vessel.visible).toBe(true);
+    expect(s.toasts.at(-1)).toMatch(/north wall/);
+    // The vessel adds a heart (two half-hearts) once, and a reload doesn't bring it back.
+    await s.content.scripts['trigger.heartVessel'](s.api);
+    expect(s.state.maxHp).toBe(8);
+    expect(s.state.has('gravelheartVessel')).toBe(true);
+    expect(s.area.hearth!.vessel.visible).toBe(false);
+    const again = setup(s.state);
+    expect(again.area.hearth!.vessel.visible).toBe(false);
+    expect(again.area.hearth!.causewayUp).toBe(true);
+    expect(again.area.doors.get('sealDoor')!.open).toBe(true);
+  });
+
+  it('a save that was beaten but left the vessel behind shows it again', () => {
+    const state = new GameState();
+    state.dungeon('shrine').done = true;
+    expect(setup(state).area.hearth!.vessel.visible).toBe(true);
+  });
+
+  it('the seal-stone shows the gate breaking and returns to the seal room, saving the press only at the end', async () => {
+    const s = setup();
+    s.content.start!(s.api);
+    let opened = false;
+    const gate = { center: new THREE.Vector3(8, 4, -121), open: () => (opened = true), settled: true };
+    (s.api as { area: unknown }).area = { gate };
+    s.area.onSwitch!('sealStone');
+    expect(s.p.switches.has('sealStone')).toBe(false);
+    await s.runQueued();
+    expect(opened).toBe(true);
+    expect(s.state.has('valleyOpen')).toBe(true);
+    expect(s.p.switches.has('sealStone')).toBe(true);
+    expect(s.travels).toEqual([{ area: 'overworld', entrance: 'gateView' }, { area: 'shrine', entrance: 'sealRoom' }]);
   });
 });

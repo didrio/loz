@@ -75,8 +75,8 @@ export interface ScriptApi {
   respawn(): void;
   /** Stops the music (true) until called with false, when the area's theme starts over. */
   silenceMusic(on: boolean): void;
-  /** Fades out, loads another area (at a named entrance, or its spawn) and fades back in. */
-  travel(area: AreaId, entrance?: string): Promise<void>;
+  /** Fades out, loads another area (at a named entrance, or its spawn) and fades back in; `quiet` skips the area-name card (a vision, a flashback). */
+  travel(area: AreaId, entrance?: string, quiet?: boolean): Promise<void>;
   giveSword(): void;
 }
 

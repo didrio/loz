@@ -114,7 +114,7 @@ in.
   that orbit it.
 - **Planned for the first dungeon** (design draft, see [shrine.md](shrine.md)): Dozing
   Sentinel and Shellback enemies, the Tether Glove, the boss Gravelheart, the Sleepless
-  Warden, and the Northpass (Emberfield's exit, blocked by a heavy wakestone).
+  Warden, and the Northpass (Emberfield's exit, sealed by a magic gate that breaks once the Warden sleeps; see [shrine.md](shrine.md)).
 - **Pickups**: green gem (1), blue gem (5), heart. **Heart Vessel**: +1 heart container.
   **Small Key**: opens one padlock or locked door (`GameState.keys`, shown under the gems).
 - **Flasks**: exactly two, found full in the Waking Shrine (life in the Sunken Court,

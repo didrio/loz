@@ -3,10 +3,11 @@ import type { Physics } from '../../core/physics';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
 import { BossArena, BushField, Chest, GreatLantern, HeartVessel, Npc, StoneDoor } from '../objects';
+import { Gate } from './gate';
 import { buildGorge, GORGE_BELL, GORGE_COURSE, gorgeAt } from './gorge';
 import { buildHollow } from './hollow';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
-import { areaNameAt, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { areaNameAt, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
 import { buildBounds, buildTerrain, buildWater } from './terrain';
 import { buildVillage } from './village';
@@ -27,6 +28,8 @@ export class Overworld implements Area {
     shrineDoor: { x: SHRINE_DOOR.x - 3.5, z: SHRINE_DOOR.z, facing: -Math.PI / 2 },
     /** On the square in front of the mill door, facing away from it. */
     mill: { x: MILL.x + 4.4, z: MILL.z, facing: Math.PI / 2 },
+    /** In front of the magic gate, facing it: where the seal-stone's vision cuts to. */
+    gateView: { x: GATE.x, z: GATE.z + 15, facing: Math.PI },
   };
   /** The Morrowbell's post on Thistledown's square. */
   readonly morrowPost: BellPost;
@@ -44,6 +47,8 @@ export class Overworld implements Area {
   readonly npcs: { maren: Npc; tobin: Npc; odo: Npc };
   readonly chest: Chest;
   readonly door: StoneDoor;
+  /** The magic gate at the Northpass (shut until the Keepers' seal is broken). */
+  readonly gate: Gate;
   /** The great lantern atop the shrine (lights up as embers return). */
   readonly lantern: GreatLantern;
   /** The Lamplighter's arena in Gloaming Hollow, and the heart vessel it leaves behind. */
@@ -72,6 +77,7 @@ export class Overworld implements Area {
     const shrine = buildShrine(b);
     this.lantern = shrine.lantern;
     buildTrees(b);
+    this.gate = new Gate(b);
     buildRocks(b);
     buildGrass(b);
     // The hollow is built after the seeded scenery and uses its own RNG (see layout.ts).
@@ -185,6 +191,7 @@ export class Overworld implements Area {
     this.chest.update(dt);
     this.door.update(dt);
     this.lantern.update(dt);
+    this.gate.update(dt);
     this.hollow.update(dt);
     this.vessel.update(dt);
     this.morrowPost.update(dt);

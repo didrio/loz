@@ -1,0 +1,97 @@
+{
+  "version": 6,
+  "flags": [
+    "metMaren",
+    "gotGroveKey",
+    "groveChestOpened",
+    "hasSword",
+    "village.millKey",
+    "lamplighterDefeated",
+    "hollowVessel",
+    "shrineOpen",
+    "village.stonewardTunic"
+  ],
+  "keys": 0,
+  "area": "shrine",
+  "items": [
+    "tether"
+  ],
+  "dungeons": {
+    "shrine": {
+      "keys": [],
+      "bossKey": true,
+      "doors": [
+        "naveEast",
+        "naveNorth",
+        "platesCourt",
+        "tetherDoor",
+        "echoDoor",
+        "cryptPit",
+        "cryptOssuary",
+        "cryptCistern",
+        "emberGauntlet"
+      ],
+      "chests": [
+        "statueChest",
+        "southChest",
+        "courtChest",
+        "courtFlaskChest",
+        "lookoutChest",
+        "tetherChest",
+        "echoChest",
+        "loftChest",
+        "cryptChest",
+        "rootChest",
+        "ossChest",
+        "cisternChest",
+        "bossKeyChest"
+      ],
+      "switches": [
+        "navePlate",
+        "northBar",
+        "plateA",
+        "plateB",
+        "crystalA",
+        "crystalB",
+        "crystalC",
+        "loftPlate",
+        "vaultPlateA",
+        "vaultPlateB"
+      ],
+      "cleared": [
+        "nave",
+        "statueGallery",
+        "southCell",
+        "plateHall",
+        "gallery",
+        "crystalWalk",
+        "tetherRoom",
+        "echoHall",
+        "crypt",
+        "pitHall",
+        "ossuary",
+        "emberHall",
+        "gauntlet",
+        "bellShaft"
+      ],
+      "done": false
+    }
+  },
+  "flasks": [
+    "life",
+    "attack"
+  ],
+  "bells": {
+    "carried": [],
+    "hung": [
+      "morrow",
+      "lull"
+    ]
+  },
+  "gems": 95,
+  "hp": 8,
+  "maxHp": 8,
+  "hours": 10,
+  "day": 1,
+  "savedAt": 0
+}

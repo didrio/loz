@@ -249,6 +249,8 @@ export function shrineContent(area: DungeonArea): AreaContent {
       const holdPlates = new Set(def.things.filter((t) => t.kind === 'switch' && t.hold).map((t) => t.id));
       area.onSwitch = (id) => api.run(async (a) => {
         const prog = progress(a.state);
+        // The seal-stone is not a latch for a door: it breaks the ward on the valley's gate (its vision saves the press).
+        if (id === warden.sealStone) return warden.seal(a);
         if (holdPlates.has(id)) {
           // A hold plate counts only with its partners down at the same moment: then the
           // whole group latches (saved, and the plates stay down).

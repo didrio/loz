@@ -58,6 +58,7 @@ function passable(d: DoorDef, p: Progress) {
   if ('key' in l) return p.keys.has(l.key);
   if ('switch' in l) return p.switches.has(l.switch);
   if ('switches' in l) return l.switches.every((s) => p.switches.has(s));
+  if ('cleared' in l) return p.rooms.has(l.cleared);
   return p.items.has(l.item);
 }
 

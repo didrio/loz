@@ -70,8 +70,8 @@ If the browser suspends audio,
 | `village` | Thistledown Two-Step | D, 116, swing 0.3 | A: D6 Bm7·E9 G6·G♯dim7 A7 D6·D♯dim7 F♯m7·B7 Em9·A7 D6·A7; B: G6·Gm6 G♯dim7 D6/A B9 Em9 B♭dim7·A7 D6·Bm7 A7 | the day tune with a blue F♮: honky-tonk piano over a stride left hand, soft hat, mallet doubling the 2nd time; plays in Thistledown by day (`Overworld.musicAt`) |
 | `night` | Where the Lanterns Sleep | B minor, 76 | A: Bm9 Em9 Cmaj9 C♯m7♭5·F♯7♭9 Gmaj9 Fmaj7♯5 Em9·Gm6 F♯sus4·F♯7; B: Gmaj7 Em9 Bm·Bm/A Gmaj7·F♯7♭9 Em9 Cmaj9 Cmaj7·F♯7♭9 Bmmaj7·Bm | the day tune reharmonized: celesta lullaby, flute an octave down, slow harp |
 | `boss` | The Lamplighter's Round | B minor, 152 | A: Bm Gmaj7 Em9 F♯7♭9 Bm D/A Gmaj7·C♯m7♭5 F♯7♭9; B: Em9 A7 Dmaj7 Gmaj7 Cmaj7 (Neapolitan) F♯7♭9 Bm·Bm/A G6·F♯7♭9 | the motif in B minor at a run (F♯–B–C♯–D), the day motif flashing by in the bridge; driving bass and drums, music box, synth brass. Silent during its entrance; starts with the fight |
+| `warden` | The Warden's Vigil | D phrygian dominant, 128 | A: D E♭maj7 Gmmaj7·D7♭9 Cm6·D7♭9 D B♭maj7♯5 Gm6·E♭maj7 D7♭9; B: E♭maj7 D Cm9 Gmmaj7 E♭maj7 B♭maj7♯5 Cm6·D7♭9 Dsus4·D7♭9 | Gravelheart's fight: the shrine's colors stood up to fight, the motif (A–D–E♭–F♯) at a run; drive bass, kick/snare/tom, bell and flute then synth brass. Unheard by the author: ask the owner to listen |
 | `shrine` | The Sleeping Stones | D phrygian dominant, 80 | A: D E♭maj7 Gmmaj7 Cm6·D7♭9 D B♭maj7♯5 Gm6·E♭maj7 D; B: E♭maj7 D Cm9 Gmmaj7 E♭maj7 B♭maj7♯5 Cm6·D7♭9 Dsus4·D | the motif made exotic (A–D–E♭–F♯); celesta, flute, music box, mallet pulse, low frame drum; ends on the day song's G → F♯ sigh |
 
-Still to write: **Gravelheart's** theme (a boss version of the shrine progression, more
-harmonic complexity; goes with milestone 6) and the title screen theme. Slash chords
+Still to write: the title screen theme (and the Northpass's / camp's music, if they need one). Slash chords
 (`F#/C#`) are supported: tone 0 of a slash chord is its bass note (within a tritone below the root, else just above).

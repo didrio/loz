@@ -73,7 +73,7 @@ function drawFloor(def: DungeonDef, rooms: Map<string, RoomDef>, floor: number) 
     const p = doorPlacement(a, b, d);
     if (!p) continue;
     const half = (d.width ?? DEFAULT_DOOR_WIDTH) / 2;
-    let ch = d.lock === 'boss' ? 'B' : d.lock ? ('key' in d.lock ? 'k' : 'item' in d.lock ? 'i' : 's') : ' ';
+    let ch = d.lock === 'boss' ? 'B' : d.lock ? ('key' in d.lock ? 'k' : 'item' in d.lock ? 'i' : 'cleared' in d.lock ? 'c' : 's') : ' ';
     if (d.oneWay) ch = p.wall === 'z' ? (b.x > a.x ? '>' : '<') : (b.z > a.z ? 'v' : '^');
     if (p.wall === 'z') {
       for (let r = row(p.z - half); r < Math.max(row(p.z - half) + 1, row(p.z + half)); r++) if (grid[r]) grid[r][col(p.x)] = ch;

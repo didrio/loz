@@ -363,6 +363,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       await api.say([{ text: 'You got a *Heart Vessel*!\nYour life grew by one heart, and you feel completely restored.' }]);
     },
     'sign.village': say('Thistledown Village\n"Mind the windmill. Mind the thornlings more."'),
+    'sign.gate': (api) => api.say([{ text: api.state.has('valleyOpen') ? 'The Northpass\nThe old ward is broken. Mind the road: nobody has walked it in a long while.' : 'The Northpass\nClosed by the Keepers\' ward. It has not opened since the lantern went dark.' }]),
     'sign.grove': say('The Whispering Grove\nThe trees here are said to remember every word ever spoken beneath them.'),
     'sign.pedestal': say('Old letters, worn by rain:\n"While the lantern burns, the sleeping stone shall wake. Rekindle the lantern, and the night shall break."'),
   };
@@ -379,6 +380,9 @@ export function overworldContent(ow: Overworld): AreaContent {
         ow.door.wake(true);
         if (!state.has('hollowVessel')) ow.vessel.show();
       }
+      // Gravelheart's ember went to the lantern too: two embers. The ward on the gate is broken for good.
+      if (state.dungeon('shrine').done) ow.lantern.setEmbers(2, true);
+      if (state.has('valleyOpen')) ow.gate.setOpen();
     },
     start(api) {
       watchTheHollow(api);

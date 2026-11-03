@@ -21,11 +21,11 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 As of 2026-11-03: Emberfield (the valley) plays start to finish (Lamplighter, quest thread, music, village).
 **The Waking Shrine** (25 rooms, four wings, the Bell Shaft trial) is playable into Warden's Hearth, a 48×40 m hall
-with drops. **Gravelheart** fights through both phases (phase 2: the ring rises, Cairn Roll, glove the keystone,
-sword the ember in its head); its hits cost two hearts (one in the tunic, as do the Sentinel's and Shellback's
-doubled hits); the defeat is a stand-in ([docs/shrine.md](docs/shrine.md)). **Bells** and both trials work
+with drops. **Gravelheart** fights through both phases (its hits cost two hearts, one in the tunic) and its defeat plays: the
+ember leaves, a Heart Vessel, a causeway to the Keepers' Seal, whose stone breaks the magic gate at the valley's
+north edge (the gate stands in front of rock until the pass is carved; [docs/shrine.md](docs/shrine.md)). **Bells** and both trials work
 ([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states.
-**Next: shrine milestone 6, session D** (defeat, theme, smoke; no plan mode).
+**Next: shrine milestone 6, session D2** (overworld streaming and the Northpass; plan in [docs/shrine.md](docs/shrine.md); Sonnet, no plan mode).
 
 ## Docs: read the one for the area you're touching
 
@@ -133,11 +133,11 @@ src/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
-    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, index (Overworld)
+    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, gate (the magic gate), index (Overworld)
     dungeon/               dungeon data format, validator, softlock solver, text map, DUNGEONS registry;
                            defs/ the dungeons; build.ts + pieces.ts turn the data into a 3D indoor Area;
                            grid.ts + puzzle.ts: rooms as 2 m grids, the wakestone puzzle checker;
-                           landmarks.ts: the three big landmark statues; hearth.ts: Gravelheart's arena;
+                           landmarks.ts: the three big landmark statues; hearth.ts: Gravelheart's arena (and the causeway, the Heart Vessel);
                            decor.ts: each wing's palette, light and decoration
   game/
     game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
@@ -161,7 +161,7 @@ src/
     bells.ts               the bell registry (BELLS) and scripts: check, hang, ring, travel, take
     gorge.ts               the Hushing Gorge: its monsters, the trial's fall rule
     shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
-    gravelheart.ts         the shrine's boss encounter: spawn, the seal, the intro, the defeat
+    gravelheart.ts         the shrine's boss encounter: spawn, the seal, the intro, the defeat, the Keepers' Seal vision
     devStates.ts           dev-menu save states (new game, night by the Hollow, shrine, boss door, bells)
     fakeApi.ts             the fake ScriptApi content tests run against
     story.ts               intro, death

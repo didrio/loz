@@ -529,12 +529,12 @@ export class Game implements ScriptApi {
   }
 
   /** Fades out, moves to another area (at a named entrance), names it, fades back in. */
-  async travel(id: AreaId, entrance?: string) {
+  async travel(id: AreaId, entrance?: string, quiet = false) {
     await this.fade(1, 0.5);
     this.loadArea(id, entrance);
     this.areaName = this.area.nameAt(this.player.pos.x, this.player.pos.z);
     await this.wait(0.2);
-    this.showAreaName(this.areaName);
+    if (!quiet) this.showAreaName(this.areaName);
     await this.fade(0, 0.5);
   }
 

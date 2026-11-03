@@ -49,7 +49,10 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   switch door with the switch on the far side (see `naveNorth` in the shrine).
 - **Locks**: `{ key: color }` (the small key of that color, `crimson`/`azure`/`jade`/`violet`/`amber`: `KEY_COLORS` in `format.ts`; spent on use, the door stays open), `'boss'` (needs the boss key),
   `{ switch: id }` (opens when that switch is pressed), `{ switches: [ids] }` (opens when
-  all of them are pressed), `{ item: id }` (needs a tool).
+  all of them are pressed), `{ item: id }` (needs a tool), `{ cleared: room }` (a hidden slab with no prompt that
+  content opens when that room is cleared or its boss beaten: the Keepers' Seal door in the shrine). A
+  `cleared` door may open straight onto a pit in the room it leaves: something rises to bridge it, so the
+  validator doesn't count that pit against the doorway. Rooms behind one get a named entrance (`area.entrances[room]`).
 - **`theme`** (per room): `sandstone` / `marble` / `moss` / `basalt`, the look of its
   floor, walls, light and decoration (`decor.ts`). Walls take the theme of the floor's
   rooms, so keep one theme per floor (a wing). Decoration in rooms with stones is
@@ -101,7 +104,7 @@ shafts coming up through it, pillars and blocks, a warm point light and two wall
 Pits have a floor 3 m down. Stairs are solid steps (looks, side collisions) with one smooth
 ramp collider on top, and railings round the shaft upstairs except at the top. Doors are
 `DungeonDoor`s styled by their lock (open frame, small-key slab, boss slab, bars for switch
-doors; item locks have no door, the obstacle is in the room), plus an open doorway (frame only,
+doors, a plain `hidden` slab for `cleared` doors; item locks have no door, the obstacle is in the room), plus an open doorway (frame only,
 black beyond) in the wall behind the entrance spot: it never closes. Things become `Chest`s (hidden until they
 `appear`), `DungeonSwitch`es, `Wakestone`s and tablets (signs are interactables); enemies
 and the boss become `spawns` for content to create. Floors are merged separately so
@@ -166,7 +169,7 @@ switch, a key you can lose, a door that re-locks), extend the solver first, with
 ## Reading the text map
 
 One character is 1 m east–west, one line is 2 m north–south, north is up. `#` wall, gaps
-are open doorways, `k` small-key door, `B` boss door, `s` switch door, `i` item door,
+are open doorways, `k` small-key door, `B` boss door, `s` switch door, `i` item door, `c` cleared-room door,
 `> < ^ v` one-way doors (pointing the way you can go), `U`/`D` stairs up/down, `v`/`*` a
 drop hole (on the floor above) and where it lands (below), `@` entrance, `C` chest, `S`
 crystal switch, `P` floor plate, `%` wakestone, `&` heavy wakestone, `e` enemy, `X` boss,

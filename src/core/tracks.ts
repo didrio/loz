@@ -8,9 +8,9 @@
 import { compile, type CompiledSong, type Instrument, type Layer, type Song } from './music';
 
 /** Which theme plays: the field by day or night, the village, a boss fight, or a dungeon. */
-export type MusicMood = 'day' | 'night' | 'village' | 'boss' | 'shrine';
+export type MusicMood = 'day' | 'night' | 'village' | 'boss' | 'shrine' | 'warden';
 /** Boss fights' songs: they crossfade in fast, with the fight. */
-export const BOSS_MOODS: ReadonlySet<MusicMood> = new Set<MusicMood>(['boss']);
+export const BOSS_MOODS: ReadonlySet<MusicMood> = new Set<MusicMood>(['boss', 'warden']);
 
 const melody = (inst: Instrument, shift = 0, vel = 1): Layer => ({ type: 'melody', inst, shift, vel });
 
@@ -181,7 +181,37 @@ export const SHRINE_SONG: Song = {
   ],
 };
 
-export const SONGS: Record<MusicMood, Song> = { day: DAY_SONG, night: NIGHT_SONG, village: VILLAGE_SONG, boss: BOSS_SONG, shrine: SHRINE_SONG };
+// --- Gravelheart: "The Warden's Vigil" (D phrygian dominant, 128 bpm) ------------------------
+// The shrine's own progression, stood up and made to fight: the motif (A–D–E♭–F♯) at a run, over
+// the same E♭maj7 / Gmmaj7 / B♭maj7♯5 colors and a D7♭9 that keeps pulling at the cord. Heavy
+// drive bass and drums, bells and a flute in the first verse, synth brass when it rises.
+
+const WARDEN_A = 'D | Ebmaj7 | Gmmaj7 D7b9 | Cm6 D7b9 | D | Bbmaj7#5 | Gm6 Ebmaj7 | D7b9';
+const WARDEN_B = 'Ebmaj7 | D | Cm9 | Gmmaj7 | Ebmaj7 | Bbmaj7#5 | Cm6 D7b9 | Dsus4 D7b9';
+const WARDEN_MELODY_A =
+  'A4 D5 Eb5 F#5 Eb5 D5 Bb4 A4 | G4*2 Bb4 D5 Eb5*2 D5 Bb4 | D5 F#5 A5 G5 F#5 Eb5 D5 C5 | Bb4 C5 D5*2 A4*4 |' +
+  'A4 D5 Eb5 F#5 A5 F#5 Eb5 D5 | D5*2 Bb5 A5 G5*2 F#5 Eb5 | Bb5 A5 G5 Bb5 A5 G5 Eb5 F#5 | D5*4 Eb5*2 F#5*2';
+const WARDEN_MELODY_B =
+  'G5*2 Bb5*2 D6*4 | C6*2 Bb5*2 A5*4 | G5 Bb5 D6 Eb6 D6 Bb5 G5 Eb5 | D5*2 F#5*2 A5*4 |' +
+  'Eb6*2 D6*2 Bb5*4 | A5 Bb5 D6 F#6 A6*2 F#6*2 | G6 F#6 Eb6 D6 C6 Bb5 A5 F#5 | D6*4 .*2 A5 Bb5';
+const wardenBass: Layer = { type: 'tones', inst: 'drive', pattern: '0 0 . 0 0 . 3 0', octave: 2 };
+const wardenDrums: Layer[] = [
+  { type: 'beat', inst: 'kick', pattern: 'X..xX..x' },
+  { type: 'beat', inst: 'snare', pattern: '..X...X.' },
+  { type: 'beat', inst: 'tom', pattern: '.o.o..o.', vel: 0.5 },
+];
+
+export const WARDEN_SONG: Song = {
+  name: "The Warden's Vigil", bpm: 128, stepsPerBeat: 2, beatsPerBar: 4, loopFrom: 1,
+  sections: [
+    { name: 'intro', chords: 'D | D7b9', layers: [wardenBass, ...wardenDrums] },
+    { name: 'A', chords: WARDEN_A, melody: WARDEN_MELODY_A, layers: [melody('bell'), melody('flute', 0, 0.5), wardenBass, ...wardenDrums, shrinePad] },
+    { name: "A'", chords: WARDEN_A, melody: WARDEN_MELODY_A, layers: [brass, wardenBass, ...wardenDrums, shrinePad] },
+    { name: 'B', chords: WARDEN_B, melody: WARDEN_MELODY_B, layers: [brass, melody('bell', 0, 0.35), wardenBass, ...wardenDrums, shrinePad] },
+  ],
+};
+
+export const SONGS: Record<MusicMood, Song> = { day: DAY_SONG, night: NIGHT_SONG, village: VILLAGE_SONG, boss: BOSS_SONG, shrine: SHRINE_SONG, warden: WARDEN_SONG };
 
 const compiled: Partial<Record<MusicMood, CompiledSong>> = {};
 

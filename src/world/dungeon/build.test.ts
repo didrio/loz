@@ -122,7 +122,7 @@ describe('the built shrine', () => {
     const ids = area.interactables.map((i) => i.id);
     for (const id of ['anteSign', 'entrySign', 'courtFlaskChest', 'southChest', 'tetherDoor', 'cryptPit', 'bossDoor', 'naveEast']) expect(ids, id).toContain(id);
     expect(ids).not.toContain('entryNave'); // an open doorway
-    expect(area.triggers.map((t) => t.id)).toEqual(['exit', 'trigger.warden']);
+    expect(area.triggers.map((t) => t.id)).toEqual(['exit', 'trigger.heartVessel', 'trigger.warden']);
   });
 
   it('wakestones: the sword pushes one cell, things in the way stop it, heavy ones don\'t budge', () => {
@@ -354,5 +354,35 @@ describe("Warden's Hearth (Gravelheart's arena)", () => {
     expect(Math.hypot(trig.x - door.x, trig.z - door.z)).toBeLessThan(8);
     // Walking straight in from the doorway reaches it (the trigger is a circle of `r` around its spot).
     expect(Math.hypot(trig.x - door.x, trig.z - (door.z - 4.5))).toBeLessThan(trig.r);
+  });
+
+  it('has a hidden door to the Keepers\' Seal that nothing can use until the stones rise out of the north pit', () => {
+    const { area, physics } = setup();
+    const h = area.hearth!, door = area.doors.get('sealDoor')!;
+    expect(door.style).toBe('hidden');
+    expect(door.open).toBe(false);
+    expect(area.interactables.map((i) => i.id)).not.toContain('sealDoor'); // no prompt: the win opens it
+    // Wren can arrive in the seal room from the vision.
+    const arrival = area.entrances.sealRoom;
+    expect(arrival.z).toBeLessThan(door.group.position.z); // north of the Hearth's wall
+    // The north drop is a pit until the causeway is up; then its middle is solid floor, flush with the ledge.
+    const sd = h.sealDoor!;
+    const ground = () => physics.groundY(sd.x, sd.z + 2, h.floorY + 3);
+    expect(ground()).toBeCloseTo(h.floorY - 3, 1);
+    h.raiseCauseway(true);
+    physics.refreshQueries();
+    expect(h.causewayUp).toBe(true);
+    expect(ground()).toBeCloseTo(h.floorY, 1);
+  });
+
+  it('shows the Heart Vessel only when told to, and puts the causeway up at once when restoring a win', () => {
+    const { area } = setup();
+    const h = area.hearth!;
+    expect(h.vessel.visible).toBe(false);
+    expect(area.triggers.find((t) => t.id === 'trigger.heartVessel')!.enabled()).toBe(false);
+    h.vessel.show();
+    expect(area.triggers.find((t) => t.id === 'trigger.heartVessel')!.enabled()).toBe(true);
+    h.clear(true);
+    expect(h.causewayUp).toBe(true);
   });
 });

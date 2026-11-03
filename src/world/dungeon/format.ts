@@ -83,9 +83,10 @@ export type FeatureDef =
  * - `{ key }`: the key of that color opens it (one key, one door; the door stays open afterwards),
  * - `boss`: have the dungeon's boss key (not spent),
  * - `{ switch }`: that switch has been pressed (switches stay pressed),
- * - `{ item }`: Wren has that item (a tool found in the dungeon).
+ * - `{ item }`: Wren has that item (a tool found in the dungeon),
+ * - `{ cleared }`: that room is cleared (its enemies beaten, or its boss: a hidden door that opens on the win).
  */
-export type Lock = 'boss' | { key: KeyColor } | { switch: string } | { switches: string[] } | { item: string };
+export type Lock = 'boss' | { key: KeyColor } | { switch: string } | { switches: string[] } | { item: string } | { cleared: string };
 
 /**
  * Small keys come in colors: each color has exactly one chest and opens exactly one door in
@@ -365,5 +366,6 @@ export function lockName(lock: Lock | undefined) {
   if (lock === 'boss') return 'boss key';
   if (typeof lock === 'object' && 'key' in lock) return `${lock.key} key`;
   if ('switch' in lock) return `switch ${lock.switch}`;
+  if ('cleared' in lock) return `${lock.cleared} cleared`;
   return 'switches' in lock ? `switches ${lock.switches.join(' + ')}` : `item ${lock.item}`;
 }

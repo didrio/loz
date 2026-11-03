@@ -78,10 +78,11 @@ export function validateDungeon(def: DungeonDef): string[] {
 
   const switches = new Set(def.things.filter((t) => t.kind === 'switch').map((t) => t.id));
   /** Floor in front of each doorway, both sides: must stay clear of stairs, holes and solid features. */
-  const approaches: { id: string; rooms: RoomDef[]; rects: Rect[] }[] = [];
+  const approaches: { id: string; rooms: RoomDef[]; rects: Rect[]; bridged: boolean }[] = [];
   for (const d of def.doors) {
     const a = room(d.from, `Door "${d.id}"`), b = room(d.to, `Door "${d.id}"`);
     if (d.from === d.to) errors.push(`Door "${d.id}" connects room "${d.from}" to itself`);
+    if (d.lock && typeof d.lock === 'object' && 'cleared' in d.lock) room(d.lock.cleared, `Door "${d.id}"`);
     for (const s of lockSwitches(d.lock)) if (!switches.has(s)) errors.push(`Door "${d.id}" waits for unknown switch "${s}"`);
     if (!a || !b) continue;
     // A shaft between floors is only closed if the lower room's ceiling meets the floor above.
@@ -130,7 +131,8 @@ export function validateDungeon(def: DungeonDef): string[] {
     if (along - half < DOOR_MARGIN || along + half > p.shared - DOOR_MARGIN) {
       errors.push(`Door "${d.id}" (${half * 2} m wide) doesn't fit on the ${p.shared} m wall "${a.id}" and "${b.id}" share`);
     }
-    approaches.push({ id: d.id, rooms: [a, b], rects: p.wall === 'z'
+    // A hidden door (`cleared`) may open onto a pit: the stones that rise on its win are the way across.
+    approaches.push({ id: d.id, rooms: [a, b], bridged: !!d.lock && typeof d.lock === 'object' && 'cleared' in d.lock, rects: p.wall === 'z'
       ? [{ x: p.x - DOOR_APPROACH, z: p.z - half, w: DOOR_APPROACH, d: half * 2 }, { x: p.x, z: p.z - half, w: DOOR_APPROACH, d: half * 2 }]
       : [{ x: p.x - half, z: p.z - DOOR_APPROACH, w: half * 2, d: DOOR_APPROACH }, { x: p.x - half, z: p.z, w: half * 2, d: DOOR_APPROACH }] });
   }
@@ -158,7 +160,8 @@ export function validateDungeon(def: DungeonDef): string[] {
       if (!ap.rooms.includes(r)) continue;
       const marks = def.things.flatMap((t) => (t.kind === 'landmark' && t.room === r.id ? [{ id: `a landmark "${t.id}"`, rect: landmarkRect(r, t.at) }] : []));
       const ledges = (r.platforms ?? []).map((p, i) => ({ id: `a platform (${i})`, rect: { x: r.x + p.x - p.r, z: r.z + p.z - p.r, w: p.r * 2, d: p.r * 2 } }));
-      const blockers = [...all, ...marks, ...ledges, ...(r.features ?? []).filter((f) => f.kind !== 'pit').map((f) => ({
+      const pitRects = new Set(holes.filter((h) => h.kind === 'pit').map((h) => h.rect));
+      const blockers = [...all.filter((o) => !(ap.bridged && pitRects.has(o.rect))), ...marks, ...ledges, ...(r.features ?? []).filter((f) => f.kind !== 'pit').map((f) => ({
         id: `a ${f.kind}`,
         rect: f.kind === 'pillar' ? { x: r.x + f.x - (f.r ?? 0.7), z: r.z + f.z - (f.r ?? 0.7), w: (f.r ?? 0.7) * 2, d: (f.r ?? 0.7) * 2 } : { x: r.x + f.x, z: r.z + f.z, w: f.w, d: f.d },
       }))];

@@ -171,23 +171,32 @@ up through the shrine to the lantern (two embers now). A **Heart Vessel** appear
 - Fight rooms have no shutters: Wren can leave a fight. A room counts as cleared when its
   enemies are all beaten; its chests appear then.
 
-## The overworld gate: the Northpass
+## After the boss: the seal, the gate, the Northpass (owner's design, 2026-11-03)
 
-Emberfield gets an exit: a narrow cut through the northern mountains, the **Northpass**,
-at the end of a new road north between Thistledown and the grove. From day one it's
-blocked by a huge heavy wakestone with the spiral carved on it, the same as the stones
-inside the shrine (so the "aha" lands as soon as the glove does).
+This replaces the first plan (a heavy wakestone in the Northpass that the glove pulls aside); none
+of that was built. The boss, not the glove, opens the way out of the valley.
 
-- Before the glove: striking it shudders it a little ("It stirs, but it's far too heavy
-  to wake with a blade"). The sign reads: "NORTHPASS: the road to the highlands." Tobin:
-  "Nobody's crossed since that stone rolled down. Some say it rolled itself."
-- With the glove: tether it, and it slides out of the cut (a little cutscene), opening the
-  way out of the valley. For now walking through shows a "to be continued" card; later it
-  leads to the next region.
-- Optional: a half-sunk wakestone in the shallows of Glimmer Lake. Pull it out to open a
-  little grotto with a chest (blue gems for now; a heart piece once those exist).
-- Villagers react after the dungeon: Maren notices the glove and remembers the old stories
-  about the shrine's stones; Tobin points out the Northpass stone looks like the shrine's.
+- **The magic gate**: at the valley's north edge, at the mouth of the Northpass (a new road north
+  from the field, between Thistledown and the grove), a rune arch of floating ember-lit stones holds
+  a glowing veil across the cut. It's visible from the start of the game and can't be passed.
+  Lore (proposal, ask the owner to confirm): the thief who stole the lantern's flame sealed the pass
+  with a ward fed by the ember pushed into Gravelheart. While the Warden can't sleep, the ward holds.
+- **The defeat**: Gravelheart settles, asleep at last. Its ember drifts out and up toward the
+  lantern (two embers now), and a Heart Vessel appears. Then the camera turns to the Hearth's north
+  wall: stones rise into a causeway across the pit, and a hidden door grinds open.
+- **The Keepers' Seal** (a hidden room north of the Hearth): one button, the seal-stone. Pressing it
+  shows a vision. The view cuts to the gate as its stones fall and the veil unravels (flag
+  `valleyOpen`), then back to the room. Wren walks back out of the dungeon herself; nothing teleports
+  her.
+- **The Northpass**: a winding mountain road beyond the gate, part of the same overworld (streamed
+  in, no loading). On it are a new enemy, the **Cragstalker** (it circles, crouches as a tell, and
+  lunges ~7 m; guard it and it's dazed; it gives up at its leash), then a bell lying on the road, then
+  **Wayfarers' Camp**: a camp-looking rest area (no resting yet) with that bell's empty post, the
+  third fast-travel stop. That's the end of what's built for now.
+- **Villagers react**: Maren, Tobin and Odo each get a line for when the shrine is done and for when
+  the valley is open. A sign stands at the gate.
+- Optional, later: a half-sunk wakestone in Glimmer Lake that the glove pulls out, opening a grotto
+  with a chest.
 
 ## Build plan (milestones)
 
@@ -202,19 +211,55 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
    small rooms.
 6. **Gravelheart**, in four sessions (planned 2026-11-03; each ends with check passing):
    - ~~**A, rig, arena, intro**~~ done (the owner hasn't played it): `game/bosses/gravelheart/`,
-     `world/dungeon/hearth.ts`, `content/gravelheart.ts`, `Boss.music`. The defeat still just
-     settles it and opens the door (session D). The ring rises 2.4 m (Wren jumps ~2 m). To judge in
+     `world/dungeon/hearth.ts`, `content/gravelheart.ts`, `Boss.music`. The ring rises 2.4 m (Wren jumps ~2 m). To judge in
      play: the palette is low contrast, and the sleeping heap barely reads as kneeling.
    - ~~**B, phase 1**~~ done (details in [combat.md](combat.md), "Bosses"; the owner has played it and likes it).
    - ~~**C, phase 2**~~ done (2026-11-03; the owner hasn't played it): `HOWL`, `ROLL`, `KNEEL`, `DOUBLE_SWEEP` in
      `bosses/gravelheart/moves.ts` (details in [combat.md](combat.md), "Bosses"). Also the owner's damage call: every
      Gravelheart attack is 4 half-hearts (2 in the tunic); the Hammerfall ring is faster. Look scene `gravelheart2`.
      To judge in play: Cairn Roll's speed and tell, the keystone window, the ring shrinking the arena (~20x16 m).
-   - **D, defeat, music, smoke, docs**: the defeat script, Heart Vessel, lantern at 2 embers; the
-     `warden` theme; fixture `shrine-boss.json` + smoke scenario `shrine-boss`; docs.
-7. **The Northpass**: the new road, the cut, the heavy stone, the sign and dialog, the
-   lake grotto (minding the seeded-scenery rules; the per-region seeds scaling item is done
-   first by the bells' Hushing Gorge, see [bells.md](bells.md)).
+   - **D, the boss's end and the way out** (owner's redesign 2026-11-03, see "After the boss" above;
+     three sessions, no plan mode needed, all Sonnet):
+     - ~~**D1, defeat and the seal room.**~~ done (2026-11-03; the owner hasn't played it):
+       - Door lock `{ cleared: room }` (`format.ts`, `solve.ts`, validator, `DoorStyle` `hidden`; tests). A cleared-lock
+         door may open onto a pit (the causeway bridges it).
+       - The Keepers' Seal room (`sealRoom`, 12x12 m) north of the Hearth, door `sealDoor`; the crystal `sealStone`
+         inside. The Hearth builds the causeway (`WardenHearth.raiseCauseway`, four slabs rising out of the north pit
+         to a flush collider) and the Heart Vessel (`hearth.vessel`, trigger `trigger.heartVessel`, flag `gravelheartVessel`).
+       - The defeat script (`content/gravelheart.ts`, `falls`): the ember drifts up through the roof, a line of
+         dialog, the ring sinks and the boss door opens, the vessel shows, the camera turns to the north wall, the
+         causeway rises and `sealDoor` opens. The lantern's second ember is drawn when the valley next loads
+         (`state.dungeon('shrine').done` → `setEmbers(2)`); there's no shot of it flying there.
+       - The seal-stone (`seal` in the same file, called from `content/shrine.ts`'s `onSwitch`): dialog, `travel`
+         to `overworld/gateView` (new `quiet` argument skips the area-name card), the camera on the gate, `gate.open()`,
+         flag `valleyOpen`, `travel` back to `shrine/sealRoom`. The press is saved only at the end, so quitting
+         mid-vision leaves the stone strikable.
+       - The gate (`world/overworld/gate.ts`, `GATE` and `inGate` in `layout.ts`): two pillars, nine floating
+         ember-lit stones, a veil of glowing strips, a `Bounds` wall across the cut while closed. It stands in front of
+         the mountain wall until D2 carves the pass. Scenery is filtered with `inGate` after the seeded placement.
+         `sign.gate` beside it.
+       - `warden` music ("The Warden's Vigil", `core/tracks.ts`): Gravelheart's `music`. Unheard: ask the owner.
+       - Dev states: "boss door" has the tunic and both bells; new "Warden asleep, the seal room open".
+       - Fixture `shrine-boss.json` and smoke `shrine-boss`.
+       - To judge in play: the defeat's pacing and camera, the causeway rising, the veil and falling stones, the theme.
+     - **D2, overworld streaming and the pass.** Do the roadmap's "Overworld streaming (regions)"
+       item:
+       - `world/overworld/region.ts`: load within ~70 m, unload past ~110 m.
+       - `Area.streamAt`.
+       - `buildTerrain(b, rect)`, with the valley chunk byte-identical.
+       - `PASS` and `carvePass` in `layout.ts`, from the gate at about (8, -122) to the camp at
+         about (-10, -255).
+       - A gap in `buildBounds`, plus the pass's own walls.
+       - Keep the valley's scenery from reshuffling: a separate `NORTH_ROAD`, and filter with
+         `inPass` afterwards, as `inGorge` does. Before and after looks of the valley.
+     - **D3, the Cragstalker, the third bell, the camp.**
+       - `game/cragstalker.ts` on `GroundEnemy`.
+       - Bell id `way` ("Waybell"): its pickup on the pass and its post at the camp.
+       - The camp's props.
+       - The NPC lines.
+       - Fixture `northpass.json` and smoke scenario `northpass`.
+       - Look scenes `gate`, `northpass`, `camp`.
+7. (Folded into 6D: the Northpass. The lake grotto stays optional, for later.)
 8. **Polish**: decoration passes, smoke scenarios for the dungeon. (Dungeon music is done:
    "The Sleeping Stones".) **No map or compass** (owner's call, 2026-11-02): those chests hold
    the flasks instead.

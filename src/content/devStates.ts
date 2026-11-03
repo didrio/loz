@@ -30,13 +30,15 @@ const emptyDungeon = (): DungeonSave => ({ keys: [], bossKey: false, doors: [], 
 /** Everything in a dungeon done except the boss: doors open, switches pressed, chests opened, fight rooms cleared, the boss key held. */
 export function completedDungeon(def: DungeonDef): { progress: DungeonSave; gems: number } {
   const chests = def.things.flatMap((t) => (t.kind === 'chest' ? [t] : []));
+  // Rooms behind a door that waits for another room to be cleared (the boss's seal room): not part of "everything but the boss".
+  const hidden = new Set(def.doors.flatMap((d) => (d.lock && typeof d.lock === 'object' && 'cleared' in d.lock ? [d.to] : [])));
   return {
     progress: {
       keys: [],
       bossKey: chests.some((c) => c.loot === 'bossKey'),
-      doors: def.doors.filter((d) => d.lock && d.lock !== 'boss' && !(typeof d.lock === 'object' && 'item' in d.lock)).map((d) => d.id),
+      doors: def.doors.filter((d) => d.lock && d.lock !== 'boss' && !(typeof d.lock === 'object' && ('item' in d.lock || 'cleared' in d.lock))).map((d) => d.id),
       chests: chests.map((c) => c.id),
-      switches: def.things.flatMap((t) => (t.kind === 'switch' ? [t.id] : [])),
+      switches: def.things.flatMap((t) => (t.kind === 'switch' && !hidden.has(t.room) ? [t.id] : [])),
       cleared: [...new Set(def.things.flatMap((t) => (t.kind === 'enemy' ? [t.room] : [])))],
       done: false,
     },
@@ -51,10 +53,29 @@ function shrineAtBossDoor(): DevState {
   return {
     name: 'Shrine: at the boss door',
     save: base({
-      flags: SHRINE_OPEN, area: 'shrine', items: ['tether'], dungeons: { shrine: progress },
-      flasks: ['life', 'attack'], gems, hp: 8, maxHp: 8, hours: 10,
+      flags: [...SHRINE_OPEN, 'village.stonewardTunic'], area: 'shrine', items: ['tether'], dungeons: { shrine: progress },
+      flasks: ['life', 'attack'], gems, hp: 8, maxHp: 8, hours: 10, bells: { carried: [], hung: ['morrow', 'lull'] },
     }),
     at: { x, z, y: floorY(SHRINE, ante.floor) + 0.05, facing: Math.PI },
+  };
+}
+
+/** The Warden beaten (the door to the seal room open, the causeway up), Wren on the ledge before it. */
+function shrineAfterBoss(): DevState {
+  const { progress, gems } = completedDungeon(SHRINE);
+  const hearth = SHRINE.rooms.find((r) => r.id === 'boss')!;
+  const seal = SHRINE.doors.find((d) => d.lock && typeof d.lock === 'object' && 'cleared' in d.lock)!;
+  progress.done = true;
+  progress.cleared.push(hearth.id);
+  progress.doors.push(seal.id);
+  const [x, z] = worldPos(hearth, [24, 8]);
+  return {
+    name: 'Shrine: Warden asleep, the seal room open',
+    save: base({
+      flags: [...SHRINE_OPEN, 'village.stonewardTunic'], area: 'shrine', items: ['tether'], dungeons: { shrine: progress },
+      flasks: ['life', 'attack'], gems, hp: 8, maxHp: 8, hours: 10, bells: { carried: [], hung: ['morrow', 'lull'] },
+    }),
+    at: { x, z, y: floorY(SHRINE, hearth.floor) + 0.05, facing: Math.PI },
   };
 }
 
@@ -110,5 +131,6 @@ export const DEV_STATES: DevState[] = [
     save: base({ flags: SHRINE_OPEN, area: 'shrine', dungeons: { shrine: emptyDungeon() }, hp: 8, maxHp: 8, hours: 10 }),
   },
   shrineAtBossDoor(),
+  shrineAfterBoss(),
   ...bellStates(),
 ];

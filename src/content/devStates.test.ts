@@ -19,8 +19,8 @@ describe('dev save states', () => {
     });
   }
 
-  it('lists a new game, the night outside the hollow, the shrine start, the boss door and six bell states', () => {
-    expect(DEV_STATES.map((s) => s.save?.area ?? 'new')).toEqual(['new', 'overworld', 'shrine', 'shrine', 'overworld', 'shrine', 'shrine', 'overworld', 'overworld', 'overworld']);
+  it('lists a new game, the night outside the hollow, the shrine start, the boss door, the beaten boss and six bell states', () => {
+    expect(DEV_STATES.map((s) => s.save?.area ?? 'new')).toEqual(['new', 'overworld', 'shrine', 'shrine', 'shrine', 'overworld', 'shrine', 'shrine', 'overworld', 'overworld', 'overworld']);
   });
 
   it('the bell states carry or hang only known bells, never one both carried and hung', () => {
@@ -45,9 +45,22 @@ describe('dev save states', () => {
   it('completedDungeon opens every key and switch door and clears every room with enemies', () => {
     const { progress } = completedDungeon(SHRINE);
     for (const d of SHRINE.doors) {
-      if (d.lock && d.lock !== 'boss' && !(typeof d.lock === 'object' && 'item' in d.lock)) expect(progress.doors).toContain(d.id);
+      if (d.lock && d.lock !== 'boss' && !(typeof d.lock === 'object' && ('item' in d.lock || 'cleared' in d.lock))) expect(progress.doors).toContain(d.id);
+      // The boss's hidden door and the seal-stone behind it wait for the win.
+      if (d.lock && typeof d.lock === 'object' && 'cleared' in d.lock) expect(progress.doors).not.toContain(d.id);
     }
     for (const t of SHRINE.things) if (t.kind === 'enemy') expect(progress.cleared).toContain(t.room);
+  });
+
+  it('the beaten-boss state has the Warden asleep, the hidden door open and the tunic and both bells', () => {
+    const s = DEV_STATES.find((x) => x.name.includes('Warden asleep'))!;
+    const p = s.save!.dungeons.shrine;
+    expect(p.done).toBe(true);
+    expect(p.cleared).toContain('boss');
+    expect(p.doors).toContain('sealDoor');
+    expect(p.switches).not.toContain('sealStone');
+    expect(s.save!.flags).toContain('village.stonewardTunic');
+    expect(s.save!.bells.hung).toEqual(['morrow', 'lull']);
   });
 
   it('the night state is at night, with the sword and the bed key, before the Lamplighter', () => {

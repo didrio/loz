@@ -115,6 +115,9 @@ export const SHRINE: DungeonDef = {
         { kind: 'pit', x: 10, z: 28, w: 6, d: 4 },
       ],
     },
+    // The Keepers' Seal: a small hall north of the Hearth, behind a hidden door that opens when Gravelheart is beaten
+    // (a causeway rises across the north pit to it). One crystal, the seal-stone, breaks the ward on the valley's gate.
+    { id: 'sealRoom', name: "Keepers' Seal", floor: -2, x: 0, z: -72, w: 12, d: 12, theme: 'basalt' },
   ],
   doors: [
     // The Sleeping Halls.
@@ -155,6 +158,8 @@ export const SHRINE: DungeonDef = {
     { id: 'emberVault', from: 'emberHall', to: 'keyVault' },
     { id: 'gauntletAnte', from: 'gauntlet', to: 'bossAnte' },
     { id: 'bossDoor', from: 'bossAnte', to: 'boss', lock: 'boss' },
+    // Hidden until the Warden sleeps: a causeway rises across the north pit to it.
+    { id: 'sealDoor', from: 'boss', to: 'sealRoom', lock: { cleared: 'boss' } },
     // East of the antechamber: the Lullbell's trial, always open.
     { id: 'anteBell', from: 'bossAnte', to: 'bellShaft', offset: 5 },
   ],
@@ -281,5 +286,7 @@ export const SHRINE: DungeonDef = {
     { kind: 'bell', id: 'lullBell', room: 'bellShaft', at: [6.5, 9], bell: 'lull', up: 17.1 },
     // ── Warden's Hearth.
     { kind: 'boss', id: 'gravelheart', room: 'boss', type: 'gravelheart' },
+    // ── The Keepers' Seal: the stone that breaks the ward on the gate.
+    { kind: 'switch', id: 'sealStone', room: 'sealRoom', at: [6, 6] },
   ],
 };

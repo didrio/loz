@@ -3,7 +3,7 @@ import { Layer } from '../../core/physics';
 import { mat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
 import { GreatLantern } from '../objects';
-import { BRIDGE, bridgeDeck, GROVE, HOLLOW_ENTRANCE, SHRINE, SPAWN, terrainHeight, VILLAGE } from './layout';
+import { BRIDGE, bridgeDeck, GATE, GROVE, HOLLOW_ENTRANCE, SHRINE, SPAWN, terrainHeight, VILLAGE } from './layout';
 
 /** The arched wooden bridge over the river: planks and rails, with a smooth deck collider. */
 export function buildBridge(b: AreaBuilder) {
@@ -150,5 +150,6 @@ export const SIGNS = [
   { id: 'sign.village', x: VILLAGE.x + 21, z: VILLAGE.z + 22 },
   { id: 'sign.grove', x: GROVE.x - 13, z: GROVE.z + 13 },
   { id: 'sign.gorge', x: -119.5, z: 19 },
+  { id: 'sign.gate', x: GATE.x + GATE.halfOpening + 4, z: GATE.z + 6 },
   { id: 'sign.hollow', x: HOLLOW_ENTRANCE.x + 3.5, z: HOLLOW_ENTRANCE.z - 4 },
 ];

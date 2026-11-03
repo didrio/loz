@@ -3,7 +3,8 @@ import { easeInOut, mulberry32 } from '../../core/math';
 import { Layer, type RAPIER } from '../../core/physics';
 import { mat, uniqueMat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
-import type { RoomDef } from './format';
+import { HeartVessel } from '../objects';
+import { PIT_DEPTH, type RoomDef } from './format';
 import type { DungeonDoor } from './pieces';
 
 /** How far the ring of floor tiles rises in phase two: above Wren's ~2 m jump, so it hems her in. */
@@ -11,6 +12,10 @@ export const RING_HEIGHT = 2.4;
 /** The ring's width: one 2 m cell all round the room. */
 export const RING_WIDTH = 2;
 const RING_RISE = 1.6;
+/** The causeway across the north pit: this wide, and the time its stones take to rise. */
+const CAUSEWAY_WIDTH = 3;
+const CAUSEWAY_RISE = 2.2;
+const CAUSEWAY_SLABS = 4;
 const SOCKET_SIZE = 1.2;
 /** Sockets sit this high on the walls (out of reach: decoration and the boss's ammunition). */
 const SOCKET_Y = 3.1;
@@ -37,15 +42,25 @@ export class WardenHearth {
   cleared = false;
   readonly center: THREE.Vector3;
   readonly sockets: Socket[] = [];
+  /** The Heart Vessel the Warden leaves, in front of where it sleeps (shown by the defeat script). */
+  readonly vessel: HeartVessel;
   private readonly tiles: { mesh: THREE.Mesh; collider: RAPIER.Collider; x: number; z: number; delay: number }[] = [];
   private readonly crackMat = uniqueMat(0x2a120a, { emissive: 0x000000 });
   private ringT = 0;
   private ringDir = 0;
+  private causewayT = 0;
+  private causewayDir = 0;
+  private readonly causewaySlabs: { mesh: THREE.Mesh; delay: number }[] = [];
+  private readonly causewayCollider: RAPIER.Collider | null = null;
+  /** Where the hidden seal-room door is (the causeway runs from the ledge to it), if the room has one. */
+  readonly sealDoor: THREE.Vector3 | null;
   /** The ledge of floor Wren fights on: the room minus the drops along its edges (world rect). */
   readonly platform: { x0: number; x1: number; z0: number; z1: number };
 
-  constructor(b: AreaBuilder, parent: THREE.Object3D, readonly room: RoomDef, readonly floorY: number, private readonly door: DungeonDoor | null) {
+  constructor(b: AreaBuilder, parent: THREE.Object3D, readonly room: RoomDef, readonly floorY: number, private readonly door: DungeonDoor | null, sealDoor: DungeonDoor | null = null) {
+    this.sealDoor = sealDoor ? sealDoor.group.position.clone() : null;
     this.center = new THREE.Vector3(room.x + room.w / 2, floorY, room.z + room.d / 2);
+    this.vessel = new HeartVessel(b, this.center.x, floorY, this.center.z + 9);
     const rand = mulberry32(31);
     // Edge drops (pits that run along a side of the room) shrink the ledge the ring sits on.
     const pits = (room.features ?? []).flatMap((f) => (f.kind === 'pit' ? [f] : []));
@@ -113,6 +128,27 @@ export class WardenHearth {
       }
     }
     this.poseRing();
+
+    // The causeway: stones that rise out of the north pit, from the ledge to the hidden door in the north wall.
+    if (this.sealDoor) {
+      const sd = this.sealDoor, depth = pits.length ? Math.max(0, ...pits.filter((f) => f.z === 0 && f.x <= sd.x - room.x - CAUSEWAY_WIDTH / 2 && f.x + f.w >= sd.x - room.x + CAUSEWAY_WIDTH / 2).map((f) => f.d)) : 0;
+      const slabMat = mat(0x6b625a), edgeMat = mat(0x4fb8a4);
+      const len = depth / CAUSEWAY_SLABS;
+      for (let i = 0; i < CAUSEWAY_SLABS; i++) {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(CAUSEWAY_WIDTH, 1, len - 0.06), slabMat);
+        // Glowing glyph strips along the middle, so it reads as the Keepers' work.
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.04, len - 0.4), edgeMat);
+        strip.position.y = 0.51;
+        mesh.add(strip);
+        mesh.castShadow = mesh.receiveShadow = true;
+        mesh.position.set(sd.x, floorY - PIT_DEPTH - 2, sd.z + len * (CAUSEWAY_SLABS - i - 0.5));
+        mesh.visible = false;
+        parent.add(mesh);
+        this.causewaySlabs.push({ mesh, delay: i * 0.18 });
+      }
+      this.causewayCollider = depth > 0 ? b.box(sd.x, floorY - 0.5, sd.z + depth / 2, CAUSEWAY_WIDTH / 2, 0.5, depth / 2, 0, Layer.World) : null;
+      this.causewayCollider?.setEnabled(false);
+    }
   }
 
   get stonesLeft() {
@@ -174,6 +210,28 @@ export class WardenHearth {
     }
   }
 
+  get causewayUp() {
+    return this.causewayT >= 1;
+  }
+
+  /** The beaten Warden's last gift: stones rise out of the north pit into a way to the hidden door (`now` when restoring). */
+  raiseCauseway(now = false) {
+    if (!this.causewaySlabs.length) return;
+    this.causewayDir = 1;
+    if (now) this.causewayT = 1;
+    this.poseCauseway();
+  }
+
+  private poseCauseway() {
+    const top = this.floorY - 0.5, low = this.floorY - PIT_DEPTH - 2;
+    for (const s of this.causewaySlabs) {
+      const k = easeInOut(Math.min(1, Math.max(0, (this.causewayT * 1.4 - s.delay) / 0.9)));
+      s.mesh.position.y = low + (top - low) * k;
+      s.mesh.visible = k > 0.001;
+    }
+    this.causewayCollider?.setEnabled(this.causewayT >= 1);
+  }
+
   /** The door shuts behind Wren. */
   seal() {
     this.sealed = true;
@@ -197,9 +255,15 @@ export class WardenHearth {
     if (now) this.door?.setOpen();
     else this.door?.startOpening();
     this.lowerRing(now);
+    if (now) this.raiseCauseway(true);
   }
 
   update(dt: number) {
+    this.vessel.update(dt);
+    if (this.causewayDir !== 0 && this.causewayT < 1) {
+      this.causewayT = Math.min(1, this.causewayT + dt / CAUSEWAY_RISE);
+      this.poseCauseway();
+    }
     if (this.ringDir !== 0) {
       this.ringT = Math.min(1, Math.max(0, this.ringT + (this.ringDir * dt) / RING_RISE));
       if (this.ringT === 0 || this.ringT === 1) this.ringDir = 0;

@@ -225,6 +225,30 @@ describe('dungeon solver', () => {
   });
 });
 
+describe('cleared-room door locks', () => {
+  // A hidden vault behind the boss room: its door waits for the boss room to be cleared.
+  const vault = { id: 'secret', floor: 0, x: 0, z: -14, w: 8, d: 8 };
+  const withVault = (lock: DungeonDef['doors'][number]['lock'], goal = 'secret') =>
+    tweak(EXAMPLE_DUNGEON, {
+      goal,
+      rooms: [...EXAMPLE_DUNGEON.rooms, vault],
+      doors: [...EXAMPLE_DUNGEON.doors, { id: 'hidden', from: 'boss', to: 'secret', lock }],
+    });
+
+  it('opens once the room is cleared, and the solver follows', () => {
+    const def = withVault({ cleared: 'boss' });
+    expect(validateDungeon(def)).toEqual([]);
+    expect(solveDungeon(def).completable).toBe(true);
+    expect(dungeonMap(def)).toContain('boss cleared');
+  });
+
+  it('rejects an unknown room, and a vault whose key room is itself', () => {
+    expect(validateDungeon(withVault({ cleared: 'nowhere' })).join('\n')).toMatch(/Door "hidden" refers to unknown room "nowhere"/);
+    // Its own room never gets cleared from outside: the vault stays out of reach.
+    expect(solveDungeon(withVault({ cleared: 'secret' })).completable).toBe(false);
+  });
+});
+
 describe('dungeon text map', () => {
   it('draws every floor with doors, stairs and things', () => {
     const map = dungeonMap(EXAMPLE_DUNGEON);

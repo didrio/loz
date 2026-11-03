@@ -1,13 +1,16 @@
 import * as THREE from 'three';
+import { easeInOut } from '../core/math';
 import { Gravelheart } from '../game/bosses/gravelheart';
 import type { Script, ScriptApi } from '../game/script';
 import type { GameState } from '../game/state';
+import { glow } from '../render/shapes';
 import type { DungeonArea } from '../world/dungeon/build';
+import type { Overworld } from '../world/overworld';
 
 /**
  * Gravelheart's encounter in Warden's Hearth: it sleeps in a heap facing the boss door;
  * walking in shuts the door behind Wren and wakes it. Beating it opens the hearth for good
- * (`DungeonProgress.done`). Dying mid-fight resets it and reopens the door (`Boss.reset`).
+ * (`DungeonProgress.done`), leaves a Heart Vessel and a way to the Keepers' Seal. Dying mid-fight resets it and reopens the door (`Boss.reset`).
  * Part of the shrine's content (`shrineContent` folds it in). See docs/shrine.md, "The boss".
  */
 export function wardenContent(area: DungeonArea) {
@@ -42,14 +45,20 @@ export function wardenContent(area: DungeonArea) {
     api.silenceMusic(false);
   };
 
+  /** The hidden door that waits for the Hearth to be cleared, and the room behind it. */
+  const sealDef = hearth ? area.def.doors.find((d) => d.from === hearth.room.id && d.lock && typeof d.lock === 'object' && 'cleared' in d.lock && d.lock.cleared === hearth.room.id) : undefined;
+
   /**
-   * Beaten: it sinks to its knees and sleeps at last; the door opens.
-   * (Placeholder until session D: the ember's flight to the lantern and the Heart Vessel.)
+   * Beaten: it sinks to its knees and sleeps at last. Its ember rises out of the stone toward the
+   * lantern, the door opens, a Heart Vessel appears, and stones rise out of the north pit into a
+   * causeway to a hidden door (the Keepers' Seal, see `seal` below).
    */
   const falls: Script = async (api) => {
     const b = boss;
-    if (!b) return;
-    api.state.dungeon(area.def.id).done = true;
+    if (!b || !hearth) return;
+    const prog = api.state.dungeon(area.def.id);
+    prog.done = true;
+    prog.cleared.add(hearth.room.id);
     const toPlayer = api.player.pos.clone().sub(b.pos).setY(0).normalize();
     const side = new THREE.Vector3(-toPlayer.z, 0, toPlayer.x);
     api.setTimeScale(0.3);
@@ -58,16 +67,95 @@ export function wardenContent(area: DungeonArea) {
     api.setTimeScale(1);
     await api.until(() => b.asleep);
     await api.wait(1);
-    hearth?.clear();
+
+    // Its ember drifts out of the chest and up through the roof, toward the lantern on the hill.
+    const spark = new THREE.Group();
+    spark.add(glow(0xffb35a, 0.5, 0.45), glow(0xfff1c0, 0.18, 0.9));
+    const start = b.pos.clone().setY(b.pos.y + 3);
+    spark.position.copy(start);
+    area.root.add(spark);
     api.sfx.solved();
-    await api.wait(1.2);
+    const top = start.clone().setY(hearth.center.y + 11);
+    api.shot(start.clone().addScaledVector(side, 14).setY(start.y + 1), start, true);
+    await api.tween(3.2, (t) => {
+      spark.position.lerpVectors(start, top, easeInOut(t));
+      api.particles.burst(spark.position, 0xffb35a, 1, 1, 0.5, false);
+      api.shot(start.clone().addScaledVector(side, 14).setY(start.y + 1), spark.position);
+    });
+    spark.removeFromParent();
+    spark.traverse((m) => m instanceof THREE.Mesh && (m.geometry.dispose(), (m.material as THREE.Material).dispose()));
+    await api.wait(0.6);
+    api.releaseCamera();
+    hearth.clear();
+    if (!api.state.has('gravelheartVessel')) hearth.vessel.show();
+    await api.say([{ text: 'Gravelheart sleeps at last. Its ember rose through the stone, toward the lantern on the eastern hill.\nThe ring sinks and the great door opens.' }]);
+
+    // The north wall: stones climb out of the pit, and a door that was never there grinds open.
+    const door = hearth.sealDoor;
+    if (door) {
+      api.shot(new THREE.Vector3(door.x - 6, door.y + 6.5, door.z + 16), new THREE.Vector3(door.x, door.y + 1.2, door.z + 1), true);
+      await api.wait(0.8);
+      api.sfx.rumble();
+      hearth.raiseCauseway();
+      await api.until(() => hearth.causewayUp);
+      await api.wait(0.5);
+      if (sealDef) {
+        prog.doors.add(sealDef.id);
+        area.doors.get(sealDef.id)?.startOpening();
+        api.sfx.rumble();
+      }
+      await api.wait(2.2);
+      api.releaseCamera();
+      api.toast('Something has opened in the north wall.');
+    }
+  };
+
+  /**
+   * The seal-stone: the view cuts to the magic gate as its stones fall and the veil comes apart, then
+   * back to the room. `valleyOpen` is set as the ward breaks (the overworld restores the gate open).
+   */
+  const seal: Script = async (api) => {
+    const prog = api.state.dungeon(area.def.id);
+    api.sfx.solved();
+    await api.say([{ text: 'The stone is warm under your hand. The room falls away, and you see a gate of floating stones, far to the north.' }]);
+    await api.travel('overworld', 'gateView', true);
+    const ow = api.area as unknown as Overworld;
+    const gc = ow.gate.center;
+    api.shot(new THREE.Vector3(gc.x - 13, gc.y + 0.5, gc.z + 17), gc, true);
+    await api.wait(1.8);
+    ow.gate.open();
+    api.sfx.rumble();
+    api.state.set('valleyOpen');
+    prog.switches.add('sealStone');
+    api.shot(new THREE.Vector3(gc.x - 9, gc.y - 0.5, gc.z + 13), gc);
+    await api.until(() => ow.gate.settled);
+    api.sfx.solved();
+    await api.wait(1.8);
+    await api.travel('shrine', 'sealRoom', true);
+    api.releaseCamera();
+    api.toast('The ward on the gate is broken. The way north is open.');
+  };
+
+  /** The Heart Vessel the Warden leaves behind. */
+  const vessel: Script = async (api) => {
+    hearth?.vessel.collect();
+    api.state.set('gravelheartVessel');
+    api.state.maxHp += 2;
+    api.state.hp = api.state.maxHp;
+    api.sfx.fanfare();
+    await api.say([{ text: 'You got a *Heart Vessel*!\nYour life grew by one heart, and you feel completely restored.' }]);
   };
 
   return {
-    scripts: { 'trigger.warden': wakes } as Record<string, Script>,
+    scripts: { 'trigger.warden': wakes, 'trigger.heartVessel': vessel } as Record<string, Script>,
+    /** The seal-stone's id in the dungeon data; striking it plays `seal`. */
+    sealStone: 'sealStone',
+    seal,
 
     restore(state: GameState) {
-      if (done(state)) hearth?.clear(true);
+      if (!done(state)) return;
+      hearth?.clear(true);
+      if (!state.has('gravelheartVessel')) hearth?.vessel.show();
     },
 
     start(api: ScriptApi) {

@@ -731,6 +731,65 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('gravelheart2-kneel');
   },
+  /** The magic gate at the valley's north edge: shut (the veil, the floating stones), mid-collapse, and broken. */
+  async gate(h) {
+    await h.newGame();
+    const gc = await h.game(() => { const c = window.embervale.area.gate.center; return { x: c.x, y: c.y, z: c.z }; });
+    const view = (dx, dy, dz, ly = 0) => h.game(([gc, dx, dy, dz, ly]) => {
+      const g = window.embervale, T = g.player.pos.constructor;
+      g.player.teleport(gc.x, g.physics.groundY(gc.x, gc.z + 12) ?? 0, gc.z + 12, Math.PI);
+      g.rig.shot(new T(gc.x + dx, gc.y + dy, gc.z + dz), new T(gc.x, gc.y + ly, gc.z), true);
+    }, [gc, dx, dy, dz, ly]);
+    await view(-14, -0.5, 20);
+    await h.wait(1200);
+    await h.shot('gate-closed');
+    await view(5, -2.5, 7, 0.5);
+    await h.wait(800);
+    await h.shot('gate-closeup');
+    await h.game(() => { window.embervale.area.gate.open(); });
+    await h.game(() => window.embervale.setTimeScale(0.3));
+    await h.wait(2200);
+    await view(-12, -0.5, 17);
+    await h.wait(600);
+    await h.shot('gate-breaking');
+    await h.game(() => window.embervale.setTimeScale(1));
+    await h.until(() => window.embervale.area.gate.settled, 20000);
+    await view(-12, -0.5, 17);
+    await h.wait(600);
+    await h.shot('gate-open');
+  },
+  /** After the boss: the Hearth's north wall with the causeway up and the hidden door open, the Heart Vessel, and the Keepers' Seal. */
+  async seal(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.loadArea('shrine'));
+    await h.wait(1500);
+    const info = await h.game(() => {
+      const a = window.embervale.area;
+      const r = a.def.rooms.find((r) => r.id === 'boss'), s = a.def.rooms.find((r) => r.id === 'sealRoom');
+      return { r, s, door: { x: a.hearth.sealDoor.x, z: a.hearth.sealDoor.z }, vessel: { x: a.hearth.vessel.x, z: a.hearth.vessel.z } };
+    });
+    const y = info.r.floor * 8;
+    const shot = (name, from, at) => h.game(([from, at]) => {
+      const g = window.embervale, T = g.player.pos.constructor;
+      g.rig.shot(new T(...from), new T(...at), true);
+    }, [from, at]).then(() => h.wait(900)).then(() => h.shot(name));
+    // Before the win: the north wall is plain, the pit open.
+    await h.game(([x, y, z]) => { const g = window.embervale; g.player.teleport(x, y, z, Math.PI); }, [info.door.x, y + 0.05, info.r.z + 10]);
+    await shot('seal-before', [info.door.x - 6, y + 6.5, info.door.z + 16], [info.door.x, y + 1.2, info.door.z + 1]);
+    await h.game(() => {
+      const a = window.embervale.area;
+      a.hearth.clear(true);
+      a.doors.get('sealDoor').setOpen();
+      a.hearth.vessel.show();
+    });
+    await shot('seal-causeway', [info.door.x - 6, y + 6.5, info.door.z + 16], [info.door.x, y + 1.2, info.door.z + 1]);
+    await shot('seal-vessel', [info.vessel.x - 5, y + 3.5, info.vessel.z + 6], [info.vessel.x, y + 1.3, info.vessel.z]);
+    // Inside the Keepers' Seal, looking at the stone from the door.
+    const door = await h.game(() => { const p = window.embervale.area.doors.get('sealDoor').group.position; return { x: p.x, z: p.z }; });
+    await h.game(([x, y, z]) => { const g = window.embervale; g.player.teleport(x, y, z, Math.PI); }, [door.x, y + 0.05, door.z - 2.5]);
+    await shot('seal-room', [door.x - 3, y + 3.2, door.z - 1], [info.s.x + info.s.w / 2, y + 1.2, info.s.z + info.s.d / 2]);
+    await shot('seal-room-door', [info.s.x + info.s.w / 2, y + 2.4, info.s.z + 2], [door.x, y + 1.6, door.z + 1]);
+  },
   /** The shrine's enemies: a Dozing Sentinel asleep, winding up and stuck after its swing; a Shellback from front and back, and tucked to charge. */
   async enemies(h) {
     await h.newGame();

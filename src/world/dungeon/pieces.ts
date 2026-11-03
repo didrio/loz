@@ -34,12 +34,14 @@ export const STONE = {
  * - switch: iron bars that slide up into the lintel,
  * Item locks have no door: the obstacle is in the room (a pit, a heavy stone).
  */
-export type DoorStyle = 'open' | 'key' | 'boss' | 'bars';
+/** `hidden`: a plain slab with no handle or prompt, which a script opens (a room cleared, a boss beaten). */
+export type DoorStyle = 'open' | 'key' | 'boss' | 'bars' | 'hidden';
 
 export function doorStyle(lock: Lock | undefined): DoorStyle {
   if (!lock) return 'open';
   if (lock === 'boss') return 'boss';
   if ('key' in lock) return 'key';
+  if ('cleared' in lock) return 'hidden';
   return 'item' in lock ? 'open' : 'bars';
 }
 
@@ -94,7 +96,7 @@ export class DungeonDoor {
         leaf.add(rail);
       }
     } else {
-      const color = style === 'boss' ? 0x4a4440 : 0x847d70;
+      const color = style === 'boss' ? 0x4a4440 : style === 'hidden' ? 0x34302d : 0x847d70;
       const slab = new THREE.Mesh(new THREE.BoxGeometry(width, DOOR_HEIGHT, 0.4), mat(color));
       slab.position.y = DOOR_HEIGHT / 2;
       slab.castShadow = true;

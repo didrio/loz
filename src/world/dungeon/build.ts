@@ -269,7 +269,12 @@ export class DungeonArea implements Area {
       const fy = floorY(def, a.floor);
       const door = new DungeonDoor(b, part(a.floor).dynamic, d.id, doorStyle(d.lock), pl.x, fy, pl.z, pl.wall, w, d.lock && typeof d.lock === 'object' && 'key' in d.lock ? d.lock.key : undefined);
       this.doors.set(d.id, door);
-      if (door.style !== 'open') {
+      if (d.lock && typeof d.lock === 'object' && 'cleared' in d.lock) {
+        // A hidden room can be arrived in (the seal's vision ends there): just inside its door, facing in.
+        const dx = pl.wall === 'z' ? Math.sign(c.x + c.w / 2 - pl.x) : 0, dz = pl.wall === 'x' ? Math.sign(c.z + c.d / 2 - pl.z) : 0;
+        this.entrances[d.to] = { x: pl.x + dx * 2.5, z: pl.z + dz * 2.5, y: fy + 0.05, facing: Math.atan2(dx, dz) };
+      }
+      if (door.style !== 'open' && door.style !== 'hidden') {
         const label = door.style === 'bars' ? 'Check' : 'Unlock';
         this.interactables.push({ id: d.id, x: pl.x, z: pl.z, y: fy, r: 2.6, label, promptY: fy + DOOR_HEIGHT + 0.6, enabled: () => !door.open && !door.opening });
       }
@@ -379,8 +384,10 @@ export class DungeonArea implements Area {
         this.spawns.push({ id: t.id, type: t.type, room: r.id, x: r.x + r.w / 2, y: fy, z: r.z + r.d / 2 });
         if (t.type === 'gravelheart') {
           const door = def.doors.find((d) => d.lock === 'boss' && (d.to === r.id || d.from === r.id));
-          const hearth = new WardenHearth(b, p.dynamic, r, fy, door ? this.doors.get(door.id) ?? null : null);
+          const seal = def.doors.find((d) => d.from === r.id && d.lock && typeof d.lock === 'object' && 'cleared' in d.lock && d.lock.cleared === r.id);
+          const hearth = new WardenHearth(b, p.dynamic, r, fy, door ? this.doors.get(door.id) ?? null : null, seal ? this.doors.get(seal.id) ?? null : null);
           this.hearth = hearth;
+          this.triggers.push({ id: 'trigger.heartVessel', x: hearth.vessel.x, z: hearth.vessel.z, y: fy, r: 1.4, enabled: () => hearth.vessel.visible });
           // Walking well into the room (3 m past the door) springs the fight, once content arms it.
           // (Rooms can be big: the trigger sits just inside the door, not around the room's middle.)
           const dp = door ? this.doors.get(door.id)?.group.position : undefined;
