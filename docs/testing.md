@@ -30,7 +30,8 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   `finishScript`...). One-off investigation scripts belong in your session scratchpad, not
   the repo.
 - CI (`.github/workflows/deploy.yml`) runs check and smoke on every push and PR; deploys
-  to GitHub Pages only if both pass, and uploads smoke screenshots when smoke fails.
+  `main` to GitHub Pages as soon as check passes (smoke runs alongside but doesn't gate the
+  deploy: owner's call, 2026-11-02), and uploads smoke screenshots when smoke fails.
 
 ## Smoke scenarios and save fixtures
 
