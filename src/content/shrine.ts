@@ -49,7 +49,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
   const trialFor = (r: RoomDef, start: THREE.Vector3) => {
     const fy = floorY(def, r.floor);
     const cps = (r.platforms ?? []).filter((p) => p.checkpoint && !p.move)
-      .map((p) => ({ x: r.x + p.x, z: r.z + p.z, hw: p.w / 2, hd: p.d / 2, top: fy + p.top }));
+      .map((p) => ({ x: r.x + p.x, z: r.z + p.z, hw: p.r, hd: p.r, top: fy + p.top }));
     return new TrialFalls(cps, fy - 1, start);
   };
   const progress = (s: GameState): DungeonProgress => s.dungeon(def.id);
@@ -169,7 +169,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
       // Each enemy minds its own room: it ignores Wren until Wren walks in.
       const inRoom = (pos: THREE.Vector3) => area.roomAt(pos)?.id === s.room;
       // ...and keeps off the stairs (hard to fight on), though it still sees Wren standing on them.
-      const walkable = (pos: THREE.Vector3) => !area.onStairs(pos, 0.2);
+      const walkable = (pos: THREE.Vector3) => !area.onStairs(pos, 0.2) && (!s.leash || Math.hypot(pos.x - s.leash.x, pos.z - s.leash.z) <= s.leash.r - 0.4);
       let e: Enemy;
       if (s.type === 'thornling') e = new Thornling(area.root, api.physics, s.x, s.z, s.y + 1, inRoom);
       else if (s.type === 'shellback') e = new Shellback(area.root, api.physics, s.x, s.z, s.y + 1, inRoom);
@@ -179,7 +179,10 @@ export function shrineContent(area: DungeonArea): AreaContent {
         const facing = Math.atan2(r.x + r.w / 2 - s.x, r.z + r.d / 2 - s.z);
         e = new DozingSentinel(area.root, api.physics, s.x, s.z, s.y + 1, inRoom, facing);
       } else continue; // the boss arrives in its own milestone
-      if (e instanceof GroundEnemy) e.setWalkable(walkable);
+      if (e instanceof GroundEnemy) {
+        e.setWalkable(walkable);
+        if (s.facing !== undefined) e.faceAngle(s.facing);
+      }
       api.addEnemy(e);
       roomEnemies.set(s.room, [...(roomEnemies.get(s.room) ?? []), e]);
     }
@@ -290,6 +293,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
         trialRoom = tr?.id ?? null;
         trial = tr ? trialFor(tr, haveSafe ? lastSafe : pos) : null;
       }
+      api.player.edgeAssist = trial !== null;
       if (trial) {
         if (onSafe) trial.checkpoint.copy(pos);
         if (trial.check(pos, api.player.grounded, area.inPit(pos))) {

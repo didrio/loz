@@ -35,7 +35,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   Rooms on the same floor may share walls but not overlap. A room with enemies counts as
   cleared once they're beaten (chests can `appear` on that). `features`: `pit`, `block` (raised), `pillar`,
   positioned relative to the room.
-  Rooms also take `trial: true` and `platforms: PlatformDef[]` for bell trials (see [bells.md](bells.md)): falls in a trial room return Wren to the last checkpoint ledge (no damage, `TRIAL_RULES`); platforms are relative to the room's NW corner and checked by the validator.
+  Rooms also take `trial: true` and `platforms: PlatformDef[]` for bell trials (see [bells.md](bells.md)): falls in a trial room return Wren to the last checkpoint ledge (half a heart, `TRIAL_RULES`); platforms are round discs (`r`) relative to the room's NW corner and checked by the validator: inside the room, clear of doorways and the ceiling, and the ledges must form a course (`checkCourse`: **the first platform is the start, the last the goal**, every hop jumpable). `enemy` and `bell` things take `up` (height above the floor) to stand on a still platform of that height (an enemy also takes `facing`, a yaw, and stays on its disc).
 - **Doors** join two rooms. A normal door needs the rooms to share a wall (one room's edge
   exactly on the other's) long enough for the doorway (default 3 m wide, plus 0.5 m of
   wall at each end); it sits in the middle of the shared wall unless `offset` says

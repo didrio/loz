@@ -4,16 +4,15 @@ import { mat } from '../render/materials';
 import type { AreaBuilder } from './area';
 
 /**
- * Platforming courses (docs/bells.md): boxes to jump between, some sliding back and forth.
+ * Platforming courses (docs/bells.md): round discs to jump between, some sliding back and forth.
  * A course is data; `checkCourse` proves it can be finished, `buildCourse` makes it solid.
  */
 
-/** A box platform. x/z are its centre; `top` is the height of its walking surface. */
+/** A round platform (a disc). x/z are its centre, `r` its radius; `top` is the height of its walking surface. */
 export interface PlatformDef {
   x: number;
   z: number;
-  w: number;
-  d: number;
+  r: number;
   top: number;
   /** Slab depth below `top` (default 1). */
   thickness?: number;
@@ -74,26 +73,24 @@ export interface Hop { from: number; to: number; gap: number; rise: number }
 export interface CourseReport { ok: boolean; problems: string[]; hardest: Hop }
 
 const SAMPLES = 8;
-interface Box { x: number; z: number; w: number; d: number; top: number }
+interface Disc { x: number; z: number; r: number; top: number }
 
 /** The positions a platform takes: one if static, else sampled along its path (ends included). */
-function poses(p: PlatformDef): Box[] {
-  const out: Box[] = [];
+function poses(p: PlatformDef): Disc[] {
+  const out: Disc[] = [];
   const n = p.move ? SAMPLES : 0;
   for (let k = 0; k <= n; k++) {
     const s = n ? k / n : 0;
     const by = p.move?.by ?? [0, 0, 0];
-    out.push({ x: p.x + by[0] * s, z: p.z + by[2] * s, w: p.w, d: p.d, top: p.top + by[1] * s });
+    out.push({ x: p.x + by[0] * s, z: p.z + by[2] * s, r: p.r, top: p.top + by[1] * s });
   }
   return out;
 }
 
-const planGap = (a: Box, b: Box) => Math.hypot(
-  Math.max(0, Math.abs(a.x - b.x) - (a.w + b.w) / 2),
-  Math.max(0, Math.abs(a.z - b.z) - (a.d + b.d) / 2),
-);
+const centres = (a: Disc, b: Disc) => Math.hypot(a.x - b.x, a.z - b.z);
+const planGap = (a: Disc, b: Disc) => Math.max(0, centres(a, b) - a.r - b.r);
 
-const contains = (b: Box, x: number, z: number) => Math.abs(x - b.x) <= b.w / 2 && Math.abs(z - b.z) <= b.d / 2;
+const contains = (b: Disc, x: number, z: number) => Math.hypot(x - b.x, z - b.z) <= b.r;
 
 /** How hard a hop is: gap over reach (1 = right at the limit); Infinity if impossible. */
 function hardness(gap: number, rise: number) {
@@ -123,11 +120,18 @@ export function checkCourse(course: CourseDef): CourseReport {
     const thick = ps[i].thickness ?? 1;
     let bad = false;
     for (const a of all[i]) for (const b of all[j]) {
-      const overlap = planGap(a, b) === 0 && Math.abs(a.x - b.x) < (a.w + b.w) / 2 && Math.abs(a.z - b.z) < (a.d + b.d) / 2;
+      const overlap = centres(a, b) < a.r + b.r;
       const room = a.top - thick - b.top;
       if (overlap && room >= 0 && room < HEADROOM) bad = true;
     }
     if (bad) problems.push(`Platform ${i} hangs less than ${HEADROOM} m of headroom above platform ${j}`);
+  }
+
+  // A platform never passes through another: where two overlap in plan (at any pose of either) their slabs must not meet in height.
+  for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) {
+    const ti = ps[i].thickness ?? 1, tj = ps[j].thickness ?? 1;
+    const hit = all[i].some((a) => all[j].some((b) => centres(a, b) < a.r + b.r && a.top - ti < b.top && b.top - tj < a.top));
+    if (hit) problems.push(`Platform ${i} and platform ${j} pass through each other`);
   }
 
   // The easiest hop between each ordered pair (best sampled poses), then bottleneck paths.
@@ -192,7 +196,7 @@ export function checkCourse(course: CourseDef): CourseReport {
   return { ok: problems.length === 0, problems, hardest };
 }
 
-/** What a kinematic collider offers (core/physics.ts `kinematicBox`). */
+/** What a moving collider offers (core/physics.ts `kinematicBox` / `kinematicCylinder`). */
 interface Mover { readonly pos: THREE.Vector3; moveTo(x: number, y: number, z: number): void; remove(): void }
 
 /** Course color when a platform names none. */
@@ -208,17 +212,17 @@ export function buildCourse(b: AreaBuilder, course: Pick<CourseDef, 'platforms'>
   for (const p of course.platforms) {
     const th = p.thickness ?? 1;
     const cx = origin.x + p.x, cy = origin.y + p.top - th / 2, cz = origin.z + p.z;
-    const geo = new THREE.BoxGeometry(p.w, th, p.d);
+    const geo = new THREE.CylinderGeometry(p.r, p.r, th, 20);
     const material = mat(p.look ?? look);
     if (!p.move) {
       b.mesh(geo, material, cx, cy, cz);
-      b.box(cx, cy, cz, p.w / 2, th / 2, p.d / 2);
+      b.cylinder(cx, cy, cz, th / 2, p.r);
       continue;
     }
     const mesh = b.dynamic(new THREE.Mesh(geo, material));
     mesh.castShadow = mesh.receiveShadow = true;
     mesh.position.set(cx, cy, cz);
-    const body: Mover = b.physics.kinematicBox(cx, cy, cz, p.w / 2, th / 2, p.d / 2, Layer.Prop);
+    const body: Mover = b.physics.kinematicCylinder(cx, cy, cz, th / 2, p.r, Layer.Prop);
     movers.push({ def: p, mesh, body, base: new THREE.Vector3(cx, cy, cz) });
   }
   return {

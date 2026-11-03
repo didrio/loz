@@ -85,3 +85,38 @@ describe('Shellback', () => {
     expect(behind).toBe(true);
   });
 });
+
+describe('Shellback meets another enemy', () => {
+  /** A charging shellback at the origin heading +z, and a second enemy standing still 3 m ahead (held in its stagger so it never walks off). */
+  function crash() {
+    const physics = flatGround();
+    const a = new Shellback(new THREE.Group(), physics, 0, 0);
+    const b = new Shellback(new THREE.Group(), physics, 0, 3);
+    const { env } = enemyEnv(physics, new THREE.Vector3(0, 0, -60));
+    physics.refreshQueries();
+    const A = a as unknown as { go(s: string): void; chargeDir: THREE.Vector3; hitDone: boolean; state: string };
+    const B = b as unknown as { state: string; t: number };
+    B.state = 'stagger';
+    B.t = -999;
+    A.go('charge');
+    A.chargeDir.set(0, 0, 1);
+    A.hitDone = true;
+    let nearest = Infinity;
+    for (let i = 0; i < 60; i++) {
+      a.update(1 / 60, env);
+      b.update(1 / 60, env);
+      physics.step(1 / 60);
+      nearest = Math.min(nearest, Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z));
+    }
+    return { a, b, A, nearest };
+  }
+
+  it('stops dead against it (a skid, like after hitting Wren), without pushing it or overlapping it', () => {
+    const { a, b, A, nearest } = crash();
+    expect(A.state).not.toBe('charge');
+    expect(Math.hypot(b.pos.x, b.pos.z - 3)).toBeLessThan(0.05); // it was not shoved
+    expect(nearest).toBeGreaterThan(1.4 - 0.01); // two 0.7 m bodies, never overlapping
+    expect(a.pos.z).toBeLessThan(b.pos.z - 1.3); // it stayed on its side
+  });
+});
+

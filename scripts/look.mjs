@@ -356,6 +356,42 @@ const SCENES = {
     await h.wait(450);
     await h.shot('shrine-ringing');
   },
+  /** The Bell Shaft (the Lullbell's trial): the climb from the door, the pit from above with the bell up top, the top ledges, and the game camera on a ledge. */
+  async bellShaft(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.loadArea('shrine'));
+    await h.wait(3000);
+    const at = (x, z, y, facing) => h.game(([x, z, y, facing]) => {
+      const g = window.embervale;
+      const r = g.area.def.rooms.find((r) => r.id === 'bellShaft');
+      g.player.teleport(r.x + x, r.floor * 8 + y + 0.05, r.z + z, facing);
+      g.rig.snap(g.player.pos, facing);
+    }, [x, z, y, facing]);
+    /** A fixed camera: room-relative eye and target (y above the room floor). */
+    const cam = (eye, target) => h.game(([eye, target]) => {
+      const g = window.embervale;
+      const r = g.area.def.rooms.find((r) => r.id === 'bellShaft');
+      const T = g.player.pos.constructor;
+      g.rig.shot(new T(r.x + eye[0], r.floor * 8 + eye[1], r.z + eye[2]), new T(r.x + target[0], r.floor * 8 + target[1], r.z + target[2]), true);
+    }, [eye, target]);
+    await at(1.5, 19, 0, Math.PI / 2);
+    await h.wait(1200);
+    await h.shot('shaft-door');
+    await cam([1.2, 1.7, 19], [12, 6, 17]);
+    await h.wait(1200);
+    await h.shot('shaft-climb');
+    await cam([4, 17, 27], [13, 9, 13]);
+    await h.wait(1200);
+    await h.shot('shaft-from-above');
+    await h.game(() => window.embervale.rig.release());
+    await at(16.5, 23.4, 3.7, Math.PI / 2);
+    await h.wait(1500);
+    await h.shot('shaft-wide-ledge');
+    await at(8.7, 9, 15.7, Math.PI / 2);
+    await cam([14, 19, 14], [6.5, 16, 9]);
+    await h.wait(1500);
+    await h.shot('shaft-top');
+  },
   /** A chest with its lid open: the underside of the lid must be solid. */
   async chestOpen(h) {
     await h.newGame();

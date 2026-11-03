@@ -310,7 +310,7 @@ describe('Player dev sprint', () => {
 
 describe('Player on a moving platform', () => {
   /** Wren stands on a kinematic slab (top at y = 1) that `path(t)` moves each frame; returns per-frame stats. */
-  function ride(path: (t: number) => THREE.Vector3, seconds: number, startX = 0) {
+  function ride(path: (t: number) => THREE.Vector3, seconds: number, startX = 0, gameOrder = false, hz = 60, move = new THREE.Vector3()) {
     const physics = new Physics();
     physics.box(0, -0.5, 0, 30, 0.5, 30);
     const k = physics.kinematicBox(startX, 0.75, 0, 2, 0.25, 2);
@@ -322,17 +322,21 @@ describe('Player on a moving platform', () => {
       lockTarget: null, enemies: [], hasSword: true,
       onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
     } satisfies PlayerEnv;
+    let walking = false;
     const frame = (t: number) => {
       const to = path(t);
+      // gameOrder = true is the wrong order (the player before the platform): it exists to show the failure.
+      if (gameOrder) p.update(1 / hz, { ...NO_CONTROLS, move: walking ? move : NO_CONTROLS.move }, env);
       k.moveTo(to.x, 0.75 + to.y, to.z);
-      p.update(1 / 60, NO_CONTROLS, env);
-      physics.step(1 / 60);
+      if (!gameOrder) p.update(1 / hz, { ...NO_CONTROLS, move: walking ? move : NO_CONTROLS.move }, env);
+      physics.step(1 / hz);
     };
-    for (let i = 0; i < 30; i++) frame(0); // settle
+    for (let i = 0; i < hz / 2; i++) frame(0); // settle
+    walking = true;
     const ys: number[] = [];
     const grounded: boolean[] = [];
-    for (let i = 1; i <= seconds * 60; i++) {
-      frame(i / 60);
+    for (let i = 1; i <= seconds * hz; i++) {
+      frame(i / hz);
       ys.push(p.pos.y - k.pos.y);
       grounded.push(p.grounded);
     }
@@ -343,7 +347,7 @@ describe('Player on a moving platform', () => {
     const { p, k, ys, grounded } = ride((t) => new THREE.Vector3(2 * t, 0, 0), 3);
     expect(grounded.every(Boolean)).toBe(true);
     expect(Math.abs(p.pos.x - k.pos.x)).toBeLessThan(0.1);
-    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(0.01);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(0.03);
   });
 
   it('rides a platform rising and falling', () => {
@@ -355,12 +359,85 @@ describe('Player on a moving platform', () => {
     expect(Math.abs(p.pos.x - k.pos.x)).toBeLessThan(0.01);
   });
 
+  // Game.frame calls Area.movePlatforms before the player updates. With the player first the
+  // carry is always zero (step clears it) and Wren sinks through a rising platform; that order fails this.
+  it.each([60, 120, 144])('rides a slow rising and falling platform (moved before the player, as in the game) at %i Hz', (hz) => {
+    const { ys, grounded } = ride((t) => new THREE.Vector3(0, 1.5 * (1 - Math.cos(t * 1.05)), 0), 6, 0, false, hz);
+    expect(grounded.every(Boolean)).toBe(true);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(0.1);
+    expect(Math.min(...ys)).toBeGreaterThan(0.15);
+  });
+
+  // A kinematic Rapier body under Wren froze her horizontal movement (even when it didn't move);
+  // platforms are fixed bodies we teleport instead (core/physics.ts kinematicBox).
+  it('control: walking on a platform that stays put', () => {
+    const { p, k } = ride(() => new THREE.Vector3(), 0.2, 0, false, 60, new THREE.Vector3(1, 0, 0));
+    expect(p.pos.x - k.pos.x).toBeGreaterThan(0.3);
+  });
+
+  it.each([['across', new THREE.Vector3(1, 0, 0)], ['with', new THREE.Vector3(0, 0, 1)], ['against', new THREE.Vector3(0, 0, -1)]] as const)(
+    'can walk %s the way a sliding platform moves (it carries her, her walking still counts)', (_, dir) => {
+      const { p, k } = ride((t) => new THREE.Vector3(0, 0, 1 - Math.cos(t * 1.5)), 0.2, 0, false, 60, dir);
+      // 0.2 s at 8.5 m/s is ~1.7 m of walking on top of whatever the platform carried her.
+      const rel = new THREE.Vector3(p.pos.x - k.pos.x, 0, p.pos.z - k.pos.z);
+      expect(rel.dot(dir)).toBeGreaterThan(0.3);
+    });
+
   it('does not carry Wren when she stands beside the platform', () => {
     const r = ride((t) => new THREE.Vector3(-3 * t, 0.5 * Math.sin(t * 3), 0), 0.1);
     r.p.teleport(10, 0, 0, 0);
     for (let i = 0; i < 60; i++) r.frame(2 + i / 60);
     expect(r.p.pos.x).toBeCloseTo(10, 2);
     expect(r.p.pos.y).toBeCloseTo(0, 1);
+  });
+});
+
+describe('Edge stickiness (trial rooms)', () => {
+  /** Wren on a 4 m slab (top y = 1) with a drop beyond it; walks +x from the middle, jumping on `jumpAt` seconds if given. */
+  function walkOff(edgeAssist: boolean, jumpAt?: number) {
+    const physics = new Physics();
+    physics.box(0, -5.5, 0, 30, 0.5, 30);
+    physics.box(0, 0.5, 0, 2, 0.5, 2);
+    physics.refreshQueries();
+    const p = new Player(new THREE.Scene(), physics, { hp: 6, maxHp: 6 });
+    p.edgeAssist = edgeAssist;
+    p.teleport(0, 1, 0, 0);
+    const env = {
+      area: { waterLevel: null, cut: () => [] } as unknown as Area,
+      lockTarget: null, enemies: [], hasSword: true,
+      onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
+    } satisfies PlayerEnv;
+    let t = 0, held = 0, leftAt = -1, maxX = 0, rose = false;
+    for (let i = 0; i < 120; i++) {
+      t = i / 60;
+      const jump = jumpAt !== undefined && Math.abs(t - jumpAt) < 1 / 120;
+      p.update(1 / 60, { ...NO_CONTROLS, move: new THREE.Vector3(1, 0, 0), jump }, env);
+      physics.step(1 / 60);
+      if (p.pos.x > 1.7 && p.grounded && p.pos.y > 0.9) held++;
+      if (leftAt < 0 && !p.grounded && p.pos.y < 0.95 && p.pos.x > 1.5) leftAt = t;
+      if (p.pos.y > 1.5) rose = true;
+      if (maxX === 0 && p.pos.y < 0.9 && p.pos.x > 1.5 && (jumpAt === undefined || rose)) maxX = p.pos.x; // where she comes back down past the slab's height
+    }
+    return { held: held / 60, leftAt, maxX, p };
+  }
+
+  it('without it Wren runs straight off a ledge', () => {
+    expect(walkOff(false).held).toBeLessThan(0.1);
+  });
+
+  it('with it she stops at the lip for a moment, then walks off if she keeps pushing', () => {
+    const r = walkOff(true);
+    expect(r.held).toBeGreaterThan(0.03);
+    expect(r.held).toBeLessThan(0.2);
+    expect(r.leftAt).toBeGreaterThan(0);
+  });
+
+  it('a jump pressed during the hold still launches at full run speed (the hold never costs speed)', () => {
+    const jumped = walkOff(true, 0.3);
+    const plain = walkOff(false, 0.3);
+    // Same jump, same input: the distance she clears must match the no-assist jump from nearly the same lip.
+    expect(jumped.maxX).toBeGreaterThan(plain.maxX - 1.2);
+    expect(jumped.maxX).toBeGreaterThan(4);
   });
 });
 

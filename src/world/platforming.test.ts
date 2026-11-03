@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { checkCourse, COURSES, jumpReach, MAX_RISE, platformPosition, type CourseDef, type PlatformDef } from './platforming';
 
-const slab = (x: number, top: number, extra: Partial<PlatformDef> = {}): PlatformDef => ({ x, z: 0, w: 4, d: 4, top, ...extra });
+const slab = (x: number, top: number, extra: Partial<PlatformDef> = {}): PlatformDef => ({ x, z: 0, r: 2, top, ...extra });
 
 /** Three stepping slabs: start, a checkpoint, the goal. Gaps of 2 m, rises of 0.5 m. */
 const EASY: CourseDef = {
@@ -45,6 +45,15 @@ describe('checkCourse', () => {
     expect(r.problems).toEqual([]);
     expect(r.ok).toBe(true);
     expect(r.hardest.gap).toBeCloseTo(2);
+  });
+  it('flags a moving platform that passes through another, and two that overlap', () => {
+    const rise = withPlatforms([slab(0, 0), slab(6, 0.5, { checkpoint: true }), slab(12, 1)]);
+    // The first slides along x into the second, at about the same height.
+    const slides = { ...rise, platforms: [slab(0, 0, { move: { by: [5, 0, 0], period: 4, phase: 0 } }), ...rise.platforms.slice(1)] };
+    expect(checkCourse(slides).problems.join('\n')).toMatch(/pass through each other/);
+    // Far enough away, or high enough above, they never meet.
+    expect(checkCourse({ ...rise, platforms: [slab(0, 0, { move: { by: [1, 0, 0], period: 4, phase: 0 } }), ...rise.platforms.slice(1)] }).problems.join('\n')).not.toMatch(/pass through/);
+    expect(checkCourse(withPlatforms([slab(0, 0), slab(1, 0.2), slab(6, 0.5, { checkpoint: true }), slab(12, 1)])).problems.join('\n')).toMatch(/pass through each other/);
   });
   it('flags a gap too wide to jump', () => {
     const r = checkCourse({ ...withPlatforms([slab(0, 0), slab(6, 0.5, { checkpoint: true }), slab(20, 1)]), goal: [20, 0] });

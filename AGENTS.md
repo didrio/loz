@@ -26,7 +26,7 @@ to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). **Be
 with fast travel, [docs/bells.md](docs/bells.md)): posts, ringing and the travel menu work, and
 the platforming base is built (coyote time, jump buffer, Wren's blob shadow, moving platforms,
 trial falls; no course exists in a scene yet). A dev menu (~ / L3) has sprint, invincibility,
-a trial-fall-damage toggle and save states. **Next: bells milestone 3** (the two trials), then shrine milestone 6 (Gravelheart; plan mode).
+a trial-fall-damage toggle and save states. **The Bell Shaft (Lullbell's trial) is built** (smoke `trials`); **next: bells 3b** (the Hushing Gorge), then shrine milestone 6 (Gravelheart; plan mode).
 
 ## Docs: read the one for the area you're touching
 

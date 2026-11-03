@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { afterEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { TRIAL_RULES, TrialFalls, type FallApi } from './trialFalls';
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
@@ -16,7 +16,10 @@ function fakeApi() {
   return { api, log };
 }
 
-afterEach(() => {
+/** What the game ships with, read before any test changes it. */
+const SHIPPED_FALL_DAMAGE = TRIAL_RULES.fallDamage;
+
+beforeEach(() => {
   TRIAL_RULES.fallDamage = 0;
 });
 
@@ -53,7 +56,11 @@ describe('TrialFalls', () => {
     expect(f.check(v(0, 0, 0), true, true)).toBe(true);
   });
 
-  it('the damage rule is a switch: with fallDamage 1 a fall costs a heart', async () => {
+  it('ships with falls costing half a heart (the owner turned it on, 2026-11-03)', () => {
+    expect(SHIPPED_FALL_DAMAGE).toBe(1);
+  });
+
+  it('the damage rule is a switch: with fallDamage 1 a fall costs half a heart', async () => {
     TRIAL_RULES.fallDamage = 1;
     const f = new TrialFalls([], -5, v(0, 0, 0));
     f.check(v(0, -6, 0), false);

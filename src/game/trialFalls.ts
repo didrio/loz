@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 
 /**
- * Trial rules (bell trials, see docs/bells.md). Falling costs `fallDamage` hearts: 0 for now
- * (owner's call, 2026-11-03), and the dev menu can flip it to 1 to try it out.
+ * Trial rules (bell trials, see docs/bells.md). Falling costs `fallDamage` half-hearts (1: owner's call,
+ * 2026-11-03, after first trying it free); the dev menu can switch it off.
  */
-export const TRIAL_RULES = { fallDamage: 0 };
+export const TRIAL_RULES = { fallDamage: 1 };
 
 /** A ledge that remembers Wren: standing on it makes it the place a fall returns to. World space. */
 export interface Checkpoint {

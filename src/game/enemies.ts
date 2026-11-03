@@ -181,6 +181,12 @@ export abstract class GroundEnemy extends Enemy {
   /** Where it may walk (a dungeon room minus its stairs), narrower than where it notices Wren. */
   private walkable: ((p: THREE.Vector3) => boolean) | undefined;
 
+  /** Turns it to face `a` (radians, 0 = +z) at once: how it stands when Wren first sees it. */
+  faceAngle(a: number) {
+    this.yaw = a;
+    this.root.rotation.y = a;
+  }
+
   setWalkable(fn: (p: THREE.Vector3) => boolean) {
     this.walkable = fn;
   }

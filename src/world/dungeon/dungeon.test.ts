@@ -95,13 +95,37 @@ describe('trial room platforms', () => {
     things: [],
   });
   it('accepts ledges inside the room, clear of the doorway', () => {
-    expect(validateDungeon(withPlatforms([{ x: 4, z: 4, w: 2, d: 2, top: 2 }]))).toEqual([]);
+    expect(validateDungeon(withPlatforms([{ x: 4, z: 4, r: 1, top: 2 }]))).toEqual([]);
   });
   it('fails a ledge sticking out (even when it slides), one too high for the ceiling, or one in front of a door', () => {
-    expect(validateDungeon(withPlatforms([{ x: 1, z: 4, w: 4, d: 2, top: 2 }])).join('\n')).toContain('sticks out');
-    expect(validateDungeon(withPlatforms([{ x: 10, z: 4, w: 2, d: 2, top: 2, move: { by: [4, 0, 0], period: 4, phase: 0 } }])).join('\n')).toContain('sticks out');
-    expect(validateDungeon(withPlatforms([{ x: 4, z: 4, w: 2, d: 2, top: 6.5 }])).join('\n')).toContain('headroom');
-    expect(validateDungeon(withPlatforms([{ x: 12, z: 7, w: 2, d: 2, top: 1 }])).join('\n')).toContain('opens straight into a platform');
+    expect(validateDungeon(withPlatforms([{ x: 1, z: 4, r: 2, top: 2 }])).join('\n')).toContain('sticks out');
+    expect(validateDungeon(withPlatforms([{ x: 10, z: 4, r: 1, top: 2, move: { by: [4, 0, 0], period: 4, phase: 0 } }])).join('\n')).toContain('sticks out');
+    expect(validateDungeon(withPlatforms([{ x: 4, z: 4, r: 1, top: 6.5 }])).join('\n')).toContain('headroom');
+    expect(validateDungeon(withPlatforms([{ x: 12, z: 7, r: 1, top: 1 }])).join('\n')).toContain('opens straight into a platform');
+  });
+});
+
+describe('trial room courses and things on ledges', () => {
+  const room = (platforms: NonNullable<DungeonDef['rooms'][number]['platforms']>, things: DungeonDef['things'] = []): DungeonDef => ({
+    id: 't', name: 't', goal: 'b', entrance: { room: 'a', at: [3, 12], facing: 'n' },
+    rooms: [{ id: 'a', floor: 0, x: 0, z: 0, w: 14, d: 14, trial: true, height: 12, features: [{ kind: 'pit', x: 2, z: 0, w: 9, d: 14 }], platforms }, { id: 'b', floor: 0, x: 14, z: 0, w: 14, d: 14 }],
+    doors: [{ id: 'ab', from: 'a', to: 'b' }],
+    things,
+  });
+  const near = [{ x: 5, z: 3, r: 1.5, top: 1 }, { x: 9, z: 3, r: 1.5, top: 2 }];
+  it('accepts a course whose hops can be jumped, first ledge to last', () => {
+    expect(validateDungeon(room(near))).toEqual([]);
+  });
+  it('fails a course with a gap too wide, or a climb too steep, for the goal', () => {
+    expect(validateDungeon(room([near[0], { ...near[1], x: 13 }])).join('\n')).toContain('goal');
+    expect(validateDungeon(room([near[0], { ...near[1], top: 4 }])).join('\n')).toContain('goal');
+  });
+  it('lets a bell or an enemy stand on a still ledge of that height, over the pit, and nowhere else', () => {
+    const bell = (at: [number, number], up: number): DungeonDef['things'] => [{ kind: 'bell', id: 'b1', room: 'a', at, bell: 'lull', up }];
+    expect(validateDungeon(room(near, bell([9, 3], 2)))).toEqual([]);
+    expect(validateDungeon(room(near, bell([9, 3], 3))).join('\n')).toContain('no still platform');
+    expect(validateDungeon(room(near, bell([9, 9], 2))).join('\n')).toContain('no still platform');
+    expect(validateDungeon(room(near, [{ kind: 'bell', id: 'b1', room: 'a', at: [9, 3], bell: 'lull' }])).join('\n')).toContain('stands on');
   });
 });
 

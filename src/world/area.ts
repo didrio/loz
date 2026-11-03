@@ -47,6 +47,11 @@ export interface Area {
    */
   tether?(x: number, y: number, z: number, dirX: number, dirZ: number): { at: THREE.Vector3 } | null;
   update(dt: number, env: AreaEnv): void;
+  /**
+   * Moves the area's moving platforms. The game calls it *before* the player updates, so a
+   * rider can take the platform's step along (`Physics.carryDelta`); `update` runs after.
+   */
+  movePlatforms?(dt: number): void;
   dispose(): void;
 }
 

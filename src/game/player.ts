@@ -100,6 +100,12 @@ const GRAVITY = 30;
 /** Jump forgiveness (platforming): a jump still works this long after leaving a ledge, and a press this long before landing still jumps. */
 export const COYOTE_TIME = 0.12;
 export const JUMP_BUFFER = 0.12;
+/**
+ * Edge stickiness (platforming): where a walk would carry Wren's feet off a ledge, she stops for up to
+ * this long unless she is still pushing; then she walks off. Only her *displacement* is held, never her
+ * speed, so a jump pressed at the lip still launches at full run speed (it works with coyote time).
+ */
+export const EDGE_HOLD = 0.05;
 
 export class Player {
   readonly h: Humanoid;
@@ -114,6 +120,9 @@ export class Player {
   private velY = 0;
   private coyote = 0;
   private jumpBuffer = 0;
+  /** Turned on in bell trial rooms (content/shrine.ts): the lip of a ledge holds Wren briefly (`EDGE_HOLD`). */
+  edgeAssist = false;
+  private edgeHeld = 0;
   private state: State = 'move';
   private t = 0;
   private combo = 0;
@@ -411,6 +420,7 @@ export class Player {
       this.facing = lerpAngle(this.facing, Math.atan2(to.x, to.z), damp(16, dt));
     }
 
+    this.edgeStick(vel, grounded && !jumped && this.state === 'move' && !this.shielding, dt);
     vel.add(this.knock);
     this.knock.multiplyScalar(Math.exp(-8 * dt));
 
@@ -430,6 +440,29 @@ export class Player {
     this.shadow.place(this.pos.x, this.pos.y, this.pos.z, this.physics.groundY(this.pos.x, this.pos.z, this.pos.y + 0.5), this.opacity);
 
     this.animate(dt);
+  }
+
+  /**
+   * Edge stickiness: if this frame's walk would put Wren's feet over nothing, hold her at the lip for
+   * `EDGE_HOLD` seconds (her speed is untouched). `vel` is the walk only, no knockback.
+   */
+  private edgeStick(vel: THREE.Vector3, active: boolean, dt: number) {
+    const speed = Math.hypot(vel.x, vel.z);
+    if (!this.edgeAssist || !active || speed < 0.5) {
+      this.edgeHeld = 0;
+      return;
+    }
+    const ahead = speed * dt + 0.05;
+    const x = this.pos.x + (vel.x / speed) * ahead, z = this.pos.z + (vel.z / speed) * ahead;
+    const ground = this.physics.groundY(x, z, this.pos.y + 0.4);
+    if (ground !== null && ground > this.pos.y - 0.45) {
+      this.edgeHeld = 0;
+      return;
+    }
+    if (this.edgeHeld >= EDGE_HOLD) return; // she has pushed long enough: off she goes
+    this.edgeHeld += dt;
+    vel.x = 0;
+    vel.z = 0;
   }
 
   private swordHits(env: PlayerEnv, dmg: number) {

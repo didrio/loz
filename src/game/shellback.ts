@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
-import type { Physics } from '../core/physics';
+import { Layer, type Physics } from '../core/physics';
 import { uniqueMat } from '../render/materials';
 import { GroundEnemy, type Attack, type EnemyEnv, type HurtResult } from './enemies';
 
@@ -209,7 +209,11 @@ export class Shellback extends GroundEnemy {
             break;
           }
         }
-        if (this.t > CHARGE_TIME) this.skid(SHELLBACK_SKID);
+        // Running into another enemy stops the charge dead (no damage to it, no shoving it): it skids in place.
+        if (this.character.blockedBy?.member === Layer.Enemy) {
+          this.chargeDir.set(0, 0, 0);
+          this.skid(SHELLBACK_SKID);
+        } else if (this.t > CHARGE_TIME) this.skid(SHELLBACK_SKID);
         break;
       case 'skid':
         turn = 0;

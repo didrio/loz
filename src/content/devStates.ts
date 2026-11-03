@@ -71,8 +71,16 @@ function bellStates(): DevState[] {
   return [
     { name: 'Bells: Morrowbell in hand, Thistledown', save: base({ flags: SWORD_AND_BED, bells: { carried: ['morrow'], hung: [] } }), at: atMorrowPost() },
     { name: 'Bells: Lullbell in hand, shrine entry', save: base({ ...late, area: 'shrine', bells: { carried: ['lull'], hung: ['morrow'] } }) },
+    { name: 'Bells: Bell Shaft start', save: base({ ...late, area: 'shrine', bells: { carried: [], hung: ['morrow'] } }), at: atBellShaft() },
     { name: 'Bells: both hung, Thistledown', save: base({ ...late, bells: { carried: [], hung: ['morrow', 'lull'] } }), at: atMorrowPost() },
   ];
+}
+
+/** Inside the Bell Shaft (the Lullbell's trial), 1.5 m in from its door, facing east at the climb. */
+function atBellShaft(): DevState['at'] {
+  const room = SHRINE.rooms.find((r) => r.id === 'bellShaft')!;
+  const [x, z] = worldPos(room, [1.5, -15 - room.z]); // the door (`anteBell`, offset 5 along the shared wall) is at world z -15
+  return { x, z, y: floorY(SHRINE, room.floor) + 0.05, facing: Math.PI / 2 };
 }
 
 export const DEV_STATES: DevState[] = [

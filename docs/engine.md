@@ -120,7 +120,15 @@ slopes ≤ 50°, auto-steps ≤ 0.45 m, snaps to ground). Positions are **feet**
 `groundY(x, z)` and `rayDistance(...)` are the queries; gameplay never calls Rapier directly.
 Jump is forgiving: coyote time and a jump buffer (0.12 s each). Moving platforms are
 `kinematicBox` bodies; a grounded Wren is carried by the mover's per-frame delta (`carryDelta`),
-so the frame order is platform `moveTo` → player → `physics.step`. See [bells.md](bells.md).
+so the frame order is platform `moveTo` → player → `physics.step` (`Game.frame` calls
+`Area.movePlatforms` first). See [bells.md](bells.md).
+
+**Characters never overlap or push each other** (owner's rule, 2026-11-03): the controller sees only
+the world; `Character.move` then cuts a move short at another character's edge (circles in plan,
+same level, only for layers that collide: bosses ignore other enemies) and slides round it. Only
+the mover is displaced, never whoever it ran into; `blockedBy` says who stopped it. Knockback
+(`knock`, `pushPlayer`) is still a push, by design. Owners must pass their own `pos` vector to
+`createCharacter` and keep it current.
 
 **The follow camera's collision** is one rule, indoors and out (the Souls/Zelda approach,
 chosen by the owner 2026-11-02 after a see-through-wall experiment fought with it): a

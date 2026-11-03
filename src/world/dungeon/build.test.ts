@@ -247,8 +247,8 @@ describe('trial room platforms', () => {
     id: 't', name: 't', goal: 'b', entrance: { room: 'a', at: [3, 12], facing: 'n' },
     rooms: [
       { id: 'a', floor: 0, x: 0, z: 0, w: 20, d: 14, trial: true, height: 8, platforms: [
-        { x: 5, z: 4, w: 3, d: 3, top: 1.5 },
-        { x: 12, z: 4, w: 3, d: 3, top: 1.5, move: { by: [0, 2, 0], period: 4, phase: 0 } },
+        { x: 5, z: 4, r: 1.5, top: 1.5 },
+        { x: 12, z: 4, r: 1.5, top: 1.5, move: { by: [0, 2, 0], period: 4, phase: 0 } },
       ] },
       { id: 'b', floor: 0, x: 20, z: 0, w: 14, d: 14 },
     ],
@@ -264,7 +264,7 @@ describe('trial room platforms', () => {
     expect(top(5, 4)).toBeCloseTo(1.5, 1);
     expect(top(12, 4)).toBeCloseTo(1.5, 1); // phase 0: resting
     for (let i = 0; i < 120; i++) { // 2 s = half a period: fully risen
-      area.update(1 / 60, {} as never);
+      area.movePlatforms(1 / 60);
       physics.step(1 / 60);
     }
     expect(top(12, 4)).toBeCloseTo(3.5, 1);

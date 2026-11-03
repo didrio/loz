@@ -1,9 +1,9 @@
 import {
-  CEIL_T, DEFAULT_DOOR_WIDTH, DIRS, DOOR_MARGIN, doorPlacement, FLOOR_T, floorHeightOf, floorY, footprintOverlap, MIN_ROOM,
+  CEIL_T, DEFAULT_DOOR_WIDTH, DIRS, DOOR_MARGIN, doorPlacement, FLOOR_T, floorHeightOf, floorY, footprintOverlap, MIN_ROOM, PIT_DEPTH,
   landmarkRect, lockSwitches, LANDMARK_SIZE, rectContains, rectsOverlap, roomHeight, roomOpenings, roomRect, STAIR_LANDING, stairPlacement, worldPos,
   type DungeonDef, type Rect, type RoomDef, type Vec2,
 } from './format';
-import { HEADROOM } from '../platforming';
+import { checkCourse, HEADROOM } from '../platforming';
 
 /** How much clear floor a doorway needs in front of it, on both sides. */
 const DOOR_APPROACH = 1.5;
@@ -34,12 +34,19 @@ export function validateDungeon(def: DungeonDef): string[] {
     }
     for (const [i, p] of (r.platforms ?? []).entries()) {
       const range = p.move ? [p.move.by[0], p.move.by[1], p.move.by[2]] : [0, 0, 0];
-      const x0 = p.x - p.w / 2 + Math.min(0, range[0]), x1 = p.x + p.w / 2 + Math.max(0, range[0]);
-      const z0 = p.z - p.d / 2 + Math.min(0, range[2]), z1 = p.z + p.d / 2 + Math.max(0, range[2]);
+      const x0 = p.x - p.r + Math.min(0, range[0]), x1 = p.x + p.r + Math.max(0, range[0]);
+      const z0 = p.z - p.r + Math.min(0, range[2]), z1 = p.z + p.r + Math.max(0, range[2]);
       if (x0 < 0 || z0 < 0 || x1 > r.w || z1 > r.d) errors.push(`Room "${r.id}": platform ${i} (even sliding) sticks out of the room`);
       const top = p.top + Math.max(0, range[1]);
       if (top + HEADROOM > roomHeight(def, r)) errors.push(`Room "${r.id}": platform ${i} is too high: less than ${HEADROOM} m of headroom under the ceiling`);
     }
+  }
+  // A trial room's ledges form a course: the first is the start, the last the goal.
+  for (const r of def.rooms) {
+    const ps = r.platforms ?? [];
+    if (ps.length < 2) continue;
+    const c = checkCourse({ platforms: ps, start: [ps[0].x, ps[0].z], goal: [ps[ps.length - 1].x, ps[ps.length - 1].z], fallY: -PIT_DEPTH });
+    for (const m of c.problems) errors.push(`Room "${r.id}": ${m}`);
   }
   // Rooms on the same floor may touch (share walls) but not overlap; a room may not reach
   // up into a room built above it (its ceiling would cut through that room's floor).
@@ -150,7 +157,7 @@ export function validateDungeon(def: DungeonDef): string[] {
     for (const ap of approaches) {
       if (!ap.rooms.includes(r)) continue;
       const marks = def.things.flatMap((t) => (t.kind === 'landmark' && t.room === r.id ? [{ id: `a landmark "${t.id}"`, rect: landmarkRect(r, t.at) }] : []));
-      const ledges = (r.platforms ?? []).map((p, i) => ({ id: `a platform (${i})`, rect: { x: r.x + p.x - p.w / 2, z: r.z + p.z - p.d / 2, w: p.w, d: p.d } }));
+      const ledges = (r.platforms ?? []).map((p, i) => ({ id: `a platform (${i})`, rect: { x: r.x + p.x - p.r, z: r.z + p.z - p.r, w: p.r * 2, d: p.r * 2 } }));
       const blockers = [...all, ...marks, ...ledges, ...(r.features ?? []).filter((f) => f.kind !== 'pit').map((f) => ({
         id: `a ${f.kind}`,
         rect: f.kind === 'pillar' ? { x: r.x + f.x - (f.r ?? 0.7), z: r.z + f.z - (f.r ?? 0.7), w: (f.r ?? 0.7) * 2, d: (f.r ?? 0.7) * 2 } : { x: r.x + f.x, z: r.z + f.z, w: f.w, d: f.d },
@@ -179,7 +186,13 @@ export function validateDungeon(def: DungeonDef): string[] {
       const half = t.kind === 'stone' ? 1 : t.kind === 'landmark' ? LANDMARK_SIZE / 2 : 0.4;
       const spot: Rect = { x: x - half, z: z - half, w: half * 2, d: half * 2 };
       const { holes, stairs } = openings.get(r.id)!;
-      for (const o of [...holes, ...stairs]) {
+      const up = (t.kind === 'enemy' || t.kind === 'bell') ? t.up : undefined;
+      if (up !== undefined) {
+        // On a trial platform: it must be a still one with that top, under the whole spot.
+        const [px, pz] = t.at;
+        const ledge = (r.platforms ?? []).find((p) => !p.move && p.top === up && Math.hypot(px - p.x, pz - p.z) + half <= p.r);
+        if (!ledge) errors.push(`${t.kind} "${t.id}" says it stands ${up} m up, but no still platform of that height is under it`);
+      } else for (const o of [...holes, ...stairs]) {
         if (rectsOverlap(o.rect, spot)) errors.push(`${t.kind} "${t.id}" stands on "${o.id}"`);
       }
       // Enemies start on level ground a body's width clear of a flight, never on or beside it.

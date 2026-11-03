@@ -26,7 +26,7 @@ Each floor is a wing with its own look (`RoomDef.theme`, `decor.ts`) and its own
 | 0 | **The Sleeping Halls** | warm sandstone, kneeling keeper statues, carved sleeping faces | pushing stones onto plates (the Nave; the Hall of Plates: two stones, two plates, a pillar in the way), filling a pit with stones to make a path (Sunken Court), statues that are sentinels (Gallery of Statues) |
 | 1 | **The Upper Galleries** | pale marble, checkered floors, tall windows with light shafts | three crystals that must all be lit (Crystal Walk → the Glove Shrine), drop-hole shortcuts (Lookout → Sunken Court, Loft → Nave), the glove's first heavy stone (Stone Loft) |
 | -1 | **The Undercroft** | dark mossy stone, hanging roots, water in the pits | a pit too wide to jump (Pit Hall: the glove's bridge), a heavy stone plugging a wall of roots (Root Cellar), a water channel to fill (Cistern), shellbacks (Crypt, Ossuary) |
-| -2 | **The Deep Hearth** | black basalt, glowing ember cracks, red light | the Gauntlet (every enemy type at once), the Key Vault (push and pull for the boss key), the Antechamber (shortcut stairs up through the Deep Shaft to the Barred Cell) |
+| -2 | **The Deep Hearth** | black basalt, glowing ember cracks, red light | the Gauntlet (every enemy type at once), the Key Vault (push and pull for the boss key), the Antechamber (shortcut stairs up through the Deep Shaft to the Barred Cell), the Bell Shaft (east of the Antechamber, always open: the Lullbell's platforming trial, see [bells.md](bells.md)) |
 
 **Landmarks** (one lopsided 4-5 m statue in each wing's central room, so you know where you are
 when a shortcut drops you in; none on floor -2, three rooms in a line need none): the Nave's

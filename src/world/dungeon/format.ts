@@ -165,7 +165,11 @@ export type ThingDef =
    * doesn't expect it to serve a plate, chest or doorway.
    */
   | { kind: 'stone'; id: string; room: string; at: Vec2; heavy?: boolean; role?: 'bridge' }
-  | { kind: 'enemy'; id: string; room: string; at: Vec2; type: string }
+  /**
+   * `up`: stands on a trial-room platform that high above the room's floor (the platform must be under `at`),
+   * and stays on it. `facing`: the yaw it stands in (0 = looking south, +x = east).
+   */
+  | { kind: 'enemy'; id: string; room: string; at: Vec2; type: string; up?: number; facing?: number }
   | { kind: 'boss'; id: string; room: string; type: string }
   | { kind: 'sign'; id: string; room: string; at: Vec2; text: string }
   /**
@@ -181,7 +185,7 @@ export type ThingDef =
    */
   | { kind: 'bellPost'; id: string; room: string; at: Vec2; bell: BellId; facing?: number }
   /** A bell waiting at the end of its trial, on a small plinth (solid); Wren takes it. */
-  | { kind: 'bell'; id: string; room: string; at: Vec2; bell: BellId };
+  | { kind: 'bell'; id: string; room: string; at: Vec2; bell: BellId; up?: number };
 
 /** The shrine's landmark statues: the Nave's, the Long Gallery's and the Crypt's. */
 export type LandmarkStyle = 'lanternKeeper' | 'watcher' | 'fallenKeeper';

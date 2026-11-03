@@ -64,6 +64,43 @@ export const SHRINE: DungeonDef = {
       features: [{ kind: 'block', x: 4, z: 8, w: 6, d: 2, h: 3 }],
     },
     { id: 'bossAnte', name: 'Antechamber', floor: -2, x: 14, z: -20, w: 16, d: 16, theme: 'basalt' },
+    {
+      // The Lullbell's trial (docs/bells.md): a climb up the shaft over a pit. First platform = start, last = goal.
+      id: 'bellShaft', name: 'Bell Shaft', floor: -2, x: 30, z: -34, w: 28, d: 30, height: 23, theme: 'basalt', trial: true,
+      features: [{ kind: 'pit', x: 6, z: 0, w: 22, d: 30 }],
+      platforms: [
+        { x: 6.5, z: 19, r: 1.4, top: 1, look: 0x7d6c5e },
+        { x: 6.5, z: 13.5, r: 1.4, top: 1.2, look: 0x7d6c5e },
+        { x: 6.5, z: 7.9, r: 1.4, top: 1.7, look: 0x7d6c5e },
+        { x: 12.4, z: 7, r: 2, top: 2, checkpoint: true, look: 0xb9b0a0 },
+        { x: 18.4, z: 7, r: 1.4, top: 2.7, look: 0x7d6c5e },
+        { x: 19.5, z: 12.4, r: 1.4, top: 2.9, move: { by: [0, 0, 2], period: 4, phase: 0 }, look: 0xb07840 },
+        { x: 19.5, z: 18, r: 1.4, top: 3.4, look: 0x7d6c5e },
+        { x: 18.8, z: 23.4, r: 2.6, top: 3.7, look: 0x7d6c5e },
+        { x: 12.7, z: 25, r: 2, top: 4.4, checkpoint: true, look: 0xb9b0a0 },
+        { x: 6.7, z: 25, r: 1.4, top: 4.6, look: 0x7d6c5e },
+        { x: 6.5, z: 19.5, r: 1.4, top: 5.1, look: 0x7d6c5e },
+        { x: 6.5, z: 14, r: 1.4, top: 5.4, move: { by: [0, 0, -2], period: 4, phase: 0 }, look: 0xb07840 },
+        { x: 6.5, z: 8.4, r: 1.4, top: 6.1, move: { by: [0, 2, 0], period: 6, phase: 0 }, look: 0xb07840 },
+        { x: 11.8, z: 7, r: 1.4, top: 8.3, look: 0x7d6c5e },
+        { x: 17.8, z: 7, r: 2, top: 8.8, checkpoint: true, look: 0xb9b0a0 },
+        { x: 19.5, z: 12.7, r: 1.4, top: 9.1, look: 0x7d6c5e },
+        { x: 19.5, z: 18.3, r: 1.4, top: 9.8, look: 0x7d6c5e },
+        { x: 15.9, z: 23.1, r: 3.5, top: 10, look: 0x7d6c5e },
+        { x: 9, z: 25, r: 2, top: 10.5, checkpoint: true, look: 0xb9b0a0 },
+        { x: 6.5, z: 19.6, r: 1.4, top: 10.8, look: 0x7d6c5e },
+        { x: 6.5, z: 14, r: 1.4, top: 11.5, move: { by: [0, 0, -2], period: 4, phase: 0 }, look: 0xb07840 },
+        { x: 6.5, z: 8.5, r: 1.4, top: 11.7, look: 0x7d6c5e },
+        { x: 11.8, z: 7, r: 1.4, top: 12.2, move: { by: [0, 2, 0], period: 6, phase: 0 }, look: 0xb07840 },
+        { x: 17.3, z: 7, r: 1.4, top: 14.5, look: 0x7d6c5e },
+        { x: 19.5, z: 12.6, r: 2, top: 15.2, checkpoint: true, look: 0xb9b0a0 },
+        { x: 19.5, z: 18.5, r: 1.4, top: 15.4, look: 0x7d6c5e },
+        { x: 14, z: 22.4, r: 4.5, top: 15.9, look: 0x7d6c5e },
+        { x: 6.5, z: 21.3, r: 2, top: 16.2, checkpoint: true, look: 0xb9b0a0 },
+        { x: 6.5, z: 15.4, r: 1.4, top: 16.9, look: 0x7d6c5e },
+        { x: 6.5, z: 9, r: 2.4, top: 17.1, checkpoint: true, look: 0xb9b0a0 },
+      ],
+    },
     { id: 'boss', name: "Warden's Hearth", floor: -2, x: 6, z: -40, w: 24, d: 20, height: 12, theme: 'basalt' },
   ],
   doors: [
@@ -105,6 +142,8 @@ export const SHRINE: DungeonDef = {
     { id: 'emberVault', from: 'emberHall', to: 'keyVault' },
     { id: 'gauntletAnte', from: 'gauntlet', to: 'bossAnte' },
     { id: 'bossDoor', from: 'bossAnte', to: 'boss', lock: 'boss' },
+    // East of the antechamber: the Lullbell's trial, always open.
+    { id: 'anteBell', from: 'bossAnte', to: 'bellShaft', offset: 5 },
   ],
   things: [
     // ── Hall of Sleepers: teach. A stone fills the doorway; one strike from the side clears it.
@@ -219,6 +258,14 @@ export const SHRINE: DungeonDef = {
     { kind: 'chest', id: 'bossKeyChest', room: 'keyVault', at: [7, 2], loot: 'bossKey', appears: { switches: ['vaultPlateA', 'vaultPlateB'] } },
     // ── Antechamber.
     { kind: 'sign', id: 'anteSign', room: 'bossAnte', at: [8, 9], text: 'Something huge breathes beyond the door, slow as a hillside.' },
+    // ── Bell Shaft: climb the ledges; a thornling guards the wide one, the Lullbell waits on top.
+    { kind: 'enemy', id: 'shaftThorn1', room: 'bellShaft', at: [18.8, 23.4], type: 'thornling', up: 3.7, facing: 3.01 },
+    { kind: 'enemy', id: 'shaftThorn2', room: 'bellShaft', at: [16.7, 23.7], type: 'thornling', up: 10, facing: 2.5 },
+    { kind: 'enemy', id: 'shaftThorn3', room: 'bellShaft', at: [15.1, 22.5], type: 'thornling', up: 10, facing: 2.5 },
+    { kind: 'enemy', id: 'shaftThorn4', room: 'bellShaft', at: [12.78, 23.27], type: 'thornling', up: 15.9, facing: 2.19 },
+    { kind: 'enemy', id: 'shaftThorn5', room: 'bellShaft', at: [15.36, 23.03], type: 'thornling', up: 15.9, facing: 2.19 },
+    { kind: 'enemy', id: 'shaftThorn6', room: 'bellShaft', at: [13.86, 20.91], type: 'thornling', up: 15.9, facing: 2.19 },
+    { kind: 'bell', id: 'lullBell', room: 'bellShaft', at: [6.5, 9], bell: 'lull', up: 17.1 },
     // ── Warden's Hearth.
     { kind: 'boss', id: 'gravelheart', room: 'boss', type: 'gravelheart' },
   ],

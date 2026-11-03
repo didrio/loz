@@ -55,7 +55,6 @@ class Mover implements KinematicBody {
     this.delta.set(x - this.pos.x + this.delta.x, y - this.pos.y + this.delta.y, z - this.pos.z + this.delta.z);
     this.pos.set(x, y, z);
     this.body.setTranslation({ x, y, z }, true);
-    this.body.setNextKinematicTranslation({ x, y, z });
   }
 
   remove() {
@@ -135,10 +134,23 @@ export class Physics {
 
   // --- moving platforms ---------------------------------------------------------
 
-  /** A position-based kinematic box on `layer` (Prop by default: the camera passes through). */
+  /**
+   * A box that moves (`moveTo`), on `layer` (Prop by default: the camera passes through). It is a *fixed*
+   * Rapier body that we teleport each frame, not a kinematic one: the character controller refused to
+   * walk on a kinematic body (Wren stood still, even when it wasn't moving). Riders are carried by `carryDelta`.
+   */
   kinematicBox(x: number, y: number, z: number, hx: number, hy: number, hz: number, layer: number = Layer.Prop): KinematicBody {
-    const body = this.world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(x, y, z));
-    const collider = this.world.createCollider(RAPIER.ColliderDesc.cuboid(hx, hy, hz).setCollisionGroups(groups(layer, 0xffff)), body);
+    return this.mover(RAPIER.ColliderDesc.cuboid(hx, hy, hz), x, y, z, layer);
+  }
+
+  /** `kinematicBox`, but a round disc: `halfHeight` thick, `r` wide. */
+  kinematicCylinder(x: number, y: number, z: number, halfHeight: number, r: number, layer: number = Layer.Prop): KinematicBody {
+    return this.mover(RAPIER.ColliderDesc.cylinder(halfHeight, r), x, y, z, layer);
+  }
+
+  private mover(desc: RAPIER.ColliderDesc, x: number, y: number, z: number, layer: number): KinematicBody {
+    const body = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(x, y, z));
+    const collider = this.world.createCollider(desc.setCollisionGroups(groups(layer, 0xffff)), body);
     const m = new Mover(body, collider, x, y, z, this);
     this.movers.set(collider.handle, m);
     return m;
@@ -166,8 +178,15 @@ export class Physics {
 
   // --- characters ---------------------------------------------------------------
 
+  /** Every live character, so they can block each other (see `Character.move`). */
+  private readonly characters = new Set<Character>();
+
+  /**
+   * `feet` is the owner's own position vector: it is kept up to date by the owner (and by `move`), and read by
+   * other characters to keep out of this one's way.
+   */
   createCharacter(feet: THREE.Vector3, radius: number, halfHeight: number, member: number, filter: number) {
-    return new Character(this.world, this.controller, feet, radius, halfHeight, member, filter);
+    return new Character(this.world, this.controller, feet, radius, halfHeight, member, filter, this.characters);
   }
 
   // --- queries ------------------------------------------------------------------
@@ -228,22 +247,28 @@ export class Physics {
  * slopes up to 50°, steps over small ledges and sticks to the ground going downhill.
  * Positions are *feet* positions; the capsule center sits `offsetY` above them.
  */
+/** Characters this far apart in height (feet) are on different levels and don't block each other. */
+const BODY_HEIGHT = 1.4;
+
 export class Character {
   readonly body: RAPIER.RigidBody;
   readonly collider: RAPIER.Collider;
   readonly offsetY: number;
   grounded = false;
+  /** The character that stopped the last `move` (null if none did). */
+  blockedBy: Character | null = null;
   private readonly queryGroups: number;
   private readonly moved = { x: 0, y: 0, z: 0 };
 
   constructor(
     private readonly world: RAPIER.World,
     private readonly controller: RAPIER.KinematicCharacterController,
-    feet: THREE.Vector3,
-    radius: number,
+    private readonly feet: THREE.Vector3,
+    readonly radius: number,
     halfHeight: number,
-    member: number,
-    filter: number,
+    readonly member: number,
+    readonly filter: number,
+    private readonly others: Set<Character>,
   ) {
     this.offsetY = halfHeight + radius;
     this.body = world.createRigidBody(
@@ -253,23 +278,44 @@ export class Character {
       RAPIER.ColliderDesc.capsule(halfHeight, radius).setCollisionGroups(groups(member, filter)),
       this.body,
     );
-    this.queryGroups = groups(member, filter);
+    // The controller only sees the world: characters keep out of each other in `move`, never by pushing.
+    this.queryGroups = groups(member, filter & ~(Layer.Player | Layer.Enemy));
+    others.add(this);
   }
 
   /**
    * Tries to move by `delta` (meters) from `feet`, which is updated to where the character
    * actually ends up. Call at most once per physics step.
+   *
+   * Characters never overlap and never push each other: a move that would end inside another character
+   * (one whose layers it collides with, at about the same height) is cut short at its edge, sliding round it.
+   * Only the mover is displaced; whoever it ran into is not touched. `blockedBy` says who stopped it.
    */
   move(feet: THREE.Vector3, delta: THREE.Vector3) {
     this.moved.x = delta.x;
     this.moved.y = delta.y;
     this.moved.z = delta.z;
+    const x0 = feet.x, z0 = feet.z;
     this.controller.computeColliderMovement(this.collider, this.moved, RAPIER.QueryFilterFlags.EXCLUDE_SENSORS, this.queryGroups);
     const m = this.controller.computedMovement();
     this.grounded = this.controller.computedGrounded();
     feet.x += m.x;
     feet.y += m.y;
     feet.z += m.z;
+    this.blockedBy = null;
+    for (const o of this.others) {
+      if (o === this || !(this.filter & o.member) || !(o.filter & this.member) || Math.abs(feet.y - o.feet.y) > BODY_HEIGHT) continue;
+      const min = this.radius + o.radius + 0.02;
+      const dx = feet.x - o.feet.x, dz = feet.z - o.feet.z, d = Math.hypot(dx, dz);
+      if (d >= min || d < 1e-6) continue;
+      // Already overlapping (a spawn, a teleport): just never get closer. Otherwise stop at its edge.
+      const d0 = Math.hypot(x0 - o.feet.x, z0 - o.feet.z);
+      const keep = d0 < min - 0.01 ? Math.max(d, Math.min(d0, min)) : min;
+      if (keep <= d) continue;
+      feet.x = o.feet.x + (dx / d) * keep;
+      feet.z = o.feet.z + (dz / d) * keep;
+      this.blockedBy = o;
+    }
     this.body.setNextKinematicTranslation({ x: feet.x, y: feet.y + this.offsetY, z: feet.z });
     return m;
   }
@@ -282,6 +328,7 @@ export class Character {
   }
 
   dispose() {
+    this.others.delete(this);
     this.world.removeRigidBody(this.body);
   }
 }

@@ -181,6 +181,8 @@ export class Game implements ScriptApi {
     const paused = this.devMenu.update();
     const dt = frozen || paused ? 0 : rawDt * this.timeScale;
     this.director.update(dt);
+    // Platforms move before the player updates, so a rider takes the step along (core/physics.ts carryDelta).
+    this.area.movePlatforms?.(dt);
 
     switch (paused ? 'paused' : this.mode) {
       case 'paused':

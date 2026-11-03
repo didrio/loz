@@ -70,7 +70,8 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   front and sides to ~75° off its facing); its back feet and tail take hits. It
   turns slowly (circling at a run gets past the shell), tucks in for 0.6 s (the tell), then
   charges ~5 m (`SHELLBACK_CHARGE`: 1, guard 1). After a charge it skids 1.3 s unable to
-  turn; 1.9 s if the shield stopped it. 4 HP.
+  turn; 1.9 s if the shield stopped it. Running into another enemy stops the charge dead (it skids
+  in place; no damage to the other, no shoving; `Character.blockedBy`). 4 HP.
 - **Lock-on** (`game/lockon.ts`) picks only enemies within 20 m, roughly where the camera
   looks, on the same level and in plain sight; it lets go when the target dies, gets
   25 m away or ends up on another floor.

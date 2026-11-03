@@ -138,3 +138,54 @@ describe('Physics.kinematicBox', () => {
     expect(p.groundY(0, 0, 10, Layer.Prop)).toBeNull();
   });
 });
+
+describe('Characters keep out of each other', () => {
+  const make = (p: Physics, x: number, z: number, r = 0.5, member = Layer.Enemy, filter = SOLID | Layer.Player | Layer.Enemy) => {
+    const feet = new THREE.Vector3(x, 0, z);
+    return { feet, c: p.createCharacter(feet, r, 0.05, member, filter) };
+  };
+  const ground = () => {
+    const p = new Physics();
+    p.box(0, -0.5, 0, 30, 0.5, 30);
+    p.refreshQueries();
+    return p;
+  };
+
+  it('a mover stops at the other one\'s edge and the other is never displaced', () => {
+    const p = ground();
+    const a = make(p, 0, 0), b = make(p, 0, 3);
+    for (let i = 0; i < 60; i++) {
+      a.c.move(a.feet, new THREE.Vector3(0, -0.01, 0.2));
+      b.c.move(b.feet, new THREE.Vector3(0, -0.01, 0));
+      p.step(1 / 60);
+    }
+    expect(b.feet.z).toBeCloseTo(3, 2);
+    expect(a.feet.z).toBeCloseTo(3 - 1.02, 1);
+    expect(a.c.blockedBy).toBe(b.c);
+  });
+
+  it('slides round when it pushes sideways, and walks away freely', () => {
+    const p = ground();
+    const a = make(p, 0.5, 0), b = make(p, 0, 1.5);
+    a.c.move(a.feet, new THREE.Vector3(0, -0.01, 0.4));
+    expect(Math.hypot(a.feet.x - b.feet.x, a.feet.z - b.feet.z)).toBeGreaterThan(0.99);
+    expect(a.feet.x).toBeGreaterThan(0.5);
+    a.c.move(a.feet, new THREE.Vector3(0, -0.01, -0.5));
+    expect(a.c.blockedBy).toBeNull();
+  });
+
+  it('layers that do not collide pass through each other; other floors do not block', () => {
+    const p = ground();
+    const boss = make(p, 0, 3, 1, Layer.Enemy, SOLID | Layer.Player); // bosses ignore other enemies
+    const imp = make(p, 0, 0);
+    for (let i = 0; i < 40; i++) imp.c.move(imp.feet, new THREE.Vector3(0, -0.01, 0.2));
+    expect(imp.feet.z).toBeGreaterThan(5);
+    const above = make(p, 5, 0);
+    above.feet.y = 3;
+    const below = make(p, 5, 0.3);
+    below.c.move(below.feet, new THREE.Vector3(0, -0.01, 0.1));
+    expect(below.c.blockedBy).toBeNull();
+    expect(boss.c.blockedBy).toBeNull();
+  });
+});
+

@@ -85,6 +85,10 @@ export interface Spawn {
   x: number;
   y: number;
   z: number;
+  /** The yaw it starts in, if the data says. */
+  facing?: number;
+  /** An enemy on a trial platform keeps to its disc (world x, z, radius). */
+  leash?: { x: number; z: number; r: number };
 }
 
 export class DungeonArea implements Area {
@@ -129,6 +133,7 @@ export class DungeonArea implements Area {
   private readonly waterMat = new THREE.MeshLambertMaterial({ color: 0x2f6f74, transparent: true, opacity: 0.75, emissive: 0x0c2a2c });
   private readonly disposer: () => void;
   private t = 0;
+  private platformT = 0;
   /** Platform courses of the rooms that have `platforms` (their movers are ticked in `update`). */
   private readonly courses: { update(t: number): void; dispose(): void }[] = [];
 
@@ -225,15 +230,19 @@ export class DungeonArea implements Area {
         }
       }
       // Light: a warm point light in the middle of the room, and sconces you can see.
-      const light = new THREE.PointLight(pal.light, 0, Math.max(r.w, r.d) * 1.4, 1.2);
-      light.position.set(r.x + r.w / 2, fy + Math.min(h - 1.2, 5), r.z + r.d / 2);
+      // A tall room (a shaft) gets another light every 4.5 m up, so its upper reaches aren't black.
       const base = (10 + r.w * r.d * 0.04) * pal.lightLevel;
-      this.lights.push({ light, base, phase: Math.random() * 10 });
-      p.dynamic.add(light);
+      for (let ly = Math.min(h - 1.2, 5); ly < h - 1.2 || ly === Math.min(h - 1.2, 5); ly += 4.5) {
+        const light = new THREE.PointLight(pal.light, 0, Math.max(r.w, r.d) * 1.4, 1.2);
+        light.position.set(r.x + r.w / 2, fy + ly, r.z + r.d / 2);
+        this.lights.push({ light, base, phase: Math.random() * 10 });
+        p.dynamic.add(light);
+      }
     }
 
     // --- walls (per floor; shared walls once; gaps for doorways) ------------------
-    type Edge = { a: number; b: number; top: number; room: RoomDef };
+    /** `side`: which way the room's inside lies from this wall line (+1 / -1 along the perpendicular axis). */
+    type Edge = { a: number; b: number; top: number; room: RoomDef; side: 1 | -1 };
     const gapsBy = new Map<string, [number, number][]>();
     const gap = (key: string, c: number, w: number) => {
       const list = gapsBy.get(key) ?? [];
@@ -276,16 +285,27 @@ export class DungeonArea implements Area {
     const [ix, iz] = DIRS[def.entrance.facing];
     this.triggers.push({ id: 'exit', x: entrance.x + ix * 0.8, z: entrance.z + iz * 0.8, y: floorY(def, er.floor), r: 1.1, enabled: () => true });
 
+    // Walls of different floors that lie on the same line at the same heights (a tall room passing the
+    // floors above or below) would be two coplanar boxes z-fighting; those segments are built as one
+    // half-thickness slab per room, each on its own side (see below).
+    const wallLines: { orient: string; line: number; a: number; b: number; floor: number; low: number; high: number }[] = [];
+    for (const r of def.rooms) {
+      const fy = floorY(def, r.floor), low = fy - FLOOR_T, high = fy + roomHeight(def, r) + CEIL_T;
+      wallLines.push(
+        { orient: 'x', line: r.z, a: r.x, b: r.x + r.w, floor: r.floor, low, high }, { orient: 'x', line: r.z + r.d, a: r.x, b: r.x + r.w, floor: r.floor, low, high },
+        { orient: 'z', line: r.x, a: r.z, b: r.z + r.d, floor: r.floor, low, high }, { orient: 'z', line: r.x + r.w, a: r.z, b: r.z + r.d, floor: r.floor, low, high },
+      );
+    }
     for (const [floor] of this.floors) {
       const fy = floorY(def, floor);
       const edges = new Map<string, Edge[]>();
       const add = (key: string, e: Edge) => edges.set(key, [...(edges.get(key) ?? []), e]);
       for (const r of def.rooms.filter((r) => r.floor === floor)) {
         const top = fy + roomHeight(def, r) + CEIL_T;
-        add(`${floor}:x:${r.z}`, { a: r.x, b: r.x + r.w, top, room: r });
-        add(`${floor}:x:${r.z + r.d}`, { a: r.x, b: r.x + r.w, top, room: r });
-        add(`${floor}:z:${r.x}`, { a: r.z, b: r.z + r.d, top, room: r });
-        add(`${floor}:z:${r.x + r.w}`, { a: r.z, b: r.z + r.d, top, room: r });
+        add(`${floor}:x:${r.z}`, { a: r.x, b: r.x + r.w, top, room: r, side: 1 });
+        add(`${floor}:x:${r.z + r.d}`, { a: r.x, b: r.x + r.w, top, room: r, side: -1 });
+        add(`${floor}:z:${r.x}`, { a: r.z, b: r.z + r.d, top, room: r, side: 1 });
+        add(`${floor}:z:${r.x + r.w}`, { a: r.z, b: r.z + r.d, top, room: r, side: -1 });
       }
       const p = part(floor);
       for (const [key, list] of edges) {
@@ -305,8 +325,20 @@ export class DungeonArea implements Area {
           // Outer ends reach half a wall further so corners close.
           const u2 = u - (u === lo && !inGap ? WALL_T / 2 : 0), v2 = v + (v === hi && !inGap ? WALL_T / 2 : 0);
           const len = v2 - u2, c = (u2 + v2) / 2, hgt = top - bottom, cy = (top + bottom) / 2;
-          if (orient === 'x') box(p.src.solid, wpal.wall, c, cy, line, len, hgt, WALL_T);
-          else box(p.src.solid, wpal.wall, line, cy, c, WALL_T, hgt, len);
+          const clash = wallLines.some((o) => o.floor !== floor && o.orient === orient && o.line === line && o.a < v && o.b > u && o.low < top && o.high > bottom);
+          if (!clash) {
+            if (orient === 'x') box(p.src.solid, wpal.wall, c, cy, line, len, hgt, WALL_T);
+            else box(p.src.solid, wpal.wall, line, cy, c, WALL_T, hgt, len);
+          } else {
+            // One collider for the whole wall, and a half-thickness slab per room on its own side, in its own look and to its own height.
+            if (orient === 'x') b.box(c, cy, line, len / 2, hgt / 2, WALL_T / 2, 0, Layer.World);
+            else b.box(line, cy, c, WALL_T / 2, hgt / 2, len / 2, 0, Layer.World);
+            for (const e of covering) {
+              const ht = e.top - bottom, hy = (e.top + bottom) / 2, off = e.side * WALL_T / 4, col = THEMES[themeOf(e.room)].wall;
+              if (orient === 'x') box(p.src.solid, col, c, hy, line + off, len, ht, WALL_T / 2, null);
+              else box(p.src.solid, col, line + off, hy, c, WALL_T / 2, ht, len, null);
+            }
+          }
           if (!inGap) {
             if (orient === 'x') box(p.src.solid, wpal.trim, c, fy + 0.2, line, len, 0.4, WALL_T + 0.12, null);
             else box(p.src.solid, wpal.trim, line, fy + 0.2, c, WALL_T + 0.12, 0.4, len, null);
@@ -372,12 +404,14 @@ export class DungeonArea implements Area {
         this.entrances[t.id] = { ...post.arrival(), y: fy + 0.05 };
         this.interactables.push({ id: t.id, x: post.front.x, z: post.front.z, y: fy, r: 2.2, get label() { return post.label; }, promptY: fy + 3.2, enabled: () => !post.hanging });
       } else if (t.kind === 'bell') {
-        const pickup = new BellPickup(b, t.bell, x, fy, z);
+        const by = fy + (t.up ?? 0);
+        const pickup = new BellPickup(b, t.bell, x, by, z);
         p.dynamic.add(pickup.group);
         this.bellPickups.set(t.id, pickup);
-        this.interactables.push({ id: t.id, x, z, y: fy, r: 2, label: 'Take', promptY: fy + 2.2, enabled: () => pickup.present });
+        this.interactables.push({ id: t.id, x, z, y: by, r: 2, label: 'Take', promptY: by + 2.2, enabled: () => pickup.present });
       } else if (t.kind === 'enemy') {
-        this.spawns.push({ id: t.id, type: t.type, room: r.id, x, y: fy, z });
+        const ledge = t.up === undefined ? undefined : (r.platforms ?? []).find((p) => !p.move && p.top === t.up && Math.hypot(t.at[0] - p.x, t.at[1] - p.z) <= p.r);
+        this.spawns.push({ id: t.id, type: t.type, room: r.id, x, y: fy + (t.up ?? 0), z, facing: t.facing, leash: ledge && { x: r.x + ledge.x, z: r.z + ledge.z, r: ledge.r } });
       }
     }
     this.placeSconces(def, gapsBy);
@@ -838,9 +872,13 @@ export class DungeonArea implements Area {
     }
   }
 
+  movePlatforms(dt: number) {
+    this.platformT += dt;
+    for (const c of this.courses) c.update(this.platformT);
+  }
+
   update(dt: number, _env: AreaEnv) {
     this.t += dt;
-    for (const c of this.courses) c.update(this.t);
     for (const d of this.doors.values()) d.update(dt);
     for (const c of this.chests.values()) c.update(dt);
     for (const s of this.switches.values()) s.update(dt);
