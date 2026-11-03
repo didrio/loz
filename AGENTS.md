@@ -20,11 +20,12 @@ built almost entirely by AI agents. Build everything as if it will ship.
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
 As of 2026-11-03: Emberfield plays start to finish: a wordless start, the shield in a ruined cottage, the village, the Lamplighter,
-then **the Waking Shrine** through **Gravelheart** and the Keepers' Seal, which opens the gate to the Northpass and **Wayfarers' Camp**.
-The valley lies under **the blight** until the seal breaks. **Sigils** (messages in the air, listed under the pause menu's Messages) and the
-villagers' reactions are in; the dungeon's lights are pooled (perf). Unplayed by the owner: surfing, the sealed gate, D3, the prism. Open: a
-Lamplighter-fight report (stuck at the arena edge, "inverted" controls) that didn't reproduce (roadmap, "Known quirks").
-The Keepers' Seal is a **prism** that takes four sword hits (S5). Breaking it empties the village: **Maren, Tobin and Odo vanish** with the blight; Lark and Pip stay, Pip asks Wren to find them (rescue quests later), Odo's stall runs on trust. A side errand: **Pip**'s doll, in a lake-home jar (20 gems). Villagers never name kin. **Next:** the pause menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
+then **the Waking Shrine** through **Gravelheart** and the Keepers' **prism** (four sword hits), which opens the gate to the Northpass and **Wayfarers' Camp**.
+The valley lies under **the blight** until the prism breaks; then **Maren, Tobin and Odo vanish** and only Lark and Pip remain. Pip asks Wren to find
+the grown-ups (rescue quests come later), and Odo's stall runs on trust. **Sigils** (listed under the pause menu's Messages) and a side errand
+(**Pip**'s doll, 20 gems) are in. Unplayed by the owner: surfing, the sealed gate, D3, the prism, the empty village. Open: a Lamplighter-fight
+report (stuck at the arena edge, "inverted" controls) that didn't reproduce (roadmap, "Known quirks"). Villagers never name kin.
+**Next:** the pause menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
 
