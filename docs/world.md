@@ -4,6 +4,33 @@ Places, characters, story and the quest thread. Read this before writing dialog,
 bosses or new places. Naming style: plain English compounds (Thistledown, Gloomwisp,
 Glimmer Lake); avoid names that echo existing franchises.
 
+## Writing for the player (the text rules)
+
+Every word the player sees (dialog, signs, item messages, toasts, tutorial lines) follows
+these. They are the owner's direction (2026-11-02); keep them in mind for all new text, and
+recheck old text against them when you touch it.
+
+- **Be deliberate: too much and too little are both failures.** One or two boxes per beat is
+  the norm; three or more needs a reason. Don't trim for its own sake: cut what the player
+  already knows, can see, or doesn't need *yet*. Tutorial text (controls, mechanics) says
+  what to press and what happens, and nothing else; the flavor lives elsewhere.
+- **Clear first, then characterful.** The player should always know what they got, what it
+  does and where to go next. Then it should sound like *someone*, not like a template.
+  Each NPC has a voice (Maren: warm and worried; Tobin: dry; Odo: wry salesman); keep it.
+- **Not generic.** Prefer a specific detail (the lamps, the flour, the mill, the hollow's
+  forty years of lamplighting) over a stock line. If a line could be said in any fantasy
+  game, rewrite it for Emberfield. Mood: wistful, a little odd, never jokey for long.
+- **Make NPCs react to the world, where it helps and adds immersion**: day vs night, before
+  and after the lantern is lit or a dungeon is cleared, Wren's gear (the sword, the
+  Stoneward Tunic), the weather of the story. Not every NPC needs every variant: pick the ones
+  the player will notice and enjoy. Variants go in the script's `if` chain by state/flag, with
+  the freshest story state first.
+- **Signs and flavor text carry the world's history**, one idea each, short enough to read at
+  a glance. Items say what they are in the first line.
+- **No spelling out what the screen shows.** Don't narrate the HUD or the obvious.
+- Text lives in content scripts today; when dialog moves to data (roadmap), these rules still
+  apply.
+
 ## Places
 
 - **Emberfield**, the valley at the heart of the land of **Embervale**: a gentle field

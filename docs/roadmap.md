@@ -41,6 +41,14 @@ Next, in order:
      the existing drink chests; remove the third drink chest (check for rooms with two chests).
      Update the checkpoint rule in AGENTS.md, combat.md, shrine.md ("drinks refill on death"),
      the save format (migration) and the HUD. Check the gem economy (gems now pay for refills).
+   - **G: text and dialog quality pass** (owner's call; no plan mode, can run before E). Read
+     every string the player sees (NPC dialog in `content/overworld.ts`, signs, item and
+     chest messages in `content/shrine.ts`/`overworld.ts`, toasts, the intro/death, shop
+     text) against the rules in [world.md](world.md) ("Writing for the player"): trim bloat
+     (the sword's four-page tutorial is the first suspect), fix unclear or generic lines,
+     and add reactive variants where they add life (day/night, shrine lit or not, Wren in
+     the tunic or not, Odo/Tobin/Maren per progress). Update the unit/smoke tests that match
+     text. Needs the owner to read it in-game afterwards (tone is theirs to judge).
    - **F: dungeon fixes** (after E, or before it; no plan mode): (1) challenge rooms (a chest or
      progress appears when their enemies are beaten) keep their enemies dead after death, and
      the chest stays visible and open; plain scattered enemies still respawn. Today

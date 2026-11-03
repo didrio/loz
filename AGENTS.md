@@ -23,7 +23,7 @@ As of 2026-11-02: Emberfield (the valley) plays start to finish; the Hollow Lamp
 only), the quest thread and all music are done. **The Waking Shrine** (25 rooms, four wings) is
 playable up to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy
 feel is untuned until the owner plays.
-**Next: the owner's playtest tweak E (flasks, plan mode), then F (dungeon fixes)** ([docs/roadmap.md](docs/roadmap.md), A–D done),
+**Next: the owner's playtest tweaks G (text and dialog quality pass, see "Text the player reads"), E (flasks, plan mode), then F (dungeon fixes, incl. cleared rooms keeping their enemies dead)** ([docs/roadmap.md](docs/roadmap.md), A–D done),
 then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
 
 ## Docs: read the one for the area you're touching
@@ -69,6 +69,12 @@ then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polis
   `/clear`, `/start <task>`, `/model sonnet`), something to play or listen to, a question to
   answer, or "nothing, I'm continuing". Say so when a session has run long enough that
   `/clear` would save money, and say whether the next task wants plan mode (usually not).
+
+## Text the player reads
+
+Dialog, signs, item messages and toasts are designed, not filler: follow "Writing for the
+player" in [docs/world.md](docs/world.md) (short, clear, in-voice, specific to Emberfield,
+and NPCs that react to day/night, story progress and Wren's gear where it adds life).
 
 ## Before you start a feature
 

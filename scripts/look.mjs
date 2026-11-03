@@ -75,6 +75,29 @@ const SCENES = {
     await h.teleport(-77.5, -58, -Math.PI / 2); // facing the mill door (west), a few steps from it
     await h.wait(1200);
     await h.shot('mill-door-tunic');
+    // Free camera (Wren parked out of the way) so nothing blocks the view.
+    const cam = async (name, from, to) => {
+      await h.game(([from, to]) => {
+        const g = window.embervale;
+        g.rig.frozen = true;
+        g.camera.position.set(...from);
+        g.camera.lookAt(...to);
+      }, [from, to]);
+      await h.wait(700);
+      await h.shot(name);
+    };
+    const ground = await h.game(() => window.embervale.physics.groundY(-81, -58) ?? 1);
+    await h.teleport(-60, -40, 0);
+    await cam('mill-door-close', [-77.2, ground + 1.7, -56.6], [-81, ground + 1.3, -58]);
+    await cam('mill-sails', [-76, ground + 4, -50], [-81, ground + 6, -58]);
+    const sign = await h.game(() => {
+      const g = window.embervale;
+      const s = g.area.interactables.find((i) => i.id === 'sign.crossroads');
+      return { x: s.x, z: s.z, sx: g.area.spawn.x, sz: g.area.spawn.z, y: g.physics.groundY(s.x + 1.2, s.z + 1.2) ?? 0 }; // beside it: not its collider's top
+    });
+    const d = Math.hypot(sign.sx - sign.x, sign.sz - sign.z);
+    await cam('sign', [sign.x + ((sign.sx - sign.x) / d) * 3, sign.y + 1.7, sign.z + ((sign.sz - sign.z) / d) * 3], [sign.x, sign.y + 1.4, sign.z]);
+    await h.game(() => (window.embervale.rig.frozen = false));
     await h.game(() => window.embervale.loadArea('mill'));
     await h.wait(1500);
     await h.shot('mill-inside');

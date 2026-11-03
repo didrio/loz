@@ -64,17 +64,33 @@ export function buildVillage(b: AreaBuilder) {
   const wy = terrainHeight(wx, wz);
   b.mesh(new THREE.CylinderGeometry(1.7, 2.7, 9, 8), mat(0xe2d6bf), wx, wy + 4.5, wz);
   b.mesh(new THREE.ConeGeometry(2.2, 2.4, 8), mat(0x8a3b28), wx, wy + 10.2, wz);
-  b.mesh(new THREE.BoxGeometry(0.15, 1.8, 1.1), mat(0x4a2e18), wx + 2.3, wy + 0.9, wz);
+  // The door: a stone frame and lintel standing proud of the wall, a plank door in front of
+  // it, a knob and a doorstep. (The wall is round, so the frame is deep enough to bridge it.)
+  {
+    const dx = wx + 2.62, dark = mat(0x4a2e18), frame = mat(0x7d6e60);
+    b.mesh(new THREE.BoxGeometry(0.4, 2.5, 0.22), frame, dx, wy + 1.25, wz - 0.82);
+    b.mesh(new THREE.BoxGeometry(0.4, 2.5, 0.22), frame, dx, wy + 1.25, wz + 0.82);
+    b.mesh(new THREE.BoxGeometry(0.4, 0.3, 1.86), frame, dx, wy + 2.55, wz);
+    b.mesh(new THREE.BoxGeometry(0.18, 2.3, 1.44), dark, dx + 0.12, wy + 1.15, wz);
+    for (const pz of [-0.36, 0, 0.36]) b.mesh(new THREE.BoxGeometry(0.2, 2.3, 0.04), mat(0x33200f), dx + 0.12, wy + 1.15, wz + pz);
+    b.mesh(new THREE.BoxGeometry(0.1, 0.5, 0.05), mat(0x33200f), dx + 0.22, wy + 1.9, wz);
+    b.mesh(new THREE.BoxGeometry(0.1, 0.5, 0.05), mat(0x33200f), dx + 0.22, wy + 0.4, wz);
+    b.mesh(new THREE.SphereGeometry(0.07, 6, 5), mat(0xc9a227), dx + 0.26, wy + 1.1, wz + 0.5);
+    b.mesh(new THREE.BoxGeometry(0.8, 0.18, 2.0), mat(0x9a958c), dx + 0.3, wy + 0.05, wz);
+  }
+  // Sails on an axle that clears the tower: the lowest tip passes 0.5 m in front of the wall.
   const blades = new THREE.Group();
-  blades.position.set(wx + 2.0, wy + 8, wz);
+  blades.position.set(wx + 3.1, wy + 8, wz);
   const sail = mat(0xf2ead8), frame = mat(0x5e3d20);
+  const axle = b.mesh(new THREE.CylinderGeometry(0.2, 0.2, 1.6, 6), frame, wx + 2.3, wy + 8, wz);
+  axle.rotation.z = Math.PI / 2;
   for (let i = 0; i < 4; i++) {
     const arm = new THREE.Group();
     arm.rotation.x = (i * Math.PI) / 2;
-    const spar = new THREE.Mesh(new THREE.BoxGeometry(0.15, 6.5, 0.2), frame);
-    spar.position.y = 3.2;
-    const cloth = new THREE.Mesh(new THREE.BoxGeometry(0.06, 4.8, 1.3), sail);
-    cloth.position.set(0, 3.8, 0.7);
+    const spar = new THREE.Mesh(new THREE.BoxGeometry(0.15, 5.6, 0.2), frame);
+    spar.position.y = 2.8;
+    const cloth = new THREE.Mesh(new THREE.BoxGeometry(0.06, 4.2, 1.3), sail);
+    cloth.position.set(0, 3.3, 0.7);
     spar.castShadow = cloth.castShadow = true;
     arm.add(spar, cloth);
     blades.add(arm);
