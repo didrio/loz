@@ -30,7 +30,7 @@ frames are slow), times the **time scale** (slow motion in cutscenes) and zero d
 environments, hit feedback both ways, hit-stop) and `TitleMenu` (`game/title.ts`: the
 orbit and the menu; `Game` acts on its choice). Scripts reach them as `g.combat.*`.
 
-## Menus (`game/menu.ts`, `game/devMenu.ts`, `game/pauseMenu.ts`)
+## Menus (`game/menu.ts`, `game/pauseMenu.ts`)
 
 `MenuStack` is the reusable menu: rows are an action, a toggle (flips, stays open) or a
 submenu; a menu may carry `body` text under its title (a note to read; a page with no rows is
@@ -41,21 +41,29 @@ should be built on it too. `MenuDriver` (`game/menuDriver.ts`) feeds one from in
 (up/down with a tick, confirm, cancel) and draws it; the game routes the HUD's mouse hover and
 click to whichever menu is open. `ChoiceMenu` is `ScriptApi.choose(title, options)`: a titled
 panel of options resolving with the index or null (backed out), shown during a cutscene instead
-of the dialog box (the bells' travel menu). `DevMenu` is the first user (~ / L3): Dev sprint,
-Invincible (`GameState.invincible`, never saved) and Save states (`content/devStates.ts`:
-New game, night outside the Hollow, shrine start, shrine at the boss door; loading one
-replaces the current save, via `Game.loadDevState`). While a menu is open `Game.frame` runs
+of the dialog box (the bells' travel menu). The **Dev tab** of the pause menu is the old dev menu: Dev sprint,
+Invincible (`GameState.invincible`, never saved), trial falls, and Save states (`content/devStates.ts`, in play order: a new game, the gorge, the
+Morrowbell, the night before the Lamplighter, the shrine's stages, the opened gate; loading one
+replaces the current save, via `Game.loadDevState`). Every state is run through `withNotes`: it gets all the keepers' notes once Wren has
+the sword, the hollow's message after the Lamplighter, and each shrine message whose room is cleared, so Hints and Messages match. While the menu is open `Game.frame` runs
 no mode update and `dt` is 0; the frame a menu closes also counts as paused, so the press
-that chose a row (Enter = also "interact") doesn't leak into the game. Dev builds, the
-Pages build and `?debug` only. To add a state, add an entry to `DEV_STATES` (the unit test
-checks it decodes and uses known ids); `completedDungeon(def)` builds "all done" progress
+that chose a row (Enter = also "interact") doesn't leak into the game. To add a state, add an entry to `STATES` in the right place (the unit test
+checks it decodes, uses known ids and that the order is progress); `completedDungeon(def)` builds "all done" progress
 from a dungeon's data.
 
-**The pause menu** (`PauseMenu`, P / Start, play mode only; the shipped game has it): pauses
-like the dev menu (the two never open over each other). Its root has a **Keepers' notes**
-page (`content/hints.ts` `foundHints`, registry order; choose one to read it, or a line saying to look for them) and,
-once Wren has read a sigil, a **Messages** page (`content/sigils.ts` `foundSigils`). P / Start close it from any depth. Gear and settings pages go in as
-rows of its root later (roadmap item 2).
+**The pause menu** (`PauseMenu`, P / Start, play mode only; the shipped game has it): the one menu for everything, ordered by
+**tabs** (`Menu.tabs`; Q/E or LB/RB switch, or click). It pauses the game and
+reopens on the tab it was last on. **Settings** is always first and never moves; **Hints** appears once Wren has found a keepers' note
+(`content/hints.ts` `foundHints`), **Messages** once she has read a sigil (`content/sigils.ts` `foundSigils`). **Dev** is the last tab (`Game.devTab`, on for everyone for now; the Steam build sets `VITE_DISABLE_DEV_TAB=1`). A "P Menu" reminder sits under the clock. Add a tab by adding an id
+to `tabs()` and a rows builder in `pauseMenu.ts`. Hints/Messages are `entry` rows: the list on the left, the selected one's text in a pane on the right. P / Start close it
+(so do Esc / B / Backspace); P rather than Esc is the pause key because Esc releases the mouse in the browser.
+Row kinds in `menu.ts`: action, toggle, submenu, **slider** (left/right or click/drag the track; holding repeats), **choice** (left/right or
+choose to cycle), **entry**. `MenuDriver.onTab` is how a tabbed menu hears Q/E (they win over confirm, which E also is).
+**Settings** (`Settings` in `core/save.ts`, saved at once under `embervale:settings`, applied by `Game.changeSettings`/`applySettings`):
+master/music/effects volume (0..1; 0.8 is the original loudness; `Sfx.setVolumes`), mouse and stick sensitivity (0.2..2×, one number
+scaling both axes: `Input.mouseSensitivity/stickSensitivity`), invert camera up/down (`Input.invertY`), Sharpness (render pixel-ratio cap 1 / 1.5 / 2) and Fullscreen
+(browser Fullscreen API, hidden if unsupported, not saved; a gamepad button may be refused by the browser, which toasts). There is no music hotkey:
+the music slider at 0 is mute. Old `music: false` saves load as music volume 0.
 
 ## Modes
 
@@ -176,9 +184,8 @@ Code reads **actions**, never keys. Bindings:
 | interact | E (or Enter) | A |
 | confirm · cancel | Enter/Space/E/click · Esc/Backspace | A/Start · B |
 | pause menu (`pause`) | P | Start |
-| music on/off | M | Back |
+| menu: change a setting · switch tab (`menuLeft/Right`, `tabPrev/Next`) | A/D or ←/→ · Q/E | d-pad ←/→ or left stick · LB/RB |
 | drink flask 1 · flask 2 (`flask1`, `flask2`) | 1 · 2 | d-pad ← · → |
-| dev menu (dev builds / `?debug` only) | ~ (Backquote) | L3 (left stick click) |
 
 Gamepad A both talks and jumps: the game checks `interact` first (the classic context
 action button). The HUD shows glyphs for the last-used device. In dialog text, `[attack]`
@@ -220,7 +227,7 @@ as none and the shrine's `restore` re-derives held keys from opened key chests w
 held flute songs) load with the songs dropped and 0 keys; v1/v2 load in the overworld with
 no items or dungeon progress. Saved: flags, keys, area, items, dungeons, flasks, bells, gems, hearts, clock. Not saved: position (continue starts at the saved area's spawn, e.g. a dungeon's
 entrance, with at least 3 hearts), enemies, cut bushes, where stones were pushed. Autosave: after every script, every 30 s of play, and on page
-hide. Settings (`embervale:settings`): music. Storage goes through `KeyValueStore` so the
+hide. Settings (`embervale:settings`): volumes, sensitivities, invert Y, sharpness (see "The pause menu"). Storage goes through `KeyValueStore` so the
 desktop build can write real files.
 
 ## Conventions

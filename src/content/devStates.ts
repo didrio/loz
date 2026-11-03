@@ -1,4 +1,5 @@
 import { SAVE_VERSION, type DungeonSave, type SaveData } from '../core/save';
+import { HINTS, hintFlag } from './hints';
 import { floorY, worldPos, type DungeonDef } from '../world/dungeon/format';
 import { SHRINE } from '../world/dungeon/defs/shrine';
 import { GATE, GORGE, gorgePoint, MORROW_POST, VILLAGE } from '../world/overworld/layout';
@@ -51,7 +52,7 @@ function shrineAtBossDoor(): DevState {
   const ante = SHRINE.rooms.find((r) => r.id === 'bossAnte')!;
   const [x, z] = worldPos(ante, [8, 2]); // just south of the boss door, which is in the room's north wall
   return {
-    name: 'Shrine: at the boss door',
+    name: 'Waking Shrine: at the boss door',
     save: base({
       flags: [...SHRINE_OPEN, 'village.stonewardTunic'], area: 'shrine', items: ['tether'], dungeons: { shrine: progress },
       flasks: ['life', 'attack'], gems, hp: 8, maxHp: 8, hours: 10, bells: { carried: [], hung: ['morrow', 'lull'] },
@@ -70,7 +71,7 @@ function shrineAfterBoss(): DevState {
   progress.doors.push(seal.id);
   const [x, z] = worldPos(hearth, [24, 8]);
   return {
-    name: 'Shrine: Warden asleep, the seal room open',
+    name: 'Waking Shrine: Gravelheart beaten, seal room open',
     save: base({
       flags: [...SHRINE_OPEN, 'village.stonewardTunic'], area: 'shrine', items: ['tether'], dungeons: { shrine: progress },
       flasks: ['life', 'attack'], gems, hp: 8, maxHp: 8, hours: 10, bells: { carried: [], hung: ['morrow', 'lull'] },
@@ -90,8 +91,9 @@ function atTheGate(): DevState {
   progress.done = true;
   progress.cleared.push(hearth.id);
   progress.doors.push(seal.id);
+  progress.switches.push('sealStone'); // the ward is broken: its sigil has been written
   return {
-    name: 'Northpass: at the opened gate, Warden beaten',
+    name: 'Northpass: the gate is open',
     save: base({
       flags: [...SHRINE_OPEN, 'village.stonewardTunic', 'gravelheartVessel', 'valleyOpen'], items: ['tether'], dungeons: { shrine: progress },
       flasks: ['life', 'attack'], gems, hp: 10, maxHp: 10, hours: 10, bells: { carried: [], hung: ['morrow', 'lull'] },
@@ -111,13 +113,16 @@ function bellStates(): DevState[] {
   const { progress, gems } = completedDungeon(SHRINE);
   const late = { flags: SHRINE_OPEN, items: ['tether'], dungeons: { shrine: progress }, flasks: ['life', 'attack'], gems, hp: 8, maxHp: 8, hours: 10 };
   return [
-    { name: 'Bells: Morrowbell in hand, Thistledown', save: base({ flags: SWORD_AND_BED, bells: { carried: ['morrow'], hung: [] } }), at: atMorrowPost() },
-    { name: 'Bells: Lullbell in hand, shrine entry', save: base({ ...late, area: 'shrine', bells: { carried: ['lull'], hung: ['morrow'] } }) },
-    { name: 'Bells: Bell Shaft start', save: base({ ...late, area: 'shrine', bells: { carried: [], hung: ['morrow'] } }), at: atBellShaft() },
-    { name: 'Bells: gorge mouth', save: base({ flags: SWORD_AND_BED, bells: { carried: [], hung: [] } }), at: atGorgeMouth() },
-    { name: 'Bells: gorge climb', save: base({ flags: SWORD_AND_BED, bells: { carried: [], hung: [] } }), at: atGorgeClimb() },
-    { name: 'Bells: both hung, Thistledown', save: base({ ...late, bells: { carried: [], hung: ['morrow', 'lull'] } }), at: atMorrowPost() },
+    { name: 'Thistledown: Morrowbell in hand', save: base({ flags: SWORD_AND_BED, bells: { carried: ['morrow'], hung: [] } }), at: atMorrowPost() },
+    { name: 'Waking Shrine: Lullbell in hand', save: base({ ...late, area: 'shrine', bells: { carried: ['lull'], hung: ['morrow'] } }) },
+    { name: 'Waking Shrine: the Bell Shaft', save: base({ ...late, area: 'shrine', bells: { carried: [], hung: ['morrow'] } }), at: atBellShaft() },
+    { name: 'Thistledown: both bells hung', save: base({ ...late, bells: { carried: [], hung: ['morrow', 'lull'] } }), at: atMorrowPost() },
   ];
+}
+
+/** A save with the sword and the bed key, no bells yet, Wren at `at`. */
+function gorgeState(at: DevState['at']): Pick<DevState, 'save' | 'at'> {
+  return { save: base({ flags: SWORD_AND_BED, bells: { carried: [], hung: [] } }), at };
 }
 
 /** Just outside the Hushing Gorge's mouth, facing in. */
@@ -139,20 +144,52 @@ function atBellShaft(): DevState['at'] {
   return { x, z, y: floorY(SHRINE, room.floor) + 0.05, facing: Math.PI / 2 };
 }
 
-export const DEV_STATES: DevState[] = [
-  { name: 'New game', save: null },
+/**
+ * Adds every keepers' note and sigil message Wren could have by the point a save is at, so
+ * the pause menu's Hints and Messages tabs are filled in to match: all four notes once she has
+ * the sword (they sit in the open valley), the hollow's message once the Lamplighter is down,
+ * and each shrine message whose room is cleared (or whose switch is pressed).
+ */
+export function withNotes(save: SaveData): SaveData {
+  const flags = new Set(save.flags);
+  if (flags.has('hasSword')) for (const h of HINTS) flags.add(hintFlag(h.id));
+  if (flags.has('lamplighterDefeated')) flags.add('sigil.hollow');
+  const shrine = save.dungeons.shrine;
+  if (shrine) {
+    for (const t of SHRINE.things) {
+      if (t.kind !== 'sigil') continue;
+      const c = t.appears;
+      const written = !c || ('cleared' in c && shrine.cleared.includes(c.cleared)) || ('switch' in c && shrine.switches.includes(c.switch));
+      if (written) flags.add(t.id);
+    }
+  }
+  return { ...save, flags: [...flags] };
+}
+
+const [morrowInHand, lullInHand, bellShaft, bothHung] = bellStates();
+
+/** In the order the game is played; the pause menu's Dev tab lists them as they are here. */
+const STATES: DevState[] = [
+  { name: 'A new game', save: null },
+  { name: 'Hushing Gorge: the mouth', ...gorgeState(atGorgeMouth()) },
+  { name: 'Hushing Gorge: the climb', ...gorgeState(atGorgeClimb()) },
+  morrowInHand,
   {
-    name: 'Night, outside the Hollow',
+    name: 'Gloaming Hollow: night, before the Lamplighter',
     save: base({ flags: SWORD_AND_BED, hours: 22 }),
     // On the south road, a good way before the hollow's trigger ring; facing south toward it.
     at: { x: -22, z: 100, facing: 0 },
   },
   {
-    name: 'Shrine: start',
+    name: 'Waking Shrine: the entrance',
     save: base({ flags: SHRINE_OPEN, area: 'shrine', dungeons: { shrine: emptyDungeon() }, hp: 8, maxHp: 8, hours: 10 }),
   },
+  bellShaft,
+  lullInHand,
+  bothHung,
   shrineAtBossDoor(),
   shrineAfterBoss(),
   atTheGate(),
-  ...bellStates(),
 ];
+
+export const DEV_STATES: DevState[] = STATES.map((s) => (s.save ? { ...s, save: withNotes(s.save) } : s));

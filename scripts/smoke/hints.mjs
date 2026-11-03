@@ -1,6 +1,6 @@
-// The pause menu (P) and the keepers' notes: an empty notes page, M for music, lock-on holds a
+// The pause menu (P): a Settings tab (and the Dev one) at first, a slider changing and saving a setting, and the keepers' notes: lock-on holds a
 // Murmurbud, mashing overloads it, a strike-and-rest rhythm opens it, its floating note is read (E)
-// and kept, and read again in the pause menu.
+// and kept, and read again under the pause menu's Hints tab; a read sigil adds a Messages tab.
 export const fixture = 'field-sword';
 
 export default async function run(t) {
@@ -9,31 +9,36 @@ export default async function run(t) {
   await until(() => window.embervale.mode === 'play');
   await game(() => (window.embervale.state.hours = 10));
   await wait(800);
+  /** Presses E until the named tab is the active one. */
+  const goTab = async (name) => {
+    for (let i = 0; i < 5; i++) {
+      if ((await game(() => document.querySelector('.gmenu-tab.active')?.textContent)) === name) return;
+      await press('KeyE');
+    }
+    check(false, `no ${name} tab`);
+  };
   const menu = () => game(() => ({ open: window.embervale.pauseMenu.isOpen, text: document.querySelector('.gmenu')?.textContent ?? '' }));
 
-  await step('P pauses with an empty notes page; P closes it', async () => {
+  await step('P pauses on the Settings tab (no Hints or Messages yet); a slider changes and saves; P closes it', async () => {
     await press('KeyP');
     await until(() => window.embervale.pauseMenu.isOpen, 5000);
     const hours = await game(() => window.embervale.state.hours);
     await wait(1000);
     check((await game(() => window.embervale.state.hours)) === hours, 'the clock ran while paused');
     const m = await menu();
-    check(/Keepers' notes/.test(m.text) && !/Messages/.test(m.text), `root text: ${m.text}`);
-    await press('Enter');
-    check(/No notes yet/.test((await menu()).text), `empty page text: ${(await menu()).text}`);
-    await press('ArrowDown');
-    await press('Enter'); // nothing to choose: stays open
-    check((await menu()).open, 'Enter on an empty page closed it');
+    check(/Settings/.test(m.text) && /Master volume/.test(m.text) && !/Hints|Messages/.test(m.text), `menu text: ${m.text}`);
+    const before = await game(() => window.embervale.settings.masterVolume);
+    await press('ArrowLeft');
+    const after = await game(() => window.embervale.settings.masterVolume);
+    check(after < before, `left should lower the master volume (${before} -> ${after})`);
+    check(JSON.parse(await game(() => localStorage.getItem('embervale:settings'))).masterVolume === after, 'setting not saved');
+    await press('ArrowRight');
+    await press('KeyE'); // on to the Dev tab
+    check((await menu()).open && /Dev sprint/.test((await menu()).text), 'E should go to the Dev tab');
+    await press('KeyQ');
+    await shot('hints-00-settings');
     await press('KeyP');
     await until(() => !window.embervale.pauseMenu.isOpen, 5000);
-  });
-
-  await step('M toggles the music', async () => {
-    const before = await game(() => window.embervale.sfx.musicOn);
-    await press('KeyM');
-    await until((before) => window.embervale.sfx.musicOn === !before, 5000, before).catch(() => {});
-    check((await game(() => window.embervale.sfx.musicOn)) === !before, 'M did not toggle the music');
-    await press('KeyM');
   });
 
   const bud = await game(() => {
@@ -85,31 +90,28 @@ export default async function run(t) {
     check((await state()).flags.includes('hint.tunic'), 'hint.tunic not set');
   });
 
-  await step('the pause menu lists the note and reads it', async () => {
+  await step('the Hints tab lists the note and shows its text', async () => {
     await press('KeyP');
     await until(() => window.embervale.pauseMenu.isOpen, 5000);
-    await press('Enter'); // the Keepers' notes row
+    check(/Hints/.test((await menu()).text) && !/Messages/.test((await menu()).text), 'Hints tab missing, or Messages shown early');
+    await goTab('Hints');
     check(/The Stoneward tunic/.test((await menu()).text), 'note missing from the list');
-    await press('Enter');
-    check(/Stoneward/.test((await menu()).text), 'note text not shown');
+    check(/Stoneward/.test(await game(() => document.querySelector('.gmenu-detail-text')?.textContent ?? '')), 'note text not shown');
     await shot('hints-04-note');
-    await press('Backspace');
-    check(/The Stoneward tunic/.test((await menu()).text) && (await menu()).open, 'Backspace should go back to the list');
-    await page.keyboard.press('KeyP');
+    await press('Backspace'); // closes
     await until(() => !window.embervale.pauseMenu.isOpen, 5000);
   });
 
-  await step('a sigil that was read shows up under Messages', async () => {
+  await step('a sigil that was read adds a Messages tab', async () => {
     await game(() => window.embervale.state.set('sigil.cell'));
     await press('KeyP');
     await until(() => window.embervale.pauseMenu.isOpen, 5000);
-    check(/Messages/.test((await menu()).text), 'Messages row missing once a sigil is read');
-    await press('ArrowDown');
-    await press('Enter');
+    check(/Messages/.test((await menu()).text), 'Messages tab missing once a sigil is read');
+    check(/Hints/.test(await game(() => document.querySelector('.gmenu-tab.active')?.textContent)), 'the menu should reopen on the Hints tab');
+    await goTab('Messages');
     check(/Over the pass/.test((await menu()).text), 'sigil missing from Messages');
-    await press('Enter');
-    check(/sent me over the pass/.test((await menu()).text), 'sigil text not shown');
-    await page.keyboard.press('KeyP');
+    check(/sent me over the pass/.test(await game(() => document.querySelector('.gmenu-detail-text')?.textContent ?? '')), 'sigil text not shown');
+    await press('KeyP');
     await until(() => !window.embervale.pauseMenu.isOpen, 5000);
   });
 }

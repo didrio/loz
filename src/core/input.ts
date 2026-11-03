@@ -5,10 +5,8 @@
 
 export type Action =
   | 'attack' | 'shield' | 'jump' | 'lock' | 'interact'
-  | 'confirm' | 'cancel' | 'pause' | 'music' | 'menuUp' | 'menuDown'
-  | 'flask1' | 'flask2' | 'item'
-  /** Dev builds and ?debug only: opens the dev menu (~ / L3). */
-  | 'devMenu';
+  | 'confirm' | 'cancel' | 'pause' | 'menuUp' | 'menuDown' | 'menuLeft' | 'menuRight' | 'tabPrev' | 'tabNext'
+  | 'flask1' | 'flask2' | 'item';
 
 export type Device = 'keyboard' | 'gamepad';
 
@@ -22,13 +20,15 @@ const KEYS: Record<Action, string[]> = {
   confirm: ['Enter', 'Space', 'KeyE', 'Mouse0'],
   cancel: ['Escape', 'Backspace'],
   pause: ['KeyP'],
-  music: ['KeyM'],
   menuUp: ['ArrowUp', 'KeyW'],
   menuDown: ['ArrowDown', 'KeyS'],
+  menuLeft: ['ArrowLeft', 'KeyA'],
+  menuRight: ['ArrowRight', 'KeyD'],
+  tabPrev: ['KeyQ'],
+  tabNext: ['KeyE'],
   flask1: ['Digit1', 'Numpad1'],
   flask2: ['Digit2', 'Numpad2'],
   item: ['KeyF'],
-  devMenu: ['Backquote'],
 };
 
 /**
@@ -47,23 +47,25 @@ const PAD: Record<Action, number[]> = {
   confirm: [0, 9],
   cancel: [1],
   pause: [9],
-  music: [8],
   menuUp: [12],
   menuDown: [13],
+  menuLeft: [14],
+  menuRight: [15],
+  tabPrev: [4],
+  tabNext: [5],
   flask1: [14],
   flask2: [15],
   item: [3],
-  devMenu: [10],
 };
 
 const KEY_GLYPH: Record<Action, string> = {
   attack: 'Click', shield: 'Shift', jump: 'Space', lock: 'Q', interact: 'E',
-  confirm: 'Enter', cancel: 'Esc', pause: 'P', music: 'M', menuUp: 'W', menuDown: 'S', flask1: '1', flask2: '2', item: 'F', devMenu: '~',
+  confirm: 'Enter', cancel: 'Esc', pause: 'P', menuUp: 'W', menuDown: 'S', menuLeft: 'A', menuRight: 'D', tabPrev: 'Q', tabNext: 'E', flask1: '1', flask2: '2', item: 'F',
 };
 
 const PAD_GLYPH: Record<Action, string> = {
   attack: 'X / RT', shield: 'LT / LB', jump: 'A', lock: 'R3', interact: 'A',
-  confirm: 'A', cancel: 'B', pause: 'Start', music: 'Back', menuUp: '↑', menuDown: '↓', flask1: '←', flask2: '→', item: 'Y', devMenu: 'L3',
+  confirm: 'A', cancel: 'B', pause: 'Start', menuUp: '↑', menuDown: '↓', menuLeft: '←', menuRight: '→', tabPrev: 'LB', tabNext: 'RB', flask1: '←', flask2: '→', item: 'Y',
 };
 
 /** The button label to show for an action on a device. */
@@ -94,6 +96,12 @@ export class Input {
   private rightStick = { x: 0, y: 0 };
   private stickNav = 0;
   private stickNavPressed = 0;
+  private stickNavX = 0;
+  private stickNavXPressed = 0;
+  /** From settings: turn-speed multipliers for the mouse and the right stick, and flipped up/down. */
+  mouseSensitivity = 1;
+  stickSensitivity = 1;
+  invertY = false;
 
   constructor(private canvas: HTMLCanvasElement) {
     window.addEventListener('keydown', (e) => {
@@ -149,17 +157,24 @@ export class Input {
     const nav = this.leftStick.y < -0.6 ? -1 : this.leftStick.y > 0.6 ? 1 : 0;
     if (nav !== 0 && nav !== this.stickNav) this.stickNavPressed = nav;
     this.stickNav = nav;
+    const navX = this.leftStick.x < -0.6 ? -1 : this.leftStick.x > 0.6 ? 1 : 0;
+    if (navX !== 0 && navX !== this.stickNavX) this.stickNavXPressed = navX;
+    this.stickNavX = navX;
   }
 
   /** True on the frame the action was pressed. */
   pressed(a: Action) {
     if (a === 'menuUp' && this.stickNavPressed === -1) return true;
     if (a === 'menuDown' && this.stickNavPressed === 1) return true;
+    if (a === 'menuLeft' && this.stickNavXPressed === -1) return true;
+    if (a === 'menuRight' && this.stickNavXPressed === 1) return true;
     return KEYS[a].some((k) => this.keysPressed.has(k)) || PAD[a].some((b) => this.padPressed.has(b));
   }
 
   /** True while the action is held. */
   held(a: Action) {
+    if (a === 'menuLeft' && this.stickNavX === -1) return true;
+    if (a === 'menuRight' && this.stickNavX === 1) return true;
     return KEYS[a].some((k) => this.keysHeld.has(k)) || PAD[a].some((b) => this.padHeld.has(b));
   }
 
@@ -184,13 +199,14 @@ export class Input {
   /** Camera turn this frame, in radians: mouse (when captured), right stick and arrow keys. */
   look(dt: number) {
     const k = (code: string) => (this.keysHeld.has(code) ? 1 : 0);
-    let yaw = (k('ArrowLeft') - k('ArrowRight')) * 2.2 * dt - this.rightStick.x * 2.8 * dt;
-    let pitch = (k('ArrowDown') - k('ArrowUp')) * 1.2 * dt + this.rightStick.y * 1.6 * dt;
+    const stick = this.stickSensitivity;
+    let yaw = (k('ArrowLeft') - k('ArrowRight')) * 2.2 * dt - this.rightStick.x * 2.8 * dt * stick;
+    let pitch = (k('ArrowDown') - k('ArrowUp')) * 1.2 * dt + this.rightStick.y * 1.6 * dt * stick;
     if (this.locked) {
-      yaw -= this.mouseDX * 0.0028;
-      pitch += this.mouseDY * 0.002;
+      yaw -= this.mouseDX * 0.0028 * this.mouseSensitivity;
+      pitch += this.mouseDY * 0.002 * this.mouseSensitivity;
     }
-    return { yaw, pitch };
+    return { yaw, pitch: this.invertY ? -pitch : pitch };
   }
 
   requestLock() {
@@ -203,6 +219,7 @@ export class Input {
     this.keysPressed.clear();
     this.padPressed.clear();
     this.stickNavPressed = 0;
+    this.stickNavXPressed = 0;
     this.mouseDX = 0;
     this.mouseDY = 0;
   }

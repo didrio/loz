@@ -9,6 +9,16 @@ describe('GameState', () => {
     expect(s.hp).toBe(s.maxHp);
   });
 
+  it('keeps read sigils (and broken jars) through a save and load', () => {
+    const s = new GameState();
+    s.set('sigil.cell');
+    s.set('jar.ruins.1');
+    s.set('hint.tunic');
+    const back = new GameState();
+    back.load(s.toSave());
+    expect([...back.flags].sort()).toEqual(['hint.tunic', 'jar.ruins.1', 'sigil.cell']);
+  });
+
   it('keeps hearts and gems in range', () => {
     const s = new GameState();
     s.damage(100);

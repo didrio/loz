@@ -1,23 +1,46 @@
+import { DEV_STATES } from '../content/devStates';
 import { foundHints } from '../content/hints';
 import { foundSigils } from '../content/sigils';
+import { SENSITIVITY_RANGE, type Settings } from '../core/save';
 import type { Game } from './game';
-import type { Menu } from './menu';
+import type { Menu, MenuRow } from './menu';
 import { MenuDriver } from './menuDriver';
+import { TRIAL_RULES } from './trialFalls';
+
+type TabId = 'settings' | 'hints' | 'messages' | 'dev';
+
+const TAB_LABEL: Record<TabId, string> = { settings: 'Settings', hints: 'Hints', messages: 'Messages', dev: 'Dev' };
+const QUALITY_NAMES = ['Performance', 'Standard', 'Sharp'];
 
 /**
- * The pause menu (P / Start): stops the game and, for now, offers the keepers' notes and the
- * messages (sigils) Wren has found (choose one to read it). More pages (gear, settings) go in as rows of the root later.
- * P / Start close it from any depth; B / Backspace / Esc go back a page, and out of the first.
+ * The pause menu (P / Start): the one menu, a row of tabs. Settings is always first; Hints
+ * appears once Wren has found a keepers' note, Messages once she has read a sigil. More tabs
+ * (gear, ...) are added to `tabs()` the same way, when there is something to look at. **Dev** is last (sprint, invincible, save states;
+ * `Game.devTab`, which the Steam build turns off).
+ * Left/right change a setting; Q/E / LB/RB switch tabs. P / Start close it; B / Backspace / Esc close it too.
  */
 export class PauseMenu {
   readonly menu: MenuDriver;
+  /** The tab shown last, so the menu reopens where the player left it. */
+  private tab: TabId = 'settings';
 
   constructor(private readonly game: Game) {
     this.menu = new MenuDriver(game);
+    this.menu.onTab = (dir) => this.step(dir);
   }
 
   get isOpen() {
     return this.menu.isOpen;
+  }
+
+  /** The tabs that exist right now, in order. */
+  tabs(): TabId[] {
+    const { state } = this.game;
+    const tabs: TabId[] = ['settings'];
+    if (foundHints(state).length) tabs.push('hints');
+    if (foundSigils(state).length) tabs.push('messages');
+    if (this.game.devTab) tabs.push('dev');
+    return tabs;
   }
 
   /**
@@ -28,7 +51,8 @@ export class PauseMenu {
     const { input } = this.game;
     if (!this.menu.isOpen) {
       if (this.game.mode !== 'play' || !input.pressed('pause')) return false;
-      this.menu.open(this.root());
+      if (!this.tabs().includes(this.tab)) this.tab = 'settings';
+      this.menu.open(this.page(this.tab));
     } else if (input.pressed('pause')) {
       this.menu.close();
     } else {
@@ -37,29 +61,83 @@ export class PauseMenu {
     return true;
   }
 
-  private root(): Menu {
-    const { state } = this.game;
-    const rows: Menu['rows'] = [{ kind: 'submenu', label: 'Keepers\' notes', menu: () => this.notes() }];
-    if (foundSigils(state).length) rows.push({ kind: 'submenu', label: 'Messages', menu: () => this.messages() });
-    return { title: 'Paused', rows };
+  /** Shows tab `i` (the mouse clicking a tab). */
+  setTab(i: number) {
+    const id = this.tabs()[i];
+    if (!id || id === this.tab) return;
+    this.tab = id;
+    this.menu.replace(this.page(id));
   }
 
-  private notes(): Menu {
-    const notes = foundHints(this.game.state);
-    if (!notes.length) {
-      return { title: 'Keepers\' notes', body: 'No notes yet. The keepers hid a few around the valley, for anyone patient enough to find them.', rows: [] };
+  private step(dir: -1 | 1) {
+    const tabs = this.tabs();
+    if (tabs.length > 1) this.setTab((tabs.indexOf(this.tab) + dir + tabs.length) % tabs.length);
+  }
+
+  private page(id: TabId): Menu {
+    const tabs = this.tabs();
+    const rows = id === 'settings' ? this.settingsRows() : id === 'hints' ? this.hintRows() : id === 'dev' ? this.devRows() : this.messageRows();
+    return { title: 'Paused', rows, tabs: { labels: tabs.map((t) => TAB_LABEL[t]), active: tabs.indexOf(id) } };
+  }
+
+  private settingsRows(): MenuRow[] {
+    const { game } = this;
+    const s = game.settings;
+    const percent = (v: number) => `${Math.round(v * 100)}%`;
+    const times = (v: number) => `${v.toFixed(1)}×`;
+    const volume = (label: string, key: 'masterVolume' | 'musicVolume' | 'sfxVolume', space = false): MenuRow => ({
+      kind: 'slider', label, space, min: 0, max: 1, step: 0.05, get: () => s[key], set: (v) => this.change({ [key]: v }), format: percent,
+    });
+    const sensitivity = (label: string, key: 'mouseSensitivity' | 'stickSensitivity', space = false): MenuRow => ({
+      kind: 'slider', label, space, ...SENSITIVITY_RANGE, step: 0.1, get: () => s[key], set: (v) => this.change({ [key]: v }), format: times,
+    });
+    const rows: MenuRow[] = [
+      volume('Master volume', 'masterVolume'),
+      volume('Music volume', 'musicVolume'),
+      volume('Effects volume', 'sfxVolume'),
+      sensitivity('Mouse sensitivity', 'mouseSensitivity', true),
+      sensitivity('Stick sensitivity', 'stickSensitivity'),
+      { kind: 'toggle', label: 'Invert camera up/down', get: () => s.invertY, set: (on) => this.change({ invertY: on }) },
+      { kind: 'choice', label: 'Sharpness', space: true, options: QUALITY_NAMES, get: () => s.quality, set: (i) => this.change({ quality: i as Settings['quality'] }) },
+    ];
+    if (game.canFullscreen) {
+      rows.push({ kind: 'toggle', label: 'Fullscreen', get: () => game.isFullscreen, set: (on) => game.setFullscreen(on) });
     }
-    return {
-      title: 'Keepers\' notes',
-      rows: notes.map((h) => ({ kind: 'submenu' as const, label: h.title, menu: () => ({ title: h.title, body: h.text.replace(/\*/g, ''), rows: [] }) })),
-    };
+    return rows;
+  }
+
+  /** Testing tools: toggles, then ready-made save states in the order the game is played (loading one replaces the save). */
+  private devRows(): MenuRow[] {
+    const { game } = this;
+    const { player, state } = game;
+    const states: MenuRow[] = DEV_STATES.map((s, i) => ({
+      kind: 'action' as const,
+      label: s.name,
+      space: i === 0,
+      run: () => {
+        this.menu.close();
+        game.loadDevState(s);
+        game.hud.showToast(`Loaded: ${s.name}`);
+      },
+    }));
+    return [
+      { kind: 'toggle', label: 'Dev sprint (x5)', get: () => player.devSpeed !== 1, set: (on) => (player.devSpeed = on ? 5 : 1) },
+      { kind: 'toggle', label: 'Invincible', get: () => state.invincible, set: (on) => (state.invincible = on) },
+      { kind: 'toggle', label: 'Trial falls cost a half heart', get: () => TRIAL_RULES.fallDamage > 0, set: (on) => (TRIAL_RULES.fallDamage = on ? 1 : 0) },
+      ...states,
+    ];
+  }
+
+  private change(patch: Partial<Settings>) {
+    this.game.changeSettings(patch);
+  }
+
+  private hintRows(): MenuRow[] {
+    return foundHints(this.game.state).map((h) => ({ kind: 'entry' as const, label: h.title, detail: h.text.replace(/\*/g, '') }));
   }
 
   /** The sigils Wren has read, in the order they were written. */
-  private messages(): Menu {
-    return {
-      title: 'Messages',
-      rows: foundSigils(this.game.state).map((g) => ({ kind: 'submenu' as const, label: g.title, menu: () => ({ title: g.title, body: g.text, rows: [] }) })),
-    };
+  private messageRows(): MenuRow[] {
+    return foundSigils(this.game.state).map((g) => ({ kind: 'entry' as const, label: g.title, detail: g.text }));
   }
 }

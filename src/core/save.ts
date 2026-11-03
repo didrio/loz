@@ -41,11 +41,29 @@ export interface DungeonSave {
   done: boolean;
 }
 
+/** Volumes are 0..1 (0.8 is the original loudness), sensitivities are multipliers on the default turn speed. */
 export interface Settings {
-  music: boolean;
+  masterVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
+  mouseSensitivity: number;
+  stickSensitivity: number;
+  invertY: boolean;
+  /** Render sharpness: 0 performance, 1 standard, 2 sharp (see QUALITY_PIXEL_RATIO). */
+  quality: 0 | 1 | 2;
 }
 
-export const DEFAULT_SETTINGS: Settings = { music: true };
+export const DEFAULT_SETTINGS: Settings = {
+  masterVolume: 0.8,
+  musicVolume: 0.8,
+  sfxVolume: 0.8,
+  mouseSensitivity: 1,
+  stickSensitivity: 1,
+  invertY: false,
+  quality: 1,
+};
+
+export const SENSITIVITY_RANGE = { min: 0.2, max: 2 };
 
 export interface KeyValueStore {
   get(key: string): string | null;
@@ -182,7 +200,19 @@ function decodeDungeons(v: unknown): Record<string, DungeonSave> {
 export function decodeSettings(raw: string | null): Settings {
   try {
     const o = JSON.parse(raw ?? '{}') as Record<string, unknown>;
-    return { music: typeof o.music === 'boolean' ? o.music : DEFAULT_SETTINGS.music };
+    const num = (v: unknown, fallback: number, min: number, max: number) =>
+      typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
+    const d = DEFAULT_SETTINGS;
+    return {
+      masterVolume: num(o.masterVolume, d.masterVolume, 0, 1),
+      // The first settings were just `music: boolean`; an old "off" stays silent.
+      musicVolume: num(o.musicVolume, o.music === false ? 0 : d.musicVolume, 0, 1),
+      sfxVolume: num(o.sfxVolume, d.sfxVolume, 0, 1),
+      mouseSensitivity: num(o.mouseSensitivity, d.mouseSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
+      stickSensitivity: num(o.stickSensitivity, d.stickSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
+      invertY: typeof o.invertY === 'boolean' ? o.invertY : d.invertY,
+      quality: o.quality === 0 || o.quality === 1 || o.quality === 2 ? o.quality : d.quality,
+    };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }

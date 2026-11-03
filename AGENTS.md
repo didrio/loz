@@ -22,10 +22,10 @@ built almost entirely by AI agents. Build everything as if it will ship.
 As of 2026-11-03: Emberfield plays start to finish: a wordless start, the shield in a ruined cottage, the village, the Lamplighter,
 then **the Waking Shrine** through **Gravelheart** and the Keepers' **prism** (four sword hits), which opens the gate to the Northpass and **Wayfarers' Camp**.
 The valley lies under **the blight** until the prism breaks; then **Maren, Tobin and Odo vanish** and only Lark and Pip remain. Pip asks Wren to find
-the grown-ups (rescue quests come later), and Odo's stall runs on trust. **Sigils** (listed under the pause menu's Messages) and a side errand
+the grown-ups (rescue quests come later), and Odo's stall runs on trust. **Sigils** (the pause menu's Messages tab) and a side errand
 (**Pip**'s doll, 20 gems) are in. Unplayed by the owner: surfing, the sealed gate, D3, the prism, the empty village. Open: a Lamplighter-fight
 report (stuck at the arena edge, "inverted" controls) that didn't reproduce (roadmap, "Known quirks"). Villagers never name kin.
-**Next:** the pause menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
+**Next:** the pause menu's inventory tab (Settings, Hints, Messages tabs are in, Settings unplayed). (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
 
@@ -142,7 +142,7 @@ src/
     game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
     combat.ts, title.ts    lock-on, glove throw, hit feedback both ways, hit-stop; the title menu
     menu.ts, menuDriver.ts MenuStack (rows, submenus, toggles, body text); MenuDriver (input → menu → HUD), ChoiceMenu (api.choose)
-    devMenu.ts, pauseMenu.ts   the dev menu (~ / L3); the pause menu (P / Start: the keepers' notes found)
+    pauseMenu.ts           the pause menu (P / Start): tabs Settings, Hints, Messages, Dev (sprint, invincible, save states)
     murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, sounds, the gauge)
     script.ts              ScriptApi + Script + Page (the contract content uses)
     player.ts, guard.ts    Wren (movement, sword, shield, stagger); the shield's guard
@@ -163,7 +163,7 @@ src/
     sigils.ts, villageNews.ts   the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)
     gorge.ts, northpass.ts the Hushing Gorge (monsters, fall rule); the canyon past the camp (Cragstalkers, fall rule)
     shrine.ts, gravelheart.ts  the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
-    devStates.ts, fakeApi.ts   dev-menu save states; the fake ScriptApi content tests run against
+    devStates.ts, fakeApi.ts   the Dev tab's save states; the fake ScriptApi content tests run against
   ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title
 scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers

@@ -229,6 +229,33 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .gmenu-row { display: flex; justify-content: space-between; gap: 32px; font-size: 21px; padding: 5px 14px; border-radius: 8px; color: rgba(255, 255, 255, 0.6); cursor: pointer; }
 .gmenu-row.selected { color: #fff; background: rgba(232, 199, 112, 0.16); }
 .gmenu-row.selected span:first-child::before { content: '▸ '; color: #ffd76a; }
-.gmenu-value { color: #ffd76a; }
+.gmenu-value { color: #ffd76a; white-space: nowrap; }
+.gmenu-row.space { margin-top: 14px; }
+.gmenu-list { overflow-y: auto; }
+.gmenu-panel.wide { width: min(900px, 94vw); height: min(560px, 88vh); display: flex; flex-direction: column; box-sizing: border-box; }
+.gmenu-panel.wide .gmenu-list { flex: 1; min-height: 0; padding-right: 4px; }
+.gmenu-tabs { display: flex; align-items: center; justify-content: center; gap: 10px; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid rgba(232, 199, 112, 0.35); }
+.gmenu-tab { font-size: 20px; letter-spacing: 0.08em; padding: 6px 22px; border-radius: 10px; color: rgba(255, 255, 255, 0.55); cursor: pointer; }
+.gmenu-tab:hover { color: #fff; }
+.gmenu-tab.active { color: #fff; background: rgba(232, 199, 112, 0.2); box-shadow: inset 0 -2px 0 #ffd76a; }
+.gmenu-tabkey { margin: 0 8px; }
+.gmenu-slider { display: flex; align-items: center; gap: 10px; flex: 1; justify-content: flex-end; }
+.gmenu-arrow { font-style: normal; color: #ffd76a; padding: 0 6px; cursor: pointer; opacity: 0.7; }
+.gmenu-arrow:hover { opacity: 1; }
+.gmenu-track { position: relative; width: 260px; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.18); cursor: pointer; flex: none; }
+.gmenu-track::before { content: ''; position: absolute; inset: -12px 0; }
+.gmenu-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: #ffd76a; opacity: 0.75; }
+.gmenu-knob { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px #ffd76a; }
+.gmenu-row .gmenu-value { min-width: 64px; text-align: right; }
+.gmenu-slider + .gmenu-value { flex: none; }
+.gmenu-split { flex: 1; min-height: 0; display: flex; gap: 22px; }
+.gmenu-split .gmenu-list { width: 290px; flex: none; }
+.gmenu-detail { flex: 1; overflow-y: auto; padding: 4px 8px 0 20px; border-left: 1px solid rgba(232, 199, 112, 0.25); }
+.gmenu-detail-title { font-size: 15px; letter-spacing: 0.18em; text-transform: uppercase; color: #e8c770; margin-bottom: 12px; }
+.gmenu-detail-text { font-size: 20px; line-height: 1.6; color: rgba(255, 255, 255, 0.92); white-space: pre-line; }
 .gmenu-help { margin-top: 14px; font-size: 13px; color: rgba(255, 255, 255, 0.5); text-align: center; }
 .gmenu-help .key { height: 22px; min-width: 22px; font-size: 12px; vertical-align: middle; margin: 0 2px; }
+
+/* A quiet reminder of the pause key, under the clock */
+.menu-hint { font-size: 12px; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.55); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); display: flex; align-items: center; gap: 5px; }
+.menu-hint .key { height: 18px; min-width: 18px; font-size: 11px; opacity: 0.8; }

@@ -19,7 +19,6 @@ import { blighted, blightMood, fieldPopulation, stepBlight } from './blight';
 import { Combat } from './combat';
 import { Debug } from './debug';
 import { BudSystem } from './buds';
-import { DevMenu } from './devMenu';
 import { ChoiceMenu } from './menuDriver';
 import { Dialog } from './dialog';
 import { EnemyManager, type Enemy } from './enemies';
@@ -40,6 +39,8 @@ import { TitleMenu } from './title';
 export type Mode = 'title' | 'play' | 'cutscene';
 
 const SETTINGS_KEY = 'embervale:settings';
+/** The most pixels per CSS pixel the renderer draws at, for Settings' Sharpness (performance, standard, sharp). */
+const QUALITY_PIXEL_RATIO = [1, 1.5, 2];
 const AUTOSAVE_SECONDS = 30;
 /** A full day passes in about five minutes. */
 const HOURS_PER_SECOND = 1 / 12;
@@ -73,7 +74,8 @@ export class Game implements ScriptApi {
   content!: AreaContent;
   private readonly dialog: Dialog;
   private readonly saveSlot: SaveSlot;
-  private readonly settings: Settings;
+  /** Player-chosen options (the pause menu's Settings tab); change them through `changeSettings`. */
+  readonly settings: Settings;
   private readonly timer = new THREE.Timer();
   private readonly debug: Debug | null;
   private areaName = '';
@@ -81,7 +83,6 @@ export class Game implements ScriptApi {
   private fadeValue = 0;
   private autosaveT = AUTOSAVE_SECONDS;
   private readonly title: TitleMenu;
-  readonly devMenu: DevMenu;
   readonly pauseMenu: PauseMenu;
   readonly buds: BudSystem;
   /** Script menus (`choose`): the bells' travel menu. */
@@ -117,7 +118,7 @@ export class Game implements ScriptApi {
 
     this.saveSlot = new SaveSlot(store);
     this.settings = decodeSettings(store.get(SETTINGS_KEY));
-    this.sfx.musicOn = this.settings.music;
+    this.applySettings();
     this.loadArea('overworld');
 
     this.title = new TitleMenu(this.hud, this.sfx, !!this.saveSlot.load());
@@ -125,14 +126,16 @@ export class Game implements ScriptApi {
     window.addEventListener('pagehide', () => this.save());
     document.addEventListener('visibilitychange', () => document.hidden && this.save());
     this.debug = new URLSearchParams(location.search).has('debug') ? new Debug(this) : null;
-    this.devMenu = new DevMenu(this, () => !!(import.meta.env.DEV || import.meta.env.VITE_DEV_SPRINT || this.debug));
     this.pauseMenu = new PauseMenu(this);
     this.buds = new BudSystem(this);
     this.choice = new ChoiceMenu(this);
     // The mouse works whichever menu is open.
-    const openMenu = () => (this.devMenu.isOpen ? this.devMenu.menu : this.pauseMenu.isOpen ? this.pauseMenu.menu : this.choice.isOpen ? this.choice.driver : null);
+    const openMenu = () => (this.pauseMenu.isOpen ? this.pauseMenu.menu : this.choice.isOpen ? this.choice.driver : null);
     this.hud.onMenuHover = (i) => openMenu()?.hover(i);
     this.hud.onMenuClick = (i) => openMenu()?.click(i);
+    this.hud.onMenuAdjust = (i, dir) => openMenu()?.adjust(i, dir);
+    this.hud.onMenuSlide = (i, fraction) => openMenu()?.slide(i, fraction);
+    this.hud.onMenuTab = (i) => this.pauseMenu.setTab(i);
   }
 
   start() {
@@ -197,8 +200,7 @@ export class Game implements ScriptApi {
     this.combat.hitStop -= rawDt;
     this.input.poll();
     this.hud.setDevice(this.input.device);
-    // One menu at a time: the dev menu can't open over the pause menu, nor the pause menu over it.
-    const paused = (!this.pauseMenu.isOpen && this.devMenu.update()) || this.pauseMenu.update();
+    const paused = this.pauseMenu.update();
     const dt = frozen || paused ? 0 : rawDt * this.timeScale;
     this.director.update(dt);
     // Platforms move before the player updates, so a rider takes the step along (core/physics.ts carryDelta).
@@ -398,11 +400,6 @@ export class Game implements ScriptApi {
     if (this.mode !== 'play') hud.setActions([]);
     const mood = boss ? boss.music : blightMood(this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day'), isBlighted);
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced);
-    if (input.pressed('music')) {
-      this.sfx.musicOn = this.settings.music = !this.settings.music;
-      this.store.set(SETTINGS_KEY, JSON.stringify(this.settings));
-      hud.showToast(this.settings.music ? 'Music on' : 'Music off ([music] to turn it back on)');
-    }
 
     this.combat.updateMarker(dt);
 
@@ -620,6 +617,41 @@ export class Game implements ScriptApi {
     if (this.mode === 'title') return;
     this.saveSlot.write(this.state.toSave());
     this.autosaveT = AUTOSAVE_SECONDS;
+  }
+
+  /** Changes some settings, applies them and saves them. */
+  changeSettings(patch: Partial<Settings>) {
+    Object.assign(this.settings, patch);
+    this.applySettings();
+    this.store.set(SETTINGS_KEY, JSON.stringify(this.settings));
+  }
+
+  private applySettings() {
+    const s = this.settings;
+    this.sfx.setVolumes(s.masterVolume, s.musicVolume, s.sfxVolume);
+    this.input.mouseSensitivity = s.mouseSensitivity;
+    this.input.stickSensitivity = s.stickSensitivity;
+    this.input.invertY = s.invertY;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, QUALITY_PIXEL_RATIO[s.quality]));
+    this.resize();
+  }
+
+  /** The pause menu's Dev tab (sprint, invincible, save states). On for everyone for now; the Steam build sets `VITE_DISABLE_DEV_TAB=1` to drop it. */
+  readonly devTab = import.meta.env.VITE_DISABLE_DEV_TAB !== '1';
+
+  /** Whether the browser lets the page go fullscreen (not iPhones, not inside some frames). */
+  get canFullscreen() {
+    return !!document.fullscreenEnabled;
+  }
+
+  get isFullscreen() {
+    return !!document.fullscreenElement;
+  }
+
+  /** Browsers only allow this from a key press or click, so a gamepad button may be refused: say so. */
+  setFullscreen(on: boolean) {
+    const done = on ? document.documentElement.requestFullscreen() : document.fullscreenElement ? document.exitFullscreen() : Promise.resolve();
+    done.catch(() => this.hud.showToast('The browser refused fullscreen (press F11, or click the toggle)'));
   }
 
   private resize() {

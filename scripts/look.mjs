@@ -442,7 +442,7 @@ const SCENES = {
     await h.wait(600);
     await h.shot('entrance-threshold');
   },
-  /** Murmurbuds (docs/world.md): each in its nook; one asleep, growing (gauge), overloaded, open; the pause menu, empty and with notes. */
+  /** Murmurbuds (docs/world.md): each in its nook; one asleep, growing (gauge), overloaded, open; the pause menu: settings, hints, messages. */
   async buds(h) {
     await h.newGame();
     await h.game(() => (window.embervale.state.hours = 10));
@@ -494,15 +494,20 @@ const SCENES = {
     await h.shot('open');
     await h.press('KeyP');
     await h.wait(300);
-    await h.shot('pause-empty');
+    await h.shot('pause-settings');
     await h.press('KeyP');
     await h.game(() => ['hint.tunic', 'hint.bells'].forEach((f) => window.embervale.state.set(f)));
     await h.press('KeyP');
+    await h.press('KeyE');
     await h.wait(300);
-    await h.shot('pause-notes');
-    await h.press('Enter');
+    await h.shot('pause-hints');
+    await h.press('ArrowDown');
+    await h.game(() => window.embervale.state.set('sigil.cell'));
+    await h.press('KeyP'); // closes
+    await h.press('KeyP');
+    await h.press('KeyE');
     await h.wait(300);
-    await h.shot('pause-note');
+    await h.shot('pause-messages');
   },
   /** The keepers' bell posts (docs/bells.md): empty, hung, ringing; the travel menu; the shrine's post in its hall. */
   async bells(h) {

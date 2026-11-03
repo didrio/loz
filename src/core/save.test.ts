@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GameState } from '../game/state';
-import { decodeSave, decodeSettings, memoryStore, SaveSlot, SAVE_VERSION } from './save';
+import { decodeSave, decodeSettings, DEFAULT_SETTINGS, memoryStore, SaveSlot, SAVE_VERSION } from './save';
 
 describe('save files', () => {
   it('round-trips game state', () => {
@@ -145,8 +145,18 @@ describe('save files', () => {
   });
 
   it('reads settings with defaults', () => {
-    expect(decodeSettings(null).music).toBe(true);
-    expect(decodeSettings('{"music":false}').music).toBe(false);
-    expect(decodeSettings('{oops').music).toBe(true);
+    expect(decodeSettings(null)).toEqual(DEFAULT_SETTINGS);
+    expect(decodeSettings('{oops')).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('turns the old music-off setting into a silent music volume', () => {
+    expect(decodeSettings('{"music":false}').musicVolume).toBe(0);
+    expect(decodeSettings('{"music":true}').musicVolume).toBe(DEFAULT_SETTINGS.musicVolume);
+  });
+
+  it('keeps saved settings and clamps or drops nonsense', () => {
+    const s = decodeSettings('{"masterVolume":0.3,"mouseSensitivity":9,"stickSensitivity":"fast","invertY":true,"quality":2,"sfxVolume":-1}');
+    expect(s).toMatchObject({ masterVolume: 0.3, mouseSensitivity: 2, stickSensitivity: 1, invertY: true, quality: 2, sfxVolume: 0 });
+    expect(decodeSettings('{"quality":7}').quality).toBe(1);
   });
 });

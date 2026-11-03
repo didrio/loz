@@ -27,10 +27,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
-      # The Pages site is the owner's test build: it keeps the dev sprint (G). Steam/itch builds don't set this.
+      # The pause menu's Dev tab is on by default (the Pages site is the owner's test build). Steam builds set VITE_DISABLE_DEV_TAB=1.
       - run: npm run build
-        env:
-          VITE_DEV_SPRINT: '1'
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         with:

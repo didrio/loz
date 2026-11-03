@@ -56,6 +56,7 @@ export class Hud {
   private promptLabel = '';
   private clock: HTMLElement;
   private clockIcon: HTMLElement;
+  private menuHint: HTMLElement;
   private actions: HTMLElement;
   private area: HTMLElement;
   private dialog: HTMLElement;
@@ -73,6 +74,12 @@ export class Hud {
   /** Set by the game: the mouse hovered a row / clicked a row of the open menu. */
   onMenuHover: (i: number) => void = () => {};
   onMenuClick: (i: number) => void = () => {};
+  /** The mouse clicked a slider's arrow, dragged its track (0..1), or clicked a tab. */
+  onMenuAdjust: (i: number, dir: -1 | 1) => void = () => {};
+  onMenuSlide: (i: number, fraction: number) => void = () => {};
+  onMenuTab: (i: number) => void = () => {};
+  /** The slider being dragged: its row and the track's box when the drag began. */
+  private drag: { row: number; left: number; width: number } | null = null;
   private bossTitle: HTMLElement;
   private bossBar: HTMLElement;
   private bossFill: HTMLElement;
@@ -97,6 +104,7 @@ export class Hud {
       <div class="hud-top-right">
         <div class="clock"><div class="clock-icon"></div></div>
         <div class="clock-text"></div>
+        <div class="menu-hint"></div>
       </div>
       <div class="actions"></div>
       <div class="prompt"></div>
@@ -135,6 +143,8 @@ export class Hud {
     this.prompt = q('.prompt');
     this.clock = q('.clock-text');
     this.clockIcon = q('.clock-icon');
+    this.menuHint = q('.menu-hint');
+    this.renderMenuHint();
     this.actions = q('.actions');
     this.area = q('.area');
     this.dialog = q('.dialog');
@@ -154,9 +164,30 @@ export class Hud {
       if (r) this.onMenuHover(Number(r.dataset.row));
     });
     this.gmenu.addEventListener('click', (e) => {
+      const el = e.target as HTMLElement;
+      const tab = el.closest<HTMLElement>('[data-tab]');
+      if (tab) return this.onMenuTab(Number(tab.dataset.tab));
+      const arrow = el.closest<HTMLElement>('[data-dir]');
       const r = rowOf(e);
+      if (arrow && r) return this.onMenuAdjust(Number(r.dataset.row), Number(arrow.dataset.dir) < 0 ? -1 : 1);
+      if (el.closest('[data-track]')) return; // the press already set the slider
       if (r) this.onMenuClick(Number(r.dataset.row));
     });
+    // A slider's track: press and drag along it. The box is measured once, so redraws mid-drag don't matter.
+    const slideTo = (x: number) => {
+      const d = this.drag;
+      if (d) this.onMenuSlide(d.row, (x - d.left) / d.width);
+    };
+    this.gmenu.addEventListener('pointerdown', (e) => {
+      const track = (e.target as HTMLElement).closest<HTMLElement>('[data-track]');
+      const r = rowOf(e);
+      if (!track || !r) return;
+      const box = track.getBoundingClientRect();
+      this.drag = { row: Number(r.dataset.row), left: box.left, width: box.width };
+      slideTo(e.clientX);
+    });
+    window.addEventListener('pointermove', (e) => slideTo(e.clientX));
+    window.addEventListener('pointerup', () => (this.drag = null));
     this.bossTitle = q('.boss-title');
     this.bossBar = q('.boss-bar');
     this.bossFill = q('.boss-fill');
@@ -183,10 +214,16 @@ export class Hud {
     this.device = d;
     this.el.classList.toggle('gamepad', d === 'gamepad');
     this.renderTyping();
+    this.renderMenuHint();
     this.lastActionsHtml = '';
     this.setActions(this.lastActions);
     this.promptLabel = '';
     this.drinksHtml = '';
+  }
+
+  /** "[P] Menu" (or the pad's button) under the clock, so nobody has to guess how to open the pause menu. */
+  private renderMenuHint() {
+    this.menuHint.innerHTML = `${this.key('pause')}Menu`;
   }
 
   // --- status ---------------------------------------------------------------------
@@ -205,12 +242,43 @@ export class Hud {
   /** Draws the open menu (see game/menu.ts), or hides it when null. */
   setMenu(view: MenuView | null) {
     this.gmenu.classList.toggle('hidden', !view);
-    const html = view
-      ? `<div class="gmenu-panel"><div class="gmenu-title">${escape(view.title)}</div>${view.body ? `<div class="gmenu-body">${escape(view.body)}</div>` : ''}${view.rows
-          .map((r, i) => `<div class="gmenu-row${r.selected ? ' selected' : ''}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-value">${escape(r.value ?? '')}</span></div>`)
-          .join('')}<div class="gmenu-help">${this.key('menuUp')}${this.key('menuDown')} move · ${this.key('confirm')} choose · ${this.key('cancel')} back</div></div>`
-      : '';
-    if (html !== this.gmenuHtml) this.gmenu.innerHTML = this.gmenuHtml = html;
+    let html = '';
+    if (view) {
+      const row = (r: MenuView['rows'][number], i: number) => {
+        const cls = `gmenu-row${r.selected ? ' selected' : ''}${r.space ? ' space' : ''}`;
+        if (r.kind === 'slider') {
+          const pct = Math.round((r.fill ?? 0) * 100);
+          return `<div class="${cls}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-slider"><i class="gmenu-arrow" data-dir="-1">◂</i><b class="gmenu-track" data-track><b class="gmenu-fill" style="width:${pct}%"></b><b class="gmenu-knob" style="left:${pct}%"></b></b><i class="gmenu-arrow" data-dir="1">▸</i></span><span class="gmenu-value">${escape(r.value ?? '')}</span></div>`;
+        }
+        const value = r.kind === 'choice' ? `<i class="gmenu-arrow" data-dir="-1">◂</i> ${escape(r.value ?? '')} <i class="gmenu-arrow" data-dir="1">▸</i>` : escape(r.value ?? '');
+        return `<div class="${cls}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-value">${value}</span></div>`;
+      };
+      const tabs = view.tabs
+        ? `<div class="gmenu-tabs"><span class="gmenu-tabkey">${this.key('tabPrev')}</span>${view.tabs.labels
+            .map((t, i) => `<span class="gmenu-tab${i === view.tabs!.active ? ' active' : ''}" data-tab="${i}">${escape(t)}</span>`)
+            .join('')}<span class="gmenu-tabkey">${this.key('tabNext')}</span></div>`
+        : `<div class="gmenu-title">${escape(view.title)}</div>`;
+      const list = view.rows.map(row).join('');
+      const split = view.rows.some((r) => r.kind === 'entry');
+      const body = view.body ? `<div class="gmenu-body">${escape(view.body)}</div>` : '';
+      const content = split
+        ? `<div class="gmenu-split"><div class="gmenu-list">${list}</div><div class="gmenu-detail">${
+            view.detail ? `<div class="gmenu-detail-title">${escape(view.detail.title)}</div><div class="gmenu-detail-text">${escape(view.detail.text)}</div>` : ''
+          }</div></div>`
+        : `${body}<div class="gmenu-list">${list}</div>`;
+      const help = `${view.tabs && view.tabs.labels.length > 1 ? `${this.key('tabPrev')}${this.key('tabNext')} tabs · ` : ''}${this.key('menuUp')}${this.key('menuDown')} move · ${
+        view.adjustable ? `${this.key('menuLeft')}${this.key('menuRight')} change · ` : ''
+      }${view.tabs ? `${this.key('pause')} close` : `${this.key('confirm')} choose · ${this.key('cancel')} back`}`;
+      html = `<div class="gmenu-panel${view.tabs ? ' wide' : ''}">${tabs}${content}<div class="gmenu-help">${help}</div></div>`;
+    }
+    if (html === this.gmenuHtml) return;
+    const oldScroll = this.gmenu.querySelector('.gmenu-list')?.scrollTop ?? 0;
+    this.gmenu.innerHTML = this.gmenuHtml = html;
+    const list = this.gmenu.querySelector<HTMLElement>('.gmenu-list');
+    if (list) {
+      list.scrollTop = oldScroll;
+      this.gmenu.querySelector('.gmenu-row.selected')?.scrollIntoView({ block: 'nearest' });
+    }
   }
 
   setHearts(hp: number, max: number) {

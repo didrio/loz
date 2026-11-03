@@ -168,7 +168,7 @@ export class GameState {
   /** Restores from a (validated) save. Unknown flags, items and bells are dropped. */
   load(d: SaveData) {
     this.reset();
-    for (const f of d.flags) if ((FLAGS as readonly string[]).includes(f) || f.startsWith('jar.')) this.flags.add(f as Flag);
+    for (const f of d.flags) if ((FLAGS as readonly string[]).includes(f) || f.startsWith('jar.') || f.startsWith('sigil.')) this.flags.add(f as Flag);
     this.keys = d.keys;
     this.area = d.area;
     for (const i of d.items) if ((ITEMS as readonly string[]).includes(i)) this.items.add(i as Item);

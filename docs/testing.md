@@ -32,8 +32,8 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
 - CI (`.github/workflows/deploy.yml`) runs check and smoke on every push and PR; deploys
   `main` to GitHub Pages as soon as check passes (smoke runs alongside but doesn't gate the
   deploy: owner's call, 2026-11-02), and uploads smoke screenshots when smoke fails.
-  The Pages build sets `VITE_DEV_SPRINT=1`, so the dev menu (~ / L3: sprint, invincible, save states) works there; Steam and
-  itch builds must not set it.
+  The pause menu's **Dev** tab (sprint, invincible, save states) is on in every build for now; the Steam build must set
+  `VITE_DISABLE_DEV_TAB=1` to drop it.
 
 ## Smoke scenarios and save fixtures
 
@@ -51,13 +51,13 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | `shrine-exit` | `shrine-entry` | the way out (always open) |
 | `shrine-enemies` | `shrine-entry` | sentinels and shellbacks spawn from the data; a sentinel sleeps, wakes, swings (2 half-hearts), falls to hits in its recovery and from behind; a shellback's shell turns a frontal hit, it falls from behind |
 | `shrine-boss` | `shrine-boss` | walking into the Hearth wakes Gravelheart (its theme, the seal); a direct kill plays the defeat (the ember, the ring and door, the Heart Vessel, the causeway and the hidden door); the vessel adds a heart; the causeway leads to the Keepers' Seal; the prism (one hit only cracks it, four shatter it): its vision breaks the gate and returns to the room |
-| `dev-menu` | `field-sword` | ~ opens and pauses, toggles stay open, Backspace goes back/closes, loading the boss-door and night states by keyboard and mouse |
+| `dev-menu` | `field-sword` | the pause menu's Dev tab: opens and pauses, toggles stay open, Backspace closes, loading the boss-door state (with its hints and messages) by keyboard and the night state by mouse |
 | `village` | `field-sword` | Lark's surf idea and a ride (shield-held landing, speed, letting go; not indoors), Tobin's mill key, the mill door, sleeping (heals, clock to 18:00), the way out, buying Odo's Stoneward Tunic |
 | `trials` | `shrine-entry` | the Bell Shaft: a fall from a checkpoint ledge returns Wren there, half a heart lost; riding a rising ledge; taking the Lullbell from the top ledge |
 | `gorge` | `field-sword` | the Hushing Gorge: its five thornlings and sentinel, a fall off the climb returns Wren to the last pillar (half a heart), taking the Morrowbell |
 | `northpass` | `northpass` | the Cragstalker stands on the canyon's far side once the region is built; a fall in the crossing returns Wren to the last ledge (half a heart); it lunges at Wren; taking the Waybell, hanging it at the camp, the travel menu offers both other bells and Morrowbell → Wayfarers' Camp arrives at its post; back in Thistledown only Lark and Pip remain, Pip asks Wren to find the grown-ups, Odo's stall refills a flask unattended |
 | `bells` | `field-sword` | the empty Thistledown post, hanging the Morrowbell (nothing answers), the travel menu to the shrine's post and back, Stay, hearts unchanged |
-| `hints` | `field-sword` | P pauses (empty notes page), M toggles music, lock-on holds a Murmurbud, mashing overloads it, a strike-and-rest rhythm opens it (not read yet), E reads the floating note (gone, kept), the pause menu lists and reads it, a read sigil shows under Messages |
+| `hints` | `field-sword` | P pauses on a lone Settings tab, a slider changes and saves, lock-on holds a Murmurbud, mashing overloads it, a strike-and-rest rhythm opens it (not read yet), E reads the floating note (gone, kept), the Hints tab lists and shows it, a read sigil adds a Messages tab |
 | `jars` | `field-sword` | a sword swing breaks an empty jar in a ruin (flag `jar.<id>` saved, no pickup) and the blue gem jar (a gem is collected); the doll jar, then Pip takes the doll back for 20 gems |
 
 **Fixtures** are real saves in `scripts/fixtures/<name>.json` (current `SAVE_VERSION`).
@@ -119,12 +119,11 @@ plays a move on demand, `embervale.setTimeScale(0.05)` slows everything to inspe
 `embervale.loadArea('shrine')` jumps into the dungeon; `embervale.area.showFloor(0)` and
 `embervale.rig.frozen = true` set up a top-down view (see the `dungeon` look scene).
 Indoors, call the `teleport` helper with a `fromY` just above the floor.
-**Dev menu**: on the dev server (or with `?debug`), **~** / **L3** opens it: dev sprint (5× run
-speed, `Player.devSpeed`), invincibility, and **Save states** that jump to a ready-made point
-and replace the current save (see "Menus" in [engine.md](engine.md)). Never in the shipped
-build. With `?debug`, **\** (not ~) toggles the collider wireframe.
-**P** toggles music (saved in the settings) and now shows a toast, so a muted game is no
-longer a mystery.
+**Dev tab**: the last tab of the pause menu (**P**, then Q/E): dev sprint (5× run
+speed, `Player.devSpeed`), invincibility, and **save states** (in play order; each has the hints and messages Wren could have by then) that jump to a ready-made point
+and replace the current save (see "Menus" in [engine.md](engine.md)). Off in builds with `VITE_DISABLE_DEV_TAB=1`.
+With `?debug`, **\** toggles the collider wireframe.
+**P** opens the pause menu (Settings, Hints, Messages tabs); music is muted with its volume slider there.
 
 ## Known testing quirks
 

@@ -8,10 +8,16 @@ import { BOSS_MOODS, compiledSong, type MusicMood } from './tracks';
 
 export type { MusicMood } from './tracks';
 
+/** The slider position that sounds as loud as the game did before there were sliders (matches DEFAULT_SETTINGS). */
+const DEFAULT_VOLUME = 0.8;
+
 export class Sfx {
   private ctx: AudioContext | null = null;
   private master!: GainNode;
   private musicGain!: GainNode;
+  private sfxGain!: GainNode;
+  /** The volumes (0..1) chosen in settings, kept so they apply once the audio context exists. */
+  private volumes = { master: DEFAULT_VOLUME, music: DEFAULT_VOLUME, sfx: DEFAULT_VOLUME };
   private noiseBuf!: AudioBuffer;
   private music!: MusicPlayer;
   /** The mood whose song is playing, or null for silence. */
@@ -25,15 +31,31 @@ export class Sfx {
     }
     this.ctx = new AudioContext();
     this.master = this.ctx.createGain();
-    this.master.gain.value = 0.5;
     this.master.connect(this.ctx.destination);
     this.musicGain = this.ctx.createGain();
-    this.musicGain.gain.value = 0.4;
     this.musicGain.connect(this.master);
+    this.sfxGain = this.ctx.createGain();
+    this.sfxGain.connect(this.master);
+    this.applyVolumes();
     this.music = new MusicPlayer(this.ctx, this.musicGain);
     this.noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+
+  /** Sets the three volumes (0..1, from settings). At DEFAULT_VOLUME everything is as loud as it was before the sliders. */
+  setVolumes(master: number, music: number, sfx: number) {
+    this.volumes = { master, music, sfx };
+    this.musicOn = music > 0;
+    this.applyVolumes();
+  }
+
+  private applyVolumes() {
+    if (!this.ctx) return;
+    const { master, music, sfx } = this.volumes;
+    this.master.gain.value = (0.5 * master) / DEFAULT_VOLUME;
+    this.musicGain.gain.value = (0.4 * music) / DEFAULT_VOLUME;
+    this.sfxGain.gain.value = sfx / DEFAULT_VOLUME;
   }
 
   private tone(freq: number, dur: number, type: OscillatorType = 'sine', vol = 0.25, slideTo?: number, delay = 0, out?: AudioNode) {
@@ -48,7 +70,7 @@ export class Sfx {
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(vol, t0 + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(g).connect(out ?? this.master);
+    o.connect(g).connect(out ?? this.sfxGain);
     o.start(t0);
     o.stop(t0 + dur + 0.05);
   }
@@ -67,7 +89,7 @@ export class Sfx {
     const g = ctx.createGain();
     g.gain.setValueAtTime(vol, t0);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    src.connect(f).connect(g).connect(this.master);
+    src.connect(f).connect(g).connect(this.sfxGain);
     src.start(t0);
     src.stop(t0 + dur + 0.05);
   }
@@ -227,7 +249,7 @@ export class Sfx {
       g.gain.exponentialRampToValueAtTime(vol, t0 + 0.07);
       g.gain.setValueAtTime(vol, t0 + 0.6);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.15);
-      far.connect(g).connect(this.master);
+      far.connect(g).connect(this.sfxGain);
       for (const [f, q, v] of [[850, 6, 1], [1250, 8, 0.6], [2850, 10, 0.3]] as const) {
         const band = ctx.createBiquadFilter();
         band.type = 'bandpass';
