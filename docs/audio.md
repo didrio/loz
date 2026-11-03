@@ -6,6 +6,10 @@ Sound effects are small functions in `core/audio.ts` (`Sfx`); background music i
 played by `core/synth.ts`. An agent can't hear any of it: render to WAV, measure levels,
 and ask the owner to listen.
 
+**Murmurbuds** (`budTap(growth)`, `nuhUh`, `budOpen`): a soft triangle knock that climbs with
+the bud's growth; "nuh-uh", two falling square blips (G4 then D4); a rising A-major arpeggio
+with a breath of noise as it opens. Not yet heard by the owner.
+
 **The keepers' bells** (`Sfx.bell(freq, gain, delay)`, [bells.md](bells.md)): a cast bell
 from sine partials at bell ratios (hum 0.5, prime 1, minor tierce 1.19, quint 1.5, nominal 2,
 then 2.52, 3.01, 4.1), the high ones dying first (4.5 s down to 0.7 s), plus a short noise tick

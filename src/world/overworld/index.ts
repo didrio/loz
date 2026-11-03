@@ -7,8 +7,9 @@ import { buildCamp, CANYON_COURSE, WAYBELL_PICKUP } from './camp';
 import { Gate } from './gate';
 import { buildGorge, GORGE_BELL, GORGE_COURSE, gorgeAt } from './gorge';
 import { buildHollow } from './hollow';
+import { MurmurbudLook } from '../murmurbud';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
-import { areaNameAt, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { areaNameAt, BUDS, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { NORTHPASS } from './northpass';
 import { RegionStreamer } from './region';
 import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
@@ -65,6 +66,10 @@ export class Overworld implements Area {
   readonly vessel: HeartVessel;
   private readonly hollowFx: { update(dt: number): void };
   private readonly bushes: BushField;
+  /** The Murmurbuds, by id (`bud.<hint>`). */
+  readonly buds: Map<string, MurmurbudLook>;
+  /** A swing reached a bud (the game's bud system listens; see game/buds.ts). */
+  onBudStrike: ((id: string) => void) | null = null;
   private readonly water: THREE.Mesh;
   private readonly blades: THREE.Group;
   private readonly windowMat: THREE.MeshLambertMaterial;
@@ -102,6 +107,7 @@ export class Overworld implements Area {
     this.wayBell = camp.bell;
     this.canyonCrossing = camp.course;
     this.bushes = new BushField(b, [...bushSpots(b), ...hollow.bushes]);
+    this.buds = new Map(BUDS.map(({ id, x, z }) => [id, new MurmurbudLook(b, id, x, terrainHeight(x, z), z)]));
     for (const s of SIGNS) buildSign(b, s.x, s.z);
     this.hollow = new BossArena(b, HOLLOW.x, HOLLOW.z, HOLLOW.floor, HOLLOW.r, hollow.lamps);
     this.vessel = new HeartVessel(b, HOLLOW.x, HOLLOW.floor, HOLLOW.z);
@@ -151,6 +157,7 @@ export class Overworld implements Area {
       { id: 'bellPickup.way', x: WAYBELL_PICKUP.x, z: WAYBELL_PICKUP.z, y: WAYBELL_PICKUP.y, r: 2, label: 'Take', promptY: WAYBELL_PICKUP.y + 2.2, enabled: () => this.wayBell.present },
       { id: 'sign.pedestal', x: shrine.pedestal.x, z: shrine.pedestal.z, r: 2.3, label: 'Read', promptY: above(shrine.pedestal.x, shrine.pedestal.z, 2), enabled: always },
       ...SIGNS.map((s) => ({ id: s.id, x: s.x, z: s.z, r: 2.3, label: 'Read', promptY: above(s.x, s.z, 2.4), enabled: always })),
+      ...[...this.buds.values()].map((bud) => bud.interactable),
     ];
     this.triggers = [
       { id: 'trigger.shrineEntrance', x: SHRINE_DOOR.x, z: SHRINE_DOOR.z, r: 1.6, enabled: () => this.door.open },
@@ -205,6 +212,10 @@ export class Overworld implements Area {
     return this.bushes.cut(x, z, dirX, dirZ, reach);
   }
 
+  strike(x: number, y: number, z: number, dirX: number, dirZ: number, reach: number) {
+    for (const bud of this.buds.values()) if (bud.inReach(x, y, z, dirX, dirZ, reach)) this.onBudStrike?.(bud.id);
+  }
+
   movePlatforms(dt: number) {
     this.platformT += dt;
     this.gorgeClimb.update(this.platformT);
@@ -230,6 +241,7 @@ export class Overworld implements Area {
     this.wayBell.update(dt);
     this.hollowFx.update(dt);
     this.bushes.update(dt);
+    for (const bud of this.buds.values()) bud.update(dt);
     this.regions.update(dt);
     this.npcs.maren.update(dt, env.playerPos);
     this.npcs.tobin.update(dt, env.playerPos);

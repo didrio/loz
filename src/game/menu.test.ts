@@ -67,4 +67,15 @@ describe('MenuStack', () => {
     stack.select(9);
     expect(stack.view()!.rows[1].selected).toBe(true);
   });
+
+  it('shows a body, and survives having no rows (an empty notes page)', () => {
+    const stack = new MenuStack();
+    stack.open({ title: 'Notes', body: 'Nothing yet.', rows: [] });
+    stack.move(1);
+    stack.move(-1);
+    stack.confirm();
+    expect(stack.view()).toEqual({ title: 'Notes', body: 'Nothing yet.', rows: [] });
+    stack.back();
+    expect(stack.isOpen).toBe(false);
+  });
 });

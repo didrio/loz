@@ -303,6 +303,68 @@ const SCENES = {
     await h.wait(600);
     await h.shot('entrance-threshold');
   },
+  /** Murmurbuds (docs/world.md): each in its nook; one asleep, growing (gauge), overloaded, open; the pause menu, empty and with notes. */
+  async buds(h) {
+    await h.newGame();
+    await h.game(() => (window.embervale.state.hours = 10));
+    /** Parks the camera off to the side of a bud, `dist` out and `up` high, looking at it (Wren never in line). */
+    // From the bud's east-south-east (open ground at all three); Wren stands to the camera's left.
+    // (The flasks bud is framed from the lake's side instead: a pine stands to its east.)
+    const frame = (id, dist, up) =>
+      h.game(([id, dist, up]) => {
+        const g = window.embervale;
+        const at = g.area.buds.get(id).center;
+        const T = at.constructor;
+        const [dx, dz] = id === 'bud.flasks' ? [-0.87, 0.5] : [0.87, -0.5];
+        g.rig.shot(new T(at.x + dist * dx, at.y + up, at.z + dist * dz), new T(at.x, at.y + 0.6, at.z), true);
+      }, [id, dist, up]);
+    const where = (id) => h.game((id) => {
+      const bud = window.embervale.area.buds.get(id);
+      return { x: bud.x, z: bud.z };
+    }, id);
+    for (const id of ['bud.tunic', 'bud.flasks', 'bud.bells']) {
+      const b = await where(id);
+      await h.teleport(b.x + 0.9, b.z + 1.6, Math.atan2(-0.9, -1.6)); // beside it, for scale
+      await frame(id, 9, 3.5);
+      await h.wait(1000);
+      await h.shot(`nook-${id.slice(4)}`);
+    }
+    // Close up on the tunic bud, Wren beside it, swinging range.
+    const b = await where('bud.tunic');
+    await h.teleport(b.x + 0.9, b.z + 1.6, Math.atan2(-0.9, -1.6));
+    await frame('bud.tunic', 6.5, 2.6);
+    await h.wait(800);
+    await h.shot('asleep');
+    /** Sets the bud's rule (and its look) by hand, then waits for the look to catch up. */
+    const set = (r) => h.game((r) => {
+      const g = window.embervale;
+      Object.assign(g.buds.rule('bud.tunic'), r);
+      const look = g.area.buds.get('bud.tunic');
+      if (r.sulk) look.sulk();
+      if (r.opened) look.open();
+    }, r);
+    await set({ gauge: 0.62, growth: 0.55 });
+    await h.wait(500);
+    await h.shot('growing');
+    await set({ gauge: 1, growth: 0, sulk: 1.2 });
+    await h.wait(200);
+    await h.shot('overloaded');
+    await h.wait(1500);
+    await set({ gauge: 0, growth: 1, opened: true });
+    await h.wait(1500);
+    await h.shot('open');
+    await h.press('KeyP');
+    await h.wait(300);
+    await h.shot('pause-empty');
+    await h.press('KeyP');
+    await h.game(() => ['hint.tunic', 'hint.bells'].forEach((f) => window.embervale.state.set(f)));
+    await h.press('KeyP');
+    await h.wait(300);
+    await h.shot('pause-notes');
+    await h.press('Enter');
+    await h.wait(300);
+    await h.shot('pause-note');
+  },
   /** The keepers' bell posts (docs/bells.md): empty, hung, ringing; the travel menu; the shrine's post in its hall. */
   async bells(h) {
     /** Camera in front of a post and off to one side, looking at its hook. */

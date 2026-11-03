@@ -25,8 +25,19 @@ Next, in order:
    hidden room whose seal-stone breaks the magic gate at the valley's north edge; beyond it, the
    Northpass (streamed in, one continuous world), the Cragstalker, a third bell and a camp. Three
    sessions, **D1 (done, unplayed), D2, D3 (built 2026-11-03, unplayed)**, in [shrine.md](shrine.md) "Build plan". Then polish (8).
-2. **Pause menu** (build it on `MenuStack`, `game/menu.ts`): inventory, settings (mouse sensitivity, invert Y, volumes). (No dungeon
-   map or compass by design.)
+2. **Pause menu**: started 2026-11-03 (P / Start, `game/pauseMenu.ts`): its first page lists the keepers'
+   notes (Murmurbuds, [world.md](world.md)). Still to come: inventory, settings (mouse sensitivity, invert Y,
+   volumes). (No dungeon map or compass by design.)
+2.5. **Shield surfing** (owner's idea, 2026-11-03; *needs plan mode*: a new movement system on `player.ts`).
+   A small kid in Thistledown does one thing: puts the idea of riding your shield in Wren's head (flag;
+   then a short tutorial line: how to do it). Then: jump, raise the shield (or raise it, then jump), and land
+   *while still holding shield* → Wren rides the shield along the ground for as long as shield is held, 2–3×
+   walking speed: the player's sprint (not the dev sprint). Steering is normal movement (stick/WASD, camera
+   with the right stick/mouse), just faster, with the shield under her feet; a riding pose is nice-to-have.
+   Debris/dust kicked up from under the shield, not overdone. Let go of shield → back to normal at once. An
+   enemy hit while surfing knocks her off and does its normal damage. Design calls for the plan: does the
+   surf block hits (probably not: it's the shield under her feet), slopes/water/ledges, jumping off it, lock-on
+   while surfing, whether the guard gauge drains. Add a `village` smoke step and a look scene.
 3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later.
 4. **Load/perf pass**: Rapier WASM as a file, code splitting, character mesh merging.
 5. **Depth**: more enemy types, target switching, jump attack, original items/tools,
@@ -87,7 +98,9 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 
 - [ ] **Split `game/game.ts` again** if it grows back: next out would be areas/transitions
   (`loadArea`, `travel`, respawn) and the HUD feed in `updateWorld`. *Trigger: it passes
-  ~700 lines, or the pause menu/inventory lands.*
+  ~700 lines, or the inventory/settings pages land.* (2026-11-03: the pause menu's notes page
+  landed in its own modules, `pauseMenu.ts` and `buds.ts`, and game.ts only went 594 → 604, so the
+  split waited.)
 - [ ] **Split content per area and topic**: `content/overworld.ts` → `content/overworld/`
   (village NPCs, the hollow, the shrine...). *Trigger: a content file passes ~500 lines.*
 - [ ] **Dialog as data**: lines in per-area data files keyed by id, scripts reference

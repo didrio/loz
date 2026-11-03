@@ -1,5 +1,5 @@
 /**
- * A stack of menus with up/down selection: the dev menu now, and the pause and main menus
+ * A stack of menus with up/down selection: the dev menu, the pause menu, and the main menu
  * later. Pure logic (no DOM, no input devices): the game feeds it "up / down / confirm /
  * back" from the keyboard, gamepad or mouse, and the HUD draws `view()`.
  */
@@ -14,12 +14,15 @@ export type MenuRow =
 
 export interface Menu {
   title: string;
+  /** Text shown under the title (a note to read, or what to do when there are no rows). */
+  body?: string;
   rows: MenuRow[];
 }
 
 /** What the HUD draws. */
 export interface MenuView {
   title: string;
+  body?: string;
   rows: { label: string; value?: string; selected: boolean }[];
 }
 
@@ -43,6 +46,7 @@ export class MenuStack {
     const top = this.top();
     if (!top) return;
     const n = top.menu.rows.length;
+    if (!n) return;
     top.selected = (top.selected + dir + n) % n;
   }
 
@@ -77,6 +81,7 @@ export class MenuStack {
     if (!top) return null;
     return {
       title: top.menu.title,
+      body: top.menu.body,
       rows: top.menu.rows.map((r, i) => ({
         label: r.label,
         value: r.kind === 'toggle' ? (r.get() ? 'ON' : 'OFF') : r.kind === 'submenu' ? '›' : undefined,

@@ -182,6 +182,19 @@ export class Sfx {
     this.noise(0.05, 4200, 1800, 0.08 * gain, 'bandpass', delay); // the clapper's strike
   }
 
+  /** The sword on a Murmurbud: a soft, hollow knock that climbs with how swollen it is (0..1). */
+  budTap(growth: number) { this.tone(330 + growth * 330, 0.14, 'triangle', 0.14, 260 + growth * 260); this.noise(0.06, 900, 400, 0.12, 'lowpass'); }
+  /** A Murmurbud overworked: "nuh-uh", two falling buzzy blips, the second lower. */
+  nuhUh() {
+    this.tone(392, 0.13, 'square', 0.07, 330);
+    this.tone(294, 0.22, 'square', 0.07, 220, 0.16);
+  }
+  /** A Murmurbud peels open: a soft rising arpeggio and a breath. */
+  budOpen() {
+    [440, 554.37, 659.25, 880].forEach((f, i) => this.tone(f, 0.6, 'sine', 0.1, undefined, i * 0.09));
+    this.noise(0.6, 600, 2400, 0.08, 'bandpass');
+  }
+
   /** The "something just changed in the world" chime. */
   solved() {
     [587.33, 739.99, 880, 1174.7, 1480].forEach((f, i) => this.tone(f, 0.5, 'sine', 0.12, undefined, i * 0.1));

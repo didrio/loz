@@ -5,7 +5,7 @@
 
 export type Action =
   | 'attack' | 'shield' | 'jump' | 'lock' | 'interact'
-  | 'confirm' | 'cancel' | 'music' | 'menuUp' | 'menuDown'
+  | 'confirm' | 'cancel' | 'pause' | 'music' | 'menuUp' | 'menuDown'
   | 'flask1' | 'flask2' | 'item'
   /** Dev builds and ?debug only: opens the dev menu (~ / L3). */
   | 'devMenu';
@@ -21,7 +21,8 @@ const KEYS: Record<Action, string[]> = {
   interact: ['KeyE', 'Enter'],
   confirm: ['Enter', 'Space', 'KeyE', 'Mouse0'],
   cancel: ['Escape', 'Backspace'],
-  music: ['KeyP'],
+  pause: ['KeyP'],
+  music: ['KeyM'],
   menuUp: ['ArrowUp', 'KeyW'],
   menuDown: ['ArrowDown', 'KeyS'],
   flask1: ['Digit1', 'Numpad1'],
@@ -44,6 +45,7 @@ const PAD: Record<Action, number[]> = {
   interact: [0],
   confirm: [0, 9],
   cancel: [1],
+  pause: [9],
   music: [8],
   menuUp: [12],
   menuDown: [13],
@@ -55,12 +57,12 @@ const PAD: Record<Action, number[]> = {
 
 const KEY_GLYPH: Record<Action, string> = {
   attack: 'Click', shield: 'Shift', jump: 'Space', lock: 'Q', interact: 'E',
-  confirm: 'Enter', cancel: 'Esc', music: 'P', menuUp: 'W', menuDown: 'S', flask1: '1', flask2: '2', item: 'F', devMenu: '~',
+  confirm: 'Enter', cancel: 'Esc', pause: 'P', music: 'M', menuUp: 'W', menuDown: 'S', flask1: '1', flask2: '2', item: 'F', devMenu: '~',
 };
 
 const PAD_GLYPH: Record<Action, string> = {
   attack: 'X', shield: 'LT', jump: 'A', lock: 'R3', interact: 'A',
-  confirm: 'A', cancel: 'B', music: 'Back', menuUp: '↑', menuDown: '↓', flask1: '←', flask2: '→', item: 'Y', devMenu: 'L3',
+  confirm: 'A', cancel: 'B', pause: 'Start', music: 'Back', menuUp: '↑', menuDown: '↓', flask1: '←', flask2: '→', item: 'Y', devMenu: 'L3',
 };
 
 /** The button label to show for an action on a device. */

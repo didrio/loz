@@ -10,6 +10,7 @@ import { POTIONS, REFILL_PRICE, type Potion } from '../game/flasks';
 import { bellContent } from './bells';
 import { northpassContent } from './northpass';
 import { gorgeContent } from './gorge';
+import { hintContent } from './hints';
 import { offerWares, type Ware } from './shop';
 
 /** What a loaded area needs from content: scripts by interactable/trigger id, and save restore. */
@@ -61,6 +62,7 @@ export function overworldContent(ow: Overworld): AreaContent {
   let lamplighter: HollowLamplighter | null = null;
   const gorge = gorgeContent(ow);
   const northpass = northpassContent(ow);
+  const hints = hintContent(ow.buds);
   const bells = bellContent({ 'bellPost.morrow': ow.morrowPost, 'bellPost.way': ow.wayPost }, { 'bellPickup.morrow': ow.morrowBell, 'bellPickup.way': ow.wayBell });
 
   /** Waking the Lamplighter: the ring of cold fire seals the hollow, and it turns around. */
@@ -344,6 +346,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     },
 
     ...bells.scripts,
+    ...hints.scripts,
     'sign.crossroads': say('NORTHWEST: Thistledown Village\nNORTHEAST: The Whispering Grove\nEAST: The Waking Shrine\nSOUTH: over the bridge to the Gloaming Hollow\nSOUTHWEST: Glimmer Lake'),
     'sign.gorge': say('THE HUSHING GORGE\n"Walk soft. The stone keeps the old bell\'s hush, and what guards it does not like noise."\nBelow, in a child\'s hand: *the way up is over the gap*'),
     'sign.hollow': say('GLOAMING HOLLOW\n"Here ends the lamplighter\'s road. Lamps lit at dusk, snuffed at dawn."\nUnderneath, scratched in fresh and shaky: *TURN BACK*'),
@@ -375,6 +378,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     scripts,
     restore(state) {
       bells.restore(state);
+      hints.restore(state);
       if (state.has('groveChestOpened')) ow.chest.open(true);
       if (state.has('shrineOpen')) ow.door.setOpen();
       if (state.has('lamplighterDefeated')) {

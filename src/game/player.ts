@@ -4,6 +4,7 @@ import { Layer, SOLID, type Character, type Physics } from '../core/physics';
 import { buildHumanoid, type Humanoid } from '../render/characters';
 import { isSharedMaterial, mat, uniqueMat } from '../render/materials';
 import { GroundShadow } from '../render/shapes';
+import type { LockTarget } from './lockon';
 import type { Area } from '../world/area';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
 import { ATTACK_BOOST } from './flasks';
@@ -22,7 +23,7 @@ export const NO_CONTROLS: Controls = { move: new THREE.Vector3(), attack: false,
 
 export interface PlayerEnv {
   area: Area;
-  lockTarget: Enemy | null;
+  lockTarget: LockTarget | null;
   enemies: readonly Enemy[];
   hasSword: boolean;
   onSwing(): void;

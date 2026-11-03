@@ -26,6 +26,15 @@ export const LAKE = { x: -100, z: 100 };
 export const GATE = { x: 8, z: -121, halfOpening: 4.2 };
 /** Gloaming Hollow: a sunken clearing at the end of the south road, the Lamplighter's arena. */
 export const HOLLOW = { x: -23, z: 127, r: 15, floor: 0.6 };
+/**
+ * The Murmurbuds (sleeping bulbs holding the keepers' notes), tucked into the valley's nooks. Ids are
+ * `bud.<hint>`; what each note says is in content/hints.ts.
+ */
+export const BUDS = [
+  { id: 'bud.tunic', x: -92, z: -50 }, // behind the windmill
+  { id: 'bud.flasks', x: -68, z: 78 }, // Glimmer Lake's east bank
+  { id: 'bud.bells', x: -111, z: 28 }, // by the Hushing Gorge's mouth
+] as const;
 
 /**
  * Each region draws its scenery from its own seeded stream, so changing one region can never

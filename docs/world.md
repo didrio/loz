@@ -107,6 +107,30 @@ in.
   hint "after dark"). Beaten, its flame turns warm and flies
   home: the shrine lantern's first ember. Leaves a **Heart Vessel** (+1 heart).
 
+## Murmurbuds and the keepers' notes
+
+The keepers sealed advice for whoever came after them in **Murmurbuds**: stubby stone-grey
+bulbs in a collar of leaves, tucked into the valley's nooks (owner's idea, 2026-11-03). Steady
+strikes wake one and it swells; strike too fast and it clams up, shivers, and shrinks back
+("nuh-uh"). At full size it peels open and a rolled note tied with red thread floats over the
+petals until Wren reads it ("Read"); then the note is gone, kept in the pause menu. The note is
+the whole reward (no gems: owner's call). A closed bud trails a thin wisp of colored motes from
+its tip (so it reads as something), and lock-on can hold it. Only reading is saved: a bud opened
+but not read closes again on reload.
+
+- **Voice**: the keepers, writing for a stranger: old-fashioned, fond, a little bossy, one
+  practical idea per note, specific to Emberfield. Titles are "On ...".
+- **Notes** (`content/hints.ts`, bud ids `bud.<hint>` placed in `world/overworld/layout.ts`
+  `BUDS`): *On stone and cloth* (buy the Stoneward Tunic; behind the windmill), *On empty
+  flasks* (Odo refills them, red or amber; Glimmer Lake's east bank), *On bells and posts* (a
+  post's arm names its bell; rung bells answer, and you can follow; by the Hushing Gorge's mouth).
+- **Adding one**: an entry in `HINTS`, its flag `hint.<id>` in `FLAGS` (`game/state.ts`), a spot
+  in `BUDS`. `content/hints.test.ts` checks the three line up.
+- **The rule** (`game/murmurbud.ts`, run by `game/buds.ts`): a strike adds 0.25 to a gauge that
+  drains 0.3/s; the bud grows while the gauge is at 0.45 or more and opens after ~3.3 s there; a
+  strike that would overfill it overloads it (growth to 0, 1.2 s sulk). Mashing overloads in
+  ~2 s; a strike every ~0.8 s opens one in ~5 s. A gauge floats over the nearest stirred bud.
+
 ## Enemies and pickups
 
 - **Thornling**: hopping thorn ball; wanders, winds up, lunges.

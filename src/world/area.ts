@@ -3,6 +3,7 @@ import type { RAPIER } from '../core/physics';
 import { Layer, Physics } from '../core/physics';
 import type { MusicMood } from '../core/tracks';
 import type { BellId, BellPost } from './bell';
+import type { MurmurbudLook } from './murmurbud';
 import { disposeTree, mergeStatic } from '../render/materials';
 
 /**
@@ -41,6 +42,9 @@ export interface Area {
   cut(x: number, z: number, dirX: number, dirZ: number, reach: number): THREE.Vector3[];
   /** The sword swings at (x, y, z) facing (dirX, dirZ): strike crystal switches and the like. */
   strike?(x: number, y: number, z: number, dirX: number, dirZ: number, reach: number): void;
+  /** The Murmurbuds here (hint notes), by id; `strike` reports the ones a swing reached to `onBudStrike`. */
+  readonly buds?: ReadonlyMap<string, MurmurbudLook>;
+  onBudStrike?: ((id: string) => void) | null;
   /**
    * The Tether Glove thrown from Wren's feet toward (dirX, dirZ): pulls what it catches.
    * Returns where the cord caught something (for the cord's end), or null on a miss.

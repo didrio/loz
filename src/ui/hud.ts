@@ -1,5 +1,6 @@
 import { ACTIONS, glyph, type Action, type Device } from '../core/input';
 import { POTIONS } from '../game/flasks';
+import type { BudGaugeView } from '../game/buds';
 import type { MenuView } from '../game/menu';
 import { KEY_HEX, type KeyColor, type Potion } from '../world/dungeon/format';
 
@@ -42,6 +43,9 @@ export class Hud {
   private hearts: HTMLElement;
   private guard: HTMLElement;
   private bars: HTMLElement[];
+  private bud: HTMLElement;
+  private budFill: HTMLElement;
+  private budFlashT = 0;
   private guardFlashT = 0;
   private gems: HTMLElement;
   private keys: HTMLElement;
@@ -96,6 +100,7 @@ export class Hud {
       </div>
       <div class="actions"></div>
       <div class="prompt"></div>
+      <div class="bud-gauge"><span class="bud-band"></span><span class="bud-fill"></span><span class="bud-edge"></span></div>
       <div class="guard-gauge">${'<span class="bar"><span class="bar-fill"></span></span>'.repeat(3)}</div>
       <div class="area"></div>
       <div class="boss-title"><div class="boss-title-name"></div><div class="boss-title-sub"></div></div>
@@ -112,7 +117,7 @@ export class Hud {
           <div><b>WASD</b> move</div><div><b>Mouse</b> camera (click to capture) · <b>←→↑↓</b> also</div>
           <div><b>Click / J</b> sword</div><div><b>Shift / Right-click</b> shield</div>
           <div><b>Space</b> jump</div><div><b>Q</b> lock on / center camera</div>
-          <div><b>E</b> talk · open · read</div><div><b>P</b> music on/off</div>
+          <div><b>E</b> talk · open · read</div><div><b>P</b> pause · <b>M</b> music on/off</div>
           <div class="pad-note">Gamepads work too.</div>
         </div>
       </div>
@@ -122,6 +127,8 @@ export class Hud {
     this.hearts = q('.hearts');
     this.guard = q('.guard-gauge');
     this.bars = Array.from(this.guard.querySelectorAll<HTMLElement>('.bar-fill'));
+    this.bud = q('.bud-gauge');
+    this.budFill = q('.bud-fill');
     this.gems = q('.gem-count');
     this.keys = q('.keys');
     this.drinks = q('.drinks');
@@ -199,7 +206,7 @@ export class Hud {
   setMenu(view: MenuView | null) {
     this.gmenu.classList.toggle('hidden', !view);
     const html = view
-      ? `<div class="gmenu-panel"><div class="gmenu-title">${escape(view.title)}</div>${view.rows
+      ? `<div class="gmenu-panel"><div class="gmenu-title">${escape(view.title)}</div>${view.body ? `<div class="gmenu-body">${escape(view.body)}</div>` : ''}${view.rows
           .map((r, i) => `<div class="gmenu-row${r.selected ? ' selected' : ''}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-value">${escape(r.value ?? '')}</span></div>`)
           .join('')}<div class="gmenu-help">${this.key('menuUp')}${this.key('menuDown')} move · ${this.key('confirm')} choose · ${this.key('cancel')} back</div></div>`
       : '';
@@ -233,6 +240,30 @@ export class Hud {
       el.parentElement!.classList.toggle('paused', paused && f < 1);
     });
     this.guard.classList.toggle('broken', broken > 0);
+  }
+
+  /**
+   * The gauge over a stirred Murmurbud (game/buds.ts): the fill, the sweet band where it grows
+   * (`band` up), and red while it's overloaded. Null hides it.
+   */
+  setBudGauge(g: { view: BudGaugeView; at: { x: number; y: number } } | null) {
+    this.bud.classList.toggle('show', !!g);
+    if (!g) return;
+    const { view, at } = g;
+    this.bud.style.transform = `translate(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px) translate(-50%, -50%)`;
+    this.bud.style.setProperty('--band', `${Math.round(view.band * 100)}%`);
+    const w = `${Math.round(view.gauge * 100)}%`;
+    if (this.budFill.style.width !== w) this.budFill.style.width = w;
+    this.bud.classList.toggle('in-band', view.gauge >= view.band && !view.overloaded);
+    this.bud.classList.toggle('overloaded', view.overloaded);
+  }
+
+  /** Shakes the bud gauge (overloaded). */
+  flashBudGauge() {
+    this.bud.classList.remove('flash');
+    void this.bud.offsetWidth; // restart the animation
+    this.bud.classList.add('flash');
+    this.budFlashT = 0.5;
   }
 
   /** Shakes the guard gauge (the guard just broke). */
@@ -434,6 +465,10 @@ export class Hud {
     if (this.areaTimer > 0) {
       this.areaTimer -= dt;
       if (this.areaTimer <= 0) this.area.classList.remove('show');
+    }
+    if (this.budFlashT > 0) {
+      this.budFlashT -= dt;
+      if (this.budFlashT <= 0) this.bud.classList.remove('flash');
     }
     if (this.guardFlashT > 0) {
       this.guardFlashT -= dt;

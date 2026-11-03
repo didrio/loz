@@ -27,6 +27,21 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .gems { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 22px; font-weight: bold; }
 
 /* Guard gauge: floats beside Wren (positioned every frame), one bar per guard slot. */
+/* A stirred Murmurbud's gauge (game/buds.ts): grows while the fill is in the band, red when overloaded. */
+.bud-gauge {
+  position: absolute; left: 0; top: 0; width: 84px; height: 10px; border-radius: 5px; overflow: hidden;
+  background: rgba(10, 14, 20, 0.6); outline: 2px solid rgba(10, 14, 20, 0.45);
+  opacity: 0; transition: opacity 0.25s;
+}
+.bud-gauge.show { opacity: 1; }
+.bud-band { position: absolute; top: 0; bottom: 0; left: var(--band, 45%); right: 0; background: rgba(72, 255, 110, 0.16); border-left: 2px solid rgba(72, 255, 110, 0.7); }
+.bud-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #c9cdbf; transition: width 0.06s linear; }
+.bud-gauge.in-band .bud-fill { background: #48ff6e; box-shadow: 0 0 6px rgba(72, 255, 110, 0.8); }
+.bud-gauge.overloaded .bud-fill { background: #ff4a3a; box-shadow: 0 0 6px rgba(255, 74, 58, 0.8); }
+.bud-gauge.overloaded .bud-band { opacity: 0.3; }
+.bud-edge { position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: rgba(255, 74, 58, 0.85); }
+.bud-gauge.flash { animation: guard-shake 0.45s; }
+
 .guard-gauge {
   position: absolute; left: 0; top: 0; display: flex; gap: 3px; padding: 3px;
   border-radius: 4px; background: rgba(10, 14, 20, 0.45);
@@ -202,7 +217,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .boss-fill { background: linear-gradient(#a8f0ff, #2f9cc4); transition: width 0.12s; }
 .boss-mark { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.6); }
 
-/* Menus (game/menu.ts): the dev menu now; pause and main menus later */
+/* Menus (game/menu.ts): the dev menu and the pause menu */
 .gmenu { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4, 8, 20, 0.55); pointer-events: auto; }
 .gmenu-panel {
   min-width: min(420px, 90vw); padding: 22px 26px 16px;
@@ -210,6 +225,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
 }
 .gmenu-title { font-size: 15px; letter-spacing: 0.2em; text-transform: uppercase; color: #e8c770; margin-bottom: 12px; text-align: center; }
+.gmenu-body { max-width: 440px; font-size: 18px; line-height: 1.5; color: rgba(255, 255, 255, 0.88); white-space: pre-line; margin: 0 6px 14px; }
 .gmenu-row { display: flex; justify-content: space-between; gap: 32px; font-size: 21px; padding: 5px 14px; border-radius: 8px; color: rgba(255, 255, 255, 0.6); cursor: pointer; }
 .gmenu-row.selected { color: #fff; background: rgba(232, 199, 112, 0.16); }
 .gmenu-row.selected span:first-child::before { content: '▸ '; color: #ffd76a; }

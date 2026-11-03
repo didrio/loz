@@ -8,7 +8,7 @@ import { Boss } from './boss';
 import type { CameraRig } from './camera';
 import type { Enemy, EnemyEnv, EnemyManager, HurtResult } from './enemies';
 import type { HazardEnv, Hazards } from './hazards';
-import { pickLockTarget } from './lockon';
+import { pickLockTarget, type LockTarget } from './lockon';
 import type { Pickups } from './pickups';
 import type { Player, PlayerEnv } from './player';
 import type { GameState } from './state';
@@ -37,7 +37,7 @@ export interface CombatHost {
  */
 export class Combat {
   /** The enemy locked on to, if any. */
-  lock: Enemy | null = null;
+  lock: LockTarget | null = null;
   /** Real seconds left of hit-stop: a few frozen frames that make hits land with weight. */
   hitStop = 0;
   private readonly cord: TetherCord;
@@ -70,7 +70,9 @@ export class Combat {
       return;
     }
     const camFwd = new THREE.Vector3(-Math.sin(this.g.rig.yaw), 0, -Math.cos(this.g.rig.yaw));
-    this.lock = pickLockTarget(player.pos, camFwd, this.g.enemies.list, this.g.physics);
+    // Murmurbuds can be locked onto too: they're hard to hit squarely otherwise.
+    const buds = this.g.area.buds ? [...this.g.area.buds.values()] : [];
+    this.lock = pickLockTarget(player.pos, camFwd, [...this.g.enemies.list, ...buds], this.g.physics);
     if (this.lock) this.g.sfx.lockOn();
     else this.g.rig.recenter(player.facing);
   }

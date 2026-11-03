@@ -16,12 +16,14 @@ import { Boss } from './boss';
 import { CameraRig } from './camera';
 import { Combat } from './combat';
 import { Debug } from './debug';
+import { BudSystem } from './buds';
 import { DevMenu } from './devMenu';
 import { ChoiceMenu } from './menuDriver';
 import { Dialog } from './dialog';
 import { EnemyManager, type Enemy } from './enemies';
 import { Hazards } from './hazards';
 import { ATTACK_BOOST_SECONDS, MAX_FLASKS } from './flasks';
+import { PauseMenu } from './pauseMenu';
 import { Pickups } from './pickups';
 import { NO_CONTROLS, Player, type Controls } from './player';
 import type { Page, Script, ScriptApi } from './script';
@@ -64,7 +66,8 @@ export class Game implements ScriptApi {
   area!: Area;
   enemies!: EnemyManager;
   mode: Mode = 'title';
-  private content!: AreaContent;
+  /** The loaded area's content (scripts by id). */
+  content!: AreaContent;
   private readonly dialog: Dialog;
   private readonly saveSlot: SaveSlot;
   private readonly settings: Settings;
@@ -76,6 +79,8 @@ export class Game implements ScriptApi {
   private autosaveT = AUTOSAVE_SECONDS;
   private readonly title: TitleMenu;
   readonly devMenu: DevMenu;
+  readonly pauseMenu: PauseMenu;
+  readonly buds: BudSystem;
   /** Script menus (`choose`): the bells' travel menu. */
   private readonly choice: ChoiceMenu;
   /** Slow motion for cutscenes (1 = normal). */
@@ -117,9 +122,11 @@ export class Game implements ScriptApi {
     document.addEventListener('visibilitychange', () => document.hidden && this.save());
     this.debug = new URLSearchParams(location.search).has('debug') ? new Debug(this) : null;
     this.devMenu = new DevMenu(this, () => !!(import.meta.env.DEV || import.meta.env.VITE_DEV_SPRINT || this.debug));
+    this.pauseMenu = new PauseMenu(this);
+    this.buds = new BudSystem(this);
     this.choice = new ChoiceMenu(this);
     // The mouse works whichever menu is open.
-    const openMenu = () => (this.devMenu.isOpen ? this.devMenu.menu : this.choice.isOpen ? this.choice.driver : null);
+    const openMenu = () => (this.devMenu.isOpen ? this.devMenu.menu : this.pauseMenu.isOpen ? this.pauseMenu.menu : this.choice.isOpen ? this.choice.driver : null);
     this.hud.onMenuHover = (i) => openMenu()?.hover(i);
     this.hud.onMenuClick = (i) => openMenu()?.click(i);
   }
@@ -182,7 +189,8 @@ export class Game implements ScriptApi {
     this.combat.hitStop -= rawDt;
     this.input.poll();
     this.hud.setDevice(this.input.device);
-    const paused = this.devMenu.update();
+    // One menu at a time: the dev menu can't open over the pause menu, nor the pause menu over it.
+    const paused = (!this.pauseMenu.isOpen && this.devMenu.update()) || this.pauseMenu.update();
     const dt = frozen || paused ? 0 : rawDt * this.timeScale;
     this.director.update(dt);
     // Platforms move before the player updates, so a rider takes the step along (core/physics.ts carryDelta).
@@ -261,6 +269,7 @@ export class Game implements ScriptApi {
     if (this.input.pressed('item') && this.state.items.has('tether')) this.combat.throwTether();
     this.player.update(dt, this.controls(), this.combat.playerEnv);
     this.combat.update(dt);
+    this.buds.update(dt);
 
     for (const t of this.area.triggers) {
       if (!t.enabled() || !sameLevel(t.y, this.player.pos.y) || Math.hypot(this.player.pos.x - t.x, this.player.pos.z - t.z) > t.r) continue;
@@ -311,7 +320,7 @@ export class Game implements ScriptApi {
   }
 
   /** A world point in screen pixels, or null if it's behind the camera. */
-  private toScreen(p: THREE.Vector3) {
+  toScreen(p: THREE.Vector3) {
     this.camera.updateMatrixWorld();
     const v = p.clone().project(this.camera);
     if (v.z > 1) return null;
@@ -390,6 +399,7 @@ export class Game implements ScriptApi {
       player.setOpacity(this.hiddenIn ? 0 : this.rig.playerOpacity);
     }
     hud.setGuard(player.guard.fills(), player.guard.broken, player.guard.paused, this.guardGaugePosition());
+    hud.setBudGauge(this.buds.gauge());
     hud.setPrompt(this.interactPrompt());
     this.physics.step(dt);
     this.sky.update(state.hours, this.mode === 'title' ? new THREE.Vector3() : player.pos, this.camera.position);

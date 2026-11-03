@@ -24,7 +24,8 @@ Shrine** (25 rooms, the Bell Shaft trial) through **Gravelheart**, whose defeat 
 gate ([docs/shrine.md](docs/shrine.md)). Beyond it the Northpass streams in and ends at **Wayfarers' Camp** (the Waybell's post);
 a canyon crossing leads to two **Cragstalkers** and the Waybell, the third fast-travel stop (D3, unplayed). **Bells** and three
 trials work ([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states (one at the opened gate).
-**Next: the owner plays D3** (are two Cragstalkers hard enough now? the crossing, the canyon's look), then shrine polish (milestone 8).
+**Murmurbuds** (hint bulbs, 3 keepers' notes) and the **pause menu** (P; music moved to M) are built, unplayed ([docs/world.md](docs/world.md)).
+**Next: shield surfing** (roadmap 2.5, plan mode); the owner still owes a play of D3 and the Murmurbuds' rhythm and sounds.
 
 ## Docs: read the one for the area you're touching
 
@@ -131,6 +132,7 @@ src/
     bell.ts                the keepers' bells: BELL_IDS, BellPost (hang, ring), BellPickup (looks only)
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
+    murmurbud.ts           MurmurbudLook: the hint bulb's looks (swells, sulks, opens on a note)
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
     overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp, the canyon crossing, the Waybell), gate (the magic gate),
                            region (RegionStreamer: parts that stream in by distance), northpass (the first region), index (Overworld)
@@ -142,7 +144,9 @@ src/
   game/
     game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
     combat.ts, title.ts    lock-on, glove throw, hit feedback both ways, hit-stop; the title menu
-    menu.ts, devMenu.ts    MenuStack (reusable menus: rows, submenus, toggles); the dev menu (~ / L3)
+    menu.ts, devMenu.ts    MenuStack (reusable menus: rows, submenus, toggles, body text); the dev menu (~ / L3)
+    pauseMenu.ts           the pause menu (P / Start): the keepers' notes found
+    murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, the gauge, opens → script)
     menuDriver.ts          MenuDriver (input → MenuStack → HUD, shared) and ChoiceMenu (api.choose)
     script.ts              ScriptApi + Script + Page (the contract content uses)
     player.ts, guard.ts    Wren (movement, sword, shield, stagger); the shield's guard
@@ -160,6 +164,7 @@ src/
     overworld.ts           scripts for every overworld interactable/trigger, save restore
     mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
     bells.ts               the bell registry (BELLS) and scripts: check, hang, ring, travel, take
+    hints.ts               the keepers' notes (HINTS) in Murmurbuds: scripts, restore, foundHints
     gorge.ts               the Hushing Gorge: its monsters, the trial's fall rule
     northpass.ts           the canyon beyond Wayfarers' Camp: the Cragstalker (spawns while the region is built), the crossing's fall rule
     shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit

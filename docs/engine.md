@@ -30,13 +30,14 @@ frames are slow), times the **time scale** (slow motion in cutscenes) and zero d
 environments, hit feedback both ways, hit-stop) and `TitleMenu` (`game/title.ts`: the
 orbit and the menu; `Game` acts on its choice). Scripts reach them as `g.combat.*`.
 
-## Menus (`game/menu.ts`, `game/devMenu.ts`)
+## Menus (`game/menu.ts`, `game/devMenu.ts`, `game/pauseMenu.ts`)
 
 `MenuStack` is the reusable menu: rows are an action, a toggle (flips, stays open) or a
-submenu; up/down wraps, confirm chooses, back pops (from the first menu it closes). It is
+submenu; a menu may carry `body` text under its title (a note to read; a page with no rows is
+fine). Up/down wraps, confirm chooses, back pops (from the first menu it closes). It is
 pure logic: the owner of the menu feeds it input (keyboard, d-pad/stick, mouse hover and
-click via `Hud.onMenuHover/onMenuClick`) and `Hud.setMenu(view)` draws it. The pause and
-main menus should be built on it. `MenuDriver` (`game/menuDriver.ts`) feeds one from input
+click via `Hud.onMenuHover/onMenuClick`) and `Hud.setMenu(view)` draws it. The main menu
+should be built on it too. `MenuDriver` (`game/menuDriver.ts`) feeds one from input
 (up/down with a tick, confirm, cancel) and draws it; the game routes the HUD's mouse hover and
 click to whichever menu is open. `ChoiceMenu` is `ScriptApi.choose(title, options)`: a titled
 panel of options resolving with the index or null (backed out), shown during a cutscene instead
@@ -49,6 +50,12 @@ that chose a row (Enter = also "interact") doesn't leak into the game. Dev build
 Pages build and `?debug` only. To add a state, add an entry to `DEV_STATES` (the unit test
 checks it decodes and uses known ids); `completedDungeon(def)` builds "all done" progress
 from a dungeon's data.
+
+**The pause menu** (`PauseMenu`, P / Start, play mode only; the shipped game has it): pauses
+like the dev menu (the two never open over each other). For now its one page is the keepers'
+notes found (`content/hints.ts` `foundHints`, registry order; choose one to read it), or a line
+saying to look for them. P / Start close it from any depth. Gear and settings pages go in as
+rows of its root later (roadmap item 2).
 
 ## Modes
 
@@ -168,7 +175,8 @@ Code reads **actions**, never keys. Bindings:
 | lock on | Q or Tab | R3 (right stick click) |
 | interact | E (or Enter) | A |
 | confirm · cancel | Enter/Space/E/click · Esc/Backspace | A/Start · B |
-| music on/off | P | Back |
+| pause menu (`pause`) | P | Start |
+| music on/off | M | Back |
 | drink flask 1 · flask 2 (`flask1`, `flask2`) | 1 · 2 | d-pad ← · → |
 | dev menu (dev builds / `?debug` only) | ~ (Backquote) | L3 (left stick click) |
 
