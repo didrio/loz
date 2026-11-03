@@ -387,6 +387,46 @@ describe('Gravelheart', () => {
       expect(b.chestOpen).toBe(false);
     });
 
+    it('takes three kneels to finish: each cuts one slice of health, ends early, and cannot kill before the third', () => {
+      const { b, physics, env } = phaseTwo(6);
+      b.hp = 20; // phase two's whole pool
+      const slice = 20 / 3;
+      const kneel = () => {
+        b.forceMove('kneel');
+        runEnemy(b, physics, env, 2, () => b.chestOpen);
+        runEnemy(b, physics, env, 0.8);
+        expect(b.chestOpen).toBe(true);
+        for (let i = 0; i < 40 && b.chestOpen; i++) {
+          swing(b, b.pos.clone().addScaledVector(b.forward, 2.6));
+          runEnemy(b, physics, env, 0.1);
+        }
+        return b.chestOpen;
+      };
+      // A flurry cannot take it past the first floor, and the kneel ends the moment it gets there.
+      expect(kneel()).toBe(false);
+      expect(b.hp).toBeCloseTo(20 - slice);
+      expect(b.alive).toBe(true);
+      runEnemy(b, physics, env, 6, () => !b.move);
+      expect(kneel()).toBe(false);
+      expect(b.hp).toBeCloseTo(20 - 2 * slice);
+      expect(b.alive).toBe(true);
+      runEnemy(b, physics, env, 6, () => !b.move);
+      kneel();
+      expect(b.alive).toBe(false);
+    });
+
+    it('a kneel that does not cut its slice runs out on its own, and the next one starts from there', () => {
+      const { b, physics, env } = phaseTwo(6);
+      b.hp = 20;
+      b.forceMove('kneel');
+      runEnemy(b, physics, env, 2, () => b.chestOpen);
+      runEnemy(b, physics, env, 0.8);
+      swing(b, b.pos.clone().addScaledVector(b.forward, 2.6));
+      runEnemy(b, physics, env, 6, () => !b.move);
+      expect(b.kneelsSpent).toBe(0);
+      expect(b.hp).toBe(18);
+    });
+
     it('a roll that runs into something solid (a pillar, Wren herself) is a wall hit too', () => {
       const { b, physics, env, player } = phaseTwo(6);
       physics.box(0, 2, 9, 10, 2, 0.5); // a wall of stone across its path (no walkable rule here)

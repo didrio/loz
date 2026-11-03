@@ -8,6 +8,8 @@ import { buildGorge, GORGE_BELL, GORGE_COURSE, gorgeAt } from './gorge';
 import { buildHollow } from './hollow';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
 import { areaNameAt, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { NORTHPASS } from './northpass';
+import { RegionStreamer } from './region';
 import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
 import { buildBounds, buildTerrain, buildWater } from './terrain';
 import { buildVillage } from './village';
@@ -61,6 +63,8 @@ export class Overworld implements Area {
   private readonly windowMat: THREE.MeshLambertMaterial;
   private readonly lanternMat: THREE.MeshBasicMaterial;
   private readonly disposer: () => void;
+  /** The regions beyond the valley (the Northpass), built and dropped by distance. */
+  private readonly regions: RegionStreamer;
   private t = 0;
 
   constructor(physics: Physics) {
@@ -143,6 +147,16 @@ export class Overworld implements Area {
     const done = b.finish();
     this.root = done.root;
     this.disposer = done.dispose;
+    this.regions = new RegionStreamer([NORTHPASS], physics, this);
+  }
+
+  streamAt(x: number, z: number) {
+    this.regions.streamAt(x, z);
+  }
+
+  /** Which regions are built right now (tests). */
+  get loadedRegions() {
+    return this.regions.loadedIds;
   }
 
   nameAt(x: number, z: number) {
@@ -198,12 +212,14 @@ export class Overworld implements Area {
     this.morrowBell.update(dt);
     this.hollowFx.update(dt);
     this.bushes.update(dt);
+    this.regions.update(dt);
     this.npcs.maren.update(dt, env.playerPos);
     this.npcs.tobin.update(dt, env.playerPos);
     this.npcs.odo.update(dt, env.playerPos);
   }
 
   dispose() {
+    this.regions.dispose();
     this.gorgeClimb.dispose();
     this.disposer();
   }

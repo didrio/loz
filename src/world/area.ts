@@ -46,6 +46,11 @@ export interface Area {
    * Returns where the cord caught something (for the cord's end), or null on a miss.
    */
   tether?(x: number, y: number, z: number, dirX: number, dirZ: number): { at: THREE.Vector3 } | null;
+  /**
+   * Builds and drops the parts of the area that stream in by distance (overworld regions). The game calls
+   * it every frame with the player's position, and before placing her anywhere.
+   */
+  streamAt?(x: number, z: number): void;
   update(dt: number, env: AreaEnv): void;
   /**
    * Moves the area's moving platforms. The game calls it *before* the player updates, so a

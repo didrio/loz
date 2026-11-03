@@ -82,6 +82,8 @@ export class Game implements ScriptApi {
   private timeScale = 1;
   /** The music is off (Wren just died). */
   private musicSilenced = false;
+  /** Wren is hidden (a vision) while this area is loaded; leaving it shows her again. */
+  private hiddenIn: string | null = null;
   /** Set when a script is waiting to run after the current one. */
   private pendingScripts: Script[] = [];
 
@@ -143,6 +145,7 @@ export class Game implements ScriptApi {
       this.hazards.clear();
       this.area.dispose();
     }
+    if (this.hiddenIn !== id) this.hiddenIn = null;
     const { area, content } = createArea(id, this.physics);
     this.area = area;
     this.content = content;
@@ -161,6 +164,7 @@ export class Game implements ScriptApi {
 
   private placeAtSpawn(entrance?: string) {
     const s = (entrance && this.area.entrances?.[entrance]) || this.area.spawn;
+    this.area.streamAt?.(s.x, s.z);
     const y = s.y ?? this.physics.groundY(s.x, s.z) ?? 0;
     this.player.teleport(s.x, y, s.z, s.facing);
     this.rig.snap(this.player.pos, s.facing);
@@ -356,6 +360,7 @@ export class Game implements ScriptApi {
 
   private updateWorld(dt: number, rawDt: number) {
     const { input, hud, state, player } = this;
+    this.area.streamAt?.(player.pos.x, player.pos.z);
     this.area.update(dt, { night: this.sky.night, playerPos: player.pos });
     this.particles.update(dt);
     hud.update(rawDt, () => this.sfx.blip());
@@ -382,7 +387,7 @@ export class Game implements ScriptApi {
     if (this.mode !== 'title') {
       const canLook = this.mode === 'play';
       this.rig.update(dt, canLook ? input.look(dt) : { yaw: 0, pitch: 0 }, player.pos, this.combat.lockAt);
-      player.setOpacity(this.rig.playerOpacity);
+      player.setOpacity(this.hiddenIn ? 0 : this.rig.playerOpacity);
     }
     hud.setGuard(player.guard.fills(), player.guard.broken, player.guard.paused, this.guardGaugePosition());
     hud.setPrompt(this.interactPrompt());
@@ -474,6 +479,10 @@ export class Game implements ScriptApi {
     this.rig.shot(from, lookAt, cut);
   }
 
+  hidePlayer(hidden: boolean) {
+    this.hiddenIn = hidden ? this.area.id : null;
+  }
+
   releaseCamera() {
     this.rig.release();
   }
@@ -515,6 +524,7 @@ export class Game implements ScriptApi {
   }
 
   respawn() {
+    this.hiddenIn = null;
     this.player.revive();
     // The checkpoint rule: any attack potion wears off. Empty flasks stay empty.
     this.player.attackBoost = 0;
@@ -529,9 +539,10 @@ export class Game implements ScriptApi {
   }
 
   /** Fades out, moves to another area (at a named entrance), names it, fades back in. */
-  async travel(id: AreaId, entrance?: string, quiet = false) {
+  async travel(id: AreaId, entrance?: string, quiet = false, arrive?: () => void) {
     await this.fade(1, 0.5);
     this.loadArea(id, entrance);
+    arrive?.(); // set the camera (or hide Wren) before the screen fades back in
     this.areaName = this.area.nameAt(this.player.pos.x, this.player.pos.z);
     await this.wait(0.2);
     if (!quiet) this.showAreaName(this.areaName);
@@ -545,6 +556,7 @@ export class Game implements ScriptApi {
 
   /** Dev menu: jumps to a ready-made point in the game, replacing the current save. */
   loadDevState(s: DevState) {
+    this.hiddenIn = null;
     if (s.save) this.state.load(s.save);
     else this.state.reset();
     this.loadArea(isAreaId(this.state.area) ? this.state.area : 'overworld');

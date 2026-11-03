@@ -21,7 +21,7 @@ export const SHRINE = { x: 108, z: 28 };
 export const LAKE = { x: -100, z: 100 };
 /**
  * The magic gate at the valley's north edge, at the mouth of the Northpass (shrine session D1; the pass
- * itself is carved in D2). The arch faces south; `halfOpening` is half the width of the cut it closes.
+ * itself is `PASS` below). The arch faces south; `halfOpening` is half the width of the cut it closes.
  */
 export const GATE = { x: 8, z: -121, halfOpening: 4.2 };
 /** Gloaming Hollow: a sunken clearing at the end of the south road, the Lamplighter's arena. */
@@ -32,7 +32,7 @@ export const HOLLOW = { x: -23, z: 127, r: 15, floor: 0.6 };
  * reshuffle another. The valley's 1337 and the hollow's 4242 are the original seeds (the layout
  * players already know); new regions add a line here.
  */
-const REGION_SEEDS = { valley: 1337, hollow: 4242, gorge: 7301 } as const;
+const REGION_SEEDS = { valley: 1337, hollow: 4242, gorge: 7301, pass: 9157 } as const;
 export const regionRng = (region: keyof typeof REGION_SEEDS) => mulberry32(REGION_SEEDS[region]);
 
 /**
@@ -52,37 +52,49 @@ export const GORGE = {
   wall: 11,
 };
 
-const GORGE_SEGS = GORGE.path.slice(1).map((p, i) => {
-  const [ax, az] = GORGE.path[i];
-  return { ax, az, bx: p[0], bz: p[1], len: Math.hypot(p[0] - ax, p[1] - az) };
-});
-const GORGE_OFFSETS = GORGE_SEGS.reduce<number[]>((o, g) => [...o, o[o.length - 1] + g.len], [0]);
+/** A centerline through points: how far along it you are, and the point, direction and normal at a distance. */
+function centerline(path: [number, number][]) {
+  const segs = path.slice(1).map((p, i) => {
+    const [ax, az] = path[i];
+    return { ax, az, bx: p[0], bz: p[1], len: Math.hypot(p[0] - ax, p[1] - az) };
+  });
+  const offsets = segs.reduce<number[]>((o, g) => [...o, o[o.length - 1] + g.len], [0]);
+  const length = offsets[segs.length];
+  return {
+    length,
+    segs,
+    /** The point `s` meters along, its unit direction (inward) and its left-hand normal. */
+    point(s: number) {
+      const c = Math.max(0, Math.min(length, s));
+      let i = segs.findIndex((_, k) => c <= offsets[k + 1]);
+      if (i < 0) i = segs.length - 1;
+      const g = segs[i];
+      const t = (c - offsets[i]) / g.len;
+      const dx = (g.bx - g.ax) / g.len, dz = (g.bz - g.az) / g.len;
+      return { x: g.ax + (g.bx - g.ax) * t, z: g.az + (g.bz - g.az) * t, dx, dz, nx: dz, nz: -dx };
+    },
+    /** Distance `d` from the centerline and how far along it (`s`) the nearest point is. */
+    frame(x: number, z: number) {
+      let d = Infinity, s = 0;
+      for (let i = 0; i < segs.length; i++) {
+        const g = segs[i];
+        const dx = g.bx - g.ax, dz = g.bz - g.az;
+        const t = Math.max(0, Math.min(1, ((x - g.ax) * dx + (z - g.az) * dz) / (dx * dx + dz * dz)));
+        const di = Math.hypot(x - (g.ax + dx * t), z - (g.az + dz * t));
+        if (di < d) { d = di; s = offsets[i] + t * g.len; }
+      }
+      return { d, s };
+    },
+  };
+}
+
+const gorgeLine = centerline(GORGE.path);
 /** Length of the gorge's centerline, m. */
-export const GORGE_LENGTH = GORGE_OFFSETS[GORGE_SEGS.length];
-
+export const GORGE_LENGTH = gorgeLine.length;
 /** The centerline point `s` meters in, its unit direction (inward) and its left-hand normal. */
-export function gorgePoint(s: number) {
-  const c = Math.max(0, Math.min(GORGE_LENGTH, s));
-  let i = GORGE_SEGS.findIndex((_, k) => c <= GORGE_OFFSETS[k + 1]);
-  if (i < 0) i = GORGE_SEGS.length - 1;
-  const g = GORGE_SEGS[i];
-  const t = (c - GORGE_OFFSETS[i]) / g.len;
-  const dx = (g.bx - g.ax) / g.len, dz = (g.bz - g.az) / g.len;
-  return { x: g.ax + (g.bx - g.ax) * t, z: g.az + (g.bz - g.az) * t, dx, dz, nx: dz, nz: -dx };
-}
-
+export const gorgePoint = gorgeLine.point;
 /** Distance `d` from the gorge's centerline and how far along it (`s`) the nearest point is. */
-export function gorgeFrame(x: number, z: number) {
-  let d = Infinity, s = 0;
-  for (let i = 0; i < GORGE_SEGS.length; i++) {
-    const g = GORGE_SEGS[i];
-    const dx = g.bx - g.ax, dz = g.bz - g.az;
-    const t = Math.max(0, Math.min(1, ((x - g.ax) * dx + (z - g.az) * dz) / (dx * dx + dz * dz)));
-    const di = Math.hypot(x - (g.ax + dx * t), z - (g.az + dz * t));
-    if (di < d) { d = di; s = GORGE_OFFSETS[i] + t * g.len; }
-  }
-  return { d, s };
-}
+export const gorgeFrame = gorgeLine.frame;
 
 /** The floor's height `s` meters in (before the pit): from the field's level at the mouth up to `floor`. */
 export function gorgeFloor(s: number) {
@@ -103,6 +115,51 @@ function carveGorge(h: number, x: number, z: number) {
   const floor = gorgeFloor(s) - GORGE.pitDepth * pit;
   const wall = GORGE.wall * smoothstep(GORGE.halfWidth, GORGE.wallTop, d) * smoothstep(0, 18, s);
   return mix(floor + wall, h, smoothstep(GORGE.wallTop, GORGE.reach, d));
+}
+
+/**
+ * The Northpass (shrine session D2): a cut through the northern mountains from the magic gate to the
+ * camp, the second region of the overworld (docs/engine.md, "Regions"). `path` runs from the field in
+ * front of the gate to the camp; the floor climbs from the field's level to `floor`, the walls rise
+ * `wall` m above it and melt into the mountain by `reach`. The camp is a flat circle at the end.
+ */
+export const PASS = {
+  path: [[8, -100], [8, -121], [9, -140], [3, -165], [-5, -195], [-10, -225], [-10, -255]] as [number, number][],
+  floor: 12,
+  halfWidth: 6.5,
+  wallTop: 14,
+  reach: 36,
+  wall: 14,
+  camp: { x: -10, z: -255, r: 17 },
+};
+const passLine = centerline(PASS.path);
+export const PASS_LENGTH = passLine.length;
+export const passPoint = passLine.point;
+
+/** Distance from the pass's carved floor (the centerline, or the camp's circle) and how far along it the nearest point is. */
+export function passFrame(x: number, z: number) {
+  const { d, s } = passLine.frame(x, z);
+  const dc = Math.max(0, Math.hypot(x - PASS.camp.x, z - PASS.camp.z) - (PASS.camp.r - PASS.halfWidth));
+  return dc < d ? { d: dc, s: PASS_LENGTH } : { d, s };
+}
+
+/** True within `margin` meters of the pass's carved area (or inside it). */
+export function inPass(x: number, z: number, margin = 0) {
+  return passFrame(x, z).d < PASS.reach + margin;
+}
+
+/** The pass floor's height `s` meters along: the field's level at the gate up to `floor` at the camp. */
+export function passFloor(s: number) {
+  const [mx, mz] = PASS.path[0];
+  return mix(placementHeight(mx, mz), PASS.floor, smoothstep(0, PASS_LENGTH, s));
+}
+
+/** The land with the pass cut into it (walls rise in the first 30 m so the gate stands between rock). */
+function carvePass(h: number, x: number, z: number) {
+  const { d, s } = passFrame(x, z);
+  if (d >= PASS.reach) return h;
+  const wall = PASS.wall * smoothstep(PASS.halfWidth, PASS.wallTop, d) * smoothstep(8, 30, s);
+  return mix(passFloor(s) + wall, h, smoothstep(PASS.wallTop, PASS.reach, d));
 }
 
 export function riverZ(x: number) {
@@ -166,7 +223,7 @@ export function placementHeight(x: number, z: number) {
 export function terrainHeight(x: number, z: number) {
   const h = placementHeight(x, z);
   const withHollow = mix(h, HOLLOW.floor, smoothstep(HOLLOW.r + 9, HOLLOW.r, Math.hypot(x - HOLLOW.x, z - HOLLOW.z)));
-  return carveGorge(withHollow, x, z);
+  return carvePass(carveGorge(withHollow, x, z), x, z);
 }
 
 /** True within `margin` meters of the hollow's edge (or inside it). */
@@ -187,6 +244,7 @@ export function areaNameAt(x: number, z: number) {
   if (Math.hypot(x - LAKE.x, z - LAKE.z) < 38) return 'Glimmer Lake';
   if (inHollow(x, z, 3)) return 'Gloaming Hollow';
   if (gorgeFrame(x, z).d < GORGE.wallTop) return 'The Hushing Gorge';
+  if (passFrame(x, z).d < PASS.wallTop && z < GATE.z) return 'The Northpass';
   return 'Emberfield';
 }
 
@@ -211,6 +269,6 @@ export function isEnemyGround(x: number, z: number) {
   if (Math.hypot(x - SPAWN.x, z - SPAWN.z) < 22) return false;
   if (Math.hypot(x - SHRINE.x, z - SHRINE.z) < 16) return false;
   if (Math.abs(z - riverZ(x)) < 12 || Math.hypot(x - LAKE.x, z - LAKE.z) < 34) return false;
-  if (inHollow(x, z, 12) || inGorge(x, z, 6)) return false;
+  if (inHollow(x, z, 12) || inGorge(x, z, 6) || inPass(x, z, 6)) return false;
   return true;
 }

@@ -27,6 +27,8 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
   const travels: { area: AreaId; entrance?: string }[] = [];
   /** Every `silenceMusic` call, in order. */
   const music: boolean[] = [];
+  /** Every `hidePlayer` call, in order. */
+  const hidden: boolean[] = [];
   /** Every toast shown, in order. */
   const toasts: string[] = [];
   const noop = () => {};
@@ -59,6 +61,7 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
     card: async () => {},
     shot: noop,
     releaseCamera: noop,
+    hidePlayer: (on) => void hidden.push(on),
     showAreaName: noop,
     toast: (t) => void toasts.push(t),
     warpTime: (h) => {
@@ -68,11 +71,14 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
     respawn: noop,
     giveSword: () => state.set('hasSword'),
     silenceMusic: (on) => void music.push(on),
-    travel: async (a, entrance) => void travels.push({ area: a, entrance }),
+    travel: async (a, entrance, _quiet, arrive) => {
+      travels.push({ area: a, entrance });
+      arrive?.();
+    },
   };
   /** Runs (and empties) the scripts that were queued with `api.run`. */
   const runQueued = async () => {
     while (queued.length) await queued.shift()!(api);
   };
-  return { api, answers, asked, choices, chosen, said, state, queued, runQueued, enemies, travels, player, pushes, music, toasts };
+  return { api, answers, asked, choices, chosen, said, state, queued, runQueued, enemies, travels, player, pushes, music, hidden, toasts };
 }

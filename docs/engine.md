@@ -73,6 +73,19 @@ rebuilds every enemy (`enemyDispose.test.ts` guards it). Three.js never frees a 
 just because its mesh left the scene.
 Adding an area = an `Area` class + a content file + a case (and id) in `content/areas.ts`.
 
+**Regions** (`world/overworld/region.ts`): the overworld is one continuous area, but parts of it beyond the
+valley are *regions* that exist only while Wren is near (owner's call, 2026-11-03). A `RegionDef` has an `id`,
+a terrain `rect` and `build(physics)`, which returns its `root`, its `interactables`/`triggers` (they join the
+overworld's lists while it is loaded), an `update` and a `dispose`. `RegionStreamer` builds one when Wren is
+within 70 m of its rect and drops it past 110 m (a `RegionDef` may override both: fog is full at 290 m, so a region
+that can be seen from afar, like the Northpass, loads at 260 m and drops at 300 m, where it never visibly pops). `Area.streamAt(x, z)` is called every frame in `updateWorld`
+and in `placeAtSpawn` *before* Wren is placed, so a teleport (a bell, a save) finds ground. A region builds in
+one frame (a small hitch; spread it over frames if regions get big). Regions use the same `terrainHeight`
+and the same 2 m grid as the valley (`buildTerrain(b, rect)`), so seams match; each has its own seed in
+`REGION_SEEDS` (`layout.ts`). The only region so far is the Northpass (`northpass.ts`). Scenery of the valley
+stays out of a region's carved land with an `inX` check (as `inGorge`, `inPass`), applied after the seeded
+placement so it never reshuffles.
+
 **Moving between areas**: `api.travel(id, entrance?)` fades out, `loadArea`s the other area
 with Wren at a named entrance (`Area.entrances`, e.g. the overworld's `shrineDoor`) or its
 spawn, shows its name and fades in. `loadArea` during play calls the new content's

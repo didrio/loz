@@ -45,14 +45,14 @@ export default async function run(t) {
     check(Math.hypot(s.pos.x - (-62 - 22 + 4.4), s.pos.z - -58) < 2.5, `came out at (${s.pos.x.toFixed(1)}, ${s.pos.z.toFixed(1)})`);
   });
 
-  await step('Odo sells the tunic for 100 gems', async () => {
+  await step('Odo sells the tunic for 50 gems', async () => {
     const p = await at('npc.odo');
     await game(() => (window.embervale.state.gems = 130));
     await teleport(p.x + 0.3, p.z, -Math.PI / 2);
     await press('KeyE');
     await finishScript(); // Enter picks "Buy"
     const r = await game(() => ({ gems: window.embervale.state.gems, has: window.embervale.state.has('village.stonewardTunic') }));
-    check(r.has && r.gems === 30, `tunic ${r.has}, gems ${r.gems}`);
+    check(r.has && r.gems === 80, `tunic ${r.has}, gems ${r.gems}`);
   });
 
   await step('Odo fills an empty flask for 20 gems', async () => {
@@ -64,7 +64,7 @@ export default async function run(t) {
     await press('KeyE');
     await finishScript(); // Enter picks the first potion: Life
     const r = await game(() => ({ gems: window.embervale.state.gems, slots: window.embervale.state.flasks.slots }));
-    check(r.slots[0] === 'life' && r.gems === 10, `flask ${r.slots[0]}, gems ${r.gems}`);
+    check(r.slots[0] === 'life' && r.gems === 60, `flask ${r.slots[0]}, gems ${r.gems}`);
   });
 }
 

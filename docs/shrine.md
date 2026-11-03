@@ -235,23 +235,27 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
          flag `valleyOpen`, `travel` back to `shrine/sealRoom`. The press is saved only at the end, so quitting
          mid-vision leaves the stone strikable.
        - The gate (`world/overworld/gate.ts`, `GATE` and `inGate` in `layout.ts`): two pillars, nine floating
-         ember-lit stones, a veil of glowing strips, a `Bounds` wall across the cut while closed. It stands in front of
-         the mountain wall until D2 carves the pass. Scenery is filtered with `inGate` after the seeded placement.
+         ember-lit stones, a veil of glowing strips, a `Bounds` wall across the cut while closed. Scenery is filtered with `inGate` after the seeded placement.
          `sign.gate` beside it.
        - `warden` music ("The Warden's Vigil", `core/tracks.ts`): Gravelheart's `music`. Unheard: ask the owner.
        - Dev states: "boss door" has the tunic and both bells; new "Warden asleep, the seal room open".
        - Fixture `shrine-boss.json` and smoke `shrine-boss`.
        - To judge in play: the defeat's pacing and camera, the causeway rising, the veil and falling stones, the theme.
-     - **D2, overworld streaming and the pass.** Do the roadmap's "Overworld streaming (regions)"
-       item:
-       - `world/overworld/region.ts`: load within ~70 m, unload past ~110 m.
-       - `Area.streamAt`.
-       - `buildTerrain(b, rect)`, with the valley chunk byte-identical.
-       - `PASS` and `carvePass` in `layout.ts`, from the gate at about (8, -122) to the camp at
-         about (-10, -255).
-       - A gap in `buildBounds`, plus the pass's own walls.
-       - Keep the valley's scenery from reshuffling: a separate `NORTH_ROAD`, and filter with
-         `inPass` afterwards, as `inGorge` does. Before and after looks of the valley.
+     - ~~D2, overworld streaming and the pass~~ done; how it works:
+       - `world/overworld/region.ts`: `RegionStreamer`, default load 70 m, unload 110 m; `Area.streamAt`
+         (called in `updateWorld` and before `placeAtSpawn` places Wren). See [engine.md](engine.md), "Regions".
+       - `buildTerrain(b, rect)` (`terrain.ts`), the valley's chunk unchanged (`VALLEY_RECT`).
+       - `PASS`, `passFrame`, `inPass`, `passFloor` and `carvePass` in `layout.ts`: a canyon from (8, -100) to the camp
+         at (-10, -255), floor 0.9 m rising to 12 m, walls 14 m (steeper than 55° at their middle), melting into the
+         mountain by 36 m; the camp is a flat 17 m circle. `centerline()` is now shared with the gorge.
+       - `northpass.ts`: the region (rect x ±150, z -330..-210, joined to the valley's square at z = -210), boulders
+         along the walls, a `Bounds` wall at the far end. `buildBounds` leaves a gap in the ring where the pass crosses it.
+       - The valley's scenery is filtered with `inPass` after the seeded placement (nothing reshuffles); `PASS` has its
+         own seed `pass`. The area name "The Northpass" shows past the gate.
+       - The region loads at 260 m and drops at 300 m (fog is full at 290 m), so the canyon never pops into view.
+       - Cutscene rules: a vision hides Wren (`api.hidePlayer`) and sets its first shot in `travel`'s `arrive` callback,
+         before the fade-in; Gravelheart's intro shot sits on the doorway's own axis (look scene `wardenIntro`).
+       - Look scene `northpass`. Not done here (D3): the camp's props, bell, NPC, the Cragstalker.
      - **D3, the Cragstalker, the third bell, the camp.**
        - `game/cragstalker.ts` on `GroundEnemy`.
        - Bell id `way` ("Waybell"): its pickup on the pass and its post at the camp.

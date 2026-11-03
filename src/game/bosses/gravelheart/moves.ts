@@ -343,7 +343,7 @@ export const ROLL: Move<G> = {
  */
 export const KNEEL: Move<G> = {
   name: 'kneel',
-  timing: () => ({ windup: 1.0, active: 3.5, recover: 1.2 }),
+  timing: () => ({ windup: 1.0, active: 2.8, recover: 1.2 }),
   weight: () => 0,
   enter(b, step, env) {
     b.chestOpen = false;

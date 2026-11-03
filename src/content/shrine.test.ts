@@ -341,5 +341,6 @@ describe('shrine content', () => {
     expect(s.state.has('valleyOpen')).toBe(true);
     expect(s.p.switches.has('sealStone')).toBe(true);
     expect(s.travels).toEqual([{ area: 'overworld', entrance: 'gateView' }, { area: 'shrine', entrance: 'sealRoom' }]);
+    expect(s.hidden).toEqual([true, false]); // the vision is of a place Wren isn't standing in
   });
 });

@@ -272,8 +272,8 @@ export function overworldContent(ow: Overworld): AreaContent {
       const wares: (Ware & { potion?: Potion })[] = [];
       const pages: Page[] = [{ who, text: state.has('hasSword') && tunic ? 'A blade, and no armor! Gems for goods, friend. I carry what the valley forgot it needs.' : 'Gems for goods, friend! I carry what the valley forgot it needs.' }];
       if (tunic) {
-        wares.push({ label: 'Stoneward Tunic', price: 100 });
-        pages.push({ who, text: 'This is a *Stoneward Tunic*, woven with grit from the old shrine quarry. Statues and stone shells hit you *half as hard*. A bargain at 100 gems.' });
+        wares.push({ label: 'Stoneward Tunic', price: 50 });
+        pages.push({ who, text: 'This is a *Stoneward Tunic*, woven with grit from the old shrine quarry. Statues and stone shells hit you *half as hard*. A bargain at 50 gems.' });
       }
       if (empty >= 0) {
         for (const potion of ['life', 'attack'] as const) wares.push({ label: POTIONS[potion].name, potion, price: REFILL_PRICE });

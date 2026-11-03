@@ -15,7 +15,7 @@ asks: they're best designed against the real use case.
 Next, in order:
 
 0. ~~The owner's playtest tweaks A–G (2026-11-02)~~ done. Untested by play: the gem economy
-   (95 in the shrine plus bushes, against the 100-gem tunic and 20 per flask refill).
+   (95 in the shrine plus bushes, against the 50-gem tunic (it was 100 until 2026-11-03) and 20 per flask refill).
 0.5. **Bells: bell posts, fast travel, bell trials** (owner's request, 2026-11-02, before the
    shrine's boss). Done: bells, posts and the travel menu, the platforming base, both trials (the Bell Shaft,
    the Hushing Gorge; the latter awaits the owner's play). See [bells.md](bells.md).
@@ -76,12 +76,11 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 
 ### Triggered by the Northpass (shrine milestone 6D+)
 
-- [ ] **Overworld streaming (regions)**: the overworld stays one area (owner's call, 2026-11-03: one
-  continuous world, no loading between field regions; dungeons and interiors still load). The valley
-  stays loaded; other regions (first: the Northpass and its camp) build when Wren is within ~70 m of
-  their bounds and dispose past ~110 m. Each region has its own `AreaBuilder`, seed, terrain chunk
-  (same `terrainHeight`, same 2 m grid, so seams match), interactables, bell posts and entrances;
-  `Area.streamAt(x, z)` loads synchronously before anything places Wren. *Do it in session D2.*
+- [x] **Overworld streaming (regions)** (2026-11-03, session D2): the overworld stays one area (owner's call: one
+  continuous world, no loading between field regions; dungeons and interiors still load). The valley stays
+  loaded; the Northpass is the first region (`world/overworld/region.ts`, `northpass.ts`). See
+  [engine.md](engine.md), "Regions". Later regions: add a `RegionDef` and a seed; bell posts and entrances
+  inside a region join `Overworld.entrances` when D3 needs them.
 
 ### Later triggers
 
@@ -113,8 +112,8 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 
 ## Known quirks and tech debt
 
-- (Once regions exist, D2.) A streamed region builds in one frame: a hitch at the streaming point.
-  Spread the build over frames when regions get big.
+- A streamed region builds in one frame: a hitch at the streaming point (the Northpass is 150×60 cells of
+  terrain plus a trimesh; unmeasured on a real GPU). Spread the build over frames when regions get big.
 
 - Two roads ford ponds: the grove road (11 m of road, ≤ 0.44 m deep) and the shrine road
   (14 m, ≤ 1.03 m). Walkable since there's no swimming; revisit when swimming lands.

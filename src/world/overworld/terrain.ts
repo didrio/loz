@@ -2,15 +2,24 @@ import * as THREE from 'three';
 import { fbm } from '../../core/math';
 import { Layer } from '../../core/physics';
 import type { AreaBuilder } from '../area';
-import { GROVE, HOLLOW, pathDist, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
+import { GROVE, HOLLOW, passFrame, pathDist, PASS, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
 
 const SIZE = 420;
-const SEGMENTS = 210;
+/** Grid spacing, m. Every chunk uses the same one, so neighbouring chunks meet vertex to vertex. */
+const CELL = 2;
 
-/** The ground: a flat-shaded, vertex-colored heightfield plus a matching physics trimesh. */
-export function buildTerrain(b: AreaBuilder) {
-  const grid = new THREE.PlaneGeometry(SIZE, SIZE, SEGMENTS, SEGMENTS);
+/** A rectangle of ground, in meters. Its corners should sit on multiples of the 2 m grid. */
+export interface TerrainRect { x0: number; x1: number; z0: number; z1: number }
+
+/** The valley's chunk: the square the overworld has always had. */
+export const VALLEY_RECT: TerrainRect = { x0: -SIZE / 2, x1: SIZE / 2, z0: -SIZE / 2, z1: SIZE / 2 };
+
+/** The ground of `rect`: a flat-shaded, vertex-colored heightfield plus a matching physics trimesh. */
+export function buildTerrain(b: AreaBuilder, rect: TerrainRect = VALLEY_RECT) {
+  const width = rect.x1 - rect.x0, depth = rect.z1 - rect.z0;
+  const grid = new THREE.PlaneGeometry(width, depth, width / CELL, depth / CELL);
   grid.rotateX(-Math.PI / 2);
+  grid.translate((rect.x0 + rect.x1) / 2, 0, (rect.z0 + rect.z1) / 2);
   const p = grid.attributes.position;
   for (let i = 0; i < p.count; i++) p.setY(i, terrainHeight(p.getX(i), p.getZ(i)));
   b.track(b.physics.meshCollider(grid, Layer.World));
@@ -31,7 +40,7 @@ export function buildTerrain(b: AreaBuilder) {
     else if (y < -0.35) c.set(0xd8c690);
     else if (y > 50) c.set(0xf0f3f6);
     else if (ny < 0.74 || y > 30) c.copy(a.set(0x8d8577)).lerp(d.set(0x67625a), n);
-    else if (pathDist(x, z) < 1.9 + n * 1.4) c.copy(a.set(0xb98d5a)).lerp(d.set(0x9a7347), n);
+    else if (pathDist(x, z) < 1.9 + n * 1.4 || (z < PASS.path[0][1] && passFrame(x, z).d < 1.9 + n * 1.4)) c.copy(a.set(0xb98d5a)).lerp(d.set(0x9a7347), n);
     else {
       c.copy(a.set(0x5d9c3a)).lerp(d.set(0x8dbd4c), n);
       if (Math.hypot(x - GROVE.x, z - GROVE.z) < 40) c.lerp(d.set(0x356b2c), 0.5);
@@ -68,6 +77,8 @@ export function buildBounds(b: AreaBuilder) {
   const half = (Math.PI * 2 * r) / n / 2 + 0.5;
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
+    // The Northpass cuts through the ring; its own rock walls hold the player in (the region adds the far end).
+    if (passFrame(Math.cos(a) * r, Math.sin(a) * r).d < PASS.halfWidth + 12) continue;
     b.box(Math.cos(a) * r, 40, Math.sin(a) * r, 0.5, 80, half, -a, Layer.Bounds);
   }
 }

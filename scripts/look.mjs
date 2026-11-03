@@ -758,6 +758,75 @@ const SCENES = {
     await h.wait(600);
     await h.shot('gate-open');
   },
+  /** The Northpass (shrine D2): the cut behind the gate, the corridor, the camp bowl and the ridge from above; the region streams in as Wren walks. */
+  async northpass(h) {
+    await h.newGame();
+    await h.game(() => { window.embervale.enemies.list.forEach((e) => (e.alive = false)); window.embervale.area.gate.setOpen(); });
+    /** Loads the region around (x, z) as the game would, then stands Wren there. */
+    const stand = async (x, z, yaw) => {
+      await h.game(([x, z]) => window.embervale.area.streamAt(x, z), [x, z]);
+      await h.teleport(x, z, yaw);
+      await h.wait(1500);
+    };
+    const cam = (eye, target) => h.game(([eye, target]) => {
+      const g = window.embervale, T = g.player.pos.constructor;
+      g.rig.shot(new T(...eye), new T(...target), true);
+    }, [eye, target]);
+    await stand(8, -105, Math.PI);
+    await h.shot('northpass-gate-approach');
+    await stand(9, -140, Math.PI);
+    await h.shot('northpass-first-stretch');
+    await stand(-5, -195, Math.PI);
+    await h.shot('northpass-middle');
+    await stand(-10, -235, Math.PI);
+    await h.shot('northpass-camp-approach');
+    await stand(-10, -255, Math.PI);
+    await h.wait(500);
+    await h.shot('northpass-camp');
+    await cam([-10, 60, -215], [-4, 10, -150]);
+    await h.wait(1200);
+    await h.shot('northpass-from-above');
+    await cam([8, 40, -85], [8, 12, -150]);
+    await h.wait(1200);
+    await h.shot('northpass-seam-from-valley');
+  },
+  /** Gravelheart's intro, first shots: the camera looking back past Wren as the door rises (it must not sit inside her), then over the shoulder. */
+  async wardenIntro(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.loadArea('shrine'));
+    await h.wait(1500);
+    const r = await h.game(() => window.embervale.area.def.rooms.find((r) => r.id === 'boss'));
+    const door = await h.game(() => window.embervale.area.doors.get('bossDoor').group.position);
+    const y = r.floor * 8 + 0.05;
+    // Outside the doorway, the door open; then one step in (the trigger starts 1 m inside the door).
+    await h.game(([x, y, z]) => {
+      const g = window.embervale;
+      g.area.doors.get('bossDoor').setOpen();
+      g.player.teleport(x, y, z + 4, Math.PI);
+      g.rig.snap(g.player.pos, Math.PI);
+    }, [door.x, y, door.z]);
+    await h.wait(1500);
+    await h.game(() => {
+      const g = window.embervale;
+      const orig = g.rig.shot.bind(g.rig);
+      window.__shots = [];
+      g.rig.shot = (f, l, cut) => {
+        orig(f, l, cut);
+        const p = g.player.pos;
+        window.__shots.push({ from: [f.x - p.x, f.y - p.y, f.z - p.z].map((v) => +v.toFixed(1)), look: [l.x - p.x, l.y - p.y, l.z - p.z].map((v) => +v.toFixed(1)), cut });
+      };
+    });
+    await h.game(([x, y, z]) => window.embervale.player.teleport(x, y, z, Math.PI), [door.x, y, door.z - 1.2]);
+    await h.until(() => window.__shots.length > 0, 20000);
+    // Two frames into the first shot: where the camera really is, against where it was asked to be.
+    await h.wait(400);
+    console.log('shots asked', JSON.stringify(await h.game(() => window.__shots)));
+    console.log('camera vs Wren', JSON.stringify(await h.game(() => { const g = window.embervale, c = g.camera.position, p = g.player.pos; return { cam: [c.x - p.x, c.y - p.y, c.z - p.z].map((v) => +v.toFixed(1)), opacity: g.rig.playerOpacity }; })));
+    await h.shot('warden-intro-1');
+    await h.until(() => window.__shots.length > 1, 20000);
+    await h.wait(400);
+    await h.shot('warden-intro-2');
+  },
   /** After the boss: the Hearth's north wall with the causeway up and the hidden door open, the Heart Vessel, and the Keepers' Seal. */
   async seal(h) {
     await h.newGame();

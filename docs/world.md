@@ -94,7 +94,7 @@ in.
   the square) opens onto his mill, where the bed sleeps to the next 06:00/18:00 and fully
   heals.
 - **Odo the Peddler**: warm, wry (he remarks on a sword without armor, and on the tunic by day or night); a stall beside the well. Refills empty flasks and sells the **Stoneward Tunic**
-  (100 gems; stone hits do half damage, rounded up; Wren's tunic turns slate-blue). Flask
+  (50 gems; stone hits do half damage, rounded up; Wren's tunic turns slate-blue). Flask
   refills (roadmap E) will be sold here through the same `offerWare`.
 - **The Hollow Lamplighter**, Keeper of a Stolen Flame (mini-boss, Gloaming Hollow): a
   4.4 m gaunt figure in a tattered lamplighter's coat, bone legs and arms, a hooked pole

@@ -265,12 +265,17 @@ export abstract class Boss extends Enemy {
     return d > 0 ? Math.min(1, this.stepT / d) : 1;
   }
 
+  /** Health it cannot be hurt below right now (0: it can die). Bosses with several punish windows raise it between them. */
+  protected hpFloor() {
+    return 0;
+  }
+
   hurt(dmg: number, from: THREE.Vector3, part = 'body'): HurtResult {
     if (!this.alive || this.state !== 'fight' || this.invulnerable) return 'ignored';
     const toAttacker = from.clone().sub(this.pos).setY(0).normalize();
     if (this.isGuarding(toAttacker, part)) return 'guarded';
     const mult = this.damageMultiplier(part);
-    this.hp = Math.max(0, this.hp - dmg * mult);
+    this.hp = Math.max(this.hpFloor(), this.hp - dmg * mult);
     this.flash = 0.15;
     this.onHurt();
     while (this.phase - 1 < this.phaseAt.length && this.hp <= this.maxHp * this.phaseAt[this.phase - 1] && this.hp > 0) {

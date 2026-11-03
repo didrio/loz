@@ -23,9 +23,9 @@ As of 2026-11-03: Emberfield (the valley) plays start to finish (Lamplighter, qu
 **The Waking Shrine** (25 rooms, four wings, the Bell Shaft trial) is playable into Warden's Hearth, a 48×40 m hall
 with drops. **Gravelheart** fights through both phases (its hits cost two hearts, one in the tunic) and its defeat plays: the
 ember leaves, a Heart Vessel, a causeway to the Keepers' Seal, whose stone breaks the magic gate at the valley's
-north edge (the gate stands in front of rock until the pass is carved; [docs/shrine.md](docs/shrine.md)). **Bells** and both trials work
+north edge ([docs/shrine.md](docs/shrine.md)). **Bells** and both trials work
 ([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states.
-**Next: shrine milestone 6, session D2** (overworld streaming and the Northpass; plan in [docs/shrine.md](docs/shrine.md); Sonnet, no plan mode).
+The Northpass behind it is carved and streams in as a region; phase two of the Warden takes three kneels. **Next: shrine milestone 6, session D3** (the Cragstalker, the Waybell, the camp; plan in [docs/shrine.md](docs/shrine.md); Sonnet, no plan mode).
 
 ## Docs: read the one for the area you're touching
 
@@ -133,7 +133,8 @@ src/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
-    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, gate (the magic gate), index (Overworld)
+    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, gate (the magic gate),
+                           region (RegionStreamer: parts that stream in by distance), northpass (the first region), index (Overworld)
     dungeon/               dungeon data format, validator, softlock solver, text map, DUNGEONS registry;
                            defs/ the dungeons; build.ts + pieces.ts turn the data into a 3D indoor Area;
                            grid.ts + puzzle.ts: rooms as 2 m grids, the wakestone puzzle checker;

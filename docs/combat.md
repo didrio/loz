@@ -20,7 +20,7 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   **guard** of 3 slots (`game/guard.ts`). Every attack is an `Attack` with `damage`
   (half-hearts) and `guard` (slots a block knocks down: 1 light, 2 heavy, 3 crushing);
   An attack may also be `stone: true` (statues, shells: the Sentinel's swing, the Shellback's
-  charge): with the **Stoneward Tunic** (`village.stonewardTunic`, 100 gems from Odo,
+  charge): with the **Stoneward Tunic** (`village.stonewardTunic`, 50 gems from Odo,
   `Player.setStoneward`) Wren takes `ceil(damage / 2)` from it, and nothing else changes. Shockwaves
   take `stone` too (`ShockwaveOptions.stone`). **Owner's call, 2026-11-03: stone enemies hit hard so the tunic is
   felt**: the Sentinel 4 half-hearts (tunic 2), the Shellback 2 (1), and **every Gravelheart attack 4 (two
@@ -130,8 +130,10 @@ two hearts drop, Wren and the boss are shoved inside the ring so no tile rises o
 `doubleSweep` (two blows 0.75 s apart, cost 2 each: block one, jump the other); **Cairn Roll** (1 s rocking
 tell, then it rolls at 13 m/s along the line it locked, `ROLL_SPEED`; sidestep). On reaching the wall (`walkable` says no 0.7 m
 ahead) it is dazed 3.2 s and `keyT` = 3 s: the keystone in its back glows and `tetherAt` pulls it (only from
-behind or the side), which plays `kneel` (head bowed toward Wren, ember hurtbox `chest` x2, ~3.5 s). With the ember in the
-head the plates don't matter any more: Roll -> keystone -> kneel is the only way to hurt it. Phase 2's
+behind or the side), which plays `kneel` (head bowed toward Wren, ember hurtbox `chest` x2, ~2.8 s). With the ember in the
+head the plates don't matter any more: Roll -> keystone -> kneel is the only way to hurt it. **Three kneels finish it**
+(owner's call, 2026-11-03: one kneel killed it): `Boss.hpFloor()` stops phase two's health from falling under the next third of its
+pool (`kneelsSpent`); a kneel that cuts the slice down to the floor ends early, a kneel that doesn't leaves the floor where it was. Phase 2's
 `walkable` margin includes the ring (`RING_WIDTH`).
 
 **Exposed tint (reusable):** a boss with a "hit it now" window overrides `Boss.exposed` (Gravelheart: `chestOpen`); the base class

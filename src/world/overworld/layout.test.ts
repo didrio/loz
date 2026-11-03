@@ -1,6 +1,6 @@
 import { mulberry32 } from '../../core/math';
 import { describe, expect, it } from 'vitest';
-import { areaNameAt, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, isEnemyGround, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
+import { areaNameAt, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
 
 describe('overworld layout', () => {
   it('starts the player on dry, fairly flat ground', () => {
@@ -91,5 +91,45 @@ describe('the Hushing Gorge', () => {
     expect(regionRng('hollow')()).toBe(mulberry32(4242)());
     expect(regionRng('gorge')()).not.toBe(regionRng('valley')());
     expect(inGorge(0, 14)).toBe(false);
+  });
+});
+
+describe('the Northpass', () => {
+  const at = (s: number, lat = 0) => {
+    const p = passPoint(s);
+    return terrainHeight(p.x + p.nx * lat, p.z + p.nz * lat);
+  };
+
+  it('has a floor that climbs gently from the field to the camp, flat across the corridor', () => {
+    expect(at(0)).toBeLessThan(2);
+    for (let s = 40; s <= PASS_LENGTH - 20; s += 10) for (const lat of [-4, 0, 4]) expect(at(s, lat)).toBeCloseTo(passFloor(s), 0);
+    for (let s = 0; s < PASS_LENGTH; s += 2) expect(Math.abs(at(s + 2) - at(s))).toBeLessThan(1.2); // walkable all the way
+    expect(passFloor(PASS_LENGTH)).toBeCloseTo(PASS.floor);
+    expect(terrainHeight(PASS.camp.x, PASS.camp.z)).toBeCloseTo(PASS.floor, 0);
+  });
+
+  it('has walls too steep to climb (over 55 degrees) from the gate to the camp', () => {
+    for (let s = 40; s < PASS_LENGTH - 30; s += 8) { // the camp itself opens out
+      const p = passPoint(s);
+      for (const side of [-1, 1]) {
+        const h = (lat: number) => terrainHeight(p.x + p.nx * lat * side, p.z + p.nz * lat * side);
+        const rise = h(PASS.halfWidth + 4.7) - h(PASS.halfWidth + 2.2); // the steep middle of the wall
+        expect(Math.atan2(rise, 2.5), `wall at s=${s}`).toBeGreaterThan((55 * Math.PI) / 180);
+      }
+    }
+  });
+
+  it('opens the camp into a flat circle, wider than the corridor', () => {
+    for (const [dx, dz] of [[0, 0], [12, 0], [-12, 0], [0, -12]]) expect(terrainHeight(PASS.camp.x + dx, PASS.camp.z + dz)).toBeCloseTo(PASS.floor, 0);
+    expect(passFrame(PASS.camp.x + PASS.camp.r, PASS.camp.z).d).toBeCloseTo(PASS.halfWidth);
+  });
+
+  it('leaves the valley alone beyond its reach, is named, and keeps field enemies out', () => {
+    expect(inPass(0, 14)).toBe(false);
+    expect(inPass(-62, -58)).toBe(false);
+    expect(areaNameAt(passPoint(100).x, passPoint(100).z)).toBe('The Northpass');
+    expect(areaNameAt(passPoint(0).x, passPoint(0).z)).toBe('Emberfield');
+    expect(isEnemyGround(passPoint(10).x, passPoint(10).z)).toBe(false);
+    expect(regionRng('pass')()).not.toBe(regionRng('valley')());
   });
 });

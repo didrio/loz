@@ -22,6 +22,8 @@ import { blendPose, GravelheartRig, SLEEP, STAND, type Pose } from './rig';
  * plate loose, the glove tears it off, and with all three gone it staggers with its chest
  * open (the sword's chance). It then pulls new plates from the walls, then from rubble.
  */
+/** Phase two takes this many kneels to finish (the last one kills). */
+const KNEEL_SLICES = 3;
 /** Seconds a landed stone lies about before it crumbles. */
 const RUBBLE_LIFE = 7;
 
@@ -44,6 +46,11 @@ export class Gravelheart extends Boss {
   /** Cairn Roll's stall detector: where it was last frame, and how long it has barely moved. */
   readonly rollLast = new THREE.Vector3();
   rollStall = 0;
+  /**
+   * Phase two's second half of health is spent in three kneels: how many of its three slices of health have been
+   * cut away so far. It cannot be hurt below the next slice's floor, so it takes three kneels to finish it.
+   */
+  kneelsSpent = 0;
   /** The plate glowing loose (or -1) and how long it stays loose. */
   loose = -1;
   looseT = 0;
@@ -111,6 +118,19 @@ export class Gravelheart extends Boss {
 
   protected damageMultiplier(part: string) {
     return part === 'chest' ? 2 : 1;
+  }
+
+  /** In phase two, the floor under the current slice of health: two thirds, then one third of phase two's pool, then nothing. */
+  protected hpFloor() {
+    return this.phase < 2 || this.kneelsSpent >= KNEEL_SLICES - 1 ? 0 : ((this.maxHp * 0.5) / KNEEL_SLICES) * (KNEEL_SLICES - 1 - this.kneelsSpent);
+  }
+
+  /** A kneel that has cut the slice down to its floor is over: it pulls itself up, and the next one takes the next slice. */
+  protected onHurt() {
+    if (this.move?.name === KNEEL.name && this.step === 'active' && this.hpFloor() > 0 && this.hp <= this.hpFloor()) {
+      this.kneelsSpent++;
+      this.skipStep();
+    }
   }
 
   protected decideDelay() {
@@ -244,6 +264,7 @@ export class Gravelheart extends Boss {
     this.keyT = 0;
     this.spin = 0;
     this.asleep = false;
+    this.kneelsSpent = 0;
     this.ground = false;
     Object.assign(this.cur, SLEEP);
   }

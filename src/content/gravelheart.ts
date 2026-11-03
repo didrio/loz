@@ -29,8 +29,11 @@ export function wardenContent(area: DungeonArea) {
     const p = api.player.pos.clone();
     const toBoss = b.pos.clone().sub(p).setY(0).normalize();
     const side = new THREE.Vector3(-toBoss.z, 0, toBoss.x);
-    // Looking back past Wren as the door rises out of the floor.
-    api.shot(p.clone().addScaledVector(toBoss, 4.5).addScaledVector(side, 1.5).setY(p.y + 2.2), p.clone().addScaledVector(toBoss, -2.5).setY(p.y + 1.6), true);
+    // Looking back at Wren as the door rises behind her. The camera stays on the doorway's own axis, well
+    // ahead of her: the walls beside the entry hold a camera on a diagonal right in her face.
+    const doorAt = area.doors.get('bossDoor')?.group.position;
+    const inward = doorAt ? p.clone().sub(doorAt).setY(0).normalize() : toBoss.clone();
+    api.shot(p.clone().addScaledVector(inward, 6.5).setY(p.y + 2.5), p.clone().addScaledVector(inward, -0.8).setY(p.y + 1.5), true);
     await api.wait(1.6);
     // Over the shoulder: a great heap of carved stone, an ember breathing inside it.
     api.shot(p.clone().addScaledVector(toBoss, -2.5).addScaledVector(side, 1.4).setY(p.y + 1.8), b.pos.clone().setY(b.pos.y + 1.6), true);
@@ -118,10 +121,14 @@ export function wardenContent(area: DungeonArea) {
     const prog = api.state.dungeon(area.def.id);
     api.sfx.solved();
     await api.say([{ text: 'The stone is warm under your hand. The room falls away, and you see a gate of floating stones, far to the north.' }]);
-    await api.travel('overworld', 'gateView', true);
+    // The shot is set as the valley loads, before the screen fades in: it is a vision, and Wren isn't standing there.
+    await api.travel('overworld', 'gateView', true, () => {
+      const gc = (api.area as unknown as Overworld).gate.center;
+      api.hidePlayer(true);
+      api.shot(new THREE.Vector3(gc.x - 13, gc.y + 0.5, gc.z + 17), gc, true);
+    });
     const ow = api.area as unknown as Overworld;
     const gc = ow.gate.center;
-    api.shot(new THREE.Vector3(gc.x - 13, gc.y + 0.5, gc.z + 17), gc, true);
     await api.wait(1.8);
     ow.gate.open();
     api.sfx.rumble();
@@ -132,6 +139,7 @@ export function wardenContent(area: DungeonArea) {
     api.sfx.solved();
     await api.wait(1.8);
     await api.travel('shrine', 'sealRoom', true);
+    api.hidePlayer(false);
     api.releaseCamera();
     api.toast('The ward on the gate is broken. The way north is open.');
   };
