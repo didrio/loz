@@ -51,18 +51,18 @@ export default async function run(t) {
     check(await inShrine(() => window.embervale.state.dungeonKeysHere.length === 0 && window.embervale.state.dungeon('shrine').doors.has('cryptCistern')), 'key not spent');
   });
 
-  await step('dying in the shrine respawns at its entrance: progress kept, drinks refilled, enemies back', async () => {
-    // Find a drink and drink it (key 1), so there's something to refill.
+  await step('dying in the shrine respawns at its entrance: progress kept, flasks stay empty, enemies back', async () => {
+    // Own a life flask and drink it (key 1): death must not fill it again.
     const enemiesBefore = await inShrine(() => {
       const g = window.embervale;
-      g.state.drinks.add('restore');
+      g.state.flasks.add('life');
       g.state.hp = 2;
       return g.area.spawns.filter((s) => s.type !== 'gravelheart').length;
     });
     await until(() => window.embervale.mode === 'play', 30000);
     await press('Digit1');
-    await until(() => window.embervale.state.drinks.left.get('restore') === 0, 15000).catch(() => {});
-    check(await inShrine(() => window.embervale.state.hp === window.embervale.state.maxHp && window.embervale.state.drinks.left.get('restore') === 0), 'the drink did nothing');
+    await until(() => window.embervale.state.flasks.slots[0] === null, 15000).catch(() => {});
+    check(await inShrine(() => window.embervale.state.hp === window.embervale.state.maxHp && window.embervale.state.flasks.slots[0] === null), 'the flask did nothing');
     await inShrine(() => (window.embervale.state.hp = 0));
     await until(() => window.embervale.mode === 'cutscene', 30000);
     await finishScript();
@@ -70,7 +70,7 @@ export default async function run(t) {
     const spawn = await inShrine(() => window.embervale.area.spawn);
     check(Math.hypot(s.pos.x - spawn.x, s.pos.z - spawn.z) < 1.5 && s.hp > 0, `respawned at (${s.pos.x.toFixed(1)}, ${s.pos.z.toFixed(1)})`);
     check(await inShrine(() => window.embervale.state.dungeon('shrine').doors.has('cryptCistern') && window.embervale.area.doors.get('cryptCistern').open), 'progress lost');
-    check(await inShrine(() => window.embervale.state.drinks.left.get('restore') === 1), 'drink not refilled');
+    check(await inShrine(() => window.embervale.state.flasks.slots[0] === null), 'flask refilled on death');
     const alive = await inShrine(() => window.embervale.enemies.list.filter((e) => e.alive).length);
     // Beaten challenge rooms (the ones a chest waits on) stay empty; everything else is back.
     const stayEmpty = await inShrine(() => {

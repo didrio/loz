@@ -4,7 +4,7 @@
  * can swap localStorage for real files without touching game code.
  */
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export interface SaveData {
   version: typeof SAVE_VERSION;
@@ -17,8 +17,8 @@ export interface SaveData {
   items: string[];
   /** Progress inside each dungeon, by dungeon id (v3+). */
   dungeons: Record<string, DungeonSave>;
-  /** Drinks found and left, by drink id (added within v3; absent means none). */
-  drinks: Record<string, { found: number; left: number }>;
+  /** Flasks owned, in order: the potion id each holds, or null when empty (v5+; v3/v4 saved drinks found and left by id, which load as one flask each). */
+  flasks: (string | null)[];
   gems: number;
   hp: number;
   maxHp: number;
@@ -105,7 +105,7 @@ export function decodeSave(raw: string | null): SaveData | null {
   // v1 saved the flute songs the player knew; the flute is gone, so they're just dropped
   // (v1 had no keys). The quest grants the key by its own flag, so nothing gets stuck.
   // v1/v2 had no areas, items or dungeons: they load in the overworld with none.
-  if (o.version !== SAVE_VERSION && o.version !== 1 && o.version !== 2 && o.version !== 3) return null;
+  if (o.version !== SAVE_VERSION && o.version !== 1 && o.version !== 2 && o.version !== 3 && o.version !== 4) return null;
   if (!Array.isArray(o.flags)) return null;
   const maxHp = isNum(o.maxHp) ? Math.max(2, Math.min(40, Math.round(o.maxHp / 2) * 2)) : 6;
   return {
@@ -115,7 +115,7 @@ export function decodeSave(raw: string | null): SaveData | null {
     area: typeof o.area === 'string' && o.area ? o.area : 'overworld',
     items: strings(o.items),
     dungeons: decodeDungeons(o.dungeons),
-    drinks: decodeDrinks(o.drinks),
+    flasks: o.version === SAVE_VERSION ? decodeFlasks(o.flasks) : flasksFromDrinks(o.drinks),
     gems: isNum(o.gems) ? Math.max(0, Math.min(9999, Math.floor(o.gems))) : 0,
     maxHp,
     hp: isNum(o.hp) ? Math.max(1, Math.min(maxHp, Math.floor(o.hp))) : maxHp,
@@ -129,14 +129,19 @@ function count(v: unknown) {
   return isNum(v) ? Math.max(0, Math.min(99, Math.floor(v))) : 0;
 }
 
-function decodeDrinks(v: unknown): Record<string, { found: number; left: number }> {
-  const out: Record<string, { found: number; left: number }> = {};
-  if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+function decodeFlasks(v: unknown): (string | null)[] {
+  return Array.isArray(v) ? v.slice(0, 8).map((p) => (typeof p === 'string' ? p : null)) : [];
+}
+
+/** v3/v4 drinks ({ restore | attack: { found, left } }): a flask per kind found, full if any was left. */
+function flasksFromDrinks(v: unknown): (string | null)[] {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return [];
+  const out: (string | null)[] = [];
   for (const [id, raw] of Object.entries(v as Record<string, unknown>)) {
     if (!raw || typeof raw !== 'object') continue;
     const d = raw as Record<string, unknown>;
-    const found = count(d.found);
-    if (found > 0) out[id] = { found, left: Math.min(found, count(d.left)) };
+    const potion = id === 'restore' ? 'life' : id;
+    if (count(d.found) > 0) out.push(count(d.left) > 0 ? potion : null);
   }
   return out;
 }

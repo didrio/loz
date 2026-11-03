@@ -46,10 +46,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 }
 
 .keys { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 20px; font-weight: bold; }
-.drinks { display: flex; gap: 10px; margin-top: 8px; }
+.drinks { position: relative; display: flex; gap: 10px; margin-top: 8px; width: fit-content; }
 .drink { position: relative; display: flex; align-items: center; gap: 4px; font-size: 17px; font-weight: bold; }
 .drink .key { min-width: 20px; height: 20px; font-size: 11px; padding: 0 5px; }
-.drink.empty { opacity: 0.35; filter: grayscale(0.8); }
+.drink.empty .key { opacity: 0.6; }
 .bottle { display: block; }
 .boost { position: absolute; left: 0; right: 0; bottom: -6px; height: 3px; background: rgba(0, 0, 0, 0.4); border-radius: 2px; overflow: hidden; }
 .boost span { display: block; height: 100%; background: #ffb02e; box-shadow: 0 0 4px #ff8a00; }

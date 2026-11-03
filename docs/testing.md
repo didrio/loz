@@ -125,7 +125,7 @@ longer a mystery.
   the swing lands a moment after the key press, so "not moving" can be true before the
   push). After clearing a room, wait for it to count as cleared and for play to resume
   (its reveal cutscene ignores input). Wait for the prompt before pressing interact.
-- After pressing a drink key, wait for the drink to register before checking (one headless
+- After pressing a flask key, wait for the drink to register before checking (one headless
   frame can outlast the key press gap).
 - Ray queries (`groundY`) only see colliders as of the last physics step, and stones are
   Prop-layer: in Node tests, `refreshQueries()` after moving one and query with Prop.

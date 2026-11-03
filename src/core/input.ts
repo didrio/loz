@@ -6,7 +6,7 @@
 export type Action =
   | 'attack' | 'shield' | 'jump' | 'lock' | 'interact'
   | 'confirm' | 'cancel' | 'music' | 'menuUp' | 'menuDown'
-  | 'drinkRestore' | 'drinkAttack' | 'item'
+  | 'flask1' | 'flask2' | 'item'
   /** Dev builds and ?debug only: 5x run speed. */
   | 'devSprint';
 
@@ -24,8 +24,8 @@ const KEYS: Record<Action, string[]> = {
   music: ['KeyP'],
   menuUp: ['ArrowUp', 'KeyW'],
   menuDown: ['ArrowDown', 'KeyS'],
-  drinkRestore: ['Digit1', 'Numpad1'],
-  drinkAttack: ['Digit2', 'Numpad2'],
+  flask1: ['Digit1', 'Numpad1'],
+  flask2: ['Digit2', 'Numpad2'],
   item: ['KeyF'],
   devSprint: ['KeyG'],
 };
@@ -47,20 +47,20 @@ const PAD: Record<Action, number[]> = {
   music: [8],
   menuUp: [12],
   menuDown: [13],
-  drinkRestore: [14],
-  drinkAttack: [15],
+  flask1: [14],
+  flask2: [15],
   item: [3],
   devSprint: [10],
 };
 
 const KEY_GLYPH: Record<Action, string> = {
   attack: 'Click', shield: 'Shift', jump: 'Space', lock: 'Q', interact: 'E',
-  confirm: 'Enter', cancel: 'Esc', music: 'P', menuUp: 'W', menuDown: 'S', drinkRestore: '1', drinkAttack: '2', item: 'F', devSprint: 'G',
+  confirm: 'Enter', cancel: 'Esc', music: 'P', menuUp: 'W', menuDown: 'S', flask1: '1', flask2: '2', item: 'F', devSprint: 'G',
 };
 
 const PAD_GLYPH: Record<Action, string> = {
   attack: 'X', shield: 'LT', jump: 'A', lock: 'R3', interact: 'A',
-  confirm: 'A', cancel: 'B', music: 'Back', menuUp: '↑', menuDown: '↓', drinkRestore: '←', drinkAttack: '→', item: 'Y', devSprint: 'L3',
+  confirm: 'A', cancel: 'B', music: 'Back', menuUp: '↑', menuDown: '↓', flask1: '←', flask2: '→', item: 'Y', devSprint: 'L3',
 };
 
 /** The button label to show for an action on a device. */

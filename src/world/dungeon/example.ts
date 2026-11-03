@@ -40,7 +40,7 @@ export const EXAMPLE_DUNGEON: DungeonDef = {
     { kind: 'enemy', id: 'westThorn2', room: 'west', at: [7, 8], type: 'thornling' },
     { kind: 'chest', id: 'westChest', room: 'west', at: [5, 6], loot: { key: 'azure' }, appears: { cleared: 'west' } },
     { kind: 'switch', id: 'cellarSwitch', room: 'cellar', at: [7, 7] },
-    { kind: 'chest', id: 'upperChest', room: 'upper', at: [2, 16], loot: 'heart' },
+    { kind: 'chest', id: 'upperChest', room: 'upper', at: [2, 16], loot: { gems: 5 } },
     { kind: 'chest', id: 'vaultChest', room: 'vault', at: [4, 5], loot: 'bossKey' },
     { kind: 'sign', id: 'entrySign', room: 'entry', at: [2, 2], text: 'The keep remembers its keys.' },
     { kind: 'boss', id: 'keeper', room: 'boss', type: 'example' },

@@ -1,4 +1,4 @@
-// The village: Tobin's mill key, the mill (bed, exit) and Odo's Stoneward Tunic.
+// The village: Tobin's mill key, the mill (bed, exit), Odo's Stoneward Tunic and flask refills.
 export const fixture = 'field-sword';
 
 export default async function run(t) {
@@ -53,6 +53,18 @@ export default async function run(t) {
     await finishScript(); // Enter picks "Buy"
     const r = await game(() => ({ gems: window.embervale.state.gems, has: window.embervale.state.has('village.stonewardTunic') }));
     check(r.has && r.gems === 30, `tunic ${r.has}, gems ${r.gems}`);
+  });
+
+  await step('Odo fills an empty flask for 20 gems', async () => {
+    await game(() => {
+      const s = window.embervale.state;
+      s.flasks.add('attack');
+      s.flasks.drink(0);
+    });
+    await press('KeyE');
+    await finishScript(); // Enter picks the first potion: Life
+    const r = await game(() => ({ gems: window.embervale.state.gems, slots: window.embervale.state.flasks.slots }));
+    check(r.slots[0] === 'life' && r.gems === 10, `flask ${r.slots[0]}, gems ${r.gems}`);
   });
 }
 

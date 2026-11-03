@@ -1,6 +1,6 @@
 import { SAVE_VERSION, type DungeonSave, type SaveData } from '../core/save';
 import { KEY_COLORS, type KeyColor } from '../world/dungeon/format';
-import { Drinks } from './drinks';
+import { Flasks } from './flasks';
 
 /**
  * Quest progress flags. Add new ones here (they're saved by name). Keep names stable once
@@ -63,8 +63,8 @@ export class GameState {
   area = 'overworld';
   readonly items = new Set<Item>();
   readonly dungeons = new Map<string, DungeonProgress>();
-  /** Single-use drinks found in chests (they refill when Wren dies). */
-  readonly drinks = new Drinks();
+  /** Flasks found in chests: emptied by drinking, refilled only at Odo's stall. */
+  readonly flasks = new Flasks();
   gems = 0;
   maxHp = 6;
   hp = 6;
@@ -127,7 +127,7 @@ export class GameState {
     this.area = 'overworld';
     this.items.clear();
     this.dungeons.clear();
-    this.drinks.clear();
+    this.flasks.clear();
     this.gems = 0;
     this.maxHp = this.hp = 6;
     this.hours = 9;
@@ -142,7 +142,7 @@ export class GameState {
       area: this.area,
       items: [...this.items],
       dungeons: Object.fromEntries([...this.dungeons].map(([id, d]) => [id, d.toSave()])),
-      drinks: this.drinks.toSave(),
+      flasks: this.flasks.toSave(),
       gems: this.gems,
       hp: this.hp,
       maxHp: this.maxHp,
@@ -160,7 +160,7 @@ export class GameState {
     this.area = d.area;
     for (const i of d.items) if ((ITEMS as readonly string[]).includes(i)) this.items.add(i as Item);
     for (const [id, ds] of Object.entries(d.dungeons)) this.dungeons.set(id, DungeonProgress.from(ds));
-    this.drinks.load(d.drinks);
+    this.flasks.load(d.flasks);
     this.gems = d.gems;
     this.maxHp = d.maxHp;
     // Like the classics: you always continue with at least three hearts.

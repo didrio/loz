@@ -267,12 +267,12 @@ describe('shrine content', () => {
     expect(area.switches.get('plateB')!.pressed).toBe(true);
   });
 
-  it('a drink chest adds a drink; a stone bounced off a wall shoves Wren back', async () => {
+  it('a flask chest adds a full flask; a stone bounced off a wall shoves Wren back', async () => {
     const { area, content, api, runQueued, pushes } = setup();
     content.start!(api);
     await runQueued();
-    await content.scripts.courtDrinkChest(api);
-    expect(api.state.drinks.left.get('attack')).toBe(1);
+    await content.scripts.courtFlaskChest(api);
+    expect(api.state.flasks.slots).toEqual(['life']);
     // The doorway stone, pushed north to the wall, then struck against it.
     const st = () => area.stones.get('entryStone')!.group.position;
     for (let k = 0; k < 4; k++) {
@@ -286,10 +286,10 @@ describe('shrine content', () => {
     const state = new GameState();
     const p = state.dungeon('shrine');
     p.doors.add('tetherDoor');
-    p.chests.add('courtDrinkChest');
+    p.chests.add('courtFlaskChest');
     let s = setup(state);
     expect(s.area.doors.get('tetherDoor')!.open).toBe(true);
-    expect(s.area.chests.get('courtDrinkChest')!.opened).toBe(true);
+    expect(s.area.chests.get('courtFlaskChest')!.opened).toBe(true);
     p.done = true;
     s = setup(state);
     await s.content.scripts.exit(s.api);

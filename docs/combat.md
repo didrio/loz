@@ -77,9 +77,11 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
 - Attacks on Wren go through `hitPlayer(from, attack)`: the shield stops frontal hits
   unless `unblockable`; `groundOnly` attacks (shockwaves) miss while airborne; the 1.2 s
   after a hit is untouchable. Results: `hit` / `blocked` / `broken` / `miss`.
-- **Drinks** (`game/drinks.ts`): the Ember Tonic doubles sword damage for 30 s (the blade
-  glows; a bar drains under its HUD slot), the Restoring Draught refills every heart. Each is
-  single-use until Wren dies, when every drink found refills.
+- **Flasks** (`game/flasks.ts`): two exist, found full; each holds one potion. The attack
+  potion doubles sword damage for 30 s (the blade glows; a bar drains under the flask row),
+  the life potion refills every heart (refused at full hearts, so it isn't wasted). Drinking
+  empties the flask; death does not refill it (and ends an attack potion). Odo refills an
+  empty flask with either potion for 20 gems (`REFILL_PRICE`).
 - Possible future depth, not built: a **perfect block** (raise the shield just before
   impact) that costs no guard. The guard break deliberately stops the hit that broke it:
   the punishment is the stagger, not damage on top.

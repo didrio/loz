@@ -70,8 +70,8 @@ indoor `Area` with no ceiling mesh (walls stop the camera), one warm flickering 
 
 **Choices and sleeping**: `api.ask(pages, options)` is `say` whose last page ends in a
 choice list (menu up/down, confirm); it resolves with the index. `content/shop.ts`
-`offerWare(api, pages, price)` wraps it as Buy / Not now and takes the gems: every shop
-uses it. The clock stands still indoors *except during a warp* (`warpTime`), which is how the
+`offerWares(api, pages, wares)` wraps it as a list of priced wares plus Not now and takes
+the gems (or reports `short`): every shop uses it. The clock stands still indoors *except during a warp* (`warpTime`), which is how the
 bed jumps to the next 06:00 / 18:00 (`wakeHour` in `content/mill.ts`).
 
 **Indoor areas** (`Area.indoor`, the dungeons): the sky, sun disc and stars are hidden and
@@ -125,7 +125,7 @@ Code reads **actions**, never keys. Bindings:
 | interact | E (or Enter) | A |
 | confirm · cancel | Enter/Space/E/click · Esc | A/Start · B |
 | music on/off | P | Back |
-| drink: Restoring Draught · Ember Tonic | 1 · 2 | d-pad ← · → |
+| drink flask 1 · flask 2 (`flask1`, `flask2`) | 1 · 2 | d-pad ← · → |
 | dev sprint (dev builds / `?debug` only) | G | L3 (left stick click) |
 
 Gamepad A both talks and jumps: the game checks `interact` first (the classic context
@@ -160,11 +160,10 @@ keys held in the current dungeon; the HUD shows both. Add flags to `FLAGS`; **ne
 (e.g. `shrine.bigKey`); the original seven overworld flags keep their plain names forever. Village flags so far:
 `village.millKey` (Tobin's gift), `village.stonewardTunic` (bought from Odo).
 Saves are versioned JSON (`embervale:save:0`), validated and repaired on load; bump
-`SAVE_VERSION` only with a migration in `decodeSave`. `SAVE_VERSION` is 4 (v4: a dungeon's `keys` is a list of colors, not a count; a v3 count loads
+`SAVE_VERSION` only with a migration in `decodeSave`. `SAVE_VERSION` is 5 (v5: `flasks`, a list with one potion id or null per flask owned, replaces `drinks`; v3/v4 drinks load as a flask per kind found, full if any was left. v4: a dungeon's `keys` is a list of colors, not a count; a v3 count loads
 as none and the shrine's `restore` re-derives held keys from opened key chests whose door is still shut): v1 saves (which
 held flute songs) load with the songs dropped and 0 keys; v1/v2 load in the overworld with
-no items or dungeon progress. Saved: flags, keys, area, items, dungeons, drinks (found and left;
-added within v3, absent means none), gems, hearts, clock. Not saved: position (continue starts at the saved area's spawn, e.g. a dungeon's
+no items or dungeon progress. Saved: flags, keys, area, items, dungeons, flasks, gems, hearts, clock. Not saved: position (continue starts at the saved area's spawn, e.g. a dungeon's
 entrance, with at least 3 hearts), enemies, cut bushes, where stones were pushed. Autosave: after every script, every 30 s of play, and on page
 hide. Settings (`embervale:settings`): music. Storage goes through `KeyValueStore` so the
 desktop build can write real files.

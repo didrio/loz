@@ -23,8 +23,8 @@ As of 2026-11-02: Emberfield (the valley) plays start to finish: the Hollow Lamp
 only), the quest thread, all music, and the village (Tobin's mill with a bed, Odo's stall selling
 the Stoneward Tunic). **The Waking Shrine** (25 rooms, four wings) is playable up to the boss
 door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy feel is untuned until played.
-**Next, the owner's playtest tweaks** ([docs/roadmap.md](docs/roadmap.md), A–D, F and G done):
-**E** flasks (plan mode) is next; then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
+The owner's playtest tweaks A–G are done ([docs/roadmap.md](docs/roadmap.md)); E made the two
+flasks (refilled at Odo's, 20 gems). **Next: shrine milestone 6** (Gravelheart and its music), then 7 (the Northpass), 8 (polish).
 
 ## Docs: read the one for the area you're touching
 
@@ -145,12 +145,12 @@ src/
     enemyTestEnv.ts        the stand-in game enemy unit tests run against
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter
     lockon.ts              which enemy lock-on picks (same level, in sight)
-    drinks.ts              single-use drinks (found / left, refilled on death): Restoring Draught, Ember Tonic
+    flasks.ts              the two flasks (life / attack potion; drinking empties one, Odo refills it)
     camera.ts, dialog.ts (say + ask: yes/no choices), pickups.ts, state.ts, debug.ts
   content/                 the game's story; what things DO
     areas.ts               createArea(id): builds an area and binds its content
     overworld.ts           scripts for every overworld interactable/trigger, save restore
-    mill.ts, shop.ts       Tobin's mill (bed, exit); offerWare, the shared Buy / Not now offer
+    mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
     shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
     fakeApi.ts             the fake ScriptApi content tests run against
     story.ts               intro, death
@@ -181,10 +181,10 @@ CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/ (scout,
   with at least 3 hearts.
 - **The checkpoint rule** (a Souls-leaning choice, owner's call): dying sends Wren back to the
   area's start with full hearts; keys, items, opened chests and doors, pressed switches stay,
-  but every enemy respawns and every drink found refills. Shortcuts matter because of it.
+  but every enemy respawns. Flasks don't refill (only Odo fills them, for gems). Shortcuts matter because of it.
   Rooms stay cleared (their chests stay revealed).
-- No map or compass (owner's call): dungeon chests hold keys, items, drinks (single-use,
-  refilled on death: `game/drinks.ts`) and gems instead. Every interactable thing must serve
+- No map or compass (owner's call): dungeon chests hold keys, items, flasks (`game/flasks.ts`)
+  and gems instead. Max hearts grow only from bosses (no heart chests in dungeons). Every interactable thing must serve
   a purpose (the puzzle checker fails a stone that doesn't).
 - A dungeon's small keys are colored (one chest, one door each) and only open that dungeon's doors. Dungeons are never sealed: the
   entrance is an open doorway you can walk out of any time (owner's call, 2026-11-02; no

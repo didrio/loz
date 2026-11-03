@@ -109,9 +109,9 @@ function drawFloor(def: DungeonDef, rooms: Map<string, RoomDef>, floor: number) 
 }
 
 function lootName(l: Loot) {
-  if (typeof l === 'string') return { bossKey: 'boss key', heart: 'heart' }[l];
+  if (typeof l === 'string') return 'boss key';
   if ('key' in l) return `${l.key} key`;
-  if ('drink' in l) return `drink: ${l.drink}`;
+  if ('flask' in l) return `flask: ${l.flask}`;
   return 'item' in l ? `item: ${l.item}` : `${l.gems} gems`;
 }
 

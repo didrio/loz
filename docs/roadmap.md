@@ -29,15 +29,11 @@ Next, in order:
      20 gems.
    - ~~D: village~~ **done**: Tobin's mill (a `MillInterior` area, bed), Odo's stall; `api.ask` and
      `content/shop.ts` `offerWare` are what E reuses for flask refills.
-   - **E: flasks** (**plan mode**, new system + save change). Replaces the drinks that
-     refill on death (`game/drinks.ts`). Exactly two flasks exist, both found already full: a
-     life flask (red) and an attack flask (orange/yellow). Drinking empties it (empty bottle,
-     same HUD spot). Death does NOT refill them. Once Wren owns at least one flask, the merchant
-     refills empty flasks one at a time, 20 gems each, with a choice of life or attack potion.
-     Shrine data: Echo Hall's heart chest (`echoChest`) becomes one flask; the other is one of
-     the existing drink chests; remove the third drink chest (check for rooms with two chests).
-     Update the checkpoint rule in AGENTS.md, combat.md, shrine.md ("drinks refill on death"),
-     the save format (migration) and the HUD. Check the gem economy (gems now pay for refills).
+   - ~~E: flasks~~ **done**: `game/flasks.ts` replaces the drinks. Two flasks (life in the
+     Sunken Court, attack in the Echo Hall), each holding either potion; death doesn't refill;
+     Odo fills one empty flask per purchase (20 gems, Wren picks the potion). The heal chests
+     went (Ossuary: 25 gems; Key Vault's drink chest removed); `SAVE_VERSION` 5. Gem economy:
+     95 in the shrine plus bushes, against the 100-gem tunic and 20 per refill; untested by play.
    - ~~G: text and dialog quality pass~~ done (the owner still reads it in-game; tone is theirs).
    - ~~F: dungeon fixes~~ done (beaten challenge rooms stay empty; sentinel windup sound shortened).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status

@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { easeInOut } from '../core/math';
 import { HollowLamplighter } from '../game/bosses/lamplighter';
-import type { Script, ScriptApi } from '../game/script';
+import type { Page, Script, ScriptApi } from '../game/script';
 import type { GameState } from '../game/state';
 import { glow } from '../render/shapes';
 import type { Overworld } from '../world/overworld';
 import { HOLLOW, HOLLOW_ENTRANCE } from '../world/overworld/layout';
-import { offerWare } from './shop';
+import { POTIONS, REFILL_PRICE, type Potion } from '../game/flasks';
+import { offerWares, type Ware } from './shop';
 
 /** What a loaded area needs from content: scripts by interactable/trigger id, and save restore. */
 export interface AreaContent {
@@ -247,26 +248,46 @@ export function overworldContent(ow: Overworld): AreaContent {
     async 'npc.odo'(api) {
       const { state } = api;
       const who = 'Odo the Peddler';
-      if (state.has('village.stonewardTunic')) {
+      const tunic = !state.has('village.stonewardTunic');
+      const empty = state.flasks.firstEmpty();
+      if (!tunic && empty < 0) {
         await api.say([{ who, text: state.isNight ? 'Slate in the lamplight. Very good, very mysterious. Stay safe out there.' : 'It suits you! Slate looks well on a hero. Come by if you need anything else.' }]);
         return;
       }
-      const result = await offerWare(api, [
-        { who, text: state.has('hasSword') ? 'A blade, and no armor! Gems for goods, friend. I carry what the valley forgot it needs.' : 'Gems for goods, friend! I carry what the valley forgot it needs.' },
-        { who, text: 'This is a *Stoneward Tunic*, woven with grit from the old shrine quarry. Statues and stone shells hit you *half as hard*. A bargain at 100 gems.' },
-      ], 100);
-      if (result === 'short') {
-        await api.say([{ who, text: `You're short, friend: 100 gems, and you have ${state.gems}. Those bushes by the fence grow back, you know.` }]);
-      } else if (result === 'declined') {
+      // What's on offer: the tunic until it's bought, a refill whenever a flask is empty.
+      const wares: (Ware & { potion?: Potion })[] = [];
+      const pages: Page[] = [{ who, text: state.has('hasSword') && tunic ? 'A blade, and no armor! Gems for goods, friend. I carry what the valley forgot it needs.' : 'Gems for goods, friend! I carry what the valley forgot it needs.' }];
+      if (tunic) {
+        wares.push({ label: 'Stoneward Tunic', price: 100 });
+        pages.push({ who, text: 'This is a *Stoneward Tunic*, woven with grit from the old shrine quarry. Statues and stone shells hit you *half as hard*. A bargain at 100 gems.' });
+      }
+      if (empty >= 0) {
+        for (const potion of ['life', 'attack'] as const) wares.push({ label: POTIONS[potion].name, potion, price: REFILL_PRICE });
+        pages.push({ who, text: `That flask of yours is dry. I'll fill it for ${REFILL_PRICE} gems: *Life Potion* brings every heart back, *Attack Potion* doubles your sword's bite for half a minute. One flask at a time, mind.` });
+      }
+      const result = await offerWares(api, pages, wares);
+      if (result === 'declined') {
         await api.say([{ who, text: 'Take your time. I\'m not going anywhere. Stalls don\'t walk.' }]);
+      } else if ('short' in result) {
+        await api.say([{ who, text: `You're short, friend: ${result.short.price} gems, and you have ${state.gems}. Those bushes by the fence grow back, you know.` }]);
       } else {
-        state.set('village.stonewardTunic');
-        api.player.setStoneward(true);
-        api.sfx.fanfare();
-        await api.say([
-          { text: 'You got the *Stoneward Tunic*!\nStone hits (statues, shells) do half damage. Your tunic turns slate-blue.' },
-          { who, text: 'Wear it in good health!' },
-        ]);
+        const potion = wares[result.bought].potion;
+        if (potion) {
+          state.flasks.fill(empty, potion);
+          api.sfx.heart();
+          await api.say([
+            { text: `Odo fills your flask with *${POTIONS[potion].name}*.` },
+            { who, text: potion === 'life' ? 'Red as a sunset. Don\'t wait for your last heart.' : 'Careful, it fizzes. Save it for something with a lot of stone in it.' },
+          ]);
+        } else {
+          state.set('village.stonewardTunic');
+          api.player.setStoneward(true);
+          api.sfx.fanfare();
+          await api.say([
+            { text: 'You got the *Stoneward Tunic*!\nStone hits (statues, shells) do half damage. Your tunic turns slate-blue.' },
+            { who, text: 'Wear it in good health!' },
+          ]);
+        }
       }
     },
 

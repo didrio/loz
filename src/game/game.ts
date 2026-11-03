@@ -18,8 +18,7 @@ import { Debug } from './debug';
 import { Dialog } from './dialog';
 import { EnemyManager, type Enemy } from './enemies';
 import { Hazards } from './hazards';
-import { ATTACK_BOOST_SECONDS, DRINK_ORDER } from './drinks';
-import type { DrinkId } from '../world/dungeon/format';
+import { ATTACK_BOOST_SECONDS, MAX_FLASKS } from './flasks';
 import { Pickups } from './pickups';
 import { NO_CONTROLS, Player, type Controls } from './player';
 import type { Page, Script, ScriptApi } from './script';
@@ -257,7 +256,7 @@ export class Game implements ScriptApi {
       return;
     }
 
-    for (const id of DRINK_ORDER) if (this.input.pressed(id === 'restore' ? 'drinkRestore' : 'drinkAttack')) this.drink(id);
+    for (let i = 0; i < MAX_FLASKS; i++) if (this.input.pressed(i === 0 ? 'flask1' : 'flask2')) this.drink(i);
 
     // What you can interact with gets its prompt floating over it, not in the corner.
     const actions: [Action, string][] = [];
@@ -348,7 +347,7 @@ export class Game implements ScriptApi {
     this.sky.gloom += (gloomTarget - this.sky.gloom) * Math.min(1, rawDt * 1.5);
     hud.setHearts(state.hp, state.maxHp);
     hud.setGems(state.gems);
-    hud.setDrinks(DRINK_ORDER.filter((id) => (state.drinks.found.get(id) ?? 0) > 0).map((id) => ({ id, left: state.drinks.left.get(id) ?? 0 })), player.attackBoost / ATTACK_BOOST_SECONDS, state.items.has('tether'));
+    hud.setFlasks(state.flasks.slots, player.attackBoost / ATTACK_BOOST_SECONDS, state.items.has('tether'));
     hud.setKeys(state.keysHere, state.dungeonKeysHere, !!state.dungeons.get(state.area)?.bossKey);
     hud.setClock(state.hours, state.day);
     if (this.mode !== 'play') hud.setActions([]);
@@ -475,15 +474,20 @@ export class Game implements ScriptApi {
     this.warpTo = toHour;
   }
 
-  /** Drinks one of the single-use draughts, if there's one left. */
-  drink(id: DrinkId) {
-    if (!this.state.drinks.use(id)) {
+  /**
+   * Drinks flask `i`, if it holds anything. A life potion at full hearts is refused, not
+   * wasted: flasks don't refill on their own.
+   */
+  drink(i: number) {
+    const potion = this.state.flasks.slots[i];
+    if (!potion || (potion === 'life' && this.state.hp >= this.state.maxHp)) {
       this.sfx.denied();
       return;
     }
+    this.state.flasks.drink(i);
     this.sfx.drink();
     const at = this.player.pos.clone().setY(this.player.pos.y + 1.2);
-    if (id === 'restore') {
+    if (potion === 'life') {
       this.state.hp = this.state.maxHp;
       this.sfx.heart();
       this.particles.burst(at, 0xff6080, 20, 3, 0.9, false);
@@ -495,8 +499,7 @@ export class Game implements ScriptApi {
 
   respawn() {
     this.player.revive();
-    // The checkpoint rule: every drink found is back, and any tonic has worn off.
-    this.state.drinks.refill();
+    // The checkpoint rule: any attack potion wears off. Empty flasks stay empty.
     this.player.attackBoost = 0;
     this.placeAtSpawn();
     this.hazards.clear();

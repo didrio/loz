@@ -5,7 +5,7 @@ import { buildHumanoid, type Humanoid } from '../render/characters';
 import { isSharedMaterial, mat, uniqueMat } from '../render/materials';
 import type { Area } from '../world/area';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
-import { ATTACK_BOOST } from './drinks';
+import { ATTACK_BOOST } from './flasks';
 import { Guard } from './guard';
 
 /** What the player wants to do this frame, in world space. Built from input, or by scripts. */

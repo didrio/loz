@@ -1,8 +1,8 @@
 import { ACTIONS, glyph, type Action, type Device } from '../core/input';
-import { DRINKS } from '../game/drinks';
-import { KEY_HEX, type DrinkId, type KeyColor } from '../world/dungeon/format';
+import { POTIONS } from '../game/flasks';
+import { KEY_HEX, type KeyColor, type Potion } from '../world/dungeon/format';
 
-/** A little corked bottle in a drink's color. */
+/** A little corked bottle in a potion's color (a pale glass one when empty). */
 const bottle = (color: string) => `<svg class="bottle" viewBox="0 0 16 22" width="16" height="22" aria-hidden="true">
   <rect x="5.5" y="1" width="5" height="3" rx="1" fill="#8a5a2b" stroke="#2a1a0a" stroke-width="1"/>
   <path d="M6 4 V8 Q2 10 2 14 V18 Q2 21 5 21 H11 Q14 21 14 18 V14 Q14 10 10 8 V4 Z" fill="${color}" stroke="#2a1a0a" stroke-width="1.2"/>
@@ -240,16 +240,18 @@ export class Hud {
   }
 
   /**
-   * The drinks Wren has found: a bottle each, how many are left, and its button. Empty ones
-   * dim (they refill on death). `boost`: how much of an Ember Tonic is left (0–1).
+   * The glove (once held) and the flasks Wren owns: a bottle each in its potion's color, or
+   * an empty one, with its button. `boost`: how much of an attack potion is left (0–1),
+   * shown under the item row while it lasts.
    */
-  setDrinks(list: { id: DrinkId; left: number }[], boost: number, glove = false) {
+  setFlasks(slots: readonly (Potion | null)[], boost: number, glove = false) {
     const item = glove ? `<div class="drink" title="Tether Glove">${gloveIcon}${this.key('item')}</div>` : '';
-    const html = item + list.map(({ id, left }) => {
-      const action: Action = id === 'restore' ? 'drinkRestore' : 'drinkAttack';
-      const bar = id === 'attack' && boost > 0 ? `<span class="boost"><span style="width:${Math.round(boost * 100)}%"></span></span>` : '';
-      return `<div class="drink${left > 0 ? '' : ' empty'}" title="${escape(DRINKS[id].name)}">${bottle(DRINKS[id].color)}<span class="drink-count">×${left}</span>${this.key(action)}${bar}</div>`;
-    }).join('');
+    const bar = boost > 0 ? `<span class="boost"><span style="width:${Math.round(boost * 100)}%"></span></span>` : '';
+    const html = item + slots.map((p, i) => {
+      const action: Action = i === 0 ? 'flask1' : 'flask2';
+      const title = p ? POTIONS[p].name : 'Empty flask';
+      return `<div class="drink${p ? '' : ' empty'}" title="${escape(title)}">${bottle(p ? POTIONS[p].color : 'rgba(205, 230, 238, 0.35)')}${this.key(action)}</div>`;
+    }).join('') + bar;
     if (html === this.drinksHtml) return;
     this.drinksHtml = html;
     this.drinks.innerHTML = html;

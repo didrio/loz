@@ -51,8 +51,8 @@ describe('dungeon format', () => {
     expect(errs({ doors: [...doors, { id: 'skip', from: 'entry', to: 'upper', kind: 'stairs' }] })).toMatch(/don't overlap in plan/);
     expect(errs({ doors: [...doors, { id: 'floors', from: 'east', to: 'upper' }] })).toMatch(/use kind: 'stairs'/);
     expect(errs({ doors: [...doors, { id: 'sw', from: 'hall', to: 'west', lock: { switch: 'nope' } }] })).toMatch(/unknown switch "nope"/);
-    expect(errs({ things: [...things, { kind: 'chest', id: 'hallChest', room: 'hall', at: [1, 1], loot: 'heart' }] })).toMatch(/Duplicate id "hallChest"/);
-    expect(errs({ things: [...things, { kind: 'chest', id: 'far', room: 'hall', at: [40, 1], loot: 'heart' }] })).toMatch(/outside room "hall"/);
+    expect(errs({ things: [...things, { kind: 'chest', id: 'hallChest', room: 'hall', at: [1, 1], loot: { gems: 5 } }] })).toMatch(/Duplicate id "hallChest"/);
+    expect(errs({ things: [...things, { kind: 'chest', id: 'far', room: 'hall', at: [40, 1], loot: { gems: 5 } }] })).toMatch(/outside room "hall"/);
     expect(errs({ goal: 'nowhere' })).toMatch(/unknown room "nowhere"/);
     // Vertical mistakes: a room poking into the floor above, stairs that don't fit or
     // collide, things on a staircase, a pit over another room.
@@ -60,7 +60,7 @@ describe('dungeon format', () => {
     expect(errs({ rooms: tall })).toMatch(/"east" is too tall: it reaches into "upper"/);
     const short = doors.map((d) => (d.id === 'eastStairs' ? { ...d, at: [5, 8] as const } : d));
     expect(errs({ doors: short })).toMatch(/don't fit inside room "upper"/);
-    expect(errs({ things: [...things, { kind: 'chest', id: 'onStairs', room: 'east', at: [5, 8], loot: 'heart' }] })).toMatch(/"onStairs" stands on "eastStairs"/);
+    expect(errs({ things: [...things, { kind: 'chest', id: 'onStairs', room: 'east', at: [5, 8], loot: { gems: 5 } }] })).toMatch(/"onStairs" stands on "eastStairs"/);
     expect(errs({ things: [...things, { kind: 'enemy', id: 'onStairs2', room: 'east', at: [5, 8], type: 'thornling' }] })).toMatch(/"onStairs2" stands on "eastStairs"/);
     expect(errs({ things: [...things, { kind: 'enemy', id: 'byStairs', room: 'east', at: [3, 8], type: 'thornling' }] })).toMatch(/"byStairs" is too close to the stairs "eastStairs"/);
     const pitOverRoom = rooms.map((r) => (r.id === 'upper' ? { ...r, features: [{ kind: 'pit' as const, x: 1, z: 15, w: 2, d: 2 }] } : r));

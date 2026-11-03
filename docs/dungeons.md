@@ -54,7 +54,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   rooms, so keep one theme per floor (a wing). Decoration in rooms with stones is
   wall-mounted or flat; free-standing statues only go where no stone can slide.
 - **Things** sit in a room at `at` (relative to the room's corner): `chest` (with `loot`:
-  `{ key: color }`, `bossKey`, `heart`, `{ item }`, `{ gems }`, `{ drink }`, optionally
+  `{ key: color }`, `bossKey`, `{ item }`, `{ gems }`, `{ flask: 'life' | 'attack' }` (a full flask), optionally
   `appears` after a switch, after several (`switches`), or once a room is cleared), `switch` (`style: 'crystal'` struck
   with the sword, or `'plate'` held down by a stone; `needs: item` if pressing it takes a
   tool), `stone` (a 2 m wakestone, `heavy` ones only move with the glove; stones and

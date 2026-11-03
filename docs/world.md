@@ -77,7 +77,7 @@ in.
   Wren is armed he gives the **Mill Key** (`village.millKey`); the windmill's door (west side of
   the square) opens onto his mill, where the bed sleeps to the next 06:00/18:00 and fully
   heals.
-- **Odo the Peddler**: warm, wry (he remarks on a sword without armor, and on the tunic by day or night); a stall beside the well. Sells the **Stoneward Tunic**
+- **Odo the Peddler**: warm, wry (he remarks on a sword without armor, and on the tunic by day or night); a stall beside the well. Refills empty flasks and sells the **Stoneward Tunic**
   (100 gems; stone hits do half damage, rounded up; Wren's tunic turns slate-blue). Flask
   refills (roadmap E) will be sold here through the same `offerWare`.
 - **The Hollow Lamplighter**, Keeper of a Stolen Flame (mini-boss, Gloaming Hollow): a
@@ -101,9 +101,10 @@ in.
   Warden, and the Northpass (Emberfield's exit, blocked by a heavy wakestone).
 - **Pickups**: green gem (1), blue gem (5), heart. **Heart Vessel**: +1 heart container.
   **Small Key**: opens one padlock or locked door (`GameState.keys`, shown under the gems).
-- **Drinks** (found in dungeon chests; single-use, refilled when Wren falls): the
-  **Restoring Draught** (red bottle: every heart back) and the **Ember Tonic** (amber bottle:
-  the sword hits twice as hard for 30 seconds). More kinds can come later.
+- **Flasks**: exactly two, found full in the Waking Shrine (life in the Sunken Court,
+  attack in the Echo Hall). A flask holds one potion: **Life Potion** (red: every heart back)
+  or **Attack Potion** (amber: the sword hits twice as hard for 30 seconds). Drunk, it stays
+  empty, even through death, until Odo fills it (20 gems, either potion, one flask at a time).
 - **Wakestones**: light ones are pale with green spirals (the sword moves them); heavy ones
   are dark violet banded in bronze with glowing teal spirals (only the Tether Glove moves
   them).

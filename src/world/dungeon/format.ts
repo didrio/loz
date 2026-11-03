@@ -125,10 +125,10 @@ export interface DoorDef {
   up?: Dir;
 }
 
-/** The single-use drinks found in dungeon chests (see `game/drinks.ts`). */
-export type DrinkId = 'restore' | 'attack';
+/** What a flask can hold; a flask chest gives a full flask (see `game/flasks.ts`). */
+export type Potion = 'life' | 'attack';
 
-export type Loot = { key: KeyColor } | 'bossKey' | 'heart' | { item: string } | { gems: number } | { drink: DrinkId };
+export type Loot = { key: KeyColor } | 'bossKey' | { item: string } | { gems: number } | { flask: Potion };
 
 /** When something appears: after a switch (or all of several) is pressed, or once a room is cleared of enemies. */
 export type Condition = { switch: string } | { switches: string[] } | { cleared: string };

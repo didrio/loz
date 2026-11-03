@@ -142,7 +142,7 @@ export const SHRINE: DungeonDef = {
     { kind: 'stone', id: 'courtStoneA', room: 'sunkenCourt', at: [7, 7] },
     { kind: 'stone', id: 'courtStoneB', room: 'sunkenCourt', at: [3, 7] },
     { kind: 'chest', id: 'courtChest', room: 'sunkenCourt', at: [16, 9], loot: { key: 'jade' } },
-    { kind: 'chest', id: 'courtDrinkChest', room: 'sunkenCourt', at: [16, 3], loot: { drink: 'attack' } },
+    { kind: 'chest', id: 'courtFlaskChest', room: 'sunkenCourt', at: [16, 3], loot: { flask: 'life' } },
     // ── Long Gallery.
     // Landmark: the watcher, in the middle of the hall facing east, its arm pointing north along the gallery.
     { kind: 'landmark', id: 'galleryWatcher', room: 'gallery', at: [5, 9], style: 'watcher', facing: Math.PI / 2 },
@@ -168,7 +168,7 @@ export const SHRINE: DungeonDef = {
     { kind: 'enemy', id: 'echoSentinel2', room: 'echoHall', at: [9, 4], type: 'sentinel' },
     { kind: 'enemy', id: 'echoShell1', room: 'echoHall', at: [3, 10], type: 'shellback' },
     { kind: 'enemy', id: 'echoShell2', room: 'echoHall', at: [9, 10], type: 'shellback' },
-    { kind: 'chest', id: 'echoChest', room: 'echoHall', at: [6, 7], loot: 'heart', appears: { cleared: 'echoHall' } },
+    { kind: 'chest', id: 'echoChest', room: 'echoHall', at: [6, 7], loot: { flask: 'attack' }, appears: { cleared: 'echoHall' } },
     // ── Stone Loft: the glove's first puzzle. Pull the heavy stone onto the plate: a key.
     { kind: 'stone', id: 'loftStone', room: 'loft', at: [3, 9], heavy: true },
     { kind: 'switch', id: 'loftPlate', room: 'loft', at: [13, 9], style: 'plate', needs: 'tether' },
@@ -192,7 +192,7 @@ export const SHRINE: DungeonDef = {
     { kind: 'enemy', id: 'ossShell1', room: 'ossuary', at: [3, 4], type: 'shellback' },
     { kind: 'enemy', id: 'ossShell2', room: 'ossuary', at: [11, 4], type: 'shellback' },
     { kind: 'enemy', id: 'ossSentinel', room: 'ossuary', at: [3, 16], type: 'sentinel' },
-    { kind: 'chest', id: 'ossChest', room: 'ossuary', at: [11, 18], loot: 'heart', appears: { cleared: 'ossuary' } },
+    { kind: 'chest', id: 'ossChest', room: 'ossuary', at: [11, 18], loot: { gems: 25 }, appears: { cleared: 'ossuary' } },
     // ── Cistern: a water channel across the room; one stone pushed in makes a crossing.
     { kind: 'stone', id: 'cisternStone', room: 'cistern', at: [5, 3] },
     { kind: 'chest', id: 'cisternChest', room: 'cistern', at: [17, 12], loot: { gems: 30 } },
@@ -215,7 +215,6 @@ export const SHRINE: DungeonDef = {
     { kind: 'stone', id: 'vaultHeavy', room: 'keyVault', at: [3, 15], heavy: true },
     { kind: 'switch', id: 'vaultPlateB', room: 'keyVault', at: [11, 17], style: 'plate', needs: 'tether', hold: true },
     { kind: 'chest', id: 'bossKeyChest', room: 'keyVault', at: [7, 2], loot: 'bossKey', appears: { switches: ['vaultPlateA', 'vaultPlateB'] } },
-    { kind: 'chest', id: 'vaultDrinkChest', room: 'keyVault', at: [12, 2], loot: { drink: 'restore' } },
     // ── Antechamber.
     { kind: 'sign', id: 'anteSign', room: 'bossAnte', at: [8, 9], text: 'Something huge breathes beyond the door, slow as a hillside.' },
     // ── Warden's Hearth.

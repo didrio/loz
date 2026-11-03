@@ -5,7 +5,7 @@ import { Shellback } from '../game/shellback';
 import type { Script, ScriptApi } from '../game/script';
 import type { DungeonProgress, GameState } from '../game/state';
 import type { DungeonArea } from '../world/dungeon/build';
-import { floorY, keyName, lockSwitches, type Condition, type Loot } from '../world/dungeon/format';
+import { floorY, keyName, lockSwitches, type Condition, type Loot, type Potion } from '../world/dungeon/format';
 import type { AreaContent } from './overworld';
 
 /**
@@ -18,10 +18,15 @@ import type { AreaContent } from './overworld';
 
 const LOOT_TEXT: Record<string, string> = {
   bossKey: 'You found the *Boss Key*!\nIts great teeth fit the door to the shrine\'s keeper.',
-  heart: 'A *Heart*! You feel completely restored.',
-  restore: 'You found a *Restoring Draught*!\n[drinkRestore] drinks it and restores every heart. Once drunk it\'s gone, until you fall and every drink you\'ve found fills again.',
-  attack: 'You found an *Ember Tonic*!\n[drinkAttack] drinks it, and your sword strikes twice as hard for 30 seconds. It fills again when you fall.',
   tether: 'You got the *Tether Glove*!\nA glowing cord coils around the old leather and tugs toward the shrine\'s stones, as if it knows them.',
+};
+
+/** A flask chest's message; `slot` is the flask's button (flask1, flask2). */
+const flaskText = (potion: Potion, slot: number) => {
+  const key = `[flask${slot + 1}]`;
+  return potion === 'life'
+    ? `You found a flask of *Life Potion*!\n${key} drinks it, and every heart comes back. Then the flask stays empty, until Odo in Thistledown fills it for a few gems.`
+    : `You found a flask of *Attack Potion*!\n${key} drinks it, and your sword strikes twice as hard for 30 seconds. Odo in Thistledown refills empty flasks.`;
 };
 
 export function shrineContent(area: DungeonArea): AreaContent {
@@ -64,11 +69,11 @@ export function shrineContent(area: DungeonArea): AreaContent {
   );
   const alive = (room: string) => (roomEnemies.get(room) ?? []).some((e) => e.alive);
 
-  const lootMessage = (loot: Loot) => {
+  const lootMessage = (api: ScriptApi, loot: Loot) => {
     if (typeof loot === 'string') return LOOT_TEXT[loot];
     if ('key' in loot) return `You found the *${keyName(loot.key)}*!\nIt opens one locked door in this shrine: the ${loot.key} one.`;
     if ('item' in loot) return LOOT_TEXT[loot.item] ?? `You got the *${loot.item}*!`;
-    if ('drink' in loot) return LOOT_TEXT[loot.drink];
+    if ('flask' in loot) return flaskText(loot.flask, api.state.flasks.slots.length - 1);
     return `You found ${loot.gems} gems!`;
   };
 
@@ -92,7 +97,6 @@ export function shrineContent(area: DungeonArea): AreaContent {
       api.particles.burst(chest.group.position.clone().setY(chest.group.position.y + 1.2), 0xfff1a8, 30, 4, 1.2, false);
       const loot = t.loot;
       if (loot === 'bossKey') p.bossKey = true;
-      else if (loot === 'heart') api.state.heal(api.state.maxHp);
       else if ('key' in loot) p.keys.add(loot.key);
       else if ('item' in loot) {
         if (loot.item === 'tether') {
@@ -104,9 +108,9 @@ export function shrineContent(area: DungeonArea): AreaContent {
           api.sfx.tetherLatch();
           await api.wait(1.2);
         }
-      } else if ('drink' in loot) api.state.drinks.add(loot.drink);
+      } else if ('flask' in loot) api.state.flasks.add(loot.flask);
       else api.state.addGems(loot.gems);
-      await api.say([{ text: lootMessage(loot) }]);
+      await api.say([{ text: lootMessage(api, loot) }]);
       if (typeof loot === 'object' && 'item' in loot && loot.item === 'tether') {
         api.releaseCamera();
         api.toast('[item] Throw the Tether Glove at a stone to pull it toward you.');

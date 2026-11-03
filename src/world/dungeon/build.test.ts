@@ -113,13 +113,13 @@ describe('the built shrine', () => {
     const { area } = setup();
     expect([...area.doors.keys()].sort()).toEqual(SHRINE.doors.filter((d) => !d.kind || d.kind === 'door').map((d) => d.id).sort());
     expect(area.chests.get('southChest')!.present).toBe(false); // appears when the cell is cleared
-    expect(area.chests.get('courtDrinkChest')!.present).toBe(true);
+    expect(area.chests.get('courtFlaskChest')!.present).toBe(true);
     expect(area.switches.get('navePlate')!.style).toBe('plate');
     expect(area.stones.get('loftStone')!.heavy).toBe(true);
     expect(area.spawns.find((s) => s.id === 'gravelheart')!.type).toBe('gravelheart');
     // Signs, chests, and every door with a lock (small, boss, bars) can be interacted with.
     const ids = area.interactables.map((i) => i.id);
-    for (const id of ['anteSign', 'entrySign', 'courtDrinkChest', 'southChest', 'tetherDoor', 'cryptPit', 'bossDoor', 'naveEast']) expect(ids, id).toContain(id);
+    for (const id of ['anteSign', 'entrySign', 'courtFlaskChest', 'southChest', 'tetherDoor', 'cryptPit', 'bossDoor', 'naveEast']) expect(ids, id).toContain(id);
     expect(ids).not.toContain('entryNave'); // an open doorway
     expect(area.triggers.map((t) => t.id)).toEqual(['exit']);
   });

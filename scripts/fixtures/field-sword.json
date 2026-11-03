@@ -1,11 +1,11 @@
 {
-  "version": 4,
+  "version": 5,
   "flags": ["metMaren", "gotGroveKey", "groveChestOpened", "hasSword"],
   "keys": 0,
   "area": "overworld",
   "items": [],
   "dungeons": {},
-  "drinks": {},
+  "flasks": [],
   "gems": 0,
   "hp": 6,
   "maxHp": 6,

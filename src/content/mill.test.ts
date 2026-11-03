@@ -124,4 +124,46 @@ describe('Tobin, the mill door and Odo', () => {
     await scripts['npc.odo'](api); // already owned: no choice, no charge
     expect(state.gems).toBe(30);
   });
+
+  it('Odo fills one empty flask at a time, 20 gems, with the potion Wren picks', async () => {
+    const { api, state, answers, asked, said } = fakeApi(ow, physics);
+    const { scripts } = overworldContent(ow);
+    state.set('village.stonewardTunic');
+    // No flasks, or all full: nothing to sell, no choice.
+    await scripts['npc.odo'](api);
+    state.flasks.add('life');
+    await scripts['npc.odo'](api);
+    expect(asked).toHaveLength(0);
+    state.flasks.add('attack');
+    state.flasks.drink(0);
+    state.flasks.drink(1);
+    state.gems = 19;
+    answers.push(1);
+    await scripts['npc.odo'](api);
+    expect(asked.at(-1)!.options).toEqual(['Life Potion (20 gems)', 'Attack Potion (20 gems)', 'Not now']);
+    expect(said.at(-1)!.text).toContain('short');
+    expect(state.flasks.slots).toEqual([null, null]);
+    state.gems = 45;
+    answers.push(1, 1); // attack, then attack again: both flasks the same potion
+    await scripts['npc.odo'](api);
+    await scripts['npc.odo'](api);
+    expect(state.flasks.slots).toEqual(['attack', 'attack']);
+    expect(state.gems).toBe(5);
+  });
+
+  it('Odo offers the tunic and a refill together, until the tunic is bought', async () => {
+    const { api, state, answers, asked } = fakeApi(ow, physics);
+    const { scripts } = overworldContent(ow);
+    state.flasks.add('life');
+    state.flasks.drink(0);
+    state.gems = 120;
+    answers.push(1); // Life Potion
+    await scripts['npc.odo'](api);
+    expect(asked.at(-1)!.options).toEqual(['Stoneward Tunic (100 gems)', 'Life Potion (20 gems)', 'Attack Potion (20 gems)', 'Not now']);
+    expect(state.flasks.slots).toEqual(['life']);
+    answers.push(0);
+    await scripts['npc.odo'](api);
+    expect(state.has('village.stonewardTunic')).toBe(true);
+    expect(state.gems).toBe(0);
+  });
 });

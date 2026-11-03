@@ -41,21 +41,22 @@ Gauntlet; jade (Sunken Court) → Ossuary; violet (Crypt) → Echo Hall; amber (
 
 **Route** (`npm run map -- shrine`): doorway stone → the
 Nave's plate opens the stairwell; the Sentinel Cell and the Sunken Court each give a key;
-the Gallery of Statues 20 gems, the Sunken Court an Ember Tonic. Upstairs, the Crystal Walk's
+the Gallery of Statues 20 gems, the Sunken Court the life flask. Upstairs, the Crystal Walk's
 three crystals open the Glove Shrine (fight → the glove); the Loft's heavy stone gives a key.
 Downstairs, keys open the Pit Hall and the Ossuary; the glove crosses the Pit Hall to the
 Root Cellar (a key); the Ossuary's stairs lead to the Deep Hearth, where a key opens the
 Gauntlet and the Key Vault's plate (glove) gives the boss key. The Gauntlet opens onto the
 Antechamber, whose stairs climb through the Deep Shaft to the Barred Cell's crystal: the
-shortcut back to the Nave. Optional: the Echo Hall (a key, the hardest fight upstairs, a
-heart), the Lookout and Cistern chests (gems), the Ossuary (a heart).
+shortcut back to the Nave. Optional: the Echo Hall (a key, the hardest fight upstairs, the
+attack flask), the Lookout and Cistern chests (gems), the Ossuary (25 gems).
 
-## Death, drinks and fairness (owner's direction, 2026-11-02)
+## Death, flasks and fairness (owner's direction, 2026-11-02)
 
 The shrine leans a little toward a Souls-like feel: dying sends Wren back to the Hall of
 Sleepers; keys, the glove, opened chests and doors, pressed switches and plates stay, but
-**every enemy respawns** (except in beaten challenge rooms, the ones a chest waits on: they stay empty and the chest stays) and **every drink found refills**. Chests hold two single-use drinks instead of a map and compass: the **Restoring
-Draught** (Key Vault) and the **Ember Tonic** (Sunken Court). Every
+**every enemy respawns** (except in beaten challenge rooms, the ones a chest waits on: they stay empty and the chest stays) but **flasks don't refill**. Instead of a map and compass, chests hold the game's two flasks, found
+full: **life** (Sunken Court) and **attack** (Echo Hall); Odo refills them in the village (20
+gems). No chest raises max hearts or heals: hearts come from bosses. Shrine gems: 95. Every
 stone has a purpose (the checker proves it), stones can't get stuck (bounce-back), and
 heavy stones look nothing like light ones (dark violet, bronze bands, glowing teal spirals).
 The Hall of Plates and the Key Vault use **hold plates**: two stones resting on two plates
@@ -195,7 +196,7 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
    here).
 8. **Polish**: decoration passes, smoke scenarios for the dungeon. (Dungeon music is done:
    "The Sleeping Stones".) **No map or compass** (owner's call, 2026-11-02): those chests hold
-   drinks instead.
+   the flasks instead.
 
 ## Open questions for the owner
 
