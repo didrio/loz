@@ -70,6 +70,55 @@ describe('Cragstalker', () => {
     expect(t).toBeGreaterThan(CRAGSTALKER_DAZED * 0.8);
   });
 
+  it('is relentless: a Wren who stands her ground is lunged at again and again, a few seconds apart', () => {
+    const { hits, run } = setup(new THREE.Vector3(0, 0, 4));
+    run(12, () => hits.length >= 4);
+    expect(hits.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('a lunge at close range is often, not always, followed at once by another crouch (a combo)', () => {
+    let combos = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const { c, hits, run } = setup(new THREE.Vector3(0, 0, 3.5));
+      c.rng = mulberry32(seed);
+      run(10, () => hits.length > 0);
+      let sawCrouch = false;
+      run(CRAGSTALKER_RECOVER + 0.1, () => (sawCrouch = sawCrouch || c.crouching));
+      if (sawCrouch) combos++;
+    }
+    expect(combos).toBeGreaterThan(3);
+    expect(combos).toBeLessThan(20);
+  });
+
+  it('stops dead where it hits Wren (the claws land, no sliding on through her)', () => {
+    const { c, hits, run } = setup(new THREE.Vector3(0, 0, 4));
+    run(10, () => hits.length > 0);
+    const at = c.pos.clone();
+    run(0.2);
+    expect(c.pos.distanceTo(at)).toBeLessThan(0.6);
+    expect(c.lunging).toBe(false);
+  });
+
+  it('never shoves another enemy or ends up inside one: a lunge into it just stops', () => {
+    for (let seed = 1; seed <= 12; seed++) {
+      const physics = flatGround();
+      const a = new Cragstalker(new THREE.Group(), physics, 0, 0);
+      const b = new Cragstalker(new THREE.Group(), physics, 0, 2.6); // stands in the way, not updated
+      a.rng = mulberry32(seed);
+      a.faceAngle(0);
+      const wren = new THREE.Vector3(0, 0, 6);
+      const { env } = enemyEnv(physics, wren);
+      const stay = b.pos.clone();
+      let closest = Infinity;
+      runEnemy(a, physics, env, 12, () => {
+        closest = Math.min(closest, Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z));
+        return false;
+      });
+      expect(b.pos.distanceTo(stay), `seed ${seed}`).toBe(0);
+      expect(closest, `seed ${seed}`).toBeGreaterThan(0.8);
+    }
+  });
+
   it('takes sword hits (6 HP) and dies', () => {
     const { c, run } = setup(new THREE.Vector3(0, 0, 40));
     run(0.1);

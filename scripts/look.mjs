@@ -793,39 +793,30 @@ const SCENES = {
   /** Wayfarers' Camp and the canyon beyond (shrine D3): the camp from its entrance, the post, the chasm and crossing from both sides, the Cragstalker and the bell behind it. */
   async camp(h) {
     await h.newGame();
-    await h.game(() => { window.embervale.enemies.list.forEach((e) => (e.alive = false)); window.embervale.area.gate.setOpen(); });
-    const stand = async (x, z, yaw) => {
-      await h.game(([x, z]) => window.embervale.area.streamAt(x, z), [x, z]);
-      await h.teleport(x, z, yaw);
-      await h.wait(1500);
+    // The Cragstalker stays (it is 85 m from Wren's parking spot, out of its sight): the shots should show it.
+    await h.game(() => { window.embervale.enemies.list.filter((e) => e.constructor.name !== 'Cragstalker').forEach((e) => (e.alive = false)); window.embervale.area.gate.setOpen(); });
+    await h.game(() => window.embervale.area.streamAt(-10, -245));
+    await h.teleport(-10, -226, Math.PI); // Wren parks on the pass below the camp, out of every shot
+    await h.wait(1500);
+    /** A free camera (the rig frozen), `eye` and `target` as [x, y, z] in the world. */
+    const view = async (name, eye, target) => {
+      await h.game(([eye, target]) => {
+        const g = window.embervale;
+        g.rig.frozen = true;
+        g.camera.position.set(...eye);
+        g.camera.lookAt(...target);
+      }, [eye, target]);
+      await h.wait(700);
+      await h.shot(name);
     };
-    const cam = (eye, target) => h.game(([eye, target]) => {
-      const g = window.embervale, T = g.player.pos.constructor;
-      g.rig.shot(new T(...eye), new T(...target), true);
-    }, [eye, target]);
-    await stand(-10, -236, Math.PI);
-    await cam([-12, 16, -240], [-12, 12, -256]);
-    await h.wait(800);
-    await h.shot('camp-entrance');
-    await cam([-12, 16, -250], [-5, 13, -261]);
-    await h.wait(500);
-    await h.shot('camp-post');
-    await cam([-10, 16, -266], [-10, 11, -300]);
-    await h.wait(500);
-    await h.shot('canyon-mouth');
-    await cam([-7, 14.5, -278], [-10, 10, -296]);
-    await h.wait(500);
-    await h.shot('canyon-crossing-from-camp');
-    await stand(-10, -298, 0);
-    await cam([-10, 16, -306], [-10, 10, -274]);
-    await h.wait(800);
-    await h.shot('canyon-crossing-from-far-side');
-    await cam([-6, 16, -296], [-10, 12, -310]);
-    await h.wait(800);
-    await h.shot('canyon-cragstalker-and-bell');
-    await cam([-3, 110, -270], [-10, 12, -292]);
-    await h.wait(800);
-    await h.shot('canyon-from-above');
+    await view('camp-entrance', [-10, 20, -236], [-12, 12, -256]);
+    await view('camp-post', [-14, 16.5, -243], [-10, 12.5, -258]);
+    await view('canyon-mouth', [-10, 15, -262], [-10, 11, -300]);
+    await view('canyon-crossing-from-camp', [-5, 22, -272], [-10, 10, -296]);
+    await view('canyon-crossing-from-far-side', [-6, 16.5, -318], [-10, 11, -280]);
+    await view('canyon-cragstalker-and-bell', [-10, 16, -296], [-10, 12.5, -314]);
+    await view('canyon-cragstalker-eyes', [-10, 13.6, -322], [-10, 12.6, -311]); // from behind the bell, looking at its face
+    await view('canyon-from-above', [-10, 115, -245], [-10, 12, -295]);
   },
   /** Gravelheart's intro, first shots: the camera looking back past Wren as the door rises (it must not sit inside her), then over the shoulder. */
   async wardenIntro(h) {

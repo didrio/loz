@@ -172,7 +172,7 @@ with a sign (`sign.gorge`) at its mouth that warns. It reuses the shaft's lesson
 ### The Waybell's canyon (built, D3)
 
 Owner's design (2026-11-03): the camp's post comes first, with its bell missing; a bit beyond the camp a narrow canyon is
-cut by a chasm, crossed on rock pillars; the Cragstalker waits on the far side with the bell behind it. The bell can be
+cut by a chasm, crossed on rock pillars; two Cragstalkers wait on the far side with the bell behind them. The bell can be
 taken without killing the enemy (it is aggressive, so that is hard), and Wren must cross back to hang it at the camp's post.
 No NPC or other paths from the camp yet.
 
@@ -185,10 +185,10 @@ No NPC or other paths from the camp yet.
   the far ledge. They live in the overworld proper, not in the Northpass region, so their state survives the region
   streaming out and in (the props are 30 m or so of fog away from Wren before the ground exists; fine).
 - **Content** (`content/northpass.ts`): `TrialFalls` on the crossing (only counted inside the canyon; half a heart; edge
-  stickiness on there). The Cragstalker spawns once the region is built (its ground is part of it), is removed when the region
-  drops, stays dead until Wren dies (the checkpoint rule). Only `onFarSide` ground is walkable for it.
+  stickiness on there). The two Cragstalkers (`CRAGSTALKERS_AT`) spawn once the region is built (its ground is part of it), are removed when the region
+  drops, each stays dead until Wren dies (the checkpoint rule). Only `onFarSide` ground is walkable for it.
 - **Verify**: dev state "Northpass: at the opened gate, Warden beaten" (valley open, both bells hung, 5 hearts), look scene
-  `camp`, smoke `northpass`. To judge in play: the Cragstalker's difficulty, the crossing, the canyon's look.
+  `camp`, smoke `northpass`. To judge in play: the Cragstalkers' difficulty (two at once), the crossing, the canyon's look.
 
 ## Open questions
 

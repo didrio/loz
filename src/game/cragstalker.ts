@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
-import type { Physics } from '../core/physics';
+import { Layer, type Physics } from '../core/physics';
 import { uniqueMat } from '../render/materials';
 import { GroundEnemy, type Attack, type EnemyEnv } from './enemies';
 
@@ -8,22 +8,26 @@ import { GroundEnemy, type Attack, type EnemyEnv } from './enemies';
 export const CRAGSTALKER_LUNGE: Attack = { damage: 3, guard: 2, knockback: 13, stone: true };
 
 /** It circles Wren at about this distance, looking for the moment. */
-const RING = 5.5;
+const RING = 4.2;
 /** The crouch is the tell: low, eyes lit, before the lunge. */
-export const CROUCH_TIME = 0.65;
-const LUNGE_TIME = 0.36;
-const LUNGE_SPEED = 19;
+export const CROUCH_TIME = 0.55;
+const LUNGE_TIME = 0.4;
+const LUNGE_SPEED = 21;
 /** Panting after a lunge: its flank is open. Longer when the shield stopped it. */
-export const CRAGSTALKER_RECOVER = 0.9;
-export const CRAGSTALKER_DAZED = 1.9;
-const SPEED_CIRCLE = 3.4;
-const SPEED_CLOSE = 5.2;
+export const CRAGSTALKER_RECOVER = 0.6;
+export const CRAGSTALKER_DAZED = 1.5;
+const SPEED_CIRCLE = 4.8;
+const SPEED_CLOSE = 8;
+/** Chance it follows a lunge at once with another crouch when Wren is still this close (a combo). */
+const COMBO_CHANCE = 0.55;
+const COMBO_RANGE = 4.5;
 
 /**
  * The Cragstalker (docs/shrine.md, "The Northpass"): a lean, stone-backed hunter that guards the Waybell. It
- * circles at a distance, then drops into a crouch with its eyes lit (the tell) and lunges about 7 m, aimed where
+ * circles at a distance, then drops into a crouch with its eyes lit (the tell) and lunges about 8 m, aimed where
  * Wren stood when the crouch ended: a sidestep dodges it, the shield stops it (and leaves it dazed). It is
- * aggressive (it closes fast, rarely waits), but fair: each lunge is followed by a pause that is the opening.
+ * very aggressive (it closes fast, barely waits, and follows a lunge with another when Wren stays close), but fair:
+ * every lunge has the same 0.55 s tell and ends in a pause that is the opening.
  */
 export class Cragstalker extends GroundEnemy {
   private state: 'idle' | 'stalk' | 'crouch' | 'lunge' | 'recover' | 'stagger' = 'idle';
@@ -147,7 +151,7 @@ export class Cragstalker extends GroundEnemy {
           face = Math.atan2(w.x, w.z);
           turn = 3;
         }
-        if (this.spot(dt, dist < 18 && this.calm <= 0 && this.sees(env, 0.7))) {
+        if (this.spot(dt, dist < 22 && this.calm <= 0 && this.sees(env, 0.7))) {
           this.go('stalk');
           this.unseen = 0;
         }
@@ -160,7 +164,7 @@ export class Cragstalker extends GroundEnemy {
         const radial = Math.max(-2.2, Math.min(SPEED_CLOSE, (dist - RING) * 1.6));
         vel.copy(tangent).multiplyScalar(SPEED_CIRCLE).addScaledVector(to, radial);
         if (this.lostTrack(env, dist, dt, 0.7)) this.giveUp();
-        else if (dist < 8.5 && this.t > this.waitFor && this.unseen === 0 && this.level(env)) {
+        else if (dist < 10 && this.t > this.waitFor && this.unseen === 0 && this.level(env)) {
           this.go('crouch');
           env.sfx.shellTuck();
         }
@@ -182,20 +186,15 @@ export class Cragstalker extends GroundEnemy {
         low = 0.6;
         turn = 0;
         vel.copy(this.lungeDir).multiplyScalar(LUNGE_SPEED);
-        if (!this.hitDone && dist < 1.8 && this.level(env)) {
+        if (!this.hitDone && dist < 2 && this.level(env)) {
           this.hitDone = true;
-          if (env.hitPlayer(this.pos, CRAGSTALKER_LUNGE) === 'blocked') {
-            // Stopped by the shield: thrown back and dazed.
-            this.knock.copy(this.lungeDir).multiplyScalar(-9);
-            this.recoverFor = CRAGSTALKER_DAZED;
-            this.go('recover');
-            break;
-          }
+          // It stops dead on Wren: the claws land (or the shield takes it, and it is thrown back dazed). No shoving her.
+          this.stopLunge(env.hitPlayer(this.pos, CRAGSTALKER_LUNGE) === 'blocked');
+          break;
         }
-        if (this.t > LUNGE_TIME) {
-          this.recoverFor = CRAGSTALKER_RECOVER;
-          this.go('recover');
-        }
+        // Running into another enemy (or Wren's body) stops the lunge dead too: no damage to it, no shoving it.
+        if (this.character.blockedBy?.member === Layer.Enemy || this.character.blockedBy?.member === Layer.Player) this.stopLunge(false);
+        else if (this.t > LUNGE_TIME) this.stopLunge(false);
         break;
       case 'recover':
         turn = 0;
@@ -203,13 +202,17 @@ export class Cragstalker extends GroundEnemy {
         vel.copy(this.lungeDir).multiplyScalar(Math.max(0, LUNGE_SPEED * 0.3 * (1 - this.t / 0.3)));
         if (this.t > this.recoverFor) {
           this.side = this.rng() < 0.5 ? -1 : 1;
-          this.waitFor = 0.5 + this.rng() * 0.6;
-          this.go('stalk');
+          this.waitFor = 0.15 + this.rng() * 0.35;
+          // Wren still in reach and in sight: it comes straight back at her (the tell is just as long).
+          if (this.recoverFor === CRAGSTALKER_RECOVER && dist < COMBO_RANGE && this.unseen === 0 && this.level(env) && this.rng() < COMBO_CHANCE) {
+            this.go('crouch');
+            env.sfx.shellTuck();
+          } else this.go('stalk');
         }
         break;
       case 'stagger':
         turn = 0;
-        if (this.t > 0.35) this.go('stalk');
+        if (this.t > 0.25) this.go('stalk');
         break;
     }
 
@@ -225,6 +228,14 @@ export class Cragstalker extends GroundEnemy {
     });
     this.body.position.y = -low * 0.3;
     this.eyeMat.color.setHex(this.state === 'crouch' ? 0xffb347 : this.alert ? 0xc9782a : 0x5a3a1a);
+  }
+
+  /** The lunge is over (it hit something, or ran its length): panting, with no slide left in it. */
+  private stopLunge(dazed: boolean) {
+    if (dazed) this.knock.copy(this.lungeDir).multiplyScalar(-9);
+    this.lungeDir.set(0, 0, 0);
+    this.recoverFor = dazed ? CRAGSTALKER_DAZED : CRAGSTALKER_RECOVER;
+    this.go('recover');
   }
 
   private go(s: Cragstalker['state']) {

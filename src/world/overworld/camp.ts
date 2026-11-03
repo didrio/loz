@@ -10,7 +10,7 @@ import { BEYOND, beyondFrame, beyondPoint, PASS, terrainHeight } from './layout'
 /**
  * Wayfarers' Camp and the canyon beyond it (docs/bells.md, shrine session D3): the third bell's site. The camp
  * (a flat circle at the end of the Northpass, `PASS.camp`) holds the Waybell's empty post; a narrow canyon leaves
- * it northward, cut by a chasm Wren crosses on rock pillars; the Cragstalker guards the far side, and the bell
+ * it northward, cut by a chasm Wren crosses on rock pillars; the two Cragstalkers guard the far side, and the bell
  * waits behind it. The ground itself is carved in `layout.ts`. These objects live in the overworld proper (not in
  * the Northpass region) so their state survives the region streaming out and back in.
  */
@@ -51,8 +51,8 @@ function crossing(): CourseDef {
 
 export const CANYON_COURSE = (COURSES.canyon = crossing());
 
-/** Where the Cragstalker waits on the far side (s from the camp's centre), and the bell behind it. */
-export const CRAGSTALKER_AT = 55;
+/** Where the two Cragstalkers wait on the far side ([s from the camp's centre, lateral]), and the bell behind them. */
+export const CRAGSTALKERS_AT: [number, number][] = [[52.5, -2], [57, 2]];
 export const WAYBELL_AT = 64;
 /** The far side's walkable ground starts here (the goal ledge ends the crossing). */
 export const FAR_SIDE_FROM = 43.5;

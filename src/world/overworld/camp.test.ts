@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { checkCourse, COURSES } from '../platforming';
 import { BEYOND, BEYOND_LENGTH, beyondFrame, PASS, terrainHeight } from './layout';
-import { beyondAt, CANYON_COURSE, CRAGSTALKER_AT, FAR_SIDE_FROM, inCrossing, onFarSide, WAYBELL_AT, WAYBELL_PICKUP, WAYBELL_POST } from './camp';
+import { beyondAt, CANYON_COURSE, CRAGSTALKERS_AT, FAR_SIDE_FROM, inCrossing, onFarSide, WAYBELL_AT, WAYBELL_PICKUP, WAYBELL_POST } from './camp';
 
 describe('the canyon beyond the camp', () => {
   it('can be crossed: from the start and from every checkpoint', () => {
@@ -40,9 +40,14 @@ describe('the canyon beyond the camp', () => {
   });
 
   it('puts the Cragstalker and the bell on the far side, with the bell behind it', () => {
-    expect(CRAGSTALKER_AT).toBeGreaterThan(FAR_SIDE_FROM);
-    expect(WAYBELL_AT).toBeGreaterThan(CRAGSTALKER_AT);
-    expect(onFarSide(beyondAt(CRAGSTALKER_AT))).toBe(true);
+    expect(CRAGSTALKERS_AT).toHaveLength(2);
+    for (const [s, lat] of CRAGSTALKERS_AT) {
+      expect(s).toBeGreaterThan(FAR_SIDE_FROM);
+      expect(WAYBELL_AT).toBeGreaterThan(s);
+      expect(onFarSide(beyondAt(s, lat))).toBe(true);
+    }
+    const [a, b] = CRAGSTALKERS_AT.map(([s, lat]) => beyondAt(s, lat));
+    expect(Math.hypot(a.x - b.x, a.z - b.z)).toBeGreaterThan(3); // not stacked on each other
     expect(onFarSide(WAYBELL_PICKUP)).toBe(true);
     expect(onFarSide(beyondAt(30))).toBe(false); // it never walks out onto the crossing
     expect(onFarSide(beyondAt(10))).toBe(false); // nor into the camp

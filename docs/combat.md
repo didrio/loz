@@ -77,11 +77,15 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   turn; 1.9 s if the shield stopped it. Running into another enemy stops the charge dead (it skids
   in place; no damage to the other, no shoving; `Character.blockedBy`). 4 HP.
 - **Cragstalker** (`game/cragstalker.ts`): a lean hide-and-stone hunter that guards the Waybell across the Northpass's
-  canyon. Aggressive: it circles Wren at ~5.5 m (drawing in fast when she keeps away), then drops into a **crouch**
-  (0.65 s, belly low, eyes bright amber: the tell) and **lunges** ~7 m (`CRAGSTALKER_LUNGE`: 3, guard 2, stone: 2 in the
-  tunic), **aimed where Wren stands when the crouch ends**, so a sidestep dodges it. After a lunge it pants 0.9 s (the opening;
-  1.9 s, dazed, if the shield stopped it). No armor: any sword hit lands; 6 HP, a short stagger when hit. It stays on the
-  canyon's far side (`setWalkable`) and gives up like any ground enemy (leash, lost sight). Not yet judged in play (owner).
+  canyon. Very aggressive (owner's call, 2026-11-03: the first tuning was far too easy): it notices Wren from 22 m, closes at
+  8 m/s, circles at ~4 m, waits only 0.15-0.5 s, then drops into a **crouch** (0.55 s, belly low, eyes bright amber: the tell) and
+  **lunges** ~8 m (`CRAGSTALKER_LUNGE`: 3, guard 2, stone: 2 in the tunic), **aimed where Wren stands when the crouch ends**, so a
+  sidestep dodges it. After a lunge it pants 0.6 s (the opening; 1.5 s, dazed, if the shield stopped it), and if Wren is still
+  within 4.5 m it follows up with another crouch 55% of the time (a combo; every lunge keeps the full tell). No armor: any sword
+  hit lands; 6 HP, a 0.25 s stagger when hit. **A lunge stops dead the moment it touches Wren** (the claws land, or the shield
+  takes it and it is thrown back dazed) **or another enemy** (no damage to it, no shoving it either way; `Character.blockedBy`), so two of
+  them never push each other. The pass has two (`CRAGSTALKERS_AT`, owner's call: one was too easy). It stays on the canyon's far side (`setWalkable`) and gives up like any ground
+  enemy (leash, lost sight). Not yet judged in play (owner).
 - **Lock-on** (`game/lockon.ts`) picks only enemies within 20 m, roughly where the camera
   looks, on the same level and in plain sight; it lets go when the target dies, gets
   25 m away or ends up on another floor.

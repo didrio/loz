@@ -22,10 +22,9 @@ built almost entirely by AI agents. Build everything as if it will ship.
 As of 2026-11-03: Emberfield (the valley) plays start to finish (Lamplighter, quest thread, music, village), and **the Waking
 Shrine** (25 rooms, the Bell Shaft trial) through **Gravelheart**, whose defeat leads to the Keepers' Seal, which opens the magic
 gate ([docs/shrine.md](docs/shrine.md)). Beyond it the Northpass streams in and ends at **Wayfarers' Camp** (the Waybell's post);
-a canyon crossing leads to the **Cragstalker** and the Waybell, the third fast-travel stop (D3, unplayed). **Bells** and three
+a canyon crossing leads to two **Cragstalkers** and the Waybell, the third fast-travel stop (D3, unplayed). **Bells** and three
 trials work ([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states (one at the opened gate).
-**Next: the owner plays D3** (Cragstalker and crossing difficulty, the canyon's look; the `camp` look scene's cameras still need
-fixing), then shrine polish (milestone 8).
+**Next: the owner plays D3** (are two Cragstalkers hard enough now? the crossing, the canyon's look), then shrine polish (milestone 8).
 
 ## Docs: read the one for the area you're touching
 

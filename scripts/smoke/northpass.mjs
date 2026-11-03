@@ -1,4 +1,4 @@
-// The Northpass (shrine D3): the Cragstalker guards the far side of the canyon, the crossing returns a fall to its
+// The Northpass (shrine D3): two Cragstalkers guard the far side of the canyon, the crossing returns a fall to its
 // last ledge, the Waybell can be taken from behind it and hung on the camp's post, and the post joins the network.
 export const fixture = 'northpass';
 
@@ -9,13 +9,13 @@ export default async function run(t) {
   const pos = () => game(() => ({ x: window.embervale.player.pos.x, y: window.embervale.player.pos.y, z: window.embervale.player.pos.z, hp: window.embervale.state.hp }));
   const ledges = () => game(() => window.embervale.area.canyonCourse.platforms.map((p) => ({ x: p.x, z: p.z, y: p.top, checkpoint: !!p.checkpoint, moves: !!p.move })));
 
-  await step('walking into the Northpass builds the camp\'s ground and the Cragstalker waits on the far side', async () => {
+  await step('walking into the Northpass builds the camp\'s ground and two Cragstalkers wait on the far side', async () => {
     await game(() => window.embervale.enemies.list.filter((e) => e.constructor.name !== 'Cragstalker').forEach((e) => (e.alive = false)));
     await teleport(-10, -245, Math.PI);
     await until(() => window.embervale.enemies.list.some((e) => e.constructor.name === 'Cragstalker'), 20000);
     await wait(500);
     const c = await game(() => window.embervale.enemies.list.filter((e) => e.constructor.name === 'Cragstalker').map((e) => ({ x: e.pos.x, y: e.pos.y, z: e.pos.z })));
-    check(c.length === 1, `${c.length} Cragstalkers`);
+    check(c.length === 2, `${c.length} Cragstalkers`);
     check(Math.abs(c[0].y - 12) < 1 && c[0].z < -295, `it stands at (${c[0].x.toFixed(1)}, ${c[0].y.toFixed(1)}, ${c[0].z.toFixed(1)})`);
   });
 

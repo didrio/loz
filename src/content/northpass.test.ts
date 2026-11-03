@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Physics } from '../core/physics';
 import { Cragstalker } from '../game/cragstalker';
 import { Overworld } from '../world/overworld';
-import { beyondAt, CANYON_COURSE, CRAGSTALKER_AT } from '../world/overworld/camp';
+import { beyondAt, CANYON_COURSE, CRAGSTALKERS_AT } from '../world/overworld/camp';
 import { BEYOND, PASS } from '../world/overworld/layout';
 import { BELLS } from './bells';
 import { fakeApi } from './fakeApi';
@@ -24,27 +24,28 @@ function setup() {
   return { ow, content, f, player, physics };
 }
 
-describe('the Cragstalker and the crossing', () => {
-  it('is on the far side only while the Northpass is built, standing on its ground', () => {
+describe('the Cragstalkers and the crossing', () => {
+  it('are two, on the far side only while the Northpass is built, standing on its ground', () => {
     const { ow, content, f } = setup();
     ow.streamAt(0, 60); // far from the pass: nothing built
     content.update!(f.api, 1 / 60);
     expect(stalkers(f)).toHaveLength(0);
     ow.streamAt(PASS.camp.x, PASS.camp.z);
     content.update!(f.api, 1 / 60);
-    expect(stalkers(f)).toHaveLength(1);
-    const c = stalkers(f)[0] as Cragstalker;
-    const at = beyondAt(CRAGSTALKER_AT);
-    expect(Math.hypot(c.pos.x - at.x, c.pos.z - at.z)).toBeLessThan(0.5);
-    expect(c.pos.y).toBeCloseTo(BEYOND.floor, 0);
+    expect(stalkers(f)).toHaveLength(2);
+    stalkers(f).forEach((c, i) => {
+      const at = beyondAt(...CRAGSTALKERS_AT[i]);
+      expect(Math.hypot(c.pos.x - at.x, c.pos.z - at.z)).toBeLessThan(0.5);
+      expect(c.pos.y).toBeCloseTo(BEYOND.floor, 0);
+    });
     content.update!(f.api, 1 / 60);
-    expect(stalkers(f)).toHaveLength(1); // not spawned twice
+    expect(stalkers(f)).toHaveLength(2); // not spawned twice
     ow.streamAt(0, 100); // out of range: the region drops
     content.update!(f.api, 1 / 60);
     expect(stalkers(f)).toHaveLength(0);
   });
 
-  it('stays down once killed, until Wren dies', () => {
+  it('each stays down once killed, until Wren dies', () => {
     const { ow, content, f } = setup();
     ow.streamAt(PASS.camp.x, PASS.camp.z);
     content.update!(f.api, 1 / 60);
@@ -53,10 +54,10 @@ describe('the Cragstalker and the crossing', () => {
     content.update!(f.api, 1 / 60);
     f.enemies.splice(f.enemies.indexOf(c), 1); // (the manager removes it once its death finishes)
     content.update!(f.api, 1 / 60);
-    expect(stalkers(f)).toHaveLength(0);
+    expect(stalkers(f)).toHaveLength(1); // the other one is still there
     content.onRespawn!(f.api);
     content.update!(f.api, 1 / 60);
-    expect(stalkers(f)).toHaveLength(1);
+    expect(stalkers(f)).toHaveLength(2);
   });
 
   it('a fall in the crossing returns Wren to the last ledge and costs half a heart; the camp\'s lower ground is not a fall', async () => {
