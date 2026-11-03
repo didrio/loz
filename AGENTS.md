@@ -24,8 +24,9 @@ Shrine** (25 rooms, the Bell Shaft trial) through **Gravelheart**, whose defeat 
 gate ([docs/shrine.md](docs/shrine.md)). Beyond it the Northpass streams in and ends at **Wayfarers' Camp** (the Waybell's post);
 a canyon crossing leads to two **Cragstalkers** and the Waybell, the third fast-travel stop (D3, unplayed). **Bells** and three
 trials work ([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states (one at the opened gate).
-**Murmurbuds** (3 keepers' notes), the **pause menu** (P) and **shield surfing** (Lark gives the idea; `game/surf.ts`) are built, unplayed.
-**Next:** the pause menu's inventory and settings (roadmap 2); the owner owes a play of D3, the Murmurbuds and surfing's feel.
+**Murmurbuds** (3 keepers' notes), the **pause menu** (P), **shield surfing** (Lark gives the idea; `game/surf.ts`) and the sealed gate
+(rock shoulders and invisible walls out to the rim) are built, unplayed. **Next:** the pause menu's inventory and settings
+(roadmap 2); the owner owes a play of D3, the Murmurbuds, surfing and the gate. (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
 

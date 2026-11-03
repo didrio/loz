@@ -28,16 +28,7 @@ Next, in order:
 2. **Pause menu**: started 2026-11-03 (P / Start, `game/pauseMenu.ts`): its first page lists the keepers'
    notes (Murmurbuds, [world.md](world.md)). Still to come: inventory, settings (mouse sensitivity, invert Y,
    volumes). (No dungeon map or compass by design.)
-2.5. ~~**Shield surfing**~~ built 2026-11-03, unplayed (rules in [combat.md](combat.md); Lark in [world.md](world.md)). Tune `SURF_SPEED`, the carve and the dust by play. The original brief:
-   A small kid in Thistledown does one thing: puts the idea of riding your shield in Wren's head (flag;
-   then a short tutorial line: how to do it). Then: jump, raise the shield (or raise it, then jump), and land
-   *while still holding shield* → Wren rides the shield along the ground for as long as shield is held, 2–3×
-   walking speed: the player's sprint (not the dev sprint). Steering is normal movement (stick/WASD, camera
-   with the right stick/mouse), just faster, with the shield under her feet; a riding pose is nice-to-have.
-   Debris/dust kicked up from under the shield, not overdone. Let go of shield → back to normal at once. An
-   enemy hit while surfing knocks her off and does its normal damage. Design calls for the plan: does the
-   surf block hits (probably not: it's the shield under her feet), slopes/water/ledges, jumping off it, lock-on
-   while surfing, whether the guard gauge drains. Add a `village` smoke step and a look scene.
+2.5. ~~Shield surfing~~ built, unplayed (rules in [combat.md](combat.md), Lark in [world.md](world.md)). Tune `SURF_SPEED`, the carve and the dust by play.
 3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later.
 4. **Load/perf pass**: Rapier WASM as a file, code splitting, character mesh merging.
 5. **Depth**: more enemy types, target switching, jump attack, original items/tools,
