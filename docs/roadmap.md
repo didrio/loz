@@ -117,6 +117,11 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 
 ## Known quirks and tech debt
 
+- **`npm run smoke -- shrine-keys` fails** at "dying in the shrine respawns at its entrance": 39 enemies alive after
+  respawning, 38 expected (45 spawns minus 7 in beaten challenge rooms). Fails the same on the commit before surfing,
+  every run. Not diagnosed: either the test's count or a real respawn bug (one spawn in a cleared room not obeying the
+  checkpoint rule in AGENTS.md). Reproduce in a failing unit test first. Not urgent, but fix before the full suite is
+  trusted as a green gate.
 - A streamed region builds in one frame: a hitch at the streaming point (the Northpass is 150×60 cells of
   terrain plus a trimesh; unmeasured on a real GPU). Spread the build over frames when regions get big.
 
