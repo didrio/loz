@@ -35,6 +35,8 @@ export interface PlayerEnv {
 export interface Health {
   hp: number;
   maxHp: number;
+  /** Dev menu: hits do nothing. */
+  invincible?: boolean;
 }
 
 type State = 'move' | 'attack' | 'hurt';
@@ -130,7 +132,7 @@ export class Player {
   attackBoost = 0;
   /** Seconds left of a glove throw: the arm is out, no sword or shield until it's back. */
   throwT = 0;
-  /** Dev builds and the GitHub Pages test build only (G; `VITE_DEV_SPRINT`): multiplies run speed to cross the map quickly. Never on in the shipped game. */
+  /** Dev builds and the GitHub Pages test build only (the dev menu; `VITE_DEV_SPRINT`): multiplies run speed to cross the map quickly. Never on in the shipped game. */
   devSpeed = 1;
   private opacity = 1;
   private fadeMats: THREE.Material[] | null = null;
@@ -294,6 +296,7 @@ export class Player {
       this.shielding = false;
       return 'broken';
     }
+    if (this.health.invincible) return 'miss';
     const damage = a.stone && this.stoneward ? Math.ceil(a.damage / 2) : a.damage;
     this.health.hp = Math.max(0, this.health.hp - damage);
     this.invuln = 1.2;

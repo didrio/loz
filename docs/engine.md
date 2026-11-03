@@ -30,6 +30,22 @@ frames are slow), times the **time scale** (slow motion in cutscenes) and zero d
 environments, hit feedback both ways, hit-stop) and `TitleMenu` (`game/title.ts`: the
 orbit and the menu; `Game` acts on its choice). Scripts reach them as `g.combat.*`.
 
+## Menus (`game/menu.ts`, `game/devMenu.ts`)
+
+`MenuStack` is the reusable menu: rows are an action, a toggle (flips, stays open) or a
+submenu; up/down wraps, confirm chooses, back pops (from the first menu it closes). It is
+pure logic: the owner of the menu feeds it input (keyboard, d-pad/stick, mouse hover and
+click via `Hud.onMenuHover/onMenuClick`) and `Hud.setMenu(view)` draws it. The pause and
+main menus should be built on it. `DevMenu` is the first user (~ / L3): Dev sprint,
+Invincible (`GameState.invincible`, never saved) and Save states (`content/devStates.ts`:
+New game, night outside the Hollow, shrine start, shrine at the boss door; loading one
+replaces the current save, via `Game.loadDevState`). While a menu is open `Game.frame` runs
+no mode update and `dt` is 0; the frame a menu closes also counts as paused, so the press
+that chose a row (Enter = also "interact") doesn't leak into the game. Dev builds, the
+Pages build and `?debug` only. To add a state, add an entry to `DEV_STATES` (the unit test
+checks it decodes and uses known ids); `completedDungeon(def)` builds "all done" progress
+from a dungeon's data.
+
 ## Modes
 
 `title` (menu over a camera orbit) · `play` · `cutscene` (a script runs: dialog, item get,
@@ -123,10 +139,10 @@ Code reads **actions**, never keys. Bindings:
 | jump | Space | A |
 | lock on | Q or Tab | R3 (right stick click) |
 | interact | E (or Enter) | A |
-| confirm · cancel | Enter/Space/E/click · Esc | A/Start · B |
+| confirm · cancel | Enter/Space/E/click · Esc/Backspace | A/Start · B |
 | music on/off | P | Back |
 | drink flask 1 · flask 2 (`flask1`, `flask2`) | 1 · 2 | d-pad ← · → |
-| dev sprint (dev builds / `?debug` only) | G | L3 (left stick click) |
+| dev menu (dev builds / `?debug` only) | ~ (Backquote) | L3 (left stick click) |
 
 Gamepad A both talks and jumps: the game checks `interact` first (the classic context
 action button). The HUD shows glyphs for the last-used device. In dialog text, `[attack]`

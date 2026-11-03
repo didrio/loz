@@ -201,3 +201,18 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .boss-lag { background: #f2f0e6; opacity: 0.8; }
 .boss-fill { background: linear-gradient(#a8f0ff, #2f9cc4); transition: width 0.12s; }
 .boss-mark { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255, 255, 255, 0.6); }
+
+/* Menus (game/menu.ts): the dev menu now; pause and main menus later */
+.gmenu { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(4, 8, 20, 0.55); pointer-events: auto; }
+.gmenu-panel {
+  min-width: min(420px, 90vw); padding: 22px 26px 16px;
+  background: rgba(8, 14, 34, 0.92); border: 2px solid rgba(232, 199, 112, 0.8); border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+.gmenu-title { font-size: 15px; letter-spacing: 0.2em; text-transform: uppercase; color: #e8c770; margin-bottom: 12px; text-align: center; }
+.gmenu-row { display: flex; justify-content: space-between; gap: 32px; font-size: 21px; padding: 5px 14px; border-radius: 8px; color: rgba(255, 255, 255, 0.6); cursor: pointer; }
+.gmenu-row.selected { color: #fff; background: rgba(232, 199, 112, 0.16); }
+.gmenu-row.selected span:first-child::before { content: '▸ '; color: #ffd76a; }
+.gmenu-value { color: #ffd76a; }
+.gmenu-help { margin-top: 14px; font-size: 13px; color: rgba(255, 255, 255, 0.5); text-align: center; }
+.gmenu-help .key { height: 22px; min-width: 22px; font-size: 12px; vertical-align: middle; margin: 0 2px; }

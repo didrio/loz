@@ -39,3 +39,15 @@ describe('GameState', () => {
     expect(flags.size).toBe(0);
   });
 });
+
+describe('GameState invincibility (dev menu)', () => {
+  it('damage does nothing while on, and works again after', () => {
+    const s = new GameState();
+    s.invincible = true;
+    s.damage(2);
+    expect(s.hp).toBe(6);
+    s.invincible = false;
+    s.damage(2);
+    expect(s.hp).toBe(4);
+  });
+});

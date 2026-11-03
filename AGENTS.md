@@ -20,11 +20,12 @@ built almost entirely by AI agents. Build everything as if it will ship.
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
 As of 2026-11-02: Emberfield (the valley) plays start to finish: the Hollow Lamplighter (night
-only), the quest thread, all music, and the village (Tobin's mill with a bed, Odo's stall selling
-the Stoneward Tunic). **The Waking Shrine** (25 rooms, four wings) is playable up to the boss
-door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy feel is untuned until played.
-The owner's playtest tweaks A–G are done ([docs/roadmap.md](docs/roadmap.md)); E made the two
-flasks (refilled at Odo's, 20 gems). **Next: shrine milestone 6** (Gravelheart and its music), then 7 (the Northpass), 8 (polish).
+only), the quest thread, all music, and the village (Tobin's mill with a bed; Odo sells the
+Stoneward Tunic and refills flasks). **The Waking Shrine** (25 rooms, four wings) is playable up
+to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done), with the game's two
+flasks in it. A dev menu (~ / L3; dev and Pages builds) has sprint, invincibility and four save
+states. Enemy feel and the gem economy are untuned until played. **Next: shrine milestone
+6** (Gravelheart and its music; plan mode), then 7 (the Northpass), 8 (polish).
 
 ## Docs: read the one for the area you're touching
 
@@ -138,6 +139,7 @@ src/
   game/
     game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
     combat.ts, title.ts    lock-on, glove throw, hit feedback both ways, hit-stop; the title menu
+    menu.ts, devMenu.ts    MenuStack (reusable menus: rows, submenus, toggles); the dev menu (~ / L3)
     script.ts              ScriptApi + Script + Page (the contract content uses)
     player.ts, guard.ts    Wren (movement, sword, shield, stagger); the shield's guard
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
@@ -152,6 +154,7 @@ src/
     overworld.ts           scripts for every overworld interactable/trigger, save restore
     mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
     shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
+    devStates.ts           dev-menu save states (new game, night by the Hollow, shrine start, boss door)
     fakeApi.ts             the fake ScriptApi content tests run against
     story.ts               intro, death
   ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, interact prompt, dialog, cards, title menu

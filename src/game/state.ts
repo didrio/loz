@@ -70,6 +70,8 @@ export class GameState {
   hp = 6;
   hours = 9;
   day = 1;
+  /** Dev menu only (never saved): damage does nothing. */
+  invincible = false;
 
   has(f: Flag) {
     return this.flags.has(f);
@@ -105,6 +107,7 @@ export class GameState {
   }
 
   damage(n: number) {
+    if (this.invincible) return;
     this.hp = Math.max(0, this.hp - n);
   }
 

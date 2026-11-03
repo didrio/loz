@@ -1,5 +1,6 @@
 import { ACTIONS, glyph, type Action, type Device } from '../core/input';
 import { POTIONS } from '../game/flasks';
+import type { MenuView } from '../game/menu';
 import { KEY_HEX, type KeyColor, type Potion } from '../world/dungeon/format';
 
 /** A little corked bottle in a potion's color (a pale glass one when empty). */
@@ -63,6 +64,11 @@ export class Hud {
   private fade: HTMLElement;
   private toast: HTMLElement;
   private debug: HTMLElement;
+  private gmenu: HTMLElement;
+  private gmenuHtml = '';
+  /** Set by the game: the mouse hovered a row / clicked a row of the open menu. */
+  onMenuHover: (i: number) => void = () => {};
+  onMenuClick: (i: number) => void = () => {};
   private bossTitle: HTMLElement;
   private bossBar: HTMLElement;
   private bossFill: HTMLElement;
@@ -110,6 +116,7 @@ export class Hud {
           <div class="pad-note">Gamepads work too.</div>
         </div>
       </div>
+      <div class="gmenu hidden"></div>
       <div class="debug hidden"></div>`;
     const q = (s: string) => this.el.querySelector<HTMLElement>(s)!;
     this.hearts = q('.hearts');
@@ -133,6 +140,16 @@ export class Hud {
     this.fade = q('.fade');
     this.toast = q('.toast');
     this.debug = q('.debug');
+    this.gmenu = q('.gmenu');
+    const rowOf = (e: Event) => (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
+    this.gmenu.addEventListener('mouseover', (e) => {
+      const r = rowOf(e);
+      if (r) this.onMenuHover(Number(r.dataset.row));
+    });
+    this.gmenu.addEventListener('click', (e) => {
+      const r = rowOf(e);
+      if (r) this.onMenuClick(Number(r.dataset.row));
+    });
     this.bossTitle = q('.boss-title');
     this.bossBar = q('.boss-bar');
     this.bossFill = q('.boss-fill');
@@ -176,6 +193,17 @@ export class Hud {
     this.menu.innerHTML = items
       .map((it, i) => `<div class="menu-item${i === selected ? ' selected' : ''}">${escape(it)}</div>`)
       .join('');
+  }
+
+  /** Draws the open menu (see game/menu.ts), or hides it when null. */
+  setMenu(view: MenuView | null) {
+    this.gmenu.classList.toggle('hidden', !view);
+    const html = view
+      ? `<div class="gmenu-panel"><div class="gmenu-title">${escape(view.title)}</div>${view.rows
+          .map((r, i) => `<div class="gmenu-row${r.selected ? ' selected' : ''}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-value">${escape(r.value ?? '')}</span></div>`)
+          .join('')}<div class="gmenu-help">${this.key('menuUp')}${this.key('menuDown')} move · ${this.key('confirm')} choose · ${this.key('cancel')} back</div></div>`
+      : '';
+    if (html !== this.gmenuHtml) this.gmenu.innerHTML = this.gmenuHtml = html;
   }
 
   setHearts(hp: number, max: number) {

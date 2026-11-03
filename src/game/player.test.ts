@@ -45,6 +45,17 @@ const HEAVY = { damage: 2, guard: 2 };
 const CRUSH = { damage: 2, guard: 3 };
 
 describe('Player.receiveHit', () => {
+  it('does nothing while invincible (dev menu)', () => {
+    const { p, health, settle } = setup();
+    settle();
+    (health as { invincible?: boolean }).invincible = true;
+    expect(p.receiveHit(front, HEAVY)).toBe('miss');
+    expect(health.hp).toBe(6);
+    (health as { invincible?: boolean }).invincible = false;
+    expect(p.receiveHit(front, HEAVY)).toBe('hit');
+    expect(health.hp).toBe(4);
+  });
+
   it('the shield blocks frontal hits, but not unblockable ones', () => {
     const { p, health, step } = setup();
     step(0.5, true);

@@ -14,32 +14,12 @@ asks: they're best designed against the real use case.
 
 Next, in order:
 
-0. **The owner's playtest tweaks (2026-11-02), before milestone 6**, one session each:
-   - ~~A: combat and visuals~~ **done**: no sword while staggered (crawl at 6%), the shield's
-     two poses (side of the arm / square in front), blob shadows under orbs and wisps.
-   - ~~B: shrine fixes~~ **done**: no fight-room shutters (`fight` flag removed; rooms just
-     count as cleared), no entrance seal or entry cutscene (open doorway, `entered` dropped
-     from the save), the "railing" was a statue 0.4 m past the top of the `shaftUp` stairs
-     (statues now keep a 2 m landing clear of stairs), stair-trim z-fighting fixed. Smoke
-     scenarios edited for the open entrance but not run (owner's call).
-   - ~~C: colored keys, one key per door~~ **done**: `Lock`/`Loot` `{ key: color }` replace the
-     counted small key; the validator wants exactly one chest and one door per color; the solver is
-     one greedy sweep (no softlock search); doors carry a color band, the HUD shows a colored key
-     icon per key held; `SAVE_VERSION` 4. Key web in [shrine.md](shrine.md). Statues chest is now
-     20 gems.
-   - ~~D: village~~ **done**: Tobin's mill (a `MillInterior` area, bed), Odo's stall; `api.ask` and
-     `content/shop.ts` `offerWare` are what E reuses for flask refills.
-   - ~~E: flasks~~ **done**: `game/flasks.ts` replaces the drinks. Two flasks (life in the
-     Sunken Court, attack in the Echo Hall), each holding either potion; death doesn't refill;
-     Odo fills one empty flask per purchase (20 gems, Wren picks the potion). The heal chests
-     went (Ossuary: 25 gems; Key Vault's drink chest removed); `SAVE_VERSION` 5. Gem economy:
-     95 in the shrine plus bushes, against the 100-gem tunic and 20 per refill; untested by play.
-   - ~~G: text and dialog quality pass~~ done (the owner still reads it in-game; tone is theirs).
-   - ~~F: dungeon fixes~~ done (beaten challenge rooms stay empty; sentinel windup sound shortened).
+0. ~~The owner's playtest tweaks A–G (2026-11-02)~~ done. Untested by play: the gem economy
+   (95 in the shrine plus bushes, against the 100-gem tunic and 20 per flask refill).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **next is milestone 6** (Gravelheart and its theme), then the
    **Northpass** valley exit the glove opens (7), polish (8).
-2. **Pause menu**: inventory, settings (mouse sensitivity, invert Y, volumes). (No dungeon
+2. **Pause menu** (build it on `MenuStack`, `game/menu.ts`): inventory, settings (mouse sensitivity, invert Y, volumes). (No dungeon
    map or compass by design.)
 3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later.
 4. **Load/perf pass**: Rapier WASM as a file, code splitting, character mesh merging.

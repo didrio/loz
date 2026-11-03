@@ -4,7 +4,7 @@ import type { Game } from './game';
 
 /**
  * Developer overlay, on with `?debug` in the URL: frame rate, draw calls, position, mode.
- * Backquote (`) toggles a wireframe of the physics colliders (terrain excluded).
+ * Backslash (\) toggles a wireframe of the physics colliders (terrain excluded).
  */
 export class Debug {
   private frames = 0;
@@ -16,7 +16,7 @@ export class Debug {
 
   constructor(private game: Game) {
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Backquote') this.showColliders = !this.showColliders;
+      if (e.code === 'Backslash') this.showColliders = !this.showColliders;
     });
   }
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createArea, isAreaId, type AreaId } from '../content/areas';
+import type { DevState } from '../content/devStates';
 import type { AreaContent } from '../content/overworld';
 import { death, intro } from '../content/story';
 import { Sfx } from '../core/audio';
@@ -15,6 +16,7 @@ import { Boss } from './boss';
 import { CameraRig } from './camera';
 import { Combat } from './combat';
 import { Debug } from './debug';
+import { DevMenu } from './devMenu';
 import { Dialog } from './dialog';
 import { EnemyManager, type Enemy } from './enemies';
 import { Hazards } from './hazards';
@@ -72,6 +74,7 @@ export class Game implements ScriptApi {
   private fadeValue = 0;
   private autosaveT = AUTOSAVE_SECONDS;
   private readonly title: TitleMenu;
+  readonly devMenu: DevMenu;
   /** Slow motion for cutscenes (1 = normal). */
   private timeScale = 1;
   /** The music is off (Wren just died). */
@@ -108,6 +111,7 @@ export class Game implements ScriptApi {
     window.addEventListener('pagehide', () => this.save());
     document.addEventListener('visibilitychange', () => document.hidden && this.save());
     this.debug = new URLSearchParams(location.search).has('debug') ? new Debug(this) : null;
+    this.devMenu = new DevMenu(this, () => !!(import.meta.env.DEV || import.meta.env.VITE_DEV_SPRINT || this.debug));
   }
 
   start() {
@@ -164,12 +168,15 @@ export class Game implements ScriptApi {
     const rawDt = Math.min(this.timer.getDelta(), 0.05);
     const frozen = this.combat.hitStop > 0;
     this.combat.hitStop -= rawDt;
-    const dt = frozen ? 0 : rawDt * this.timeScale;
     this.input.poll();
     this.hud.setDevice(this.input.device);
+    const paused = this.devMenu.update();
+    const dt = frozen || paused ? 0 : rawDt * this.timeScale;
     this.director.update(dt);
 
-    switch (this.mode) {
+    switch (paused ? 'paused' : this.mode) {
+      case 'paused':
+        break;
       case 'title':
         this.updateTitle(dt);
         break;
@@ -353,11 +360,6 @@ export class Game implements ScriptApi {
     if (this.mode !== 'play') hud.setActions([]);
     const mood = boss ? 'boss' : this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day');
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced);
-    // Dev sprint: G / L3 toggles 5x run speed to get through the valley fast. Never in the shipped build.
-    if ((import.meta.env.DEV || import.meta.env.VITE_DEV_SPRINT || this.debug) && input.pressed('devSprint')) {
-      player.devSpeed = player.devSpeed === 1 ? 5 : 1;
-      hud.showToast(player.devSpeed === 1 ? 'Dev sprint off' : 'Dev sprint on (x5)');
-    }
     if (input.pressed('music')) {
       this.sfx.musicOn = this.settings.music = !this.settings.music;
       this.store.set(SETTINGS_KEY, JSON.stringify(this.settings));
@@ -524,6 +526,27 @@ export class Game implements ScriptApi {
   giveSword() {
     this.state.set('hasSword');
     this.player.setSword(true);
+  }
+
+  /** Dev menu: jumps to a ready-made point in the game, replacing the current save. */
+  loadDevState(s: DevState) {
+    if (s.save) this.state.load(s.save);
+    else this.state.reset();
+    this.loadArea(isAreaId(this.state.area) ? this.state.area : 'overworld');
+    this.player.revive();
+    this.player.invuln = 0; // no respawn blink: a state should look like a clean cut
+    this.player.attackBoost = 0;
+    this.player.setSword(this.state.has('hasSword'));
+    this.player.setStoneward(this.state.has('village.stonewardTunic'));
+    if (s.at) {
+      const y = s.at.y ?? this.physics.groundY(s.at.x, s.at.z) ?? 0;
+      this.player.teleport(s.at.x, y, s.at.z, s.at.facing);
+      this.rig.snap(this.player.pos, s.at.facing);
+    }
+    this.musicSilenced = false;
+    this.areaName = this.area.nameAt(this.player.pos.x, this.player.pos.z);
+    this.save();
+    if (!s.save) this.run(intro);
   }
 
   // ---------------------------------------------------------------------------

@@ -32,7 +32,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
 - CI (`.github/workflows/deploy.yml`) runs check and smoke on every push and PR; deploys
   `main` to GitHub Pages as soon as check passes (smoke runs alongside but doesn't gate the
   deploy: owner's call, 2026-11-02), and uploads smoke screenshots when smoke fails.
-  The Pages build sets `VITE_DEV_SPRINT=1`, so the dev sprint (G / L3) works there; Steam and
+  The Pages build sets `VITE_DEV_SPRINT=1`, so the dev menu (~ / L3: sprint, invincible, save states) works there; Steam and
   itch builds must not set it.
 
 ## Smoke scenarios and save fixtures
@@ -50,6 +50,7 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | `shrine-keys` | `shrine-entry` | a room clearing, the amber key chest, the Cistern door, the HUD key, dying (the checkpoint rule: beaten challenge rooms stay empty), Continue inside |
 | `shrine-exit` | `shrine-entry` | the way out (always open) |
 | `shrine-enemies` | `shrine-entry` | sentinels and shellbacks spawn from the data; a sentinel sleeps, wakes, swings (2 half-hearts), falls to hits in its recovery and from behind; a shellback's shell turns a frontal hit, it falls from behind |
+| `dev-menu` | `field-sword` | ~ opens and pauses, toggles stay open, Backspace goes back/closes, loading the boss-door and night states by keyboard and mouse |
 | `village` | `field-sword` | Tobin's mill key, the mill door, sleeping (heals, clock to 18:00), the way out, buying Odo's Stoneward Tunic |
 
 **Fixtures** are real saves in `scripts/fixtures/<name>.json` (current `SAVE_VERSION`).
@@ -97,7 +98,7 @@ Tests live next to their modules (`*.test.ts`).
 
 ## Debugging in the browser
 
-`npm run dev`, then `?debug` in the URL: fps/draw calls/position overlay; backquote (`)
+`npm run dev`, then `?debug` in the URL: fps/draw calls/position overlay; backslash (\)
 toggles a collider wireframe. In dev, `window.embervale` is the `Game` (teleport with
 `embervale.player.teleport(x, y, z)`). For bosses: `embervale.activeBoss.forceMove('slam')`
 plays a move on demand, `embervale.setTimeScale(0.05)` slows everything to inspect poses,
@@ -105,8 +106,10 @@ plays a move on demand, `embervale.setTimeScale(0.05)` slows everything to inspe
 `embervale.loadArea('shrine')` jumps into the dungeon; `embervale.area.showFloor(0)` and
 `embervale.rig.frozen = true` set up a top-down view (see the `dungeon` look scene).
 Indoors, call the `teleport` helper with a `fromY` just above the floor.
-**Dev sprint**: on the dev server (or with `?debug`), **G** toggles 5× run speed
-(`Player.devSpeed`) to cross the valley fast; a toast confirms it. Never in the shipped build.
+**Dev menu**: on the dev server (or with `?debug`), **~** / **L3** opens it: dev sprint (5× run
+speed, `Player.devSpeed`), invincibility, and **Save states** that jump to a ready-made point
+and replace the current save (see "Menus" in [engine.md](engine.md)). Never in the shipped
+build. With `?debug`, **\** (not ~) toggles the collider wireframe.
 **P** toggles music (saved in the settings) and now shows a toast, so a muted game is no
 longer a mystery.
 

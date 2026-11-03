@@ -1,0 +1,73 @@
+import { SAVE_VERSION, type DungeonSave, type SaveData } from '../core/save';
+import { floorY, worldPos, type DungeonDef } from '../world/dungeon/format';
+import { SHRINE } from '../world/dungeon/defs/shrine';
+
+/**
+ * Dev-menu save states: ready-made points in the game to jump to while testing. Loading one
+ * replaces the current save. Built from the game's own data (the shrine's ids), so adding a
+ * chest or door to a dungeon doesn't leave a state behind. Dev builds only (see game.ts).
+ */
+export interface DevState {
+  name: string;
+  /** Null: a brand-new game (the intro plays). */
+  save: SaveData | null;
+  /** Where Wren stands; omitted = the area's spawn. `y` omitted = the ground (or floor) there. */
+  at?: { x: number; z: number; y?: number; facing: number };
+}
+
+const base = (o: Partial<SaveData>): SaveData => ({
+  version: SAVE_VERSION,
+  flags: [], keys: 0, area: 'overworld', items: [], dungeons: {}, flasks: [],
+  gems: 0, hp: 6, maxHp: 6, hours: 9, day: 1, savedAt: 0,
+  ...o,
+});
+
+const SWORD_AND_BED = ['metMaren', 'gotGroveKey', 'groveChestOpened', 'hasSword', 'village.millKey'];
+const SHRINE_OPEN = [...SWORD_AND_BED, 'lamplighterDefeated', 'hollowVessel', 'shrineOpen'];
+const emptyDungeon = (): DungeonSave => ({ keys: [], bossKey: false, doors: [], chests: [], switches: [], cleared: [], done: false });
+
+/** Everything in a dungeon done except the boss: doors open, switches pressed, chests opened, fight rooms cleared, the boss key held. */
+export function completedDungeon(def: DungeonDef): { progress: DungeonSave; gems: number } {
+  const chests = def.things.flatMap((t) => (t.kind === 'chest' ? [t] : []));
+  return {
+    progress: {
+      keys: [],
+      bossKey: chests.some((c) => c.loot === 'bossKey'),
+      doors: def.doors.filter((d) => d.lock && d.lock !== 'boss' && !(typeof d.lock === 'object' && 'item' in d.lock)).map((d) => d.id),
+      chests: chests.map((c) => c.id),
+      switches: def.things.flatMap((t) => (t.kind === 'switch' ? [t.id] : [])),
+      cleared: [...new Set(def.things.flatMap((t) => (t.kind === 'enemy' ? [t.room] : [])))],
+      done: false,
+    },
+    gems: chests.reduce((n, c) => n + (typeof c.loot === 'object' && 'gems' in c.loot ? c.loot.gems : 0), 0),
+  };
+}
+
+function shrineAtBossDoor(): DevState {
+  const { progress, gems } = completedDungeon(SHRINE);
+  const ante = SHRINE.rooms.find((r) => r.id === 'bossAnte')!;
+  const [x, z] = worldPos(ante, [8, 2]); // just south of the boss door, which is in the room's north wall
+  return {
+    name: 'Shrine: at the boss door',
+    save: base({
+      flags: SHRINE_OPEN, area: 'shrine', items: ['tether'], dungeons: { shrine: progress },
+      flasks: ['life', 'attack'], gems, hp: 8, maxHp: 8, hours: 10,
+    }),
+    at: { x, z, y: floorY(SHRINE, ante.floor) + 0.05, facing: Math.PI },
+  };
+}
+
+export const DEV_STATES: DevState[] = [
+  { name: 'New game', save: null },
+  {
+    name: 'Night, outside the Hollow',
+    save: base({ flags: SWORD_AND_BED, hours: 22 }),
+    // On the south road, a good way before the hollow's trigger ring; facing south toward it.
+    at: { x: -22, z: 100, facing: 0 },
+  },
+  {
+    name: 'Shrine: start',
+    save: base({ flags: SHRINE_OPEN, area: 'shrine', dungeons: { shrine: emptyDungeon() }, hp: 8, maxHp: 8, hours: 10 }),
+  },
+  shrineAtBossDoor(),
+];
