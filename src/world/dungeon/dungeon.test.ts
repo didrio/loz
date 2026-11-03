@@ -63,8 +63,29 @@ describe('dungeon format', () => {
     const short = doors.map((d) => (d.id === 'eastStairs' ? { ...d, at: [5, 8] as const } : d));
     expect(errs({ doors: short })).toMatch(/don't fit inside room "upper"/);
     expect(errs({ things: [...things, { kind: 'chest', id: 'onStairs', room: 'east', at: [5, 8], loot: 'heart' }] })).toMatch(/"onStairs" stands on "eastStairs"/);
+    expect(errs({ things: [...things, { kind: 'enemy', id: 'onStairs2', room: 'east', at: [5, 8], type: 'thornling' }] })).toMatch(/"onStairs2" stands on "eastStairs"/);
+    expect(errs({ things: [...things, { kind: 'enemy', id: 'byStairs', room: 'east', at: [3, 8], type: 'thornling' }] })).toMatch(/"byStairs" is too close to the stairs "eastStairs"/);
     const pitOverRoom = rooms.map((r) => (r.id === 'upper' ? { ...r, features: [{ kind: 'pit' as const, x: 1, z: 15, w: 2, d: 2 }] } : r));
     expect(errs({ rooms: pitOverRoom })).toMatch(/would open into room "east" below/);
+  });
+});
+
+describe('landmark statues', () => {
+  const room = { id: 'a', floor: 0, x: 0, z: 0, w: 14, d: 14 };
+  const room2 = { id: 'b', floor: 0, x: 14, z: 0, w: 14, d: 14 };
+  const withMark = (at: [number, number], extra: DungeonDef['things'] = []): DungeonDef => ({
+    id: 'l', name: 'l', goal: 'b', entrance: { room: 'a', at: [3, 12], facing: 'n' }, rooms: [room, room2],
+    doors: [{ id: 'ab', from: 'a', to: 'b' }],
+    things: [{ kind: 'landmark', id: 'statue', room: 'a', at, style: 'watcher' }, ...extra],
+  });
+  it('accepts one in open floor and draws it as L', () => {
+    expect(validateDungeon(withMark([5, 5]))).toEqual([]);
+    expect(dungeonMap(withMark([5, 5]))).toContain('L');
+  });
+  it('fails one on a doorway approach, another thing, or sticking out of the room', () => {
+    expect(validateDungeon(withMark([12, 7])).join('\n')).toContain('opens straight into a landmark "statue"');
+    expect(validateDungeon(withMark([5, 5], [{ kind: 'chest', id: 'c', room: 'a', at: [5, 6], loot: 'smallKey' }])).join('\n')).toContain('landmark "statue" overlaps chest "c"');
+    expect(validateDungeon(withMark([1, 5])).join('\n')).toContain('sticks out');
   });
 });
 

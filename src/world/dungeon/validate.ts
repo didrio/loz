@@ -1,6 +1,6 @@
 import {
   CEIL_T, DEFAULT_DOOR_WIDTH, DIRS, DOOR_MARGIN, doorPlacement, FLOOR_T, floorHeightOf, floorY, footprintOverlap, MIN_ROOM,
-  lockSwitches, rectContains, rectsOverlap, roomHeight, roomOpenings, roomRect, STAIR_LANDING, stairPlacement, worldPos,
+  landmarkRect, lockSwitches, LANDMARK_SIZE, rectContains, rectsOverlap, roomHeight, roomOpenings, roomRect, STAIR_LANDING, stairPlacement, worldPos,
   type DungeonDef, type Rect, type RoomDef, type Vec2,
 } from './format';
 
@@ -140,7 +140,8 @@ export function validateDungeon(def: DungeonDef): string[] {
     }
     for (const ap of approaches) {
       if (!ap.rooms.includes(r)) continue;
-      const blockers = [...all, ...(r.features ?? []).filter((f) => f.kind !== 'pit').map((f) => ({
+      const marks = def.things.flatMap((t) => (t.kind === 'landmark' && t.room === r.id ? [{ id: `a landmark "${t.id}"`, rect: landmarkRect(r, t.at) }] : []));
+      const blockers = [...all, ...marks, ...(r.features ?? []).filter((f) => f.kind !== 'pit').map((f) => ({
         id: `a ${f.kind}`,
         rect: f.kind === 'pillar' ? { x: r.x + f.x - (f.r ?? 0.7), z: r.z + f.z - (f.r ?? 0.7), w: (f.r ?? 0.7) * 2, d: (f.r ?? 0.7) * 2 } : { x: r.x + f.x, z: r.z + f.z, w: f.w, d: f.d },
       }))];
@@ -165,11 +166,40 @@ export function validateDungeon(def: DungeonDef): string[] {
         errors.push(`${t.kind} "${t.id}" at (${t.at[0]}, ${t.at[1]}) isn't on the 2 m grid (use odd coordinates)`);
       }
       if (t.kind === 'stone' && (r.w % 2 || r.d % 2)) errors.push(`Room "${r.id}" has stones, so its size must be whole cells (even meters)`);
-      const half = t.kind === 'stone' ? 1 : 0.4;
+      const half = t.kind === 'stone' ? 1 : t.kind === 'landmark' ? LANDMARK_SIZE / 2 : 0.4;
       const spot: Rect = { x: x - half, z: z - half, w: half * 2, d: half * 2 };
       const { holes, stairs } = openings.get(r.id)!;
       for (const o of [...holes, ...stairs]) {
         if (rectsOverlap(o.rect, spot)) errors.push(`${t.kind} "${t.id}" stands on "${o.id}"`);
+      }
+      // Enemies start on level ground a body's width clear of a flight, never on or beside it.
+      if (t.kind === 'enemy') {
+        const wide: Rect = { x: x - 1.5, z: z - 1.5, w: 3, d: 3 };
+        for (const o of stairs) {
+          if (rectsOverlap(o.rect, wide) && !rectsOverlap(o.rect, spot)) errors.push(`enemy "${t.id}" is too close to the stairs "${o.id}" (keep it 1.5 m clear)`);
+        }
+      }
+    }
+    if (r && t.kind === 'landmark') {
+      // A statue is solid: it can't stand in a wall, on a pillar or block, or on another thing.
+      const me = landmarkRect(r, t.at);
+      if (!rectContains(roomRect(r), me, DOOR_MARGIN)) errors.push(`landmark "${t.id}" sticks out of room "${r.id}"`);
+      for (const f of r.features ?? []) {
+        if (f.kind === 'pit') continue;
+        const rr = f.kind === 'pillar' ? (f.r ?? 0.7) : 0;
+        const fr: Rect = f.kind === 'pillar' ? { x: r.x + f.x - rr, z: r.z + f.z - rr, w: rr * 2, d: rr * 2 } : { x: r.x + f.x, z: r.z + f.z, w: f.w, d: f.d };
+        if (rectsOverlap(fr, me)) errors.push(`landmark "${t.id}" overlaps a ${f.kind} in room "${r.id}"`);
+      }
+      for (const o of def.things) {
+        if (o === t || o.room !== r.id || o.kind === 'boss') continue;
+        const [ox, oz] = o.kind === 'landmark' ? [0, 0] : worldPos(r, o.at);
+        const oh = o.kind === 'stone' ? 1 : o.kind === 'enemy' ? 0.8 : 0.4;
+        const or: Rect = o.kind === 'landmark' ? landmarkRect(r, o.at) : { x: ox - oh, z: oz - oh, w: oh * 2, d: oh * 2 };
+        if (rectsOverlap(or, me)) errors.push(`landmark "${t.id}" overlaps ${o.kind} "${o.id}"`);
+      }
+      if (def.entrance.room === r.id) {
+        const [ex, ez] = worldPos(r, def.entrance.at);
+        if (rectsOverlap({ x: ex - 1, z: ez - 1, w: 2, d: 2 }, me)) errors.push(`landmark "${t.id}" stands at the dungeon entrance`);
       }
     }
     if (t.kind === 'chest' && t.appears) {

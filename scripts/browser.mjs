@@ -1,6 +1,6 @@
 // Shared helpers for the headless-browser scripts (smoke.mjs, look.mjs): start a dev
 // server, drive the game through `window.embervale`, and take screenshots.
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 
@@ -10,7 +10,7 @@ export const CHROME =
 
 /** Starts a dev server and a headless Chrome. Call `close()` when done. */
 export async function launch() {
-  const server = await createServer({ server: { port: 0 }, logLevel: 'error' });
+  const server = await createServer({ server: { port: 0, hmr: false, watch: null }, logLevel: 'error' }); // no reloads while files change mid-run
   await server.listen();
   const url = server.resolvedUrls.local[0];
   const browser = await chromium.launch({
@@ -31,9 +31,17 @@ export async function launch() {
  * A page plus helpers for driving the game. Headless rendering is slow and game time runs
  * slower than real time there, so helpers wait on game state, never on fixed delays.
  */
-export async function openGame(env, outDir) {
+export async function openGame(env, outDir, { fixture } = {}) {
   await mkdir(outDir, { recursive: true });
-  const page = await env.browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const page = await env.browser.newPage({ viewport: { width: 1280, height: 720 } }); // its own storage
+  if (fixture) {
+    // Plant the save (scripts/fixtures/<name>.json) before the game boots, so the title menu
+    // offers Continue. Only if the slot is empty: later reloads keep what the game saved.
+    const save = await readFile(new URL(`./fixtures/${fixture}.json`, import.meta.url), 'utf8');
+    await page.addInitScript(([key, raw]) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, raw);
+    }, ['embervale:save:0', save]);
+  }
   const errors = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
@@ -58,7 +66,7 @@ export async function openGame(env, outDir) {
         hp: g.state.hp,
         pos: { x: g.player.pos.x, y: g.player.pos.y, z: g.player.pos.z },
         enemies: g.enemies.list.filter((e) => e.alive).length,
-        lock: !!g.lock,
+        lock: !!g.combat.lock,
       };
     });
   /** Advances dialog until the running script ends. */
@@ -84,7 +92,7 @@ export async function openGame(env, outDir) {
   /** Loads the page and waits for the title menu. */
   const boot = async () => {
     await page.goto(env.url);
-    await until(() => window.embervale?.mode === 'title', 30000);
+    await until(() => window.embervale?.mode === 'title', 60000);
     await wait(800);
   };
   /** Boots, starts a new game and skips the intro. */
@@ -95,5 +103,13 @@ export async function openGame(env, outDir) {
     await finishScript();
   };
 
-  return { page, errors, wait, game, until, shot, press, state, finishScript, teleport, boot, newGame };
+  /** Boots and presses Continue: from the fixture the page was opened with, or the game's own save. */
+  const continueGame = async () => {
+    await boot();
+    await press('Enter');
+    await until(() => window.embervale.mode === 'play', 60000);
+    await wait(500);
+  };
+
+  return { page, errors, wait, game, until, shot, press, state, finishScript, teleport, boot, newGame, continueGame };
 }

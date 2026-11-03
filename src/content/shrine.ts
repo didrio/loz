@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { Thornling, type Enemy } from '../game/enemies';
+import { GroundEnemy, Thornling, type Enemy } from '../game/enemies';
+import { DozingSentinel } from '../game/sentinel';
+import { Shellback } from '../game/shellback';
 import type { Script, ScriptApi } from '../game/script';
 import type { DungeonProgress, GameState } from '../game/state';
 import type { DungeonArea } from '../world/dungeon/build';
@@ -13,9 +15,6 @@ import type { AreaContent } from './overworld';
  * (`GameState.dungeon('shrine')`), so adding a chest or door to the data needs no code here.
  * See docs/shrine.md for the design and milestones.
  */
-
-/** Enemy types not built yet stand in as thornlings so fight rooms work (milestone 4 replaces them). */
-const STAND_IN = new Set(['sentinel', 'shellback']);
 
 const LOOT_TEXT: Record<string, string> = {
   smallKey: 'You found a *Small Key*!\nIt opens one locked door in this shrine.',
@@ -96,10 +95,22 @@ export function shrineContent(area: DungeonArea): AreaContent {
       else if (loot === 'bossKey') p.bossKey = true;
       else if (loot === 'heart') api.state.heal(api.state.maxHp);
       else if ('item' in loot) {
-        if (loot.item === 'tether') api.state.items.add('tether');
+        if (loot.item === 'tether') {
+          // The dungeon's item gets its own moment: close on Wren, the cord flaring teal.
+          api.state.items.add('tether');
+          const w = api.player.pos, f = api.player.forward;
+          api.shot(w.clone().add(new THREE.Vector3(f.x * 2.6 - f.z * 1.2, 1.6, f.z * 2.6 + f.x * 1.2)), w.clone().setY(w.y + 1.2), true);
+          api.particles.burst(w.clone().setY(w.y + 1.5), 0x7ff7e8, 40, 5, 1.4, false);
+          api.sfx.tetherLatch();
+          await api.wait(1.2);
+        }
       } else if ('drink' in loot) api.state.drinks.add(loot.drink);
       else api.state.addGems(loot.gems);
       await api.say([{ text: lootMessage(loot) }]);
+      if (typeof loot === 'object' && 'item' in loot && loot.item === 'tether') {
+        api.releaseCamera();
+        api.toast('[item] Throw the Tether Glove at a stone to pull it toward you.');
+      }
     };
   }
 
@@ -133,9 +144,20 @@ export function shrineContent(area: DungeonArea): AreaContent {
     for (const list of roomEnemies.values()) for (const e of list) api.removeEnemy(e);
     roomEnemies.clear();
     for (const s of area.spawns) {
-      if (s.type !== 'thornling' && !STAND_IN.has(s.type)) continue; // the boss arrives in its own milestone
       // Each enemy minds its own room: it ignores Wren until Wren walks in.
-      const e = new Thornling(area.root, api.physics, s.x, s.z, s.y + 1, (pos) => area.roomAt(pos)?.id === s.room);
+      const inRoom = (pos: THREE.Vector3) => area.roomAt(pos)?.id === s.room;
+      // ...and keeps off the stairs (hard to fight on), though it still sees Wren standing on them.
+      const walkable = (pos: THREE.Vector3) => !area.onStairs(pos, 0.2);
+      let e: Enemy;
+      if (s.type === 'thornling') e = new Thornling(area.root, api.physics, s.x, s.z, s.y + 1, inRoom);
+      else if (s.type === 'shellback') e = new Shellback(area.root, api.physics, s.x, s.z, s.y + 1, inRoom);
+      else if (s.type === 'sentinel') {
+        // Statues stand facing into their room.
+        const r = area.def.rooms.find((room) => room.id === s.room)!;
+        const facing = Math.atan2(r.x + r.w / 2 - s.x, r.z + r.d / 2 - s.z);
+        e = new DozingSentinel(area.root, api.physics, s.x, s.z, s.y + 1, inRoom, facing);
+      } else continue; // the boss arrives in its own milestone
+      if (e instanceof GroundEnemy) e.setWalkable(walkable);
       api.addEnemy(e);
       roomEnemies.set(s.room, [...(roomEnemies.get(s.room) ?? []), e]);
     }
@@ -198,6 +220,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
       if (started) return;
       started = true;
       const p = progress(api.state);
+      let heavyHinted = false;
       area.onStone = (_id, result, from) => {
         if (result === 'bounced') {
           // Struck against a wall: it bounces back and shoves Wren out of its way (no harm done).
@@ -205,6 +228,13 @@ export function shrineContent(area: DungeonArea): AreaContent {
           api.sfx.stoneSlide();
           api.player.push(from, 15);
         } else if (result === 'moved') api.sfx.stoneSlide();
+        else if (result === 'bridged') api.sfx.columnSwing();
+        else if (result === 'heavy' && !heavyHinted) {
+          // The first heavy stone a blade meets: say why it won't budge.
+          heavyHinted = true;
+          api.sfx.stoneThunk();
+          api.toast(api.state.items.has('tether') ? 'Too heavy for a blade. Try the [item] Tether Glove.' : 'Too heavy to wake with a blade.');
+        }
         else if (result === 'sunk') {
           api.sfx.stoneSlide();
           api.sfx.stoneSink();
@@ -251,7 +281,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
       const pos = api.player.pos;
       const floorTop = floorY(def, area.floorAt(pos.y));
       // Remember solid ground; fall into a pit and come back to it, a heart lighter.
-      if (api.player.grounded && Math.abs(pos.y - floorTop) < 0.3 && area.roomAt(pos)) {
+      if (api.player.grounded && Math.abs(pos.y - floorTop) < 0.3 && area.roomAt(pos) && !area.nearPit(pos, 0.8)) {
         lastSafe.copy(pos);
         haveSafe = true;
       } else if (!falling && api.player.grounded && haveSafe && area.inPit(pos)) {
@@ -266,14 +296,9 @@ export function shrineContent(area: DungeonArea): AreaContent {
           falling = false;
         });
       }
-      // Leaving a puzzle room (one with a plate) puts its stones back, so no wrong push can
-      // ruin it; stones on a plate or in a pit stay. Elsewhere a moved stone stays moved
-      // (the doorway stone doesn't come back after every death).
-      const room = area.roomAt(pos)?.id ?? null;
-      if (room && room !== lastRoom) {
-        if (lastRoom && plateRooms.has(lastRoom)) area.resetRoom(lastRoom);
-        lastRoom = room;
-      }
+      // Stones stay where they're put when Wren leaves a room (so a stone can be pulled
+      // from out in the doorway); puzzle rooms reset when Wren falls (see onRespawn).
+      lastRoom = area.roomAt(pos)?.id ?? lastRoom;
       // Step well inside a fight room with its enemies still up: the shutters drop.
       const here = area.roomAt(api.player.pos, 1.2);
       if (!fighting && here?.fight && !p.cleared.has(here.id) && alive(here.id)) {
@@ -304,6 +329,9 @@ export function shrineContent(area: DungeonArea): AreaContent {
       if (fighting) for (const s of shuttersOf(fighting)) s.setOpen();
       fighting = null;
       spawnAll(api);
+      // A puzzle (a room with a plate) gone wrong comes back with the enemies: stones on a
+      // pressed plate or in a pit stay. Elsewhere a moved stone stays moved.
+      for (const r of plateRooms) area.resetRoom(r);
     },
   };
 }

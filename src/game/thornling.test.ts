@@ -3,32 +3,15 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Physics } from '../core/physics';
 import { DungeonArea } from '../world/dungeon/build';
 import { SHRINE } from '../world/dungeon/defs/shrine';
-import { Thornling, type EnemyEnv } from './enemies';
+import { REACTION, Thornling, type EnemyEnv } from './enemies';
+import { enemyEnv, runEnemy } from './enemyTestEnv';
 
 beforeAll(async () => {
   await initPhysics();
 });
 
-/** A stand-in for the game around one thornling: counts the hits it lands on a still Wren. */
-function env(physics: Physics, playerPos: THREE.Vector3) {
-  const hits: unknown[] = [];
-  const noop = () => {};
-  const e = {
-    playerPos, playerAlive: true, night: false, physics,
-    hazards: {} as EnemyEnv['hazards'], sfx: new Proxy({}, { get: () => noop }) as EnemyEnv['sfx'],
-    particles: { burst: noop } as unknown as EnemyEnv['particles'],
-    hitPlayer: (from) => (hits.push(from.clone()), 'hit'),
-    pushPlayer: noop, spawn: noop, drop: noop, shake: noop,
-  } satisfies EnemyEnv;
-  return { env: e, hits };
-}
-
-function run(t: Thornling, physics: Physics, e: EnemyEnv, seconds: number) {
-  for (let s = 0; s < seconds; s += 1 / 60) {
-    t.update(1 / 60, e);
-    physics.step(1 / 60);
-  }
-}
+const env = (physics: Physics, playerPos: THREE.Vector3) => enemyEnv(physics, playerPos);
+const run = (t: Thornling, physics: Physics, e: EnemyEnv, seconds: number) => runEnemy(t, physics, e, seconds);
 
 describe('Thornling senses', () => {
   it('can\'t reach Wren from the floor below (the shrine\'s pit hall is under the nave)', () => {
@@ -70,7 +53,7 @@ describe('Thornling senses', () => {
     const t = new Thornling(new THREE.Group(), physics, 0, 0);
     const wren = new THREE.Vector3(0, 0, 10);
     const { env: e } = env(physics, wren);
-    run(t, physics, e, 0.5);
+    run(t, physics, e, REACTION + 0.5); // it spots Wren and starts the chase
     // Wren runs off much faster than a thornling: it follows a while, then turns back.
     let far = 0;
     for (let i = 0; i < 400; i++) {
@@ -106,8 +89,41 @@ describe('Thornling senses', () => {
     const { env: e, hits } = env(physics, wren);
     run(t, physics, e, 5);
     expect(hits.length).toBe(0);
-    wren.set(0, 0, 6); // steps into its room
+    // Steps into its room, a few meters from wherever it wandered (it notices within 15 m, and
+    // the room is 16 m across: from the far corner it could miss Wren entirely).
+    wren.set(Math.max(-7, Math.min(7, t.pos.x)), 0, Math.max(-7, Math.min(7, t.pos.z + 4)));
     run(t, physics, e, 4);
+    expect(hits.length).toBeGreaterThan(0);
+  });
+
+  it('keeps off ground it may not walk on (stairs) but still notices Wren standing there', () => {
+    const physics = new Physics();
+    physics.box(0, -0.5, 0, 40, 0.5, 40);
+    physics.refreshQueries();
+    const t = new Thornling(new THREE.Group(), physics, 0, 0, 400, undefined);
+    t.setWalkable((p) => p.x < 3); // a flight of stairs from x = 3 on
+    const wren = new THREE.Vector3(6, 0, 0);
+    const { env: e, hits } = env(physics, wren);
+    let reach = 0;
+    for (let i = 0; i < 60 * 8; i++) {
+      run(t, physics, e, 1 / 60);
+      reach = Math.max(reach, t.pos.x);
+    }
+    expect(reach).toBeLessThan(3); // stopped at the foot
+    expect(reach).toBeGreaterThan(1.5); // it did notice Wren on the stairs and come for them
+    expect(hits.length).toBe(0);
+  });
+
+  it('gives Wren a moment (its reaction time) before it charges', () => {
+    const physics = new Physics();
+    physics.box(0, -0.5, 0, 40, 0.5, 40);
+    physics.refreshQueries();
+    const t = new Thornling(new THREE.Group(), physics, 0, 0);
+    const wren = new THREE.Vector3(0, 0, 3.5); // right in front of it, in plain view
+    const { env: e, hits } = env(physics, wren);
+    run(t, physics, e, REACTION - 0.1);
+    expect(t.alert).toBe(false);
+    run(t, physics, e, 3);
     expect(hits.length).toBeGreaterThan(0);
   });
 });

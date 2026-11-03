@@ -134,6 +134,19 @@ export class Physics {
     return hit ? hit.timeOfImpact : max;
   }
 
+  /**
+   * Like `rayDistance`, but sweeps a ball of `radius`: how far its center travels before it
+   * touches something. A ball doesn't slip through gaps or graze corners the way a thin ray
+   * does (the follow camera uses it). A ball already touching something at the start ignores it.
+   */
+  sphereDistance(from: THREE.Vector3, dir: THREE.Vector3, max: number, radius: number, filter: number = Layer.World) {
+    const hit = this.world.castShape(
+      { x: from.x, y: from.y, z: from.z }, { x: 0, y: 0, z: 0, w: 1 }, { x: dir.x, y: dir.y, z: dir.z },
+      new RAPIER.Ball(radius), 0, max, false, undefined, groups(0xffff, filter),
+    );
+    return hit ? hit.time_of_impact : max;
+  }
+
   step(dt: number) {
     this.world.timestep = dt;
     this.world.step();

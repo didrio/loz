@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Layer, type Physics } from '../core/physics';
 import type { Particles } from '../render/particles';
-import { glow } from '../render/shapes';
+import { glow, GroundShadow } from '../render/shapes';
 import type { Attack, HitResult } from './enemies';
 
 /**
@@ -59,6 +59,8 @@ interface Orb {
   radius: number;
   color: number;
   mesh: THREE.Group;
+  /** A dark disc on the ground below, so its distance and height read at a glance. */
+  shadow: GroundShadow;
 }
 
 /** Ring half-width that counts as "touching" the wave front. */
@@ -107,6 +109,7 @@ export class Hazards {
     this.orbs.push({
       pos: from.clone(), vel: dir.clone().normalize().multiplyScalar(o.speed ?? 9), t: 0,
       homing: o.homing ?? 0.8, life: o.life ?? 4, attack: o.attack ?? { damage: 1, guard: 1, knockback: 6 }, radius, color, mesh,
+      shadow: new GroundShadow(this.scene, radius * 2.2),
     });
   }
 
@@ -149,6 +152,7 @@ export class Hazards {
       o.pos.add(step);
       o.mesh.position.copy(o.pos);
       o.mesh.rotation.y += dt * 6;
+      o.shadow.place(o.pos.x, o.pos.y, o.pos.z, env.physics.groundY(o.pos.x, o.pos.z, o.pos.y, Layer.World));
       if (Math.random() < dt * 30) env.particles.burst(o.pos, o.color, 1, 0.6, 0.35, false);
       let pop = o.t > o.life || wall < dist + o.radius;
       if (!pop && o.pos.distanceTo(chest) < 0.75 + o.radius) {
@@ -174,6 +178,7 @@ export class Hazards {
   private removeOrb(i: number) {
     const o = this.orbs[i];
     this.scene.remove(o.mesh);
+    o.shadow.dispose();
     o.mesh.traverse((m) => {
       if (m instanceof THREE.Mesh) {
         m.geometry.dispose();

@@ -20,3 +20,41 @@ export function glow(color: number, radius: number, opacity = 0.35) {
     new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false }),
   );
 }
+
+const SHADOW_GEO = new THREE.CircleGeometry(1, 16).rotateX(-Math.PI / 2);
+/** How high above the ground a floating thing's shadow fades out completely (meters). */
+const SHADOW_FADE = 12;
+
+/**
+ * A dark disc on the ground under something that floats (orbs, wisps), so you can read how
+ * far away it is and how high: the higher it flies, the smaller and fainter the disc.
+ * Not a real shadow (those are hard to read on flat-shaded ground at night); a blob, the
+ * way late-90s games did it. Call `place` every frame with the ground height under it.
+ */
+export class GroundShadow {
+  readonly mesh: THREE.Mesh;
+  private readonly material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+
+  constructor(parent: THREE.Object3D, private readonly size: number) {
+    this.mesh = new THREE.Mesh(SHADOW_GEO, this.material);
+    this.mesh.renderOrder = 1;
+    this.mesh.visible = false;
+    parent.add(this.mesh);
+  }
+
+  /** Puts the disc at `groundY` under (x, z) for something at height `y`; hides it with no ground. */
+  place(x: number, y: number, z: number, groundY: number | null, strength = 1) {
+    const h = groundY === null ? Infinity : y - groundY;
+    const k = 1 - Math.min(1, Math.max(0, h) / SHADOW_FADE);
+    this.mesh.visible = k > 0.02 && strength > 0.02;
+    if (!this.mesh.visible) return;
+    this.mesh.position.set(x, groundY! + 0.04, z);
+    this.mesh.scale.setScalar(this.size * (0.45 + 0.55 * k));
+    this.material.opacity = 0.5 * k * strength;
+  }
+
+  dispose() {
+    this.mesh.removeFromParent();
+    this.material.dispose();
+  }
+}

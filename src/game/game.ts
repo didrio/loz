@@ -10,20 +10,21 @@ import { decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings
 import { Particles } from '../render/particles';
 import { Sky } from '../render/sky';
 import { Hud } from '../ui/hud';
-import { sameLevel, type Area, type Interactable } from '../world/area';
+import { nearestInteractable, sameLevel, type Area } from '../world/area';
 import { Boss } from './boss';
 import { CameraRig } from './camera';
+import { Combat } from './combat';
 import { Debug } from './debug';
 import { Dialog } from './dialog';
-import { EnemyManager, Gloomwisp, type Enemy, type EnemyEnv, type HurtResult } from './enemies';
-import { Hazards, type HazardEnv } from './hazards';
+import { EnemyManager, type Enemy } from './enemies';
+import { Hazards } from './hazards';
 import { ATTACK_BOOST_SECONDS, DRINK_ORDER } from './drinks';
-import { pickLockTarget } from './lockon';
 import type { DrinkId } from '../world/dungeon/format';
 import { Pickups } from './pickups';
-import { NO_CONTROLS, Player, type Controls, type PlayerEnv } from './player';
+import { NO_CONTROLS, Player, type Controls } from './player';
 import type { Page, Script, ScriptApi } from './script';
 import { GameState } from './state';
+import { TitleMenu } from './title';
 
 /**
  * - title: the menu over a slow camera orbit
@@ -31,9 +32,6 @@ import { GameState } from './state';
  * - cutscene: a script is running (dialog, item get, cutscene); no player control
  */
 export type Mode = 'title' | 'play' | 'cutscene';
-
-type MenuItem = 'continue' | 'new' | 'confirmNew';
-const MENU_LABELS: Record<MenuItem, string> = { continue: 'Continue', new: 'New Game', confirmNew: 'Start over? This erases your save' };
 
 const SETTINGS_KEY = 'embervale:settings';
 const AUTOSAVE_SECONDS = 30;
@@ -60,27 +58,23 @@ export class Game implements ScriptApi {
   readonly player: Player;
   readonly rig: CameraRig;
   readonly hazards: Hazards;
+  readonly combat: Combat;
   area!: Area;
   enemies!: EnemyManager;
   mode: Mode = 'title';
-  lock: Enemy | null = null;
   private content!: AreaContent;
   private readonly dialog: Dialog;
   private readonly saveSlot: SaveSlot;
   private readonly settings: Settings;
-  private readonly marker = new THREE.Group();
   private readonly timer = new THREE.Timer();
   private readonly debug: Debug | null;
   private areaName = '';
   private warpTo: number | null = null;
   private fadeValue = 0;
   private autosaveT = AUTOSAVE_SECONDS;
-  private titleT = 0;
-  private menu: { items: MenuItem[]; selected: number };
+  private readonly title: TitleMenu;
   /** Slow motion for cutscenes (1 = normal). */
   private timeScale = 1;
-  /** Real seconds left of hit-stop: a few frozen frames that make hits land with weight. */
-  private hitStop = 0;
   /** The music is off (Wren just died). */
   private musicSilenced = false;
   /** Set when a script is waiting to run after the current one. */
@@ -103,15 +97,14 @@ export class Game implements ScriptApi {
     this.player = new Player(this.scene, physics, this.state);
     this.rig = new CameraRig(this.camera, physics);
     this.hazards = new Hazards(this.scene);
-    this.buildMarker();
+    this.combat = new Combat(this);
 
     this.saveSlot = new SaveSlot(store);
     this.settings = decodeSettings(store.get(SETTINGS_KEY));
     this.sfx.musicOn = this.settings.music;
     this.loadArea('overworld');
 
-    this.menu = { items: this.saveSlot.load() ? ['continue', 'new'] : ['new'], selected: 0 };
-    this.renderMenu();
+    this.title = new TitleMenu(this.hud, this.sfx, !!this.saveSlot.load());
 
     window.addEventListener('pagehide', () => this.save());
     document.addEventListener('visibilitychange', () => document.hidden && this.save());
@@ -160,7 +153,7 @@ export class Game implements ScriptApi {
     const y = s.y ?? this.physics.groundY(s.x, s.z) ?? 0;
     this.player.teleport(s.x, y, s.z, s.facing);
     this.rig.snap(this.player.pos, s.facing);
-    this.lock = null;
+    this.combat.lock = null;
   }
 
   // ---------------------------------------------------------------------------
@@ -170,8 +163,8 @@ export class Game implements ScriptApi {
   private frame = (now: number) => {
     this.timer.update(now);
     const rawDt = Math.min(this.timer.getDelta(), 0.05);
-    const frozen = this.hitStop > 0;
-    this.hitStop -= rawDt;
+    const frozen = this.combat.hitStop > 0;
+    this.combat.hitStop -= rawDt;
     const dt = frozen ? 0 : rawDt * this.timeScale;
     this.input.poll();
     this.hud.setDevice(this.input.device);
@@ -185,8 +178,8 @@ export class Game implements ScriptApi {
         this.updatePlay(dt);
         break;
       case 'cutscene':
-        this.player.update(dt, NO_CONTROLS, this.playerEnv);
-        this.enemies.update(dt, this.enemyEnv, true);
+        this.player.update(dt, NO_CONTROLS, this.combat.playerEnv);
+        this.enemies.update(dt, this.combat.enemyEnv, true);
         this.dialog.update(this.input.pressed('confirm'));
         break;
     }
@@ -198,23 +191,7 @@ export class Game implements ScriptApi {
   };
 
   private updateTitle(dt: number) {
-    this.titleT += dt;
-    this.state.hours = 7.5 + Math.sin(this.titleT * 0.05) * 1.5;
-    const a = this.titleT * 0.04;
-    this.camera.position.set(Math.cos(a) * 70, 32, Math.sin(a) * 70);
-    this.camera.lookAt(0, 4, 0);
-
-    const m = this.menu;
-    if (this.input.pressed('menuUp') || this.input.pressed('menuDown')) {
-      m.selected = (m.selected + (this.input.pressed('menuUp') ? -1 : 1) + m.items.length) % m.items.length;
-      if (m.items.includes('confirmNew')) m.items = m.items.map((i) => (i === 'confirmNew' ? 'new' : i));
-      this.sfx.init();
-      this.sfx.select();
-      this.renderMenu();
-    }
-    if (!this.input.pressed('confirm')) return;
-    this.sfx.init();
-    const choice = m.items[m.selected];
+    const choice = this.title.update(dt, this.input, this.camera, this.state);
     if (choice === 'continue') {
       const save = this.saveSlot.load();
       if (save) this.state.load(save);
@@ -224,20 +201,12 @@ export class Game implements ScriptApi {
       this.state.area = where;
       this.content.restore(this.state);
       this.begin(false);
-    } else if (choice === 'new' && m.items.includes('continue')) {
-      m.items[m.selected] = 'confirmNew';
-      this.sfx.select();
-      this.renderMenu();
-    } else {
+    } else if (choice === 'new') {
       this.state.reset();
       this.saveSlot.clear();
       if (this.area.id !== 'overworld') this.loadArea('overworld');
       this.begin(true);
     }
-  }
-
-  private renderMenu() {
-    this.hud.setTitleMenu(this.menu.items.map((i) => MENU_LABELS[i]), this.menu.selected);
   }
 
   private begin(newGame: boolean) {
@@ -255,28 +224,19 @@ export class Game implements ScriptApi {
     if (!this.area.indoor) this.advanceClock(dt);
     if (this.input.clicked() && !this.input.locked) this.input.requestLock();
 
-    // Lock-on: toggles; with nothing to lock onto it recenters the camera instead.
-    // Let go when the target dies, gets far away, or ends up on another floor.
-    if (this.lock && (!this.lock.alive || this.lock.pos.distanceTo(this.player.pos) > 25 || Math.abs(this.lock.pos.y - this.player.pos.y) > 4)) this.lock = null;
-    if (this.input.pressed('lock')) {
-      if (this.lock) this.lock = null;
-      else {
-        this.lock = this.findLockTarget();
-        if (this.lock) this.sfx.lockOn();
-        else this.rig.recenter(this.player.facing);
-      }
-    }
+    this.combat.updateLock(this.input.pressed('lock'));
 
     // "Interact" comes before "jump" because they share a gamepad button.
-    const near = this.nearestInteractable();
+    const near = nearestInteractable(this.area.interactables, this.player.pos);
     if (near && this.input.pressed('interact')) {
       const script = this.content.scripts[near.id];
       if (script) this.run(script);
       return;
     }
 
-    this.player.update(dt, this.controls(), this.playerEnv);
-    this.updateCombat(dt);
+    if (this.input.pressed('item') && this.state.items.has('tether')) this.combat.throwTether();
+    this.player.update(dt, this.controls(), this.combat.playerEnv);
+    this.combat.update(dt);
 
     for (const t of this.area.triggers) {
       if (!t.enabled() || !sameLevel(t.y, this.player.pos.y) || Math.hypot(this.player.pos.x - t.x, this.player.pos.z - t.z) > t.r) continue;
@@ -299,7 +259,8 @@ export class Game implements ScriptApi {
     // What you can interact with gets its prompt floating over it, not in the corner.
     const actions: [Action, string][] = [];
     if (this.state.has('hasSword')) actions.push(['attack', 'Sword']);
-    actions.push(['lock', this.lock ? 'Release' : 'Lock on']);
+    if (this.state.items.has('tether')) actions.push(['item', 'Glove']);
+    actions.push(['lock', this.combat.lock ? 'Release' : 'Lock on']);
     this.hud.setActions(actions);
 
     this.autosaveT -= dt;
@@ -319,7 +280,7 @@ export class Game implements ScriptApi {
 
   /** The interact prompt floating over whatever is in reach (null when nothing is, or not in play). */
   private interactPrompt() {
-    const near = this.mode === 'play' ? this.nearestInteractable() : null;
+    const near = this.mode === 'play' ? nearestInteractable(this.area.interactables, this.player.pos) : null;
     if (!near) return null;
     const at = this.toScreen(new THREE.Vector3(near.x, near.promptY ?? this.player.pos.y + 2.4, near.z));
     return at && { ...at, label: near.label };
@@ -331,21 +292,6 @@ export class Game implements ScriptApi {
     const v = p.clone().project(this.camera);
     if (v.z > 1) return null;
     return { x: ((v.x + 1) / 2) * window.innerWidth, y: ((1 - v.y) / 2) * window.innerHeight };
-  }
-
-  /** Enemies, their attacks and the things they drop. */
-  private updateCombat(dt: number) {
-    this.enemies.update(dt, this.enemyEnv);
-    this.hazards.update(dt, this.hazardEnv);
-    this.pickups.update(dt, this.player.pos, (x, z, fromY) => this.physics.groundY(x, z, fromY) ?? fromY - 1, (k) => {
-      if (k === 'heart') {
-        this.state.heal(2);
-        this.sfx.heart();
-      } else {
-        this.state.addGems(k === 'bluegem' ? 5 : 1);
-        this.sfx.gem();
-      }
-    });
   }
 
   private advanceClock(dt: number) {
@@ -394,165 +340,35 @@ export class Game implements ScriptApi {
     this.sky.gloom += (gloomTarget - this.sky.gloom) * Math.min(1, rawDt * 1.5);
     hud.setHearts(state.hp, state.maxHp);
     hud.setGems(state.gems);
-    hud.setDrinks(DRINK_ORDER.filter((id) => (state.drinks.found.get(id) ?? 0) > 0).map((id) => ({ id, left: state.drinks.left.get(id) ?? 0 })), player.attackBoost / ATTACK_BOOST_SECONDS);
+    hud.setDrinks(DRINK_ORDER.filter((id) => (state.drinks.found.get(id) ?? 0) > 0).map((id) => ({ id, left: state.drinks.left.get(id) ?? 0 })), player.attackBoost / ATTACK_BOOST_SECONDS, state.items.has('tether'));
     hud.setKeys(state.keysHere, !!state.dungeons.get(state.area)?.bossKey);
     hud.setClock(state.hours, state.day);
     if (this.mode !== 'play') hud.setActions([]);
     const mood = boss ? 'boss' : this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day');
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced);
+    // Dev sprint: G / L3 toggles 5x run speed to get through the valley fast. Never in the shipped build.
+    if ((import.meta.env.DEV || this.debug) && input.pressed('devSprint')) {
+      player.devSpeed = player.devSpeed === 1 ? 5 : 1;
+      hud.showToast(player.devSpeed === 1 ? 'Dev sprint off' : 'Dev sprint on (x5)');
+    }
     if (input.pressed('music')) {
       this.sfx.musicOn = this.settings.music = !this.settings.music;
       this.store.set(SETTINGS_KEY, JSON.stringify(this.settings));
+      hud.showToast(this.settings.music ? 'Music on' : 'Music off ([music] to turn it back on)');
     }
 
-    if (this.lock?.alive) {
-      this.marker.visible = true;
-      this.marker.position.copy(this.lock.pos).setY(this.lock.pos.y + this.lock.lockHeight + 1.4 + Math.sin(performance.now() / 150) * 0.1);
-      this.marker.rotation.y += dt * 3;
-    } else this.marker.visible = false;
+    this.combat.updateMarker(dt);
 
     if (this.mode !== 'title') {
       const canLook = this.mode === 'play';
-      const lockAt = this.lock?.alive ? this.lock.pos.clone().setY(this.lock.pos.y + this.lock.lockHeight) : null;
-      this.rig.update(dt, canLook ? input.look(dt) : { yaw: 0, pitch: 0 }, player.pos, lockAt);
+      this.rig.update(dt, canLook ? input.look(dt) : { yaw: 0, pitch: 0 }, player.pos, this.combat.lockAt);
+      player.setOpacity(this.rig.playerOpacity);
     }
-    hud.setGuard(player.guard.fills(), player.guard.broken, this.guardGaugePosition());
+    hud.setGuard(player.guard.fills(), player.guard.broken, player.guard.paused, this.guardGaugePosition());
     hud.setPrompt(this.interactPrompt());
     this.physics.step(dt);
     this.sky.update(state.hours, this.mode === 'title' ? new THREE.Vector3() : player.pos, this.camera.position);
     this.debug?.update(dt);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Interaction, lock-on, combat callbacks
-  // ---------------------------------------------------------------------------
-
-  private nearestInteractable() {
-    let best: Interactable | null = null, bestD = Infinity;
-    for (const it of this.area.interactables) {
-      if (!it.enabled() || !sameLevel(it.y, this.player.pos.y)) continue;
-      const d = Math.hypot(this.player.pos.x - it.x, this.player.pos.z - it.z);
-      if (d < it.r && d < bestD) {
-        best = it;
-        bestD = d;
-      }
-    }
-    return best;
-  }
-
-  private findLockTarget() {
-    const camFwd = new THREE.Vector3(-Math.sin(this.rig.yaw), 0, -Math.cos(this.rig.yaw));
-    return pickLockTarget(this.player.pos, camFwd, this.enemies.list, this.physics);
-  }
-
-  private buildMarker() {
-    for (let i = 0; i < 3; i++) {
-      const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.4, 4), new THREE.MeshBasicMaterial({ color: 0xffcf3a, depthTest: false }));
-      arrow.rotation.x = Math.PI;
-      arrow.position.set(Math.cos((i / 3) * Math.PI * 2) * 0.5, 0, Math.sin((i / 3) * Math.PI * 2) * 0.5);
-      arrow.renderOrder = 10;
-      this.marker.add(arrow);
-    }
-    this.marker.visible = false;
-    this.scene.add(this.marker);
-  }
-
-  private get playerEnv(): PlayerEnv {
-    return {
-      area: this.area,
-      lockTarget: this.lock,
-      enemies: this.enemies.list,
-      hasSword: this.state.has('hasSword'),
-      onSwing: () => this.sfx.swing(),
-      onJump: () => this.sfx.jump(),
-      onHitEnemy: (e, result, at) => this.onSwordHit(e, result, at),
-      onCutBush: (at) => {
-        this.sfx.cut();
-        this.particles.burst(at, 0x4f9a35, 14, 5, 0.6);
-        this.pickups.drop(at, 0.3, 0.1);
-      },
-    };
-  }
-
-  /** Feedback for every sword contact: sounds, sparks, hit-stop, drops. */
-  private onSwordHit(e: Enemy, result: HurtResult, at: THREE.Vector3) {
-    if (result === 'ignored') return;
-    if (result === 'guarded') {
-      this.sfx.clank();
-      this.particles.burst(at, 0xffe28a, 10, 6, 0.35);
-      this.hitStop = 0.05;
-      return;
-    }
-    const isBoss = e instanceof Boss;
-    if (result === 'weak') {
-      this.sfx.weakHit();
-      this.particles.burst(at, 0x9ff0ff, 14, 7, 0.45);
-      this.hitStop = 0.11;
-      this.rig.shake(0.25);
-    } else {
-      this.sfx.hit();
-      this.particles.burst(at, 0xffffff, 6, 6, 0.3);
-      if (isBoss) this.hitStop = 0.06;
-    }
-    if (e.alive || isBoss) return;
-    this.sfx.enemyDie();
-    this.particles.burst(at, e instanceof Gloomwisp ? 0xb06aff : 0x7a2f4a, 18, 6, 0.7);
-    this.pickups.drop(e.pos.clone(), 0.65, 0.2);
-    if (this.lock === e) this.lock = null;
-  }
-
-  /** Every enemy attack on Wren goes through here: the result, plus how it feels. */
-  private hitPlayer: EnemyEnv['hitPlayer'] = (from, attack) => {
-    const r = this.player.receiveHit(from, attack);
-    const at = this.player.pos.clone().setY(this.player.pos.y + 1.2);
-    const shieldAt = at.clone().add(this.player.forward.multiplyScalar(0.7));
-    if (r === 'hit') {
-      this.sfx.hurt();
-      this.particles.burst(at, 0xff4d4d, 8, 4);
-      this.hitStop = Math.max(this.hitStop, 0.07);
-      this.rig.shake(0.2);
-    } else if (r === 'blocked') {
-      // Heavier attacks clang harder: the cost should be felt, not just seen in the HUD.
-      if (attack.guard >= 2) this.sfx.heavyBlock();
-      else this.sfx.clank();
-      this.particles.burst(shieldAt, 0xffe28a, 4 + attack.guard * 4, 5, 0.3);
-      if (attack.guard >= 2) this.rig.shake(0.12 * attack.guard);
-    } else if (r === 'broken') {
-      this.sfx.guardBreak();
-      this.particles.burst(shieldAt, 0x8b5a2b, 14, 6, 0.6);
-      this.particles.burst(shieldAt, 0xffe28a, 10, 7, 0.35);
-      this.hitStop = Math.max(this.hitStop, 0.09);
-      this.rig.shake(0.4);
-      this.hud.flashGuard();
-    }
-    return r;
-  };
-
-  private get enemyEnv(): EnemyEnv {
-    return {
-      playerPos: this.player.pos,
-      playerAlive: this.player.alive,
-      night: this.state.isNight && !this.area.indoor,
-      physics: this.physics,
-      hazards: this.hazards,
-      sfx: this.sfx,
-      particles: this.particles,
-      hitPlayer: this.hitPlayer,
-      pushPlayer: (from, strength) => this.player.push(from, strength),
-      spawn: (e) => this.enemies.add(e),
-      drop: (kind, at) => this.pickups.spawn(kind, at),
-      shake: (s) => this.rig.shake(s),
-    };
-  }
-
-  private get hazardEnv(): HazardEnv {
-    return {
-      playerPos: this.player.pos,
-      physics: this.physics,
-      particles: this.particles,
-      hitPlayer: this.hitPlayer,
-      onPop: () => this.sfx.orbPop(),
-    };
   }
 
   // ---------------------------------------------------------------------------
@@ -566,7 +382,7 @@ export class Game implements ScriptApi {
       return;
     }
     this.mode = 'cutscene';
-    this.lock = null;
+    this.combat.lock = null;
     script(this)
       .catch((e: unknown) => console.error('Script failed:', e))
       .finally(() => {
@@ -597,7 +413,7 @@ export class Game implements ScriptApi {
 
   removeEnemy(e: Enemy) {
     this.enemies.remove(e);
-    if (this.lock === e) this.lock = null;
+    this.combat.forget(e);
   }
 
   say(pages: Page[]) {

@@ -69,7 +69,7 @@ describe('shrine content', () => {
   });
 
   it('the boss door wants the boss key; the glove chest gives the Tether Glove', async () => {
-    const { area, content, api, p } = setup();
+    const { area, content, api, p, toasts } = setup();
     await content.scripts.bossDoor(api);
     expect(area.doors.get('bossDoor')!.opening).toBe(false);
     p.bossKey = true;
@@ -79,6 +79,7 @@ describe('shrine content', () => {
     content.restore(api.state);
     await content.scripts.tetherChest(api);
     expect(api.state.items.has('tether')).toBe(true);
+    expect(toasts.filter((t) => t.includes('[item]'))).toHaveLength(1); // how to use it, once
   });
 
   it('a fight room shutters when Wren walks in, and opens with its chest once its enemies fall', async () => {
@@ -161,6 +162,26 @@ describe('shrine content', () => {
     expect(teleports[0][2]).toBeCloseTo(pit.z + 15);
   });
 
+  it('does not remember ground hanging over a pit\'s lip: Wren comes back well clear of the water', async () => {
+    const { content, api, runQueued, rooms, player } = setup();
+    content.start!(api);
+    await runQueued();
+    const pit = rooms.get('pitHall')!;
+    Object.defineProperty(player, 'grounded', { get: () => true });
+    const teleports: number[][] = [];
+    (player as unknown as { teleport: (x: number, y: number, z: number) => void }).teleport = (x, y, z) => void teleports.push([x, y, z]);
+    player.pos.set(pit.x + 1, -8, pit.z + 10); // well back from the pit
+    content.update!(api, 1 / 60);
+    player.pos.set(pit.x + 3.9, -8, pit.z + 10); // right on the lip
+    content.update!(api, 1 / 60);
+    player.pos.set(pit.x + 4.3, -8, pit.z + 10); // 'grounded' while already over the edge
+    content.update!(api, 1 / 60);
+    player.pos.set(pit.x + 5, -11, pit.z + 10); // in the water
+    content.update!(api, 1 / 60);
+    await runQueued();
+    expect(teleports[0][0]).toBeCloseTo(pit.x + 1);
+  });
+
   it('walking up or down the stairwell\'s stairs is not a fall (halfway, the nearest floor is the other one)', async () => {
     const { content, api, runQueued, rooms, player, queued } = setup();
     content.start!(api);
@@ -178,7 +199,7 @@ describe('shrine content', () => {
     expect(api.state.hp).toBe(api.state.maxHp);
   });
 
-  it('leaving the nave puts its stone back, but a pressed plate stays pressed', async () => {
+  it('a moved stone stays put when Wren leaves the room, and goes back when Wren falls', async () => {
     const { area, content, api, runQueued, stand } = setup();
     content.start!(api);
     await runQueued();
@@ -188,6 +209,8 @@ describe('shrine content', () => {
     area.update(1, {} as never);
     stand('southCell');
     content.update!(api, 1 / 60);
+    expect(area.stoneCell('naveStone')).toMatchObject({ i: 2, j: 6 }); // still where it was pushed
+    content.onRespawn!(api);
     expect(area.stoneCell('naveStone')).toMatchObject({ i: 2, j: 5 });
   });
 

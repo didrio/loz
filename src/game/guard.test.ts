@@ -83,6 +83,22 @@ describe('Guard', () => {
     expect(g.slots).toBe(3);
   });
 
+  it('is paused (the HUD shows red) only while a slot is down and the shield is up', () => {
+    const g = new Guard();
+    g.update(0.1, true);
+    expect(g.paused).toBe(false); // shield up, but nothing to recover
+    g.block(1);
+    g.update(0.1, true);
+    expect(g.paused).toBe(true);
+    g.update(0.1, false);
+    expect(g.paused).toBe(false); // lowered: recovering, green again
+    g.update(GUARD_REGEN, true);
+    expect(g.paused).toBe(true); // raised again before it filled
+    g.update(GUARD_REGEN, false);
+    g.update(0.1, true);
+    expect(g.paused).toBe(false); // full again
+  });
+
   it('keeps blocking light hits until it breaks, if the shield is never lowered', () => {
     const g = new Guard();
     const results = [];

@@ -59,6 +59,7 @@ export function overworldContent(ow: Overworld): AreaContent {
   const lamplighterWakes: Script = async (api) => {
     const boss = lamplighter;
     if (!boss) return;
+    api.silenceMusic(true); // the field's song stops dead as the trap springs
     ow.hollow.armed = false;
     ow.hollow.seal();
     api.sfx.flameRing();
@@ -76,6 +77,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     api.showBossTitle(boss.title, boss.epithet);
     await api.wait(1.8);
     boss.engage();
+    api.silenceMusic(false); // and the fight's song starts with the fight
   };
 
   /** Its death: slow motion, the cage bursts, and the freed flame flies home to the shrine. */
@@ -239,7 +241,7 @@ export function overworldContent(ow: Overworld): AreaContent {
         { text: 'You found the *Wayfarer\'s Blade*!\nIts edge is nicked, but it still sings when you swing it.' },
         { text: 'Press [attack] to swing. Keep pressing in rhythm for a three-hit combo. Press [lock] to lock on to an enemy.' },
         { text: 'Hold [shield] to raise your shield (you can still jump with it up). Each block knocks down some of its *guard*, the green bars beside you.' },
-        { text: 'Guard only comes back while your shield is *lowered*, so back off and let it recover. Block with too little guard left and it *breaks*: you stagger, barely able to move, until you catch your balance.' },
+        { text: 'Guard only comes back while your shield is *lowered* (the bars turn red while they wait), so back off and let it recover. Block with too little guard left and it *breaks*: you stagger, barely able to move, until you catch your balance.' },
         { text: 'Maren will want to see this. Head back to *Thistledown*.' },
       ]);
     },

@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "flags": ["metMaren", "gotGroveKey", "groveChestOpened", "hasSword", "lamplighterDefeated", "hollowVessel", "shrineOpen"],
+  "keys": 0,
+  "area": "shrine",
+  "items": [],
+  "dungeons": {
+    "shrine": { "keys": 0, "bossKey": false, "doors": [], "chests": [], "switches": [], "cleared": [], "entered": true, "done": false }
+  },
+  "drinks": {},
+  "gems": 0,
+  "hp": 8,
+  "maxHp": 8,
+  "hours": 10,
+  "day": 1,
+  "savedAt": 0
+}

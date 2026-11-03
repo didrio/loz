@@ -1,5 +1,5 @@
 import {
-  DEFAULT_DOOR_WIDTH, DIRS, doorPlacement, dropHole, roomOpenings, STAIR_LANDING, STAIR_RUN, stairPlacement, worldPos,
+  DEFAULT_DOOR_WIDTH, DIRS, doorPlacement, dropHole, landmarkRect, roomOpenings, STAIR_LANDING, STAIR_RUN, stairPlacement, worldPos,
   type DungeonDef, type Rect, type RoomDef,
 } from './format';
 
@@ -56,6 +56,7 @@ export function roomGrid(def: DungeonDef, room: RoomDef): RoomGrid {
       solids.push({ x: room.x + f.x - r, z: room.z + f.z - r, w: r * 2, d: r * 2 });
     } else if (f.kind === 'block') solids.push({ x: room.x + f.x, z: room.z + f.z, w: f.w, d: f.d });
   }
+  for (const t of def.things) if (t.kind === 'landmark' && t.room === room.id) solids.push(landmarkRect(room, t.at));
   const { holes, stairs } = roomOpenings(def, room);
   for (const h of holes) if (h.kind !== 'pit') solids.push(h.rect);
   for (const s of stairs) solids.push(s.rect);

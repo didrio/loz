@@ -59,7 +59,11 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   with the sword, or `'plate'` held down by a stone; `needs: item` if pressing it takes a
   tool), `stone` (a 2 m wakestone, `heavy` ones only move with the glove; stones and
   plates go at odd coordinates, the centers of 2 m cells), `enemy` (`type` is an enemy
-  class name like `thornling`), `boss` (stands in the middle of its room), `sign`.
+  class name like `thornling`), `boss` (stands in the middle of its room), `sign`,
+  `landmark` (a big lopsided statue to orient by: `style` `lanternKeeper` / `watcher` /
+  `fallenKeeper`, `facing` a yaw; a 3 m square, solid like a pillar, so the grid blocks the
+  cells it touches and the validator rejects one on a doorway approach, a stair, a pit, a
+  pillar or another thing; models in `landmarks.ts`, emissive only, no light).
 - **`music`**: the dungeon's theme (a mood in `core/tracks.ts`), played while inside.
 - **`entrance`** (room, spot, facing) and **`goal`** (the room that finishes it, normally
   the boss room).
@@ -78,6 +82,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   other, blocks or pillars; nothing stands on them; a pit can't open into a room below
   (use a drop).
 - Every doorway needs 1.5 m of clear floor in front of it on both sides (no stairs, holes,
+- Enemies start on level ground: not on a flight or its top shaft, and 1.5 m clear of a flight (the validator fails both).
   blocks or pillars there). This caught a real bug: the nave's east door first opened into
   the side of a staircase, leaving a gap narrower than Wren.
 
@@ -161,7 +166,7 @@ are open doorways, `k` small-key door, `B` boss door, `s` switch door, `i` item 
 `> < ^ v` one-way doors (pointing the way you can go), `U`/`D` stairs up/down, `v`/`*` a
 drop hole (on the floor above) and where it lands (below), `@` entrance, `C` chest, `S`
 crystal switch, `P` floor plate, `%` wakestone, `&` heavy wakestone, `e` enemy, `X` boss,
-`?` sign, `O` pit, `=` block, `I` pillar. Room ids are written in empty space inside each room. Example (`npm run map --
+`?` sign, `L` landmark statue, `O` pit, `=` block, `I` pillar. Room ids are written in empty space inside each room. Example (`npm run map --
 example`):
 
 ```

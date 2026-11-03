@@ -4,16 +4,33 @@ import { Layer, type Physics } from '../core/physics';
 
 const MIN_PITCH = -0.15;
 const MAX_PITCH = 1.1;
+/** The camera is a ball this big: it stops this far short of walls, ceilings and floors. */
+const CAM_RADIUS = 0.35;
+/** Closest the camera comes to Wren's chest. */
+const MIN_DIST = 0.7;
+/** Wren starts fading out when the camera is closer than this... */
+const FADE_START = 1.7;
+/** ...and is hidden entirely closer than this (a sheet of dither noise would be worse than nothing). */
+const FADE_END = 1.1;
 
 /**
  * Third-person orbit camera. Turned by the player (mouse, right stick, arrows); when locked
- * on it swings behind the player and frames the target. It pulls in when a wall or the
- * ground gets between it and the player. Scripts can take it over with `shot()`.
+ * on it swings behind the player and frames the target.
+ *
+ * Collision is one rule, indoors and out (the usual third-person approach): a small ball is
+ * swept from Wren's chest back toward where the camera wants to be; if it hits a wall,
+ * ceiling or the ground, the camera comes in to that point at once (it must never show the
+ * inside of a wall), then drifts back out slowly when the way clears, so walking along a wall
+ * doesn't make it pump in and out. When it ends up very close, Wren fades out
+ * (`playerOpacity`) so she never blocks the view. Trees and fences (Prop) don't count.
+ * Scripts can take it over with `shot()`.
  */
 export class CameraRig {
   yaw = 0;
   pitch = 0.32;
   dist = 9;
+  /** How visible Wren should be (1 = fully); she fades when the camera is pressed close. */
+  playerOpacity = 1;
   private focus = new THREE.Vector3();
   private recenterTo: number | null = null;
   private currentDist = 9;
@@ -80,6 +97,7 @@ export class CameraRig {
       const dir = want.normalize();
       const free = Math.max(0.8, this.physics.rayDistance(this.lookNow, dir, len, Layer.World | Layer.Prop) - 0.4);
       c.position.lerp(this.lookNow.clone().addScaledVector(dir, Math.min(len, free)), damp(3, dt));
+      this.playerOpacity = 1;
       this.applyShake(dt);
       c.lookAt(this.lookNow);
       return;
@@ -101,18 +119,17 @@ export class CameraRig {
     }
     this.focus.lerp(want, damp(12, dt));
 
-    // Pull in instantly when something blocks the view; ease back out when it clears.
+    // Pull in at once when something blocks the view; ease back out when it clears.
     const dir = new THREE.Vector3(
       Math.sin(this.yaw) * Math.cos(this.pitch),
       Math.sin(this.pitch),
       Math.cos(this.yaw) * Math.cos(this.pitch),
     );
-    const free = Math.max(1.2, this.physics.rayDistance(this.focus, dir, this.dist, Layer.World) - 0.35);
-    this.currentDist = free < this.currentDist ? free : this.currentDist + (free - this.currentDist) * damp(3, dt);
+    const free = Math.max(MIN_DIST, this.physics.sphereDistance(this.focus, dir, this.dist, CAM_RADIUS, Layer.World));
+    this.currentDist = free < this.currentDist ? free : this.currentDist + (free - this.currentDist) * damp(2, dt);
 
     c.position.copy(this.focus).addScaledVector(dir, this.currentDist);
-    const floor = this.physics.groundY(c.position.x, c.position.z, this.focus.y + 2, Layer.World);
-    if (floor !== null && c.position.y < floor + 0.6) c.position.y = floor + 0.6;
+    this.playerOpacity = clamp((this.currentDist - FADE_END) / (FADE_START - FADE_END), 0, 1);
     this.applyShake(dt);
     c.lookAt(this.focus);
     this.lookNow.copy(this.focus);

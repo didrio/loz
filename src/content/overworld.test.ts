@@ -103,6 +103,23 @@ describe('overworld content', () => {
     area.dispose();
   });
 
+  it('the Lamplighter\'s entrance plays in silence; its song starts with the fight', async () => {
+    const area = new Overworld(physics);
+    const state = new GameState();
+    state.set('hasSword');
+    state.hours = 21;
+    const { api, enemies } = fakeApi(area, physics, state);
+    const content = overworldContent(area);
+    content.start?.(api);
+    const boss = enemies.find((e) => 'engaged' in e) as unknown as { engaged: boolean };
+    expect(boss).toBeTruthy();
+    const calls: { on: boolean; fighting: boolean }[] = [];
+    api.silenceMusic = (on) => void calls.push({ on, fighting: boss.engaged });
+    await content.scripts['trigger.hollow'](api);
+    expect(calls).toEqual([{ on: true, fighting: false }, { on: false, fighting: true }]);
+    area.dispose();
+  });
+
   it('restores opened things from a save', () => {
     const fresh = new Overworld(physics);
     const state = new GameState();

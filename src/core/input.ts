@@ -6,7 +6,9 @@
 export type Action =
   | 'attack' | 'shield' | 'jump' | 'lock' | 'interact'
   | 'confirm' | 'cancel' | 'music' | 'menuUp' | 'menuDown'
-  | 'drinkRestore' | 'drinkAttack';
+  | 'drinkRestore' | 'drinkAttack' | 'item'
+  /** Dev builds and ?debug only: 5x run speed. */
+  | 'devSprint';
 
 export type Device = 'keyboard' | 'gamepad';
 
@@ -24,17 +26,21 @@ const KEYS: Record<Action, string[]> = {
   menuDown: ['ArrowDown', 'KeyS'],
   drinkRestore: ['Digit1', 'Numpad1'],
   drinkAttack: ['Digit2', 'Numpad2'],
+  item: ['KeyF'],
+  devSprint: ['KeyG'],
 };
 
 /**
  * Standard gamepad mapping: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 Back, 9 Start,
- * 12–15 d-pad up/down/left/right. A both talks and jumps: the game checks "interact" first.
+ * 10 L3, 11 R3 (stick clicks), 12–15 d-pad up/down/left/right. A both talks and jumps: the
+ * game checks "interact" first. Lock-on is the right stick click, Souls-style; the shield is
+ * on both left shoulders (LT and LB) until the owner picks one.
  */
 const PAD: Record<Action, number[]> = {
   attack: [2],
-  shield: [7, 5],
+  shield: [6, 4],
   jump: [0],
-  lock: [6, 4],
+  lock: [11],
   interact: [0],
   confirm: [0, 9],
   cancel: [1],
@@ -43,16 +49,18 @@ const PAD: Record<Action, number[]> = {
   menuDown: [13],
   drinkRestore: [14],
   drinkAttack: [15],
+  item: [3],
+  devSprint: [10],
 };
 
 const KEY_GLYPH: Record<Action, string> = {
   attack: 'Click', shield: 'Shift', jump: 'Space', lock: 'Q', interact: 'E',
-  confirm: 'Enter', cancel: 'Esc', music: 'P', menuUp: 'W', menuDown: 'S', drinkRestore: '1', drinkAttack: '2',
+  confirm: 'Enter', cancel: 'Esc', music: 'P', menuUp: 'W', menuDown: 'S', drinkRestore: '1', drinkAttack: '2', item: 'F', devSprint: 'G',
 };
 
 const PAD_GLYPH: Record<Action, string> = {
-  attack: 'X', shield: 'RT', jump: 'A', lock: 'LT', interact: 'A',
-  confirm: 'A', cancel: 'B', music: 'Back', menuUp: '↑', menuDown: '↓', drinkRestore: '←', drinkAttack: '→',
+  attack: 'X', shield: 'LT', jump: 'A', lock: 'R3', interact: 'A',
+  confirm: 'A', cancel: 'B', music: 'Back', menuUp: '↑', menuDown: '↓', drinkRestore: '←', drinkAttack: '→', item: 'Y', devSprint: 'L3',
 };
 
 /** The button label to show for an action on a device. */

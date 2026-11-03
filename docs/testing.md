@@ -6,20 +6,24 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
 ## Commands
 
 - `npm run check`: lint + unit tests + typecheck/build. Run before calling work done.
-- `npm run smoke`: starts a dev server and plays through the quest in headless Chrome
-  (title → intro → walk → collisions → bridge → bounds → locked chest + floating prompt →
-  Maren's key (HUD) → chest: sword → shield guard and guard break (stagger: no jump, a
-  crawl) → combat → the sealed shrine door → the Lamplighter fight (intro, phase two,
-  defeat cutscene, the door waking, heart vessel) → the door opens on interact (cutscene)
-  → night → reload and Continue → into the shrine (the seal) → a fight room's shutters
-  and its key chest → unlocking a door upstairs → striking the crystal → dying and
-  respawning at the entrance → saving and continuing inside → leaving once it's beaten),
-  asserting game state, failing on console errors
-  and saving screenshots to `smoke-output/`. Uses the installed Chrome (`CHROME_PATH` to
-  override). Waits on game state, never fixed delays: headless rendering is slow and game
-  time runs slower than real time there. Extend it when you add a quest step.
+- `npm run smoke`: starts one dev server and headless Chrome and runs the **scenarios**
+  (below) in parallel pages, up to 3 at a time; prints one ok/FAIL line per scenario (with
+  its failing steps) and the total time. `npm run smoke -- full combat` runs only those
+  named. Asserts game state, fails on console errors, saves screenshots to
+  `smoke-output/<scenario>/`. Uses the installed Chrome (`CHROME_PATH` to override). Waits
+  on game state, never fixed delays: headless rendering is slow and game time runs slower
+  than real time there. The dev server doesn't hot-reload during a run, so edits (yours or
+  another session's) don't reset the pages. A scenario that fails is **retried once alone**
+  after the rest: FLAKY means it passed alone (a busy CPU slows software rendering past a
+  step's timeout), a second FAIL is real. Don't run look scenes alongside it.
+  Known load-sensitive steps (2026-11-02, load ~12 on 11 cores): `full`'s bridge walk and
+  first walk, `combat`'s stagger check; all pass alone.
+- **When to run what** (owner's call, 2026-11-02): `npm run check` on every change; after a
+  task, only the scenarios that cover it (table below); the full suite at a milestone's
+  end, before a commit, or after shared systems (player, physics, camera, saves, game.ts)
+  changed, asking the owner first. CI runs everything on every push anyway.
 - `npm run look -- <scenes>` (`--list` for names: title, field, village, grove, chest,
-  door, dungeon, shrine, hollow, night, guard, boss, boss-moves): captures named scenes to
+  door, dungeon, camera, glove, landmarks, shrine, enemies, hollow, night, guard, shield, orbs, boss, boss-moves): captures named scenes to
   `look-output/` for you to inspect. Boss scenes slow time, make Wren invulnerable, park
   the camera and force moves. Add a scene when you add a place, a boss or a visual system.
 - Both scripts share `scripts/browser.mjs` (dev server, Chrome, `newGame`, `teleport`,
@@ -27,6 +31,37 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   the repo.
 - CI (`.github/workflows/deploy.yml`) runs check and smoke on every push and PR; deploys
   to GitHub Pages only if both pass, and uploads smoke screenshots when smoke fails.
+
+## Smoke scenarios and save fixtures
+
+`scripts/smoke.mjs` is the runner; each scenario is `scripts/smoke/<name>.mjs`, exporting
+`fixture` (a name, or `null` for a new game) and `default async function run(t)`, where `t`
+has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
+`check(cond, msg)`. The runner adds the "no errors in the console" step at the end.
+
+| Scenario | Starts from | Covers |
+|---|---|---|
+| `full` | new game | title, intro, walking, collisions, bridge, bounds, locked chest, Maren's key, the sword, the sealed door, the Lamplighter fight and its heart vessel, the door opening, night + save/Continue, entering the shrine and the seal |
+| `combat` | `field-sword` | the shield's guard and guard break, lock-on and the sword vs a thornling |
+| `shrine-puzzle` | `shrine-entry` | pushing stones, plates, the crystal switch, the solved puzzle surviving Continue |
+| `shrine-keys` | `shrine-entry` | fight-room shutters, key chest, locked door, dying (the checkpoint rule), Continue inside |
+| `shrine-exit` | `shrine-entry` | the seal opening once the keeper is beaten, the way out |
+| `shrine-enemies` | `shrine-entry` | sentinels and shellbacks spawn from the data; a sentinel sleeps, wakes, swings (2 half-hearts), falls to hits in its recovery and from behind; a shellback's shell turns a frontal hit, it falls from behind |
+
+**Fixtures** are real saves in `scripts/fixtures/<name>.json` (current `SAVE_VERSION`).
+`openGame(env, dir, { fixture })` plants the file in the page's localStorage before the game
+boots (only if the slot is empty, so a reload keeps what the game saved), so the title shows
+Continue; `continueGame()` boots and presses it. No game code is involved. A unit test
+(`src/core/fixtures.test.ts`) requires every fixture to decode unchanged through `decodeSave`
+and to use only known flags, items, areas and dungeons, so a save-format change fails
+`npm run check` until the fixtures are updated. To make one: play to the spot in
+`npm run dev`, save, copy `localStorage['embervale:save:0']` into a file (set `savedAt` 0),
+or edit an existing fixture by hand.
+
+**Adding a scenario**: write `scripts/smoke/<name>.mjs` (copy a small one), add the name to
+`SCENARIOS` in `scripts/smoke.mjs`, and a row above. Prefer a fixture over replaying the
+game to reach the spot. A scenario runs in its own page and storage, so it must not rely on
+another one. Add a new fixture only when a scenario needs a state no fixture has.
 
 ## Unit tests
 
@@ -66,8 +101,16 @@ plays a move on demand, `embervale.setTimeScale(0.05)` slows everything to inspe
 `embervale.loadArea('shrine')` jumps into the dungeon; `embervale.area.showFloor(0)` and
 `embervale.rig.frozen = true` set up a top-down view (see the `dungeon` look scene).
 Indoors, call the `teleport` helper with a `fromY` just above the floor.
+**Dev sprint**: on the dev server (or with `?debug`), **G** toggles 5× run speed
+(`Player.devSpeed`) to cross the valley fast; a toast confirms it. Never in the shipped build.
+**P** toggles music (saved in the settings) and now shows a toast, so a muted game is no
+longer a mystery.
 
 ## Known testing quirks
+
+- **Never check the HUD after a fixed delay.** Prompts, the boss bar and cards update on game
+  frames, and with scenarios running in parallel game time crawls: `wait(300)` then `check`
+  flaked three times in one day. `until` the element shows (with a timeout), then `check`.
 
 - `finishScript` presses Enter, which is also an interact key: right after a script ends,
   a stray Enter can re-trigger the interactable you're standing at. Harmless so far.

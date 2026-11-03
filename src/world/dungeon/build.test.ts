@@ -155,22 +155,72 @@ describe('the built shrine', () => {
 
   it('a stone in a pit fills it (Wren can walk over), and room resets leave it there', () => {
     const { area, ground, rooms, physics } = setup();
-    const pit = rooms.get('pitHall')!;
-    expect(area.moveStone('bridgeStone', { i: 1, j: 0 })).toBe('moved');
+    const cis = rooms.get('cistern')!;
+    expect(area.moveStone('cisternStone', { i: 0, j: 1 })).toBe('moved');
     area.update(1, {} as never);
-    expect(area.moveStone('bridgeStone', { i: 1, j: 0 })).toBe('sunk');
+    expect(area.moveStone('cisternStone', { i: 0, j: 1 })).toBe('sunk');
     area.update(1, {} as never);
-    const [x, z] = [pit.x + 5, pit.z + 9];
+    const [x, z] = [cis.x + 5, cis.z + 7];
     physics.refreshQueries(); // ray queries see moved colliders after a step (the game steps every frame)
     // Stones are Prop-layer (the camera passes through them), which Wren walks on.
     expect(physics.groundY(x, z, -8 + 1)).toBeCloseTo(-8, 1);
-    expect(ground(x + 4, z, -8 + 1)).toBeCloseTo(-11, 1); // the rest of the pit is still open
-    area.resetRoom('pitHall');
-    expect(area.stoneCell('bridgeStone')).toMatchObject({ i: 2, sunk: true });
+    expect(ground(x + 4, z, -8 + 1)).toBeCloseTo(-11, 1); // the rest of the channel is still open
+    area.resetRoom('cistern');
+    expect(area.stoneCell('cisternStone')).toMatchObject({ i: 2, sunk: true });
     // A stone that was merely moved goes home on reset.
     area.moveStone('naveStone', { i: 0, j: 1 });
     area.resetRoom('nave');
     expect(area.stoneCell('naveStone')).toMatchObject({ i: 2, j: 5 });
+  });
+
+  it('the Tether Glove pulls a stone one cell toward Wren, heavy ones too, only in line and in range', () => {
+    const { area, rooms } = setup();
+    const loft = rooms.get('loft')!;
+    const stone = area.stones.get('loftStone')!.group.position;
+    // Wren east of the heavy stone, in its row, 8 m off: it comes one cell closer.
+    const wx = stone.x + 8;
+    expect(area.tether(wx, 8, stone.z, -1, 0)?.result).toBe('moved');
+    expect(area.stoneCell('loftStone')).toMatchObject({ i: 2, j: 4 });
+    area.update(1, {} as never);
+    // Out of its row (off to one side), the cord catches but nothing moves.
+    expect(area.tether(wx, 8, stone.z + 3, -0.94, -0.34)?.result).toBe('blocked');
+    expect(area.stoneCell('loftStone')).toMatchObject({ i: 2, j: 4 });
+    // Too far away, or aimed elsewhere: a miss.
+    expect(area.tether(stone.x + 14, 8, stone.z, -1, 0)).toBeNull();
+    // Facing away, it still finds the stone Wren stands in line with (aim assist)...
+    expect(area.tether(wx, 8, stone.z, 1, 0)?.result).toBe('moved');
+    area.update(1, {} as never);
+    // ...but not one off to the side.
+    expect(area.tether(wx, 8, stone.z + 5, 0, 1)).toBeNull();
+    // Pulled all the way onto its plate, the plate presses (the loft's key).
+    const pressed: string[] = [];
+    area.onSwitch = (id) => pressed.push(id);
+    // Wren backs off as it comes, keeping two cells away (but never past the room's east end).
+    for (let k = 0; k < 8 && !pressed.length; k++) {
+      area.tether(Math.min(stone.x + 4, loft.x + loft.w - 1), 8, stone.z, -1, 0);
+      area.update(1, {} as never);
+    }
+    expect(pressed).toEqual(['loftPlate']);
+  });
+
+  it('a fallen column swings across the Pit Hall\'s pit when pulled from the near side, and Wren can cross', () => {
+    const { area, rooms, physics, p, walk } = setup();
+    const pit = rooms.get('pitHall')!;
+    const col = area.columns.get('bridgeStone')!;
+    const row = col.z;
+    expect(physics.groundY(pit.x + 8, row, -8 + 1, Layer.World)).toBeCloseTo(-11, 1); // open pit
+    // From the far (west) side it won't budge: it swings toward whoever pulls from across the pit.
+    expect(area.tether(pit.x + 2, -8, row + 2, 0, 1)).toBeNull();
+    const at = area.tether(pit.x + 14, -8, row, -1, 0);
+    expect(at?.result).toBe('bridged');
+    for (let k = 0; k < 3; k++) area.update(1, {} as never);
+    physics.refreshQueries();
+    expect(physics.groundY(pit.x + 8, row, -8 + 1, Layer.World)).toBeCloseTo(-8, 1);
+    // Wren walks across it, west, from the near ledge to the far one.
+    p.teleport(pit.x + 14, -8 + 0.05, row, -Math.PI / 2);
+    walk(-1, 0, 2);
+    expect(p.pos.x).toBeLessThan(pit.x + 4);
+    expect(p.pos.y).toBeGreaterThan(-8.5);
   });
 
   it('removes all of its colliders when disposed', () => {

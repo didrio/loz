@@ -21,15 +21,19 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 As of 2026-11-02: the valley (Emberfield) is playable start to finish up to the first
 dungeon. The Hollow Lamplighter mini-boss (night only), the quest thread and the music
-(all five themes on the owner's Gmaj7 → Dmaj7 plan) are done. **The Waking Shrine** (first
-dungeon, 25 rooms, four themed wings) is built and playable up to the glove: its build
-plan is in [docs/shrine.md](docs/shrine.md), milestones 1–3 done (builder; transitions,
+(day, night, village, the Lamplighter and the shrine, all built on one shared motif) are
+done. **The Waking Shrine** (first
+dungeon, 25 rooms, four themed wings) is built and playable up to the boss door: its
+build plan is in [docs/shrine.md](docs/shrine.md), milestones 1–5 done (builder; transitions,
 seal, keys, doors, chests, fight rooms; wakestones, plates, pits, bounce-back, puzzle
-checker) plus drinks and the death/checkpoint rule. **Next: shrine milestone 4** (the Dozing
-Sentinel and Shellback enemies, replacing the stand-in thornlings), then 5 (the Tether
-Glove), 6 (Gravelheart, the boss, and its music), 7 (the Northpass exit), 8 (polish).
-Check the scaling checklist in [docs/roadmap.md](docs/roadmap.md) first: the scenario
-smoke tests item is due soon.
+checker; the Dozing Sentinel and Shellback; the Tether Glove and the column bridge; the
+Souls-style camera collision) plus drinks and the death/checkpoint rule. Pre-boss pass
+(2026-11-02): guards are diegetic (weapons/shells are armor hurtboxes: the Sentinel's maul,
+the Shellback's shell, the Lamplighter's pole), the Sentinel's reach comes from its model,
+the guard bars go red while paused, gamepad lock-on is R3 / shield LT+LB / dev sprint L3,
+and `game.ts` is split (`combat.ts`, `title.ts`). Enemy feel is untuned until the owner plays. **Next: the owner's playtest tweaks B–D** (listed in [docs/roadmap.md](docs/roadmap.md); A is done), then **shrine milestone 6** (Gravelheart, the boss, and its
+music), then 7 (the Northpass exit), 8 (polish).
+Check the scaling checklist in [docs/roadmap.md](docs/roadmap.md) first.
 
 ## Docs: read the one for the area you're touching
 
@@ -65,6 +69,9 @@ smoke tests item is due soon.
   propose a simpler model when there is one, then build it and say where you deviated.
 - They want depth over speed: take the time to do things properly, but report plainly.
 - You can't hear audio or judge game feel: say so and ask them to play/listen.
+- They pay for every token: read narrowly (the layout below names the files), keep a
+  session to one task, and leave the docs ready for a fresh session instead of relying on
+  chat history.
 - Commit or push only when asked.
 
 ## Before you start a feature
@@ -82,8 +89,12 @@ door), so don't skip them because the change "looks small":
 1. **Rules get tests.** A logic change gets a unit test next to its module that would fail
    without it. A bug gets **reproduced in a failing test first**, then fixed.
 2. **`npm run check`** passes (lint, unit tests, typecheck, build).
-3. **Gameplay or content changes: `npm run smoke`** passes, and gets a new step when you
-   add a quest beat, a boss or a system.
+3. **Gameplay or content changes: the smoke scenarios that cover it** pass
+   (`npm run smoke -- <scenarios>`, 1–2 min), and smoke gets a new step when you add a
+   quest beat, a boss or a system. The **full suite** (~3–6 min) is for the end of a
+   milestone, before the owner commits, or after touching shared systems (player, physics,
+   camera, saves, game.ts): **ask the owner first** (owner's call, 2026-11-02; CI also runs
+   it on every push). See [docs/testing.md](docs/testing.md) for which scenario covers what.
 4. **Anything visible: look at it.** `npm run look -- <scenes>` (or a scratch Playwright
    script built on `scripts/browser.mjs`), then open the screenshots and check them. For
    refactors, capture before and after. Dungeon layouts: `npm run map -- <id>`.
@@ -104,7 +115,7 @@ in them; `content` (story, dialog, quest logic) binds behavior to world objects 
 src/
   main.ts                  boot: init Rapier, create Game, expose window.embervale (dev/?debug)
   core/                    engine-level, no game knowledge
-    physics.ts             Rapier wrapper: layers, static colliders, Character, ray queries
+    physics.ts             Rapier wrapper: layers, static colliders, Character, ray and sphere queries
     input.ts               actions (keyboard/mouse/gamepad), bindings, button glyphs
     director.ts            game-time waits/conditions/tweens for scripts (replaces setTimeout)
     save.ts                save format + migrations, validation, KeyValueStore, settings
@@ -119,12 +130,16 @@ src/
     dungeon/               dungeon data format, validator, softlock solver, text map, DUNGEONS registry;
                            defs/ the dungeons; build.ts + pieces.ts turn the data into a 3D indoor Area;
                            grid.ts + puzzle.ts: rooms as 2 m grids, the wakestone puzzle checker;
+                           landmarks.ts: the three big landmark statues;
                            decor.ts: each wing's palette, light and decoration
   game/
     game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
+    combat.ts, title.ts    lock-on, glove throw, hit feedback both ways, hit-stop; the title menu
     script.ts              ScriptApi + Script + Page (the contract content uses)
     player.ts, guard.ts    Wren (movement, sword, shield, stagger); the shield's guard
-    enemies.ts, hazards.ts Enemy base, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
+    enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
+    sentinel.ts, shellback.ts  the shrine's Dozing Sentinel and Shellback (on GroundEnemy)
+    enemyTestEnv.ts        the stand-in game enemy unit tests run against
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter
     lockon.ts              which enemy lock-on picks (same level, in sight)
     drinks.ts              single-use drinks (found / left, refilled on death): Restoring Draught, Ember Tonic
@@ -137,14 +152,16 @@ src/
     story.ts               intro, death
   ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, interact prompt, dialog, cards, title menu
 scripts/
-  smoke.mjs, look.mjs, browser.mjs   headless playthrough; scene captures; shared helpers
+  smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers
   map.mjs                  text map + problems for a dungeon (npm run map -- <id>)
 docs/                      topic docs (table above)
+CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/ (scout, looker, builder,
+                           architect), skills/ (/start, /wrap), settings.json
 ```
 
 ## Commands
 
-`npm run dev` (then `?debug`) · `npm run check` · `npm run smoke` · `npm run look -- <scenes>`
+`npm run dev` (then `?debug`) · `npm run check` · `npm run smoke [-- <scenarios>]` · `npm run look -- <scenes>`
 · `npm run map -- <dungeon id>`. Details in [docs/testing.md](docs/testing.md).
 
 ## Design decisions (don't undo without asking)
@@ -170,8 +187,9 @@ docs/                      topic docs (table above)
 - Gamepad A doubles as interact and jump (context action button).
 - Enemies and the clock freeze during dialog and cutscenes; the clock also stands still indoors.
 - The Hollow Lamplighter only appears at night (so its fight and theme are always night ones).
-- All music follows the owner's harmonic plan (Gmaj7 → Dmaj7 at the core; see
-  [docs/audio.md](docs/audio.md)); death silences the music and fades to black before the
+- The valley's songs share one tune (the day theme's motif; night reharmonizes it darker,
+  the village plays it honky-tonk; see [docs/audio.md](docs/audio.md)). The owner retired
+  the old Gmaj7 → Dmaj7 rule on 2026-11-02. Death silences the music and fades to black before the
   respawn, so it feels like a game over, not a teleport.
 - No instrument/song mechanic. Progress gates are keys, items and boss outcomes; the
   shrine opens only after the Lamplighter falls.

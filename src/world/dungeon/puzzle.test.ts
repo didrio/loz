@@ -28,6 +28,16 @@ describe('room grid', () => {
   });
 });
 
+describe('landmark statues in the grid', () => {
+  it('block the cells they touch, so stones cannot be pushed through them', () => {
+    const nave = roomGrid(SHRINE, room('nave'));
+    expect(nave.blocked[3][2] && nave.blocked[4][2]).toBe(true); // the keeper at (8, 5)
+    expect(nave.blocked[2][5] || nave.blocked[5][5]).toBe(false); // the stone-to-plate row stays open
+    const d = box([{ kind: 'landmark', id: 'm', room: 'a', at: [5, 5], style: 'watcher' }]);
+    expect(roomGrid(d, d.rooms[0]).blocked[2][2]).toBe(true);
+  });
+});
+
 describe('wakestone puzzles', () => {
   it('the nave\'s plate can be pressed with the sword alone; the loft\'s needs the glove', () => {
     expect(solveRoomPuzzle(SHRINE, room('nave'), false).plates.get('navePlate')).toBe(true);

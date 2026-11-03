@@ -126,8 +126,11 @@ export class HollowLamplighter extends Boss {
     super(parent, physics, arena, { x, z, yaw, hp: 30, radius: 0.9, halfHeight: 1.2, phases: [0.5] });
     this.lockHeight = 2.6;
 
-    const cloth = [mat(0x1c1a22), mat(0x23202a), mat(0x17151c)];
-    const bone = mat(0xd9d2bf), iron = mat(0x2a2c31), wood = mat(0x2e241c), dark = mat(0x0c0b0e);
+    // Its own materials (not the shared palette), so the hit flash and guard tint touch only it.
+    const cloth = [uniqueMat(0x1c1a22), uniqueMat(0x23202a), uniqueMat(0x17151c)];
+    const bone = uniqueMat(0xd9d2bf), iron = uniqueMat(0x2a2c31), wood = uniqueMat(0x2e241c), dark = uniqueMat(0x0c0b0e);
+    const maskMat = uniqueMat(0xe9e4d4);
+    this.flashMats.push(...cloth, bone, iron, wood, dark, maskMat);
     const shadow = (m: THREE.Mesh) => ((m.castShadow = true), m);
     const add = (parentNode: THREE.Object3D, geo: THREE.BufferGeometry, material: THREE.Material, x = 0, y = 0, z = 0) => {
       const m = shadow(new THREE.Mesh(geo, material));
@@ -286,7 +289,7 @@ export class HollowLamplighter extends Boss {
       const ka = (k / 6) * Math.PI * 2 + Math.PI / 6;
       add(this.cage, new THREE.BoxGeometry(0.035, 0.64, 0.035), iron, Math.sin(ka) * 0.34, 0.32, Math.cos(ka) * 0.34);
     }
-    this.mask = add(this.head, new THREE.SphereGeometry(0.2, 10, 8), mat(0xe9e4d4), 0, 0.32, 0.13);
+    this.mask = add(this.head, new THREE.SphereGeometry(0.2, 10, 8), maskMat, 0, 0.32, 0.13);
     this.mask.scale.set(1, 1.3, 0.55);
     // Blank porcelain: two hollow, slightly uneven eyes, a hairline crack and a dark tear streak.
     for (const s of [-1, 1]) {
@@ -324,9 +327,9 @@ export class HollowLamplighter extends Boss {
     return phase === 2 ? (HOWL as Move<this>) : null;
   }
 
-  /** Parries frontal hits with the pole whenever it isn't committed to a move. */
-  protected isGuarding(toAttacker: THREE.Vector3, part: string) {
-    return !this.move && part !== 'head' && toAttacker.dot(this.forward) > 0.2;
+  /** The sword glances off the pole (an armor hurtbox, only while it's held at the ready). */
+  protected isGuarding(_toAttacker: THREE.Vector3, part: string) {
+    return part === 'pole';
   }
 
   protected damageMultiplier(part: string) {
@@ -365,7 +368,21 @@ export class HollowLamplighter extends Boss {
       this.box(this.head, new THREE.Vector3(0, 0.35, 0), 0.55, 'head', 2),
       this.box(this.torso, new THREE.Vector3(0, 0.95, 0), 0.85, 'body'),
       this.box(this.hips, new THREE.Vector3(0, -0.8, 0), 0.75, 'legs'),
+      ...this.poleArmor(),
     ];
+  }
+
+  /**
+   * The pole parries: armor along its shaft and hook, but only while it's held at the ready
+   * (not committed to a move, so a slam's punish window stays open, and not dropped). A
+   * swing that meets the pole clanks; one that gets past it, from an angle, lands.
+   */
+  private poleArmor(): Hurtbox[] {
+    if (this.move || this.poleDropped) return [];
+    const boxes: Hurtbox[] = [];
+    for (let y = 0.2; y <= 2.8; y += 0.45) boxes.push({ ...this.box(this.pole, new THREE.Vector3(0, y, 0), 0.24, 'pole'), armor: true });
+    boxes.push({ ...this.box(this.pole, new THREE.Vector3(0.1, 3.05, 0), 0.38, 'pole'), armor: true });
+    return boxes;
   }
 
   /** The head's world position (wisps orbit it; the freed flame starts there). */

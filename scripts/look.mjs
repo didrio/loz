@@ -139,6 +139,126 @@ const SCENES = {
       await h.shot(`dungeon-floor${floor}`);
     }
   },
+  async camera(h) {
+    // Wren with her back to a wall in tight rooms: the camera should sit in front of the wall,
+    // close, with Wren faded (dithered) when it's very close. Plus an open room for comparison.
+    await h.newGame();
+    await h.game(() => {
+      window.embervale.state.dungeon('shrine').entered = true;
+      window.embervale.loadArea('shrine');
+    });
+    await h.wait(1500);
+    await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+    const backTo = async (name, id, fx, fz, facing) => {
+      await h.game(([id, fx, fz, facing]) => {
+        const g = window.embervale, r = g.area.def.rooms.find((q) => q.id === id);
+        g.player.teleport(r.x + r.w * fx, r.floor * 8 + 0.05, r.z + r.d * fz, facing);
+        g.rig.snap(g.player.pos, facing);
+      }, [id, fx, fz, facing]);
+      await h.wait(1200);
+      await h.shot(name);
+    };
+    await backTo('lookout', 'lookout', 0.5, 0.1, 0); // 8×12 m, back to the north wall
+    await backTo('gallery', 'gallery', 0.12, 0.5, Math.PI / 2); // the 10 m wide Long Gallery, back to the west wall
+    await backTo('corner', 'southCell', 0.06, 0.08, Math.PI / 4); // a corner
+    await backTo('open', 'nave', 0.5, 0.5, 0); // the middle of a big room
+  },
+  async glove(h) {
+    // The Tether Glove: the cord mid-throw and the HUD slot. (The Pit Hall's column bridge is
+    // shot by the shrine-glove smoke scenario: smoke-output/shrine-glove/02-bridge.png.)
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.dungeon('shrine').entered = true;
+      g.state.items.add('tether');
+      g.loadArea('shrine');
+    });
+    await h.wait(1500);
+    await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+    // Loft: two cells east of the heavy stone, facing it; throw, then freeze with the cord out.
+    await h.game(() => {
+      const g = window.embervale, r = g.area.def.rooms.find((q) => q.id === 'loft');
+      const s = g.area.stones.get('loftStone').group.position;
+      g.player.teleport(s.x + 4, r.floor * 8 + 0.05, s.z, -Math.PI / 2);
+      g.rig.snap(g.player.pos, -Math.PI / 2);
+      g.rig.yaw += Math.PI / 2; // from the side, so Wren doesn't hide the cord
+    });
+    await h.wait(1000);
+    await h.game(() => window.embervale.combat.throwTether());
+    await h.wait(120);
+    await h.game(() => window.embervale.setTimeScale(0.01));
+    await h.wait(300);
+    await h.shot('cord');
+    await h.game(() => window.embervale.setTimeScale(1));
+    await h.wait(1500);
+    await h.shot('hud');
+  },
+  async landmarks(h) {
+    // The three landmark statues, each seen from the doorway Wren usually arrives by.
+    await h.newGame();
+    await h.game(() => {
+      window.embervale.state.dungeon('shrine').entered = true;
+      window.embervale.loadArea('shrine');
+    });
+    await h.wait(1500);
+    await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+    // Free camera at eye level (Wren parked out of the shot): `from` and `to` are [x, z, y above the floor].
+    const view = async (name, floor, from, to) => {
+      await h.game(([floor, from, to]) => {
+        const g = window.embervale;
+        g.player.teleport(from[0], floor * 8 + 0.05, from[1], 0);
+        g.rig.frozen = true;
+        g.camera.position.set(from[0], floor * 8 + from[2], from[1]);
+        g.camera.lookAt(to[0], floor * 8 + to[2], to[1]);
+      }, [floor, from, to]);
+      await h.wait(900);
+      await h.shot(name);
+    };
+    await view('landmark-nave', 0, [14.8, 7, 2.2], [22, 1, 3.2]); // just inside the nave's west doorway, from the entry hall
+    await view('landmark-gallery', 1, [32.5, -0.5, 2.4], [35, -5, 3]); // top of the stairs
+    await view('landmark-crypt', -1, [37.2, -2.6, 2.4], [33, 10, 1.8]); // foot of the stairs down
+    await view('landmark-nave-side', 0, [18, 13, 2.2], [22, 1, 3.2]);
+    await view('landmark-gallery-side', 1, [38.5, 3, 2.2], [35, -5, 3]);
+    await view('landmark-crypt-side', -1, [27, 4, 2.2], [33, 10, 1.8]);
+  },
+  /** The shrine's first-entry seal cutscene, mid-way: the doorway behind Wren should show only darkness. */
+  async seal(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.loadArea('shrine'));
+    await h.wait(900);
+    await h.shot('seal-open');
+    await h.wait(1500);
+    await h.shot('seal-closing');
+    // From beside the doorway, looking out and down at the threshold.
+    await h.game(() => {
+      const g = window.embervale;
+      const d = g.area.entranceDoor.group.position, s = g.area.spawn;
+      const T = g.player.pos.constructor;
+      const k = new T(d.x - s.x, 0, d.z - s.z).normalize();
+      g.rig.shot(new T(d.x - k.x * 1.6 - k.z * 0.9, d.y + 1.3, d.z - k.z * 1.6 + k.x * 0.9), new T(d.x + k.x * 2, d.y + 0.2, d.z + k.z * 2), true);
+    });
+    await h.wait(600);
+    await h.shot('seal-threshold');
+  },
+  /** A chest with its lid open: the underside of the lid must be solid. */
+  async chestOpen(h) {
+    await h.newGame();
+    const c = await h.game(() => ({ x: window.embervale.area.chest.x, z: window.embervale.area.chest.z }));
+    await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+    await h.teleport(c.x - 1.6, c.z + 1.6, Math.atan2(1.6, -1.6));
+    await h.wait(800);
+    await h.game(() => {
+      const g = window.embervale;
+      const ch = g.area.chest;
+      ch.open(true);
+      const T = g.player.pos.constructor, p = ch.group.position, y = ch.group.rotation.y;
+      // Wren out of the way: standing where the camera goes, their hood fills the foreground.
+      g.player.teleport(p.x - Math.sin(y) * 4, p.y, p.z - Math.cos(y) * 4, y);
+      g.rig.shot(new T(p.x + Math.sin(y) * 2.2, p.y + 1.7, p.z + Math.cos(y) * 2.2), new T(p.x, p.y + 1.0, p.z), true);
+    });
+    await h.wait(600);
+    await h.shot('chest-open');
+  },
   async shrine(h) {
     await h.newGame();
     await h.teleport(90, 28, Math.PI / 2);
@@ -158,23 +278,65 @@ const SCENES = {
     await h.wait(1500);
     await h.shot('night-village-road');
   },
-  /** The guard gauge beside Wren: one slot down, then broken. */
+  /** The guard gauge beside Wren: one slot down (shield up: red, paused), lowered (green, refilling), then broken. */
   async guard(h) {
     await h.newGame();
     const hit = (guard) =>
       h.game((guard) => {
         const g = window.embervale, p = g.player, f = p.forward;
-        return g.hitPlayer(p.pos.clone().set(p.pos.x + f.x * 3, p.pos.y, p.pos.z + f.z * 3), { damage: 2, guard });
+        return g.combat.hitPlayer(p.pos.clone().set(p.pos.x + f.x * 3, p.pos.y, p.pos.z + f.z * 3), { damage: 2, guard });
       }, guard);
     await h.page.keyboard.down('ShiftLeft');
     await h.until(() => window.embervale.player.shielding, 5000);
     await hit(1);
     await h.wait(500);
     await h.shot('guard-one-down');
+    await h.page.keyboard.up('ShiftLeft');
+    await h.wait(500);
+    await h.shot('guard-refilling');
+    await h.page.keyboard.down('ShiftLeft');
+    await h.until(() => window.embervale.player.shielding, 5000);
     await hit(3);
     await h.wait(400);
     await h.shot('guard-broken');
     await h.page.keyboard.up('ShiftLeft');
+  },
+  /** Wren's shield, lowered (on the outside of the left arm, face out to the side) and raised (square in front, facing ahead). */
+  async shield(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.setTimeScale(0.02)); // a still pose
+    const views = { front: { dist: 3.2, side: 1.2, height: 1.6, lookHeight: 1.2 }, left: { dist: 0.3, side: -3.2, height: 1.5, lookHeight: 1.2 } };
+    for (const [name, o] of Object.entries(views)) {
+      await park(h, o);
+      await h.wait(600);
+      await h.shot(`shield-lowered-${name}`);
+    }
+    await h.page.keyboard.down('ShiftLeft');
+    await h.until(() => window.embervale.player.shielding, 5000);
+    for (const [name, o] of Object.entries(views)) {
+      await park(h, o);
+      await h.wait(600);
+      await h.shot(`shield-raised-${name}`);
+    }
+    await h.page.keyboard.up('ShiftLeft');
+  },
+  /** Orbs hanging at three heights over open ground at dusk: each blob shadow should be smaller and fainter the higher its orb. */
+  async orbs(h) {
+    await h.newGame();
+    await h.game(() => (window.embervale.state.hours = 19));
+    await h.teleport(-40, -30, 0);
+    await h.wait(800);
+    await h.game(() => {
+      const g = window.embervale, p = g.player.pos, T = p.constructor;
+      g.player.invuln = 1e6;
+      for (const [i, up] of [[0, 1.2], [1, 3], [2, 6]]) {
+        g.hazards.orb(new T(p.x - 3 + i * 3, p.y + up, p.z + 6), new T(0, 0, 1), { speed: 0.01, homing: 0, life: 60 });
+      }
+    });
+    await h.wait(300);
+    await park(h, { dist: 13, side: 6, height: 3, lookHeight: 1.5 });
+    await h.wait(800);
+    await h.shot('orbs-heights');
   },
   /** The Lamplighter up close: front, face, side, back, and phase two. */
   async boss(h) {
@@ -203,6 +365,93 @@ const SCENES = {
     await park(h, { dist: 7, side: 3, height: 2.6, lookHeight: 2.6, boss: true });
     await h.wait(1200);
     await h.shot('boss-howl');
+  },
+  /** The shrine's enemies: a Dozing Sentinel asleep, winding up and stuck after its swing; a Shellback from front and back, and tucked to charge. */
+  async enemies(h) {
+    await h.newGame();
+    await h.game(() => {
+      window.embervale.state.dungeon('shrine').entered = true;
+      window.embervale.loadArea('shrine');
+    });
+    await h.game(() => {
+      const g = window.embervale;
+      g.player.invuln = 1e6;
+      // Only the first sentinel and shellback stay, so nothing else crowds the shots.
+      const keep = [g.enemies.list.find((e) => 'asleep' in e), g.enemies.list.find((e) => 'exposed' in e)];
+      for (const e of g.enemies.list) if (!keep.includes(e)) e.alive = false;
+    });
+    // Each room that empties plays its short "cleared" script (chests appear); enemies stay
+    // frozen until the queue is done, which takes a while at headless speed.
+    await h.until(() => window.embervale.mode === 'play', 120000);
+    await h.wait(1500);
+    await h.game(() => document.querySelector('.area')?.classList.remove('show')); // the area's name card, out of the shots
+    await h.wait(800);
+    // Wren `dist` in front of the enemy (`which`: 'asleep' marks sentinels, 'exposed' shellbacks).
+    const place = (which, dist) =>
+      h.game(([which, dist]) => {
+        const g = window.embervale, e = g.enemies.list.find((e) => which in e && e.alive);
+        const x = e.pos.x + Math.sin(e.facing) * dist, z = e.pos.z + Math.cos(e.facing) * dist;
+        g.player.teleport(x, (g.physics.groundY(x, z, e.pos.y + 2) ?? e.pos.y) + 0.05, z, e.facing + Math.PI);
+      }, [which, dist]);
+    // The camera `dist` ahead of the enemy (negative: behind), `side` to its left.
+    const view = (which, dist, side, height, lookHeight) =>
+      h.game(([which, dist, side, height, lookHeight]) => {
+        const g = window.embervale, e = g.enemies.list.find((e) => which in e && e.alive);
+        const f = { x: Math.sin(e.facing), z: Math.cos(e.facing) }, T = e.pos.constructor;
+        const at = new T(e.pos.x, e.pos.y + lookHeight, e.pos.z);
+        const cam = (side) => new T(e.pos.x + f.x * dist - f.z * side, e.pos.y + height, e.pos.z + f.z * dist + f.x * side);
+        // Near a wall the camera can end up inside it (a blank shot): then take the other side.
+        const clear = (c) => {
+          const d = c.clone().sub(at), len = d.length();
+          return g.physics.rayDistance(at, d.divideScalar(len), len) >= len - 0.3;
+        };
+        g.rig.shot(clear(cam(side)) || !clear(cam(-side)) ? cam(side) : cam(-side), at, true);
+      }, [which, dist, side, height, lookHeight]);
+    const until = (which, state, minT) =>
+      h.until(([which, state, minT]) => {
+        const e = window.embervale.enemies.list.find((e) => which in e && e.alive);
+        return e.state === state && e.t >= minT;
+      }, 20000, [which, state, minT]);
+    const freeze = (s = 0.01) => h.game((s) => window.embervale.setTimeScale(s), s);
+
+    await place('asleep', 9); // in its room, but too far to wake it
+    await h.wait(2500);
+    await view('asleep', 5, 2.5, 2, 1.6);
+    await h.wait(800);
+    await h.shot('sentinel-asleep');
+    await place('asleep', 2.5);
+    await until('asleep', 'windup', 0.8);
+    await freeze();
+    await view('asleep', 4.5, 4, 2.2, 1.8);
+    await h.wait(500);
+    await h.shot('sentinel-windup');
+    await freeze(1);
+    await until('asleep', 'recover', 0.3);
+    await freeze();
+    await view('asleep', 3, 4.5, 1.8, 1);
+    await h.wait(500);
+    await h.shot('sentinel-recover');
+    await freeze(1);
+
+    await h.game(() => {
+      const g = window.embervale, s = g.area.spawn; // back at the entrance, out of its sight
+      g.player.teleport(s.x, s.y, s.z, 0);
+    });
+    await h.wait(300);
+    await freeze();
+    await view('exposed', 3.5, 1.5, 1.6, 0.4);
+    await h.wait(500);
+    await h.shot('shellback-front');
+    await view('exposed', -3.5, 1.5, 1.6, 0.4);
+    await h.wait(500);
+    await h.shot('shellback-back');
+    await freeze(1);
+    await place('exposed', 4.5);
+    await until('exposed', 'tuck', 0.4);
+    await freeze();
+    await view('exposed', 3, 2.5, 1.4, 0.4);
+    await h.wait(500);
+    await h.shot('shellback-tuck');
   },
   /** Each Lamplighter move caught at the end of its windup (the telegraph) and in action. */
   async 'boss-moves'(h) {

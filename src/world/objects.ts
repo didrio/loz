@@ -62,7 +62,10 @@ export class Chest {
     lidMesh.position.z = 0.47;
     const lock = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.28, 0.08), trim);
     lock.position.set(0, 0.05, 0.96);
-    this.lid.add(lidMesh, lock);
+    // The half cylinder has no flat face; close its underside so the open lid isn't see-through.
+    const underside = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.96), dark);
+    underside.position.set(0, -0.01, 0.47);
+    this.lid.add(lidMesh, lock, underside);
     const inside = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.05, 0.85), dark);
     inside.position.y = 0.78;
     for (const me of [base, band, lidMesh, lock]) me.castShadow = true;

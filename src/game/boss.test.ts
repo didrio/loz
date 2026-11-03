@@ -8,6 +8,7 @@ import { AreaBuilder } from '../world/area';
 import { BossArena } from '../world/objects';
 import { Boss, type Move } from './boss';
 import { HollowLamplighter } from './bosses/lamplighter';
+import { swordTarget } from './player';
 import type { Attack, Enemy, EnemyEnv } from './enemies';
 import { Hazards } from './hazards';
 
@@ -76,15 +77,26 @@ describe('Boss framework (via the Hollow Lamplighter)', () => {
     expect(b.engaged).toBe(true);
   });
 
-  it('guards frontal hits while stalking, but not hits from behind or to the head', () => {
+  it('its pole parries a swing that meets it while stalking; one that gets past it, or a head hit, lands', () => {
     const { physics, scene, env } = setup();
     const b = lamplighter(physics, scene);
     b.engage();
     run(b, env, physics, 0.1);
     expect(b.move).toBeNull();
-    expect(b.hurt(1, new THREE.Vector3(0, 0, 3), 'body')).toBe('guarded');
-    expect(b.hurt(1, new THREE.Vector3(0, 0, -3), 'body')).toBe('hit');
-    expect(b.hp).toBe(b.maxHp - 1);
+    /** Swings at it from 3 m out, `deg` degrees off its facing, the way Wren's sword picks a part. */
+    const swingFrom = (deg: number) => {
+      const a = (deg * Math.PI) / 180 + Math.atan2(b.forward.x, b.forward.z);
+      const from = new THREE.Vector3(b.pos.x + Math.sin(a) * 3, b.pos.y, b.pos.z + Math.cos(a) * 3);
+      const box = swordTarget(b.hurtboxes(), from, b.pos.clone().sub(from).setY(0).normalize());
+      return box ? b.hurt(1, from, box.part) : 'miss';
+    };
+    expect(swingFrom(0)).toBe('guarded'); // straight into the pole held out in front
+    expect(swingFrom(-40)).toBe('guarded'); // the pole side
+    expect(b.hp).toBe(b.maxHp);
+    expect(swingFrom(60)).toBe('hit'); // round the pole (the old ±78° guard turned this)
+    expect(swingFrom(180)).toBe('hit');
+    expect(b.hp).toBe(b.maxHp - 2);
+    b.hp = b.maxHp - 1;
     expect(b.hurt(1, new THREE.Vector3(0, 0, 3), 'head')).toBe('weak');
     expect(b.hp).toBe(b.maxHp - 3);
   });

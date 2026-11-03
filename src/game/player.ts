@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { clamp, damp, easeOut, lerpAngle, mix } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
 import { buildHumanoid, type Humanoid } from '../render/characters';
-import { mat, uniqueMat } from '../render/materials';
+import { isSharedMaterial, mat, uniqueMat } from '../render/materials';
 import type { Area } from '../world/area';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
 import { ATTACK_BOOST } from './drinks';
@@ -46,8 +46,50 @@ const SWINGS = [
   { dur: 0.42, dmg: 2 },
 ];
 const RUN_SPEED = 8.5;
-/** While the guard is broken Wren staggers: a crawl at this fraction of normal speed, no jumping. */
-const STAGGER_SPEED = 0.1;
+/** While the guard is broken Wren staggers: a crawl at this fraction of normal speed, no jumping, no sword. */
+const STAGGER_SPEED = 0.06;
+/** The shield lowered: on the outside of the left forearm (arm space), face turned ~80° out to the side. */
+const SHIELD_REST_POS = new THREE.Vector3(0.14, -0.4, 0.02);
+const SHIELD_REST_YAW = 1.4;
+/** The shield raised: its center in front of the chest (body space, before the character's scale). */
+const SHIELD_BLOCK_POS = new THREE.Vector3(0.05, 1.2, 0.62);
+/** How far the sword reaches (from Wren's centre to a hurtbox's surface). */
+export const SWORD_REACH = 2.6;
+
+/**
+ * The hurtbox a swing from `pos` facing `forward` reaches, or null: the nearest armor if it's
+ * in the way (nearer than the target), else weak points first, then the nearest part.
+ */
+export function swordTarget(boxes: Hurtbox[], pos: THREE.Vector3, forward: THREE.Vector3, chop = false): Hurtbox | null {
+  // The blade sweeps from knee to just over the head; the overhead chop reaches higher.
+  const low = 0.15, high = chop ? 3.1 : 2.5;
+  let best: Hurtbox | null = null, bestD = Infinity;
+  let armor: Hurtbox | null = null, armorD = Infinity;
+  for (const box of boxes) {
+    const to = box.center.clone().sub(pos);
+    const y = to.y;
+    if (y + box.radius < low || y - box.radius > high) continue;
+    to.setY(0);
+    const d = to.length() - box.radius;
+    if (d > SWORD_REACH) continue;
+    if (to.length() > 0.8 && to.normalize().dot(forward) < 0.15) continue;
+    if (box.armor) {
+      if (d < armorD) {
+        armor = box;
+        armorD = d;
+      }
+      continue;
+    }
+    if (!best || box.priority > best.priority || (box.priority === best.priority && d < bestD)) {
+      best = box;
+      bestD = d;
+    }
+  }
+  return armor && armorD < bestD ? armor : best;
+}
+
+/** How long a glove throw holds the arm out (and the sword back). */
+export const THROW_TIME = 0.5;
 const GRAVITY = 30;
 
 export class Player {
@@ -83,6 +125,12 @@ export class Player {
   private readonly bladeMat = uniqueMat(0xd8dde3, { emissive: 0x000000 });
   /** Seconds left of an Ember Tonic (the sword hits harder meanwhile). */
   attackBoost = 0;
+  /** Seconds left of a glove throw: the arm is out, no sword or shield until it's back. */
+  throwT = 0;
+  /** Dev builds only (G): multiplies run speed to cross the map quickly. Never on in the shipped game. */
+  devSpeed = 1;
+  private opacity = 1;
+  private fadeMats: THREE.Material[] | null = null;
 
   constructor(scene: THREE.Scene, physics: Physics, private readonly health: Health) {
     this.h = buildHumanoid({ skin: 0xf0c49c, hair: 0x2e2018, coat: 0xb4532a, pants: 0x4a4038, boots: 0x5a3a22, accent: 0x2aa198 });
@@ -106,7 +154,7 @@ export class Player {
     this.sword.visible = false;
     this.h.armR.add(this.sword);
 
-    // A round wooden shield on the left arm. It counter-rotates to keep facing forward.
+    // A round wooden shield on the left arm (its face is local +z; `animate` sets the pose).
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.08, 12), this.shieldMat);
     disc.rotation.x = Math.PI / 2;
     const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.04, 4, 16), mat(0x9a9fa6));
@@ -114,7 +162,7 @@ export class Player {
     boss.position.z = 0.05;
     for (const m of [disc, rim, boss]) m.castShadow = true;
     this.shield.add(disc, rim, boss);
-    this.shield.position.set(0.12, -0.42, 0.12);
+    this.shield.position.copy(SHIELD_REST_POS);
     this.h.armL.add(this.shield);
 
     this.trail = new THREE.Mesh(
@@ -139,6 +187,35 @@ export class Player {
 
   get grounded() {
     return this.body.grounded;
+  }
+
+  /**
+   * Fades Wren (1 = solid, 0 = hidden) when the camera is pressed close, so she never blocks the view.
+   * Dithered (`alphaHash`), not blended, so there's no sorting between her parts. The first
+   * call gives her her own copies of any shared materials, so nothing else fades with her.
+   */
+  setOpacity(o: number) {
+    if (o === this.opacity) return;
+    this.opacity = o;
+    if (!this.fadeMats) {
+      const fadeMats: THREE.Material[] = (this.fadeMats = []);
+      const copies = new Map<THREE.Material, THREE.Material>();
+      this.h.root.traverse((m) => {
+        if (!(m instanceof THREE.Mesh) || m === this.trail) return;
+        const src = m.material as THREE.Material;
+        let own = copies.get(src);
+        if (!own) {
+          own = isSharedMaterial(src) ? src.clone() : src;
+          own.alphaHash = true;
+          own.needsUpdate = true;
+          copies.set(src, own);
+          fadeMats.push(own);
+        }
+        m.material = own;
+      });
+    }
+    for (const m of this.fadeMats) m.opacity = o;
+    this.h.root.visible = o > 0.02;
   }
 
   setSword(has: boolean) {
@@ -170,6 +247,23 @@ export class Player {
    * (unless unblockable) at the cost of guard slots; if the guard can't afford it, it breaks:
    * the hit is still stopped, but you're knocked back and lose the shield for a while.
    */
+  /**
+   * Throws the Tether Glove toward `yaw` (turning to face it). Only from a standstill-ready
+   * state: not mid-swing, hurt, staggered, or already throwing. True if it was thrown.
+   */
+  throwTether(yaw: number) {
+    if (!this.alive || this.state !== 'move' || this.throwT > 0 || this.guard.broken > 0) return false;
+    this.throwT = THROW_TIME;
+    this.facing = yaw;
+    return true;
+  }
+
+  /** Where the glove hand is, roughly (the cord starts here). */
+  handPos() {
+    const f = this.forward;
+    return this.pos.clone().add(new THREE.Vector3(f.x * 0.55 + f.z * 0.3, 1.25, f.z * 0.55 - f.x * 0.3));
+  }
+
   receiveHit(from: THREE.Vector3, a: Attack): HitResult {
     if (!this.alive || this.invuln > 0) return 'miss';
     if (a.groundOnly && !this.body.grounded) return 'miss';
@@ -217,6 +311,7 @@ export class Player {
 
   update(dt: number, c: Controls, env: PlayerEnv) {
     this.invuln = Math.max(0, this.invuln - dt);
+    this.throwT = Math.max(0, this.throwT - dt);
     this.attackBoost = Math.max(0, this.attackBoost - dt);
     const ember = this.attackBoost > 0 ? 0.7 + Math.sin(this.attackBoost * 8) * 0.25 : 0;
     this.bladeMat.emissive.setRGB(1 * ember, 0.45 * ember, 0.1 * ember);
@@ -229,13 +324,14 @@ export class Player {
     const canAct = this.alive;
     const move = canAct ? c.move : NO_CONTROLS.move;
     // The shield stays up through jumps: hold it, hop, keep blocking.
-    this.shielding = canAct && this.state === 'move' && c.shield && this.guard.canBlock;
+    this.shielding = canAct && this.state === 'move' && c.shield && this.guard.canBlock && this.throwT <= 0;
 
-    if (canAct && env.hasSword && c.attack) {
+    // Staggered (guard broken): no sword either. A swing's lunge would carry Wren out of the crawl.
+    const staggered = this.guard.broken > 0;
+    if (canAct && env.hasSword && c.attack && this.throwT <= 0 && !staggered) {
       if (this.state === 'move') this.startAttack(0, env);
       else if (this.state === 'attack' && this.t > SWINGS[this.combo].dur * 0.4 && this.combo < 2) this.queued = true;
     }
-    const staggered = this.guard.broken > 0;
     let jumped = false;
     if (canAct && this.state === 'move' && grounded && c.jump && !staggered) {
       this.velY = wading ? 8 : 11;
@@ -247,10 +343,10 @@ export class Player {
     this.t += dt;
     switch (this.state) {
       case 'move': {
-        const speed = (this.shielding ? 3.2 : wading ? 5 : RUN_SPEED) * (staggered ? STAGGER_SPEED : 1);
+        const speed = (this.shielding ? 3.2 : wading ? 5 : RUN_SPEED) * (staggered ? STAGGER_SPEED : 1) * this.devSpeed;
         vel.copy(move).multiplyScalar(speed);
         if (!lock && move.lengthSq() > 0.01 && !this.shielding) {
-          this.facing = lerpAngle(this.facing, Math.atan2(move.x, move.z), damp(14, dt));
+          this.facing = lerpAngle(this.facing, Math.atan2(move.x, move.z), damp(40, dt)); // near-instant: turning shouldn't cost a step
         }
         break;
       }
@@ -288,33 +384,10 @@ export class Player {
     this.animate(dt);
   }
 
-  /** The hurtbox the sword can reach this swing, preferring weak points, or null. */
-  private reachable(boxes: Hurtbox[]) {
-    const f = this.forward;
-    const reach = 2.6;
-    // The blade sweeps from knee to just over the head; the overhead chop reaches higher.
-    const low = 0.15, high = this.combo === 2 ? 3.1 : 2.5;
-    let best: Hurtbox | null = null, bestD = Infinity;
-    for (const box of boxes) {
-      const to = box.center.clone().sub(this.pos);
-      const y = to.y;
-      if (y + box.radius < low || y - box.radius > high) continue;
-      to.setY(0);
-      const d = to.length() - box.radius;
-      if (d > reach) continue;
-      if (to.length() > 0.8 && to.normalize().dot(f) < 0.15) continue;
-      if (!best || box.priority > best.priority || (box.priority === best.priority && d < bestD)) {
-        best = box;
-        bestD = d;
-      }
-    }
-    return best;
-  }
-
   private swordHits(env: PlayerEnv, dmg: number) {
     for (const e of env.enemies) {
       if (!e.alive || this.hitSet.has(e)) continue;
-      const box = this.reachable(e.hurtboxes());
+      const box = swordTarget(e.hurtboxes(), this.pos, this.forward, this.combo === 2);
       if (!box) continue;
       this.hitSet.add(e);
       const result = e.hurt(dmg * (this.attackBoost > 0 ? ATTACK_BOOST : 1), this.pos, box.part);
@@ -392,13 +465,25 @@ export class Player {
       h.armL.rotation.x = h.armR.rotation.x = -0.8;
     }
 
-    if (this.shielding) h.armL.rotation.set(-1.25, -0.6, 0);
-    this.shield.rotation.set(-h.armL.rotation.x, 0, 0);
+    // Throwing the glove: the left arm thrown straight out ahead.
+    if (this.throwT > 0 && this.state === 'move') h.armL.rotation.set(-1.6, 0, 0.12);
+    // Lowered, the shield rides on the outside of the forearm, its face turned out to Wren's left.
+    this.shield.position.copy(SHIELD_REST_POS);
+    this.shield.rotation.set(0, SHIELD_REST_YAW, 0);
+    if (this.shielding) {
+      // Raised: square in front of the chest, facing straight ahead whatever the arm is doing
+      // (placed in body space, then expressed in the arm's frame).
+      h.armL.rotation.set(-1.25, -0.6, 0);
+      h.armL.updateMatrix();
+      const inv = h.armL.quaternion.clone().invert();
+      this.shield.quaternion.copy(inv);
+      this.shield.position.copy(SHIELD_BLOCK_POS).sub(h.armL.position).applyQuaternion(inv);
+    }
     // Guard broken: the shield arm hangs, the shield droops and flashes red until it recovers.
     const broken = this.guard.broken;
     if (broken > 0) {
       h.armL.rotation.set(0.35, 0, 0.45 + Math.sin(broken * 18) * 0.05);
-      this.shield.rotation.set(0.5, 0.4, 0.3);
+      this.shield.rotation.set(0.5, SHIELD_REST_YAW - 0.3, 0.3);
     }
     const flash = broken > 0 && Math.floor(broken * 6) % 2 === 0 ? 1 : 0;
     this.shieldMat.color.setHex(flash ? 0xc0392b : 0x8b5a2b);

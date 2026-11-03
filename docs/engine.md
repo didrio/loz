@@ -25,6 +25,11 @@ step is the frame time capped at 50 ms (game time slows down rather than jumping
 frames are slow), times the **time scale** (slow motion in cutscenes) and zero during
 **hit-stop** (a few frozen frames when a hit lands; it's what makes combat feel weighty).
 
+`Game` is the hub and holds wiring only. Two parts live in their own modules: `Combat`
+(`game/combat.ts`: lock-on and its marker, the glove throw, the player/enemy/hazard
+environments, hit feedback both ways, hit-stop) and `TitleMenu` (`game/title.ts`: the
+orbit and the menu; `Game` acts on its choice). Scripts reach them as `g.combat.*`.
+
 ## Modes
 
 `title` (menu over a camera orbit) · `play` · `cutscene` (a script runs: dialog, item get,
@@ -42,6 +47,10 @@ draw calls per material per 80 m cell; `b.dynamic(obj)` keeps things that move o
 (NPCs, doors, glowing windows, instanced trees). Colliders made through the builder are
 tracked so `dispose()` removes everything. After building, `physics.refreshQueries()`:
 Rapier answers ray queries only about colliders that existed at the last step.
+Anything built at runtime frees its own GPU memory when removed: `Enemy.dispose()` runs
+`disposeTree` on its root (every geometry and unshared material), because a dungeon death
+rebuilds every enemy (`enemyDispose.test.ts` guards it). Three.js never frees a geometry
+just because its mesh left the scene.
 Adding an area = an `Area` class + a content file + a case (and id) in `content/areas.ts`.
 
 **Moving between areas**: `api.travel(id, entrance?)` fades out, `loadArea`s the other area
@@ -79,8 +88,16 @@ slopes ≤ 50°, auto-steps ≤ 0.45 m, snaps to ground). Positions are **feet**
 `move` at most once per physics step. Player: radius 0.4, 1.8 m tall, run 8.5 m/s, jump 11.
 `groundY(x, z)` and `rayDistance(...)` are the queries; gameplay never calls Rapier directly.
 
-Camera shots and the follow camera keep out of walls with a ray from the look-at point to
-the camera. **Never aim a shot at a point inside a collider** (e.g. a door's center): the
+**The follow camera's collision** is one rule, indoors and out (the Souls/Zelda approach,
+chosen by the owner 2026-11-02 after a see-through-wall experiment fought with it): a
+0.35 m ball is swept from Wren's chest toward where the camera wants to be
+(`Physics.sphereDistance`, World layer only, so trees and fences don't count). On a hit the
+camera comes in to that point at once, then eases back out slowly (so walking along a wall
+doesn't pump it). Closer than 1.7 m Wren fades out, and closer than 1.1 m she's hidden (`rig.playerOpacity` →
+`Player.setOpacity`, dithered `alphaHash`, her own material copies) so she never blocks the
+view. Small rooms just get a close camera; a room that needs better gets a fixed angle later.
+
+Camera shots keep out of walls with a ray from the look-at point to the camera. **Never aim a shot at a point inside a collider** (e.g. a door's center): the
 ray starts inside stone and the camera ends up pressed against it. Aim just in front of
 the surface (see `doorFace` in `content/overworld.ts`).
 
@@ -91,13 +108,14 @@ Code reads **actions**, never keys. Bindings:
 | Action | Keyboard / mouse | Gamepad (standard mapping) |
 |---|---|---|
 | move / camera | WASD / mouse (click to capture) or arrows | left stick / right stick |
-| attack · shield | Click or J · Shift or right-click | X · RT/RB |
+| attack · shield | Click or J · Shift or right-click | X · LT/LB (both for now; owner to pick one) |
 | jump | Space | A |
-| lock on | Q or Tab | LT/LB |
+| lock on | Q or Tab | R3 (right stick click) |
 | interact | E (or Enter) | A |
 | confirm · cancel | Enter/Space/E/click · Esc | A/Start · B |
 | music on/off | P | Back |
 | drink: Restoring Draught · Ember Tonic | 1 · 2 | d-pad ← · → |
+| dev sprint (dev builds / `?debug` only) | G | L3 (left stick click) |
 
 Gamepad A both talks and jumps: the game checks `interact` first (the classic context
 action button). The HUD shows glyphs for the last-used device. In dialog text, `[attack]`

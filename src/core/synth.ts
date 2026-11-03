@@ -15,7 +15,7 @@ const LOOKAHEAD = 0.25;
 
 /** Reverb send per instrument (0 dry, 1 very wet). */
 const SEND: Record<Instrument, number> = {
-  flute: 0.35, bell: 0.5, box: 0.55, harp: 0.4, pad: 0.45, bass: 0.05, drive: 0.04, brass: 0.25, mallet: 0.3,
+  flute: 0.35, bell: 0.5, box: 0.55, harp: 0.4, pad: 0.45, bass: 0.05, drive: 0.04, brass: 0.25, mallet: 0.3, piano: 0.2,
   kick: 0.04, snare: 0.2, hat: 0.1, shaker: 0.2, tom: 0.25,
 };
 
@@ -228,6 +228,23 @@ export class MusicPlayer {
         const knock = this.gain(out);
         this.strike(knock, t, 0.05 * v, 0.03);
         this.noise(t, 0.04, this.filter('bandpass', 1800, knock, 2));
+        break;
+      }
+      case 'piano': {
+        // A honky-tonk upright: two strings per note tuned a little apart (the "saloon"
+        // chorus), a bright hammer that mellows as it rings, a felt thump, and the damper
+        // falling when the note ends.
+        const end = t + Math.min(1.2, d + 0.25);
+        const g = this.gain(out);
+        this.strike(g, t, 0.18 * v, end - t);
+        const lp = this.filter('lowpass', 900, g);
+        lp.frequency.setValueAtTime(Math.min(f * 6, 6000), t);
+        lp.frequency.exponentialRampToValueAtTime(Math.max(f * 2, 400), t + 0.4);
+        this.osc('triangle', f * 0.9942, t, end, lp); // -10 cents
+        this.osc('sawtooth', f * 1.0058, t, end, lp); // +10 cents
+        const thump = this.gain(out);
+        this.strike(thump, t, 0.03 * v, 0.03);
+        this.noise(t, 0.03, this.filter('bandpass', 2500, thump, 1.5));
         break;
       }
       case 'harp': {

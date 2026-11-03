@@ -113,6 +113,28 @@ export class Sfx {
   /** A stone dropping into a pit and settling. */
   stoneSink() { this.noise(0.6, 400, 60, 0.45, 'lowpass'); this.tone(90, 0.5, 'sine', 0.25, 40, 0.15); }
 
+  // --- the Tether Glove ---
+  /** The cord whipping out: a rising, airy zip. */
+  tetherThrow() { this.noise(0.16, 900, 4200, 0.18); this.tone(520, 0.14, 'triangle', 0.05, 1300); }
+  /** It catches: a bright little latch. */
+  tetherLatch() { this.tone(1500, 0.06, 'square', 0.05, 900); this.tone(2200, 0.12, 'sine', 0.06, undefined, 0.03); }
+  /** A fallen column swinging round and landing across a pit. */
+  columnSwing() {
+    this.creak();
+    this.noise(1.1, 300, 90, 0.4, 'lowpass', 0.1);
+    // ...and the thud as it settles across the pit.
+    this.tone(110, 0.7, 'sine', 0.5, 32, 1.15);
+    this.noise(0.6, 900, 60, 0.45, 'lowpass', 1.15);
+  }
+
+  // --- enemy sounds ---
+  /** A statue coming alive (and a sentinel heaving its maul up): stone grinding on stone. */
+  grind() { this.noise(1.0, 350, 120, 0.4, 'lowpass'); this.tone(55, 1.0, 'sawtooth', 0.06, 48); this.noise(0.8, 1800, 900, 0.06, 'bandpass'); }
+  /** A shellback tucking into its shell before a charge. */
+  shellTuck() { this.tone(260, 0.12, 'square', 0.07, 140); this.noise(0.15, 1200, 400, 0.18, 'lowpass'); }
+  /** A shellback's charge: claws scrabbling on stone. */
+  scrabble() { this.noise(0.5, 2600, 1400, 0.16, 'bandpass'); }
+
   // --- boss sounds ---
   /** A long wooden/iron creak (a huge thing moving). */
   creak() { this.tone(70, 0.9, 'sawtooth', 0.06, 52); this.noise(0.9, 700, 250, 0.12, 'bandpass'); }
@@ -162,8 +184,9 @@ export class Sfx {
     if (this.ctx.state === 'suspended' && playing && this.musicOn) void this.ctx.resume();
     const want = this.musicOn && playing ? mood : null;
     if (want !== this.musicMood) {
+      // Silence cuts in at once (death, a boss's entrance); the boss theme fast; day and night slowly.
       const fast = want === 'boss' || this.musicMood === 'boss';
-      this.music.play(want && compiledSong(want), fast ? 0.6 : 2.5);
+      this.music.play(want && compiledSong(want), want === null ? 0.12 : fast ? 0.6 : 2.5);
       this.musicMood = want;
     }
     this.music.update();

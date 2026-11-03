@@ -149,7 +149,16 @@ export type ThingDef =
   | { kind: 'stone'; id: string; room: string; at: Vec2; heavy?: boolean; role?: 'bridge' }
   | { kind: 'enemy'; id: string; room: string; at: Vec2; type: string }
   | { kind: 'boss'; id: string; room: string; type: string }
-  | { kind: 'sign'; id: string; room: string; at: Vec2; text: string };
+  | { kind: 'sign'; id: string; room: string; at: Vec2; text: string }
+  /**
+   * A big, lopsided statue to orient by (one per floor's central room): `LANDMARK_SIZE` m
+   * square around `at`, solid like a pillar (the grid marks its cells blocked). `facing`
+   * is a yaw in radians (0 = looking south, +x = toward east); each style says what it points at.
+   */
+  | { kind: 'landmark'; id: string; room: string; at: Vec2; style: LandmarkStyle; facing?: number };
+
+/** The shrine's landmark statues: the Nave's, the Long Gallery's and the Crypt's. */
+export type LandmarkStyle = 'lanternKeeper' | 'watcher' | 'fallenKeeper';
 
 export const DEFAULT_FLOOR_HEIGHT = 8;
 /** Thickness of a floor slab (below the walking surface) and of a ceiling slab (above the room). */
@@ -304,6 +313,15 @@ export function roomOpenings(def: DungeonDef, room: RoomDef) {
     if (s && s.lower === room) stairs.push({ rect: s.rect, id: d.id });
   }
   return { holes, stairs };
+}
+
+/** Side of the square a landmark statue occupies (grid cells it touches are blocked). */
+export const LANDMARK_SIZE = 3;
+
+/** A landmark's footprint in world meters. */
+export function landmarkRect(room: RoomDef, at: Vec2): Rect {
+  const [x, z] = worldPos(room, at);
+  return { x: x - LANDMARK_SIZE / 2, z: z - LANDMARK_SIZE / 2, w: LANDMARK_SIZE, d: LANDMARK_SIZE };
 }
 
 /** A thing's world x/z (things are placed relative to their room's corner). */

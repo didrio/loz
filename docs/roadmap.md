@@ -14,10 +14,25 @@ asks: they're best designed against the real use case.
 
 Next, in order:
 
-1. **First dungeon: the Waking Shrine.** In progress: milestones 1–3 done (see the status
-   in [shrine.md](shrine.md)); **next is milestone 4** (Dozing Sentinel and Shellback), then
-   the Tether Glove (5, rethinking the Pit Hall's bridge first), Gravelheart and its theme
-   (6), the **Northpass** valley exit the glove opens (7), polish (8).
+0. **The owner's playtest tweaks (2026-11-02), before milestone 6**, one session each:
+   - ~~A: combat and visuals~~ **done**: no sword while staggered (crawl at 6%), the shield's
+     two poses (side of the arm / square in front), blob shadows under orbs and wisps.
+   - **B: shrine fixes**: no fight-room shutters; no entrance seal or entry cutscene (exit
+     always open); the railing at the top of the Deep Shaft stairs (`shaftUp`) you have to
+     jump over (repro in a scratch Playwright run first); z-fighting (stair trim top is
+     coplanar with each tread, `build.ts` stairs; audit the rest).
+   - **C: colored keys, one key per door** (Resident Evil style): `Lock`/`Loot` `{ key: color }`,
+     a validator rule that every key has exactly one chest and one door (today: 5 keys, 4
+     doors). Key web: crimson Loft → Pit Hall, azure Root Cellar → Gauntlet, jade Court →
+     Ossuary, violet Crypt → Echo Hall, amber Sentinel Cell → Cistern (new lock). Statues
+     chest's draught → 20 gems (3 gem chests). Save migration, HUD key icons, door marks.
+   - **D: village**: bigger cottages; Tobin gives a house key after the sword; his door
+     leads to a small interior with a bed that sleeps to the next 06:00/18:00; a new
+     merchant sells the **Stoneward Tunic** (100 gems; stone hits do half damage, rounded
+     up; Wren's tunic changes color) via a new yes/no dialog choice.
+1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
+   in [shrine.md](shrine.md)); **next is milestone 6** (Gravelheart and its theme), then the
+   **Northpass** valley exit the glove opens (7), polish (8).
 2. **Pause menu**: inventory, settings (mouse sensitivity, invert Y, volumes). (No dungeon
    map or compass by design.)
 3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later.
@@ -40,6 +55,13 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 - [x] **Dungeon data format + validator + solvability checker + text map** (2026-11-02,
   `world/dungeon/`). Dungeons are data, checked for structure and softlocks before any 3D
   exists. See [dungeons.md](dungeons.md).
+- [x] **Agent setup for cost** (2026-11-02): project-local Claude Code agents, skills and
+  model routing (see CLAUDE.md). Keeps the per-session cost flat as content grows: docs
+  carry the state, Sonnet does the documented patterns, Opus only plans and unsticks.
+  Keep adding a skill whenever a kind of task repeats.
+- [x] **Split `game/game.ts`** (2026-11-02, before the boss): 748 → 529 lines. Combat wiring
+  (lock-on, glove throw, hit feedback, enemy/hazard envs) → `game/combat.ts`; the title menu
+  → `game/title.ts`; "what's in reach" → `nearestInteractable` in `world/area.ts` (tested).
 
 ### Triggered by building the first dungeon (do these with it)
 
@@ -56,18 +78,15 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   their dungeon's progress, no hand-added flags; story flags still use `<area>.<thing>`.
 - [x] **Room puzzle checker** (2026-11-02, shrine milestone 3): `solveRoomPuzzle` in
   `checkDungeon`. See [dungeons.md](dungeons.md).
-- [ ] **Scenario smoke tests from save fixtures** (getting close: the playthrough now
-  includes the shrine and runs several minutes; do it when adding the next batch of
-  shrine steps): instead of one linear playthrough,
-  short scenarios that each start from a saved state ("at the shrine door, sword, boss
-  beaten") and run in parallel. The current smoke becomes one scenario. *Trigger: adding
-  the dungeon's steps, or smoke taking over ~5 minutes.*
+- [x] **Scenario smoke tests from save fixtures** (2026-11-02): `npm run smoke` runs named
+  scenarios in parallel pages, each from a save fixture (`scripts/fixtures/`, validated by a
+  unit test). See [testing.md](testing.md). Add shrine/enemy steps as scenarios.
 
 ### Later triggers
 
-- [ ] **Split `game/game.ts`** (660 lines, the hub everything is wired through): move
-  areas/transitions, the title menu and interaction into their own modules. *Trigger: it
-  passes ~800 lines, or the pause menu/inventory lands.*
+- [ ] **Split `game/game.ts` again** if it grows back: next out would be areas/transitions
+  (`loadArea`, `travel`, respawn) and the HUD feed in `updateWorld`. *Trigger: it passes
+  ~700 lines, or the pause menu/inventory lands.*
 - [ ] **Split content per area and topic**: `content/overworld.ts` → `content/overworld/`
   (village NPCs, the hollow, the shrine...). *Trigger: a content file passes ~500 lines.*
 - [ ] **Dialog as data**: lines in per-area data files keyed by id, scripts reference

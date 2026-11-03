@@ -5,16 +5,19 @@ import { disposeTree, mat, mergeStatic } from '../../render/materials';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger } from '../area';
 import { Chest } from '../objects';
 import {
-  CEIL_T, DEFAULT_DOOR_WIDTH, DIRS, DOOR_HEIGHT, doorPlacement, dropHole, FLOOR_T, floorHeightOf, floorY, PIT_DEPTH,
+  CEIL_T, DEFAULT_DOOR_WIDTH, DIRS, DOOR_HEIGHT, doorPlacement, dropHole, FLOOR_T, floorHeightOf, floorY, landmarkRect, PIT_DEPTH,
   roomHeight, roomOpenings, roomRect, stairPlacement, worldPos,
   type Dir, type DungeonDef, type Rect, type RoomDef,
 } from './format';
 import { CELL, cellAt, cellCenter, roomGrid, type Cell, type RoomGrid } from './grid';
+import { buildLandmark } from './landmarks';
+import { FallenColumn } from './bridge';
+import { PULL_RANGE } from './puzzle';
 import { decorateRoom, THEMES, themeOf, type WallSpot } from './decor';
 import { buildSconce, buildTablet, doorStyle, DungeonDoor, DungeonSwitch, Wakestone } from './pieces';
 
 /** What happened when a stone was struck or pulled. */
-export type StoneResult = 'moved' | 'sunk' | 'blocked' | 'heavy' | 'bounced';
+export type StoneResult = 'moved' | 'sunk' | 'blocked' | 'heavy' | 'bounced' | 'bridged';
 
 interface StoneState {
   room: RoomDef;
@@ -96,6 +99,8 @@ export class DungeonArea implements Area {
   readonly chests = new Map<string, Chest>();
   readonly switches = new Map<string, DungeonSwitch>();
   readonly stones = new Map<string, Wakestone>();
+  /** Fallen columns (`role: 'bridge'` stones): the glove swings them across their pits. */
+  readonly columns = new Map<string, FallenColumn>();
   readonly spawns: Spawn[] = [];
   /** Fight rooms' shutters: bars on the room side of each of its doorways, open until a fight starts. */
   readonly shutters = new Map<string, DungeonDoor[]>();
@@ -260,6 +265,15 @@ export class DungeonArea implements Area {
       : back === 'w' ? { wall: 'z' as const, x: er.x, z: ez } : { wall: 'z' as const, x: er.x + er.w, z: ez };
     gap(entrance.wall === 'x' ? `${er.floor}:x:${entrance.z}` : `${er.floor}:z:${entrance.x}`, entrance.wall === 'x' ? entrance.x : entrance.z, DEFAULT_DOOR_WIDTH);
     this.entranceDoor = new DungeonDoor(b, part(er.floor).dynamic, 'entrance', 'seal', entrance.x, floorY(def, er.floor), entrance.z, entrance.wall, DEFAULT_DOOR_WIDTH);
+    // Beyond the doorway is nothing, so the view out would show whatever lies down there (the
+    // rooms of the floor below); a black unlit panel just outside makes it read as darkness.
+    {
+      const [ox, oz] = DIRS[def.entrance.facing];
+      const fy0 = floorY(def, er.floor), w = DEFAULT_DOOR_WIDTH + 4, h = DOOR_HEIGHT + 3.5;
+      const dark = new THREE.Mesh(new THREE.BoxGeometry(entrance.wall === 'x' ? w : 0.5, h, entrance.wall === 'x' ? 0.5 : w), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+      dark.position.set(entrance.x - ox * 1.3, fy0 + h / 2 - 2.5, entrance.z - oz * 1.3);
+      part(er.floor).dynamic.add(dark);
+    }
     // Walking back out through the open entrance leaves the dungeon (content decides where to).
     const [ix, iz] = DIRS[def.entrance.facing];
     const exitDoor = this.entranceDoor;
@@ -336,6 +350,14 @@ export class DungeonArea implements Area {
         this.interactables.push({ id: t.id, x, z, y: fy, r: 2.4, label: 'Open', promptY: fy + 1.9, enabled: () => chest.present && !chest.opened });
       } else if (t.kind === 'switch') {
         this.switches.set(t.id, new DungeonSwitch(p.dynamic, t.id, t.style ?? 'crystal', x, fy, z, b));
+      } else if (t.kind === 'stone' && t.role === 'bridge') {
+        // Lies along +z from its spot; long enough to reach 1.5 m past the pit's far lip.
+        const pit = (r.features ?? []).find((f) => f.kind === 'pit');
+        if (!pit) throw new Error(`Bridge stone ${t.id} has no pit in its room`);
+        const lipW = r.x + pit.x, lipE = r.x + pit.x + pit.w;
+        const side = lipW + pit.w / 2 > x ? 1 : -1;
+        const length = (side > 0 ? lipE - x : x - lipW) + 1.5;
+        this.columns.set(t.id, new FallenColumn(b, p.dynamic, t.id, x, fy, z, length, side, this.heavyGlow));
       } else if (t.kind === 'stone') {
         this.stones.set(t.id, new Wakestone(b, p.dynamic, t.id, x, fy, z, !!t.heavy, this.heavyGlow));
         const cell = cellAt(r, x, z)!;
@@ -343,6 +365,8 @@ export class DungeonArea implements Area {
       } else if (t.kind === 'sign') {
         buildTablet(b, p.dynamic, x, fy, z, faceCenter);
         this.interactables.push({ id: t.id, x, z, y: fy, r: 2.2, label: 'Read', promptY: fy + 2.1, enabled: () => true });
+      } else if (t.kind === 'landmark') {
+        buildLandmark(b, p.src.solid, t.style, themeOf(r), x, fy, z, t.facing ?? 0);
       } else if (t.kind === 'enemy') {
         this.spawns.push({ id: t.id, type: t.type, room: r.id, x, y: fy, z });
       }
@@ -419,6 +443,7 @@ export class DungeonArea implements Area {
       if (f.kind === 'pillar') solids.push({ x: r.x + f.x - 1, z: r.z + f.z - 1, w: 2, d: 2 });
       else solids.push({ x: r.x + f.x, z: r.z + f.z, w: f.w, d: f.d });
     }
+    for (const t of def.things) if (t.kind === 'landmark' && t.room === r.id) solids.push(landmarkRect(r, t.at));
     const walls: [string, number, number, number, 'x' | 'z', number][] = [
       [`${r.floor}:x:${r.z}`, r.x, r.x + r.w, r.z + inset, 'x', 0],
       [`${r.floor}:x:${r.z + r.d}`, r.x, r.x + r.w, r.z + r.d - inset, 'x', Math.PI],
@@ -597,6 +622,78 @@ export class DungeonArea implements Area {
   }
 
   /**
+   * The Tether Glove, thrown from Wren's feet at (x, y, z) toward (dirX, dirZ): the stone it
+   * catches slides one cell toward Wren, heavy or not, as the puzzle checker assumes (Wren in
+   * line with it, up to `PULL_RANGE` cells, nothing between). A fallen column swings across
+   * its pit. Returns where the cord caught something and what happened, or null on a miss.
+   */
+  tether(x: number, y: number, z: number, dirX: number, dirZ: number): { at: THREE.Vector3; result: StoneResult } | null {
+    const range = PULL_RANGE * CELL;
+    const wren = new THREE.Vector3(x, y, z);
+    const aimed = (p: THREE.Vector3, maxD: number, cone: number) => {
+      const dx = p.x - x, dz = p.z - z, d = Math.hypot(dx, dz);
+      return Math.abs(p.y - y) < 1.8 && d <= maxD && d > 0.5 && (dx * dirX + dz * dirZ) / d >= cone ? d : null;
+    };
+    // A fallen column: a big target, grabbed from anywhere across its pit.
+    for (const c of this.columns.values()) {
+      if (c.laid) continue;
+      const g = c.grip;
+      if (aimed(g, range + 6, 0.55) === null || (x - c.x) * c.side < 3) continue;
+      c.swing();
+      const room = this.roomAt(new THREE.Vector3(c.x, y, c.z));
+      if (room) {
+        // Its row of pit cells counts as filled (floor), like a stone dropped in.
+        const filled = this.filled.get(room.id) ?? new Set<string>();
+        const g2 = this.grid(room);
+        const row = cellAt(room, c.x, c.z)!.j;
+        for (let i = 0; i < g2.cols; i++) if (g2.pit[i][row]) filled.add(`${i},${row}`);
+        this.filled.set(room.id, filled);
+      }
+      this.onStone?.(c.id, 'bridged', g);
+      return { at: g, result: 'bridged' };
+    }
+    let best: string | null = null, bestD = Infinity;
+    for (const [id, st] of this.stoneState) {
+      if (st.sunk) continue;
+      const d = aimed(this.stones.get(id)!.group.position, range + 0.9, 0.8);
+      if (d !== null && d < bestD) {
+        best = id;
+        bestD = d;
+      }
+    }
+    if (!best) {
+      // Aim assist: nothing in front, so the nearest stone Wren stands in line with (its row
+      // or column), in range, wherever it is; Wren turns to it. Turning shouldn't cost a step
+      // into the very cell the stone needs.
+      for (const [id, st] of this.stoneState) {
+        if (st.sunk) continue;
+        const q = this.stones.get(id)!.group.position, dx = q.x - x, dz = q.z - z;
+        const d = Math.hypot(dx, dz);
+        if (Math.abs(q.y - y) > 1.8 || d > range + 0.9 || d < 0.5 || Math.min(Math.abs(dx), Math.abs(dz)) > CELL * 0.65 || d >= bestD) continue;
+        best = id;
+        bestD = d;
+      }
+    }
+    if (!best) return null;
+    const stone = this.stones.get(best)!, s = this.stoneState.get(best)!;
+    const at = stone.group.position.clone().setY(stone.group.position.y + stone.size / 2);
+    const dx = x - stone.group.position.x, dz = z - stone.group.position.z;
+    const alongX = Math.abs(dx) >= Math.abs(dz);
+    const dir: Cell = alongX ? { i: Math.sign(dx), j: 0 } : { i: 0, j: Math.sign(dz) };
+    // In line with it (its row or column, give or take), and nothing between.
+    const off = alongX ? Math.abs(dz) : Math.abs(dx);
+    const cells = Math.round((alongX ? Math.abs(dx) : Math.abs(dz)) / CELL);
+    let clear = off < CELL * 0.65;
+    for (let k = 1; clear && k < cells; k++) {
+      const what = this.cellBlocker(s, { i: s.cell.i + dir.i * k, j: s.cell.j + dir.j * k });
+      if (what === 'solid' || what === 'stone' || what === 'chest') clear = false;
+    }
+    const result: StoneResult = clear ? this.moveStone(best, dir, wren) : 'blocked';
+    this.onStone?.(best, result, at);
+    return { at, result };
+  }
+
+  /**
    * Moves a stone one cell in `dir` if it can go: inside its room, not into anything solid,
    * another stone, or Wren (`player`, feet). Into an open pit it drops and fills it; onto a
    * floor plate, the plate presses. (Pushing and the glove's pull both come through here.)
@@ -667,6 +764,39 @@ export class DungeonArea implements Area {
     return false;
   }
 
+  /**
+   * Whether `p` is on a flight of stairs or over the shaft at its top, on this floor
+   * (enemies are kept off both; `margin` widens them).
+   */
+  onStairs(p: THREE.Vector3, margin = 0) {
+    const f = this.floorAt(p.y);
+    for (const r of this.def.rooms) {
+      if (r.floor !== f) continue;
+      const { holes, stairs } = roomOpenings(this.def, r);
+      const rects = [...stairs.map((s) => s.rect), ...holes.filter((h) => h.kind === 'stairs').map((h) => h.rect)];
+      if (rects.some((q) => p.x > q.x - margin && p.x < q.x + q.w + margin && p.z > q.z - margin && p.z < q.z + q.d + margin)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Whether `p` is within `margin` of a pit's outline, on either side of it. Ground this close
+   * to the lip can't be trusted as a place to come back to (the character can hang over the edge).
+   */
+  nearPit(p: THREE.Vector3, margin: number) {
+    for (const r of this.def.rooms) {
+      if (Math.abs(p.y - floorY(this.def, r.floor)) > 1) continue;
+      for (const f of r.features ?? []) {
+        if (f.kind !== 'pit') continue;
+        const x = p.x - r.x, z = p.z - r.z;
+        const outer = x > f.x - margin && x < f.x + f.w + margin && z > f.z - margin && z < f.z + f.d + margin;
+        const inner = x > f.x + margin && x < f.x + f.w - margin && z > f.z + margin && z < f.z + f.d - margin;
+        if (outer && !inner) return true;
+      }
+    }
+    return false;
+  }
+
   /** Shows only one floor with no ceilings (top-down views), or everything again (null). */
   showFloor(floor: number | null) {
     for (const [f, p] of this.floors) {
@@ -684,6 +814,7 @@ export class DungeonArea implements Area {
     for (const c of this.chests.values()) c.update(dt);
     for (const s of this.switches.values()) s.update(dt);
     for (const s of this.stones.values()) s.update(dt);
+    for (const c of this.columns.values()) c.update(dt);
     this.heavyGlow.emissive.setRGB(0.1, 0.55 + Math.sin(this.t * 2.4) * 0.2, 0.5 + Math.sin(this.t * 2.4) * 0.18);
     for (const l of this.lights) l.light.intensity = l.base * (0.92 + Math.sin(this.t * 7 + l.phase) * 0.04 + Math.sin(this.t * 13 + l.phase) * 0.03);
   }

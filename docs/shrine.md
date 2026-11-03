@@ -1,11 +1,10 @@
 # The Waking Shrine (first dungeon): design
 
 Status: **design approved by the owner** (2026-11-02), being built milestone by milestone.
-Done: the shrine's theme music (owner's progressions), plus milestones 1–3 and the
+Done: the shrine's theme music (owner's progressions), plus milestones 1–5 and the
 expansion (25 rooms in four themed wings; multi-crystal
 locks; the puzzle checker proves chests across pits reachable). Playable now up to the
-glove and through most of the Undercroft; the heavy stones (Loft, Pit Hall, Root Cellar,
-Key Vault) need the glove's pull (5), the boss is milestone 6. The layout is data in
+boss door, glove and all; the boss is milestone 6. The layout is data in
 `src/world/dungeon/defs/shrine.ts` (validated and solved by the tests; `npm run map --
 shrine` to see it). This doc covers what the data doesn't: the gimmick's progression, the
 item, the enemies, the boss, the overworld gate, and the build plan. Keep the two in step.
@@ -28,6 +27,14 @@ Each floor is a wing with its own look (`RoomDef.theme`, `decor.ts`) and its own
 | 1 | **The Upper Galleries** | pale marble, checkered floors, tall windows with light shafts | three crystals that must all be lit (Crystal Walk → the Glove Shrine), drop-hole shortcuts (Lookout → Sunken Court, Loft → Nave), the glove's first heavy stone (Stone Loft) |
 | -1 | **The Undercroft** | dark mossy stone, hanging roots, water in the pits | a pit too wide to jump (Pit Hall: the glove's bridge), a heavy stone plugging a wall of roots (Root Cellar), a water channel to fill (Cistern), shellbacks (Crypt, Ossuary) |
 | -2 | **The Deep Hearth** | black basalt, glowing ember cracks, red light | the Gauntlet (every enemy type at once), the Key Vault (push and pull for the boss key), the Antechamber (shortcut stairs up through the Deep Shaft to the Barred Cell) |
+
+**Landmarks** (one lopsided 4-5 m statue in each wing's central room, so you know where you are
+when a shortcut drops you in; none on floor -2, three rooms in a line need none): the Nave's
+*lantern keeper* (kneeling, the lantern arm raised toward the doorway from the Hall of
+Sleepers, the head turned, a glowing emissive lantern, no light), the Long Gallery's *watcher*
+(one leg on a broken column, one arm pointing north along the hall, one half-broken wing) and
+the Crypt's *fallen keeper* (a huge head toppled on one cheek, one eye open, moss and a sapling
+over one side). Data kind `landmark` (see [dungeons.md](dungeons.md)); `npm run look -- landmarks`.
 
 **Route** (the solver checks every key order; `npm run map -- shrine`): doorway stone → the
 Nave's plate opens the stairwell; the Sentinel Cell and the Sunken Court each give a key;
@@ -57,8 +64,8 @@ at the same time.
 Carved 2 m blocks with the shrine's spiral. Struck with the sword, a wakestone "wakes"
 and slides one cell (2 m) away from Wren, stopping at walls, pillars and other stones; a
 stone pushed into a pit falls in and becomes floor. Heavy wakestones (bigger, darker,
-cracked) don't budge for a sword. Stones in a room reset when you leave it, so no puzzle
-can be ruined.
+cracked) don't budge for a sword. Stones in a puzzle room reset when Wren falls (not on leaving: owner's call, so a stone
+can be pulled from out in the doorway), so no puzzle can be ruined for good.
 
 - **Teach** (Hall of Sleepers): a stone sits in the doorway to the nave. One strike slides
   it clear. Statues line the walls, asleep (decoration that sells the theme).
@@ -90,9 +97,10 @@ lock-on target, or straight ahead.
 - **Dozing Sentinel** (new): a stone statue that sleeps until Wren comes within ~5 m, then
   wakes with a grinding tell. Slow, heavy two-handed swing (guard cost 2, 2 half-hearts),
   long recovery (punish window). Teaches guard management: block one swing, then back off.
-  Front-heavy: hits from the side or behind land freely.
-- **Shellback** (new): a stone-shelled crawler. Its shell guards frontal sword hits
-  (`guarded`: Wren recoils): circle round and hit it from behind. (Flipping it with the
+  Its maul is its guard: hits that meet the maul clank, hits that get past it land.
+- **Shellback** (new): a stone-shelled crawler, its face hidden behind the shell (only the
+  eyes show through two holes). The shell turns sword hits (`guarded`: Wren recoils); circle
+  round and hit its back feet and tail. (Flipping it with the
   glove is a possible later addition; the glove affects stones only for now.)
 
 ## The boss: Gravelheart, the Sleepless Warden
@@ -192,8 +200,23 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
    pit costs a heart and returns Wren to the last solid floor, and the puzzle checker proves
    every plate and doorway stone. The first doorway is now 2 m wide and on the grid, so its
    stone blocks it until struck aside.
-4. **Enemies**: Dozing Sentinel and Shellback, with tests like `boss.test.ts`.
-5. **The Tether Glove**: the `item` action, the cord, pulling stones (through
+   (The safe spot is only recorded 0.8 m or more from a pit's lip: `nearPit`; ground hanging over the edge once brought Wren back above the water.)
+4. ~~**Enemies**~~ **done**: the Dozing Sentinel and the Shellback replace the stand-in
+   thornlings (numbers in [combat.md](combat.md)); unit tests, the `enemies` look scene and
+   the `shrine-enemies` smoke scenario. Feel and sounds are untuned until the owner plays them.
+5. ~~**The Tether Glove**~~ **done** (2026-11-02): the `item` action (F / Y);
+   `DungeonArea.tether` pulls a stone one cell toward Wren (in line, up to `PULL_RANGE`,
+   nothing between; auto-aims at the stone she's in line with); the Pit Hall's bridge is a
+   **fallen column** (`world/dungeon/bridge.ts`) that swings across the pit like a drawbridge
+   (the room is too low for a toppling stone); the cord (`game/tether.ts`), throw pose, sounds,
+   HUD slot, item-get moment and hints; the `shrine-glove` smoke scenario. Owner's playtest
+   fixes: near-instant turning, stones reset only when Wren falls (not on leaving), enemies
+   take `REACTION` (0.9 s) to react on sight, and **the camera**: one
+   collision rule (a swept ball, quick in, slow out) with Wren fading when it's close, as
+   Souls and Zelda do (see [engine.md](engine.md)).
+   Not yet confirmed by eye: the cord in flight (the `glove` look scene catches the throw pose
+   but not the cord); the owner should check it and the camera in small rooms in play.
+   Original milestone text: **The Tether Glove**: the `item` action, the cord, pulling stones (through
    `DungeonArea.moveStone`), HUD slot, the item-get cutscene. **Rethink the Pit Hall
    first**: its pit is 4 m wide and Wren jumps ~6 m at a run, so it doesn't stop anyone.
    Either widen it past a jump (and bridge it differently, e.g. a tall heavy stone the glove

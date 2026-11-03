@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
-import { uniqueMat } from '../render/materials';
+import { disposeTree, uniqueMat } from '../render/materials';
+import { GroundShadow } from '../render/shapes';
 import type { Sfx } from '../core/audio';
 import type { Particles } from '../render/particles';
 import type { Area } from '../world/area';
@@ -44,6 +45,11 @@ export interface Hurtbox {
   radius: number;
   part: string;
   priority: number;
+  /**
+   * A weapon or shell: the sword bounces off it when it's nearer to Wren than the part she
+   * would otherwise hit (so armor guards only where it really is, never through the body).
+   */
+  armor?: boolean;
 }
 
 export interface EnemyEnv {
@@ -77,6 +83,8 @@ export abstract class Enemy {
   radius = 0.8;
   /** Height above `pos` where the lock-on marker sits. */
   lockHeight = 1;
+  /** Particle color when it dies. */
+  deathColor = 0x7a2f4a;
   protected deathT = 0;
 
   abstract update(dt: number, env: EnemyEnv): void;
@@ -113,6 +121,9 @@ export abstract class Enemy {
   /** Frees physics and GPU resources; called when the enemy is removed. */
   dispose() {
     this.root.removeFromParent();
+    // Every geometry and unshared material under the root: the checkpoint rule rebuilds
+    // every enemy on each death, so anything left here leaks GPU memory per death.
+    disposeTree(this.root);
     for (const m of this.flashMats) m.dispose();
   }
 
@@ -133,42 +144,140 @@ export abstract class Enemy {
   }
 }
 
-/** A hopping ball of thorns. Wanders, notices you, winds up and lunges. */
-/** How far from home a thornling will chase before giving up and walking back. */
-const THORN_LEASH = 24;
+/** How far from home a ground enemy will chase before giving up and walking back. */
+const LEASH = 24;
 /** Seconds without seeing Wren before a chase is dropped. */
-const THORN_FORGET = 2.5;
+const FORGET = 2.5;
+/** Seconds a wandering enemy must see Wren before it gives chase (see `GroundEnemy.spot`). */
+export const REACTION = 0.9;
 
-export class Thornling extends Enemy {
-  private state: 'wander' | 'chase' | 'windup' | 'lunge' | 'recover' | 'stagger' = 'wander';
-  private t = 0;
+/**
+ * An enemy that walks on the ground and follows the notice rules every enemy shares
+ * (docs/combat.md, "What enemies notice"): same level, line of sight, its territory, a leash.
+ */
+export abstract class GroundEnemy extends Enemy {
+  protected yaw = 0;
+  protected velY = 0;
+  protected readonly home: THREE.Vector3;
+  protected readonly character: Character;
   /** Seconds since it last saw Wren (while chasing). */
-  private unseen = 0;
+  protected unseen = 0;
   /** After giving up a chase: seconds before it will notice Wren again (no yo-yo at the leash). */
-  private calm = 0;
-  private hopT = Math.random() * 10;
-  private yaw = 0;
-  private velY = 0;
-  private readonly home: THREE.Vector3;
-  private readonly wanderTo = new THREE.Vector3();
-  private readonly lungeDir = new THREE.Vector3();
-  private hitDone = false;
-  private readonly body: THREE.Group;
-  private readonly character: Character;
-
+  protected calm = 0;
   /**
    * `fromY`: look for the ground below this height (indoors, under the ceilings).
    * `territory`: where Wren has to be for it to care (a dungeon room); anywhere if omitted.
    */
-  constructor(parent: THREE.Object3D, physics: Physics, x: number, z: number, fromY = 400, private readonly territory?: (p: THREE.Vector3) => boolean) {
+  constructor(physics: Physics, x: number, z: number, fromY: number, protected readonly territory: ((p: THREE.Vector3) => boolean) | undefined, capsuleRadius: number, capsuleHalf: number) {
     super();
     const y = physics.groundY(x, z, fromY, Layer.World) ?? 0;
     this.pos.set(x, y, z);
     this.home = this.pos.clone();
+    this.character = physics.createCharacter(this.pos, capsuleRadius, capsuleHalf, Layer.Enemy, SOLID | Layer.Player | Layer.Enemy);
+  }
+
+  /** Where it may walk (a dungeon room minus its stairs), narrower than where it notices Wren. */
+  private walkable: ((p: THREE.Vector3) => boolean) | undefined;
+
+  setWalkable(fn: (p: THREE.Vector3) => boolean) {
+    this.walkable = fn;
+  }
+
+  /** May it walk here (inside its territory, and not on ground it's kept off)? */
+  protected mayWalk(p: THREE.Vector3) {
+    return (!this.territory || this.territory(p)) && (!this.walkable || this.walkable(p));
+  }
+
+  /**
+   * Can it see Wren? Same level (not through a floor), inside its territory, and a clear
+   * line from its eyes (`eyeHeight` above its feet) to Wren's (not through a wall).
+   */
+  protected sees(env: EnemyEnv, eyeHeight = 0.8) {
+    const p = env.playerPos;
+    if (!env.playerAlive || Math.abs(p.y - this.pos.y) > 2.2) return false;
+    if (this.territory && !this.territory(p)) return false;
+    const eye = this.pos.clone().setY(this.pos.y + eyeHeight);
+    const to = p.clone().setY(p.y + 1).sub(eye);
+    const len = to.length();
+    return env.physics.rayDistance(eye, to.divideScalar(len), len, Layer.World) >= len - 0.05;
+  }
+
+  /** While chasing: true once it should give up (lost sight, Wren left its room, too far from home). */
+  protected lostTrack(env: EnemyEnv, dist: number, dt: number, eyeHeight?: number) {
+    this.unseen = this.sees(env, eyeHeight) ? 0 : this.unseen + dt;
+    const fromHome = Math.hypot(this.pos.x - this.home.x, this.pos.z - this.home.z);
+    const outOfBounds = !!this.territory && !this.territory(env.playerPos);
+    return !env.playerAlive || dist > 22 || fromHome > LEASH || outOfBounds || this.unseen > FORGET;
+  }
+
+  /** Same height as Wren, so an attack can land (not through a floor). */
+  private spotT = 0;
+  /**
+   * Reaction time: true once Wren has been in sight (`seeing`) for `REACTION` seconds in a
+   * row. Walking into a room, Wren gets a moment to see it before anything charges.
+   */
+  protected spot(dt: number, seeing: boolean) {
+    this.spotT = seeing ? this.spotT + dt : 0;
+    if (this.spotT < REACTION) return false;
+    this.spotT = 0;
+    return true;
+  }
+
+  protected level(env: EnemyEnv) {
+    return Math.abs(env.playerPos.y - this.pos.y) < 1.5;
+  }
+
+  /** Moves with `vel` plus any knockback, under gravity. */
+  protected walk(vel: THREE.Vector3, dt: number, knockDecay = 7) {
+    vel.add(this.knock);
+    this.knock.multiplyScalar(Math.exp(-knockDecay * dt));
+    // Never step onto ground it's kept off (stairs): stop at the foot, and look ahead by a body.
+    if (this.walkable && (vel.x || vel.z) && this.walkable(this.pos)) {
+      const len = Math.hypot(vel.x, vel.z);
+      const ahead = new THREE.Vector3(this.pos.x + (vel.x / len) * 0.7, this.pos.y, this.pos.z + (vel.z / len) * 0.7);
+      if (!this.walkable(ahead)) {
+        vel.x = 0;
+        vel.z = 0;
+        this.knock.set(0, 0, 0);
+      }
+    }
+    this.velY = this.character.grounded ? -1 : this.velY - 30 * dt;
+    this.character.move(this.pos, new THREE.Vector3(vel.x * dt, this.velY * dt, vel.z * dt));
+  }
+
+  /** Which way it faces (radians, 0 = +z). */
+  get facing() {
+    return this.yaw;
+  }
+
+  /** Is `from` in front of it, within `halfAngle` radians of where it faces? */
+  protected inFront(from: THREE.Vector3, halfAngle: number) {
+    const a = Math.atan2(from.x - this.pos.x, from.z - this.pos.z);
+    const d = Math.atan2(Math.sin(a - this.yaw), Math.cos(a - this.yaw));
+    return Math.abs(d) < halfAngle;
+  }
+
+  dispose() {
+    super.dispose();
+    this.character.dispose();
+  }
+}
+
+/** A hopping ball of thorns. Wanders, notices you, winds up and lunges. */
+export class Thornling extends GroundEnemy {
+  private state: 'wander' | 'chase' | 'windup' | 'lunge' | 'recover' | 'stagger' = 'wander';
+  private t = 0;
+  private hopT = Math.random() * 10;
+  private readonly wanderTo = new THREE.Vector3();
+  private readonly lungeDir = new THREE.Vector3();
+  private hitDone = false;
+  private readonly body: THREE.Group;
+
+  constructor(parent: THREE.Object3D, physics: Physics, x: number, z: number, fromY = 400, territory?: (p: THREE.Vector3) => boolean) {
+    super(physics, x, z, fromY, territory, 0.6, 0.15);
     this.wanderTo.copy(this.home);
     this.radius = 0.75;
     this.lockHeight = 1.0;
-    this.character = physics.createCharacter(this.pos, 0.6, 0.15, Layer.Enemy, SOLID | Layer.Player | Layer.Enemy);
 
     const skin = uniqueMat(0x7a2f4a), thorn = uniqueMat(0xc9b27a), eye = new THREE.MeshBasicMaterial({ color: 0xffd23a });
     this.flashMats.push(skin, thorn);
@@ -209,30 +318,11 @@ export class Thornling extends Enemy {
     return this.state === 'chase' || this.state === 'windup' || this.state === 'lunge';
   }
 
-  /**
-   * Can it see Wren? Same level (not through a floor), inside its territory, and a clear
-   * line from its eyes to Wren's (not through a wall).
-   */
-  private sees(env: EnemyEnv) {
-    const p = env.playerPos;
-    if (!env.playerAlive || Math.abs(p.y - this.pos.y) > 2.2) return false;
-    if (this.territory && !this.territory(p)) return false;
-    const eye = this.pos.clone().setY(this.pos.y + 0.8);
-    const to = p.clone().setY(p.y + 1).sub(eye);
-    const len = to.length();
-    return env.physics.rayDistance(eye, to.divideScalar(len), len, Layer.World) >= len - 0.05;
-  }
-
   /** Drops the chase and heads home. */
   private giveUp() {
     this.go('wander');
     this.wanderTo.copy(this.home);
     this.calm = 3;
-  }
-
-  dispose() {
-    super.dispose();
-    this.character.dispose();
   }
 
   update(dt: number, env: EnemyEnv) {
@@ -259,7 +349,7 @@ export class Thornling extends Enemy {
           for (let tries = 0; tries < 8; tries++) {
             const a = Math.random() * Math.PI * 2, r = Math.random() * 9;
             this.wanderTo.set(this.home.x + Math.cos(a) * r, this.pos.y, this.home.z + Math.sin(a) * r);
-            if (!this.territory || this.territory(this.wanderTo)) break;
+            if (this.mayWalk(this.wanderTo)) break;
             this.wanderTo.copy(this.home);
           }
           this.t = 0;
@@ -267,7 +357,7 @@ export class Thornling extends Enemy {
           vel.copy(w.normalize()).multiplyScalar(1.8);
           face = Math.atan2(w.x, w.z);
         }
-        if (dist < 15 && this.calm <= 0 && this.sees(env)) {
+        if (this.spot(dt, dist < 15 && this.calm <= 0 && this.sees(env))) {
           this.go('chase');
           this.unseen = 0;
         }
@@ -276,10 +366,7 @@ export class Thornling extends Enemy {
       case 'chase': {
         vel.copy(to).multiplyScalar(4.4 * speedMul);
         face = Math.atan2(to.x, to.z);
-        this.unseen = this.sees(env) ? 0 : this.unseen + dt;
-        const fromHome = Math.hypot(this.pos.x - this.home.x, this.pos.z - this.home.z);
-        const outOfBounds = !!this.territory && !this.territory(env.playerPos);
-        if (!env.playerAlive || dist > 22 || fromHome > THORN_LEASH || outOfBounds || this.unseen > THORN_FORGET) this.giveUp();
+        if (this.lostTrack(env, dist, dt)) this.giveUp();
         else if (dist < 3.2 && this.unseen === 0) this.go('windup');
         break;
       }
@@ -295,7 +382,7 @@ export class Thornling extends Enemy {
       case 'lunge':
         vel.copy(this.lungeDir).multiplyScalar(13);
         squash = 1.15;
-        if (!this.hitDone && dist < 1.6 && Math.abs(env.playerPos.y - this.pos.y) < 1.5) {
+        if (!this.hitDone && dist < 1.6 && this.level(env)) {
           this.hitDone = true;
           if (env.hitPlayer(this.pos, THORNLING_LUNGE) === 'blocked') {
             this.knock.copy(this.lungeDir).multiplyScalar(-12);
@@ -310,10 +397,7 @@ export class Thornling extends Enemy {
         break;
     }
 
-    vel.add(this.knock);
-    this.knock.multiplyScalar(Math.exp(-7 * dt));
-    this.velY = this.character.grounded ? -1 : this.velY - 30 * dt;
-    this.character.move(this.pos, new THREE.Vector3(vel.x * dt, this.velY * dt, vel.z * dt));
+    this.walk(vel, dt);
 
     this.yaw = lerpAngle(this.yaw, face, damp(10, dt));
     const moving = vel.lengthSq() > 0.5 && this.state !== 'stagger';
@@ -349,6 +433,8 @@ export class Gloomwisp extends Enemy {
   private readonly core: THREE.Mesh;
   private readonly halo: THREE.Mesh;
   private readonly coreMat: THREE.MeshLambertMaterial;
+  /** Its blob on the ground: a wisp hovering at night is hard to place without one. */
+  private readonly shadow: GroundShadow;
   readonly nocturnal: boolean;
   private readonly anchor: (() => THREE.Vector3 | null) | null;
   private readonly attackCooldown: number;
@@ -362,6 +448,7 @@ export class Gloomwisp extends Enemy {
     this.cooldown = this.anchor ? 1 + Math.random() * 2 : 0;
     this.hp = 1;
     this.radius = 0.5;
+    this.deathColor = 0xb06aff;
     this.lockHeight = 0.6;
     this.pos.set(x, (physics.groundY(x, z, 400, Layer.World) ?? 0) + 1.6, z);
     this.coreMat = uniqueMat(0x2a1840, { emissive: 0x6a2fb0 });
@@ -374,6 +461,12 @@ export class Gloomwisp extends Enemy {
     this.root.add(this.core, this.halo);
     this.root.scale.setScalar(0.01);
     parent.add(this.root);
+    this.shadow = new GroundShadow(parent, 0.75);
+  }
+
+  dispose() {
+    super.dispose();
+    this.shadow.dispose();
   }
 
   protected applyFlash(dt: number) {
@@ -384,6 +477,7 @@ export class Gloomwisp extends Enemy {
   update(dt: number, env: EnemyEnv) {
     this.applyFlash(dt);
     if (!this.alive) {
+      this.shadow.mesh.visible = false;
       this.dying(dt);
       return;
     }
@@ -418,6 +512,7 @@ export class Gloomwisp extends Enemy {
     }
     this.root.position.copy(this.pos);
     this.root.scale.setScalar(Math.max(0.01, this.fade));
+    this.shadow.place(this.pos.x, this.pos.y, this.pos.z, env.physics.groundY(this.pos.x, this.pos.z, this.pos.y, Layer.World), this.fade);
     this.core.rotation.x += dt * 2;
     this.core.rotation.y += dt * 3;
     (this.halo.material as THREE.MeshBasicMaterial).opacity = 0.2 + Math.sin(this.t * 5) * 0.08;

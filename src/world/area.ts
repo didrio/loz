@@ -38,6 +38,11 @@ export interface Area {
   cut(x: number, z: number, dirX: number, dirZ: number, reach: number): THREE.Vector3[];
   /** The sword swings at (x, y, z) facing (dirX, dirZ): strike crystal switches and the like. */
   strike?(x: number, y: number, z: number, dirX: number, dirZ: number, reach: number): void;
+  /**
+   * The Tether Glove thrown from Wren's feet toward (dirX, dirZ): pulls what it catches.
+   * Returns where the cord caught something (for the cord's end), or null on a miss.
+   */
+  tether?(x: number, y: number, z: number, dirX: number, dirZ: number): { at: THREE.Vector3 } | null;
   update(dt: number, env: AreaEnv): void;
   dispose(): void;
 }
@@ -85,6 +90,20 @@ export interface Trigger {
 
 /** Whether a stacked-floor spot (`y`) is on the player's level. */
 export const sameLevel = (y: number | undefined, playerY: number) => y === undefined || Math.abs(playerY - y) < 2.5;
+
+/** The nearest enabled interactable within its reach of `pos`, on the same level, or null. */
+export function nearestInteractable(list: readonly Interactable[], pos: { x: number; y: number; z: number }) {
+  let best: Interactable | null = null, bestD = Infinity;
+  for (const it of list) {
+    if (!it.enabled() || !sameLevel(it.y, pos.y)) continue;
+    const d = Math.hypot(pos.x - it.x, pos.z - it.z);
+    if (d < it.r && d < bestD) {
+      best = it;
+      bestD = d;
+    }
+  }
+  return best;
+}
 
 /**
  * Collects an area's meshes and colliders while it's being built. Static meshes are merged

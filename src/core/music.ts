@@ -11,14 +11,14 @@
  * Notation, one bar between each `|` (every bar must add up to a full bar of steps):
  * - melody: `C5*2 F5*3 G5 A5*2`: note name + octave, `*n` = lasts n steps (default 1),
  *   `.` = rest. With 2 steps per beat, a step is an eighth note.
- * - chords: `F | Am | Dm Gm | C7`: two chords in one bar split it evenly.
+ * - chords: `F | Am | Dm Gm | C7 | D6/A`: two chords in one bar split it evenly.
  * - tone patterns: `0*3 2 0*2 2*2`: numbers pick chord tones (0 root, 1 third, 2 fifth,
  *   3 root an octave up, ...), so the same pattern fits every chord.
  * - beat patterns: one character per step, `X` accent, `x` normal, `o` soft, `.` rest.
  */
 
 export type Instrument =
-  | 'flute' | 'bell' | 'box' | 'harp' | 'pad' | 'bass' | 'drive' | 'brass' | 'mallet'
+  | 'flute' | 'bell' | 'box' | 'harp' | 'pad' | 'bass' | 'drive' | 'brass' | 'mallet' | 'piano'
   | 'kick' | 'snare' | 'hat' | 'shaker' | 'tom';
 
 export interface NoteEvent {
@@ -58,6 +58,11 @@ export interface Song {
   sections: Section[];
   /** The section the song jumps back to when it ends (skipping the intro). */
   loopFrom: number;
+  /**
+   * Shuffle feel, 0–0.5: every off-beat step (the "and") starts this fraction of a step late,
+   * like a DAW's swing knob. 0 or omitted: straight.
+   */
+  swing?: number;
 }
 
 export interface CompiledSong {
@@ -88,6 +93,18 @@ const QUALITIES: Record<string, number[]> = {
   '7': [0, 4, 7, 10],
   m7: [0, 3, 7, 10],
   maj7: [0, 4, 7, 11],
+  '6': [0, 4, 7, 9],
+  m6: [0, 3, 7, 9],
+  add9: [0, 4, 7, 14],
+  maj9: [0, 4, 7, 11, 14],
+  m9: [0, 3, 7, 10, 14],
+  '9': [0, 4, 7, 10, 14],
+  '7sus4': [0, 5, 7, 10],
+  '7b9': [0, 4, 7, 10, 13],
+  m7b5: [0, 3, 6, 10],
+  dim7: [0, 3, 6, 9],
+  mmaj7: [0, 3, 7, 11],
+  'maj7#5': [0, 4, 8, 11],
   sus4: [0, 5, 7],
   sus2: [0, 2, 7],
   dim: [0, 3, 6],
@@ -116,13 +133,17 @@ export function chordOf(name: string): Chord {
 
 /**
  * The n-th tone of a chord stacked upward: 0 root, 1 third, 2 fifth, then an octave up.
- * For a slash chord, tone 0 is the bass note (just below the root), so bass lines and
- * arpeggios start on it.
+ * For a slash chord, tone 0 is the bass note (within a tritone below the root, else just
+ * above it), so bass lines and arpeggios start on it.
  */
 export function chordTone(chord: Chord, index: number, octave: number): number {
   const n = chord.tones.length;
   const base = 12 * (octave + 1) + chord.root;
-  if (index === 0 && chord.bass !== undefined) return base - ((chord.root - chord.bass + 12) % 12 || 12);
+  if (index === 0 && chord.bass !== undefined) {
+    // Just below the root, or (if that's more than a tritone down, like D/F♯) just above it.
+    const below = (chord.root - chord.bass + 12) % 12 || 12;
+    return below > 6 ? base - below + 12 : base - below;
+  }
   return base + chord.tones[index % n] + 12 * Math.floor(index / n);
 }
 
@@ -239,8 +260,9 @@ export function compile(song: Song): CompiledSong {
     if (i === song.loopFrom) loopAt = offset * stepDur;
     const s = sectionEvents(section, stepsPerBar);
     for (const e of s.events) {
+      const late = (offset + e.step) % 2 === 1 ? (song.swing ?? 0) * stepDur : 0;
       events.push({
-        at: (offset + e.step) * stepDur,
+        at: (offset + e.step) * stepDur + late,
         dur: e.steps * stepDur,
         freq: e.midi === null ? 0 : freqOf(e.midi),
         inst: e.inst,

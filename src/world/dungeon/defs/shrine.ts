@@ -116,6 +116,8 @@ export const SHRINE: DungeonDef = {
     { kind: 'enemy', id: 'naveThorn3', room: 'nave', at: [8, 18], type: 'thornling' },
     { kind: 'stone', id: 'naveStone', room: 'nave', at: [5, 11] },
     { kind: 'switch', id: 'navePlate', room: 'nave', at: [11, 11], style: 'plate' },
+    // Landmark: the lantern keeper, its lantern arm pointing back at the doorway from the entry hall.
+    { kind: 'landmark', id: 'naveKeeper', room: 'nave', at: [8, 5], style: 'lanternKeeper', facing: -0.93 },
     // ── Gallery of Statues: the statues along the walls are asleep... three of them aren't.
     { kind: 'sign', id: 'statueSign', room: 'statueGallery', at: [7, 2], text: 'Here stand the shrine\'s keepers. Do not wake them.' },
     { kind: 'enemy', id: 'statueSentinel1', room: 'statueGallery', at: [3, 7], type: 'sentinel' },
@@ -142,6 +144,8 @@ export const SHRINE: DungeonDef = {
     { kind: 'chest', id: 'courtChest', room: 'sunkenCourt', at: [16, 9], loot: 'smallKey' },
     { kind: 'chest', id: 'courtDrinkChest', room: 'sunkenCourt', at: [16, 3], loot: { drink: 'attack' } },
     // ── Long Gallery.
+    // Landmark: the watcher, in the middle of the hall facing east, its arm pointing north along the gallery.
+    { kind: 'landmark', id: 'galleryWatcher', room: 'gallery', at: [5, 9], style: 'watcher', facing: Math.PI / 2 },
     { kind: 'enemy', id: 'galleryThorn1', room: 'gallery', at: [5, 4], type: 'thornling' },
     { kind: 'enemy', id: 'galleryThorn2', room: 'gallery', at: [7, 22], type: 'thornling' },
     { kind: 'enemy', id: 'gallerySentinel', room: 'gallery', at: [5, 27], type: 'sentinel' },
@@ -174,9 +178,12 @@ export const SHRINE: DungeonDef = {
     { kind: 'enemy', id: 'cryptShell2', room: 'crypt', at: [6, 14], type: 'shellback' },
     { kind: 'enemy', id: 'cryptThorn1', room: 'crypt', at: [8, 10], type: 'thornling' },
     { kind: 'enemy', id: 'cryptThorn2', room: 'crypt', at: [4, 17], type: 'thornling' },
+    // Landmark: the fallen keeper's head, its open eye toward the foot of the stairs down.
+    { kind: 'landmark', id: 'cryptHead', room: 'crypt', at: [9, 14], style: 'fallenKeeper', facing: 2.77 },
     { kind: 'chest', id: 'cryptChest', room: 'crypt', at: [8, 4], loot: 'smallKey', appears: { cleared: 'crypt' } },
-    // ── Pit Hall: too wide to jump. The glove topples the far side's heavy stone across it.
-    { kind: 'stone', id: 'bridgeStone', room: 'pitHall', at: [1, 9], heavy: true, role: 'bridge' },
+    // ── Pit Hall: too wide to jump. A fallen column lies along the far ledge (from here, 12.5 m
+    //    toward the back wall); the glove swings it across the pit like a drawbridge.
+    { kind: 'stone', id: 'bridgeStone', room: 'pitHall', at: [1, 7], heavy: true, role: 'bridge' },
     { kind: 'enemy', id: 'pitThorn', room: 'pitHall', at: [14, 16], type: 'thornling' },
     // ── Root Cellar: a wall of roots with one gap, plugged by a heavy stone: pull it out.
     { kind: 'stone', id: 'rootStone', room: 'rootCellar', at: [7, 11], heavy: true },

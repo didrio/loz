@@ -8,6 +8,12 @@ const bottle = (color: string) => `<svg class="bottle" viewBox="0 0 16 22" width
   <path d="M6 4 V8 Q2 10 2 14 V18 Q2 21 5 21 H11 Q14 21 14 18 V14 Q14 10 10 8 V4 Z" fill="${color}" stroke="#2a1a0a" stroke-width="1.2"/>
   <path d="M4.5 13 Q5 10.5 7 10" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.2" stroke-linecap="round"/></svg>`;
 
+/** The Tether Glove: a leather glove with a coil of glowing cord at the cuff. */
+const gloveIcon = `<svg class="glove" viewBox="0 0 18 22" width="18" height="22" aria-hidden="true">
+  <path d="M4 21 V11 Q4 9 5.5 9 V4 Q5.5 2.5 7 2.5 Q8.5 2.5 8.5 4 V3 Q8.5 1.5 10 1.5 Q11.5 1.5 11.5 3 V4.5 Q11.5 3.5 13 3.5 Q14.5 3.5 14.5 5 V14 Q14.5 18 12 21 Z" fill="#8a5a2b" stroke="#2a1a0a" stroke-width="1.2"/>
+  <path d="M5 9 Q2 10 2.5 13 L4 14" fill="#8a5a2b" stroke="#2a1a0a" stroke-width="1.1"/>
+  <path d="M4 18 Q9 15 14 18" fill="none" stroke="#7ff7e8" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+
 // The key icons, drawn as tiny SVGs (a ring bow, a shaft and teeth) so they stay crisp at
 // any size. The dark outline is a wider copy of the same shape underneath.
 const KEY_SHAPE = `
@@ -178,10 +184,11 @@ export class Hud {
   }
 
   /**
-   * The guard gauge that floats beside Wren: one bar per slot (`fills`, 1 = up), red while
-   * broken. `at` is its screen position, or null to hide it.
+   * The guard gauge that floats beside Wren: one bar per slot (`fills`, 1 = up), green while
+   * up or recovering; the recovering bars turn red while `paused` (shield up, so they wait),
+   * and the whole gauge while broken. `at` is its screen position, or null to hide it.
    */
-  setGuard(fills: number[], broken: number, at: { x: number; y: number } | null) {
+  setGuard(fills: number[], broken: number, paused: boolean, at: { x: number; y: number } | null) {
     this.guard.classList.toggle('show', !!at);
     if (!at) return;
     this.guard.style.transform = `translate(${at.x.toFixed(1)}px, ${at.y.toFixed(1)}px) translate(-50%, -50%)`;
@@ -190,6 +197,7 @@ export class Hud {
       const h = `${Math.round(f * 100)}%`;
       if (el.style.height !== h) el.style.height = h;
       el.parentElement!.classList.toggle('up', f >= 1);
+      el.parentElement!.classList.toggle('paused', paused && f < 1);
     });
     this.guard.classList.toggle('broken', broken > 0);
   }
@@ -222,8 +230,9 @@ export class Hud {
    * The drinks Wren has found: a bottle each, how many are left, and its button. Empty ones
    * dim (they refill on death). `boost`: how much of an Ember Tonic is left (0–1).
    */
-  setDrinks(list: { id: DrinkId; left: number }[], boost: number) {
-    const html = list.map(({ id, left }) => {
+  setDrinks(list: { id: DrinkId; left: number }[], boost: number, glove = false) {
+    const item = glove ? `<div class="drink" title="Tether Glove">${gloveIcon}${this.key('item')}</div>` : '';
+    const html = item + list.map(({ id, left }) => {
       const action: Action = id === 'restore' ? 'drinkRestore' : 'drinkAttack';
       const bar = id === 'attack' && boost > 0 ? `<span class="boost"><span style="width:${Math.round(boost * 100)}%"></span></span>` : '';
       return `<div class="drink${left > 0 ? '' : ' empty'}" title="${escape(DRINKS[id].name)}">${bottle(DRINKS[id].color)}<span class="drink-count">×${left}</span>${this.key(action)}${bar}</div>`;
@@ -272,8 +281,9 @@ export class Hud {
     this.areaTimer = 3.2;
   }
 
+  /** A short note at the bottom of the screen (formatted like dialog: `[action]` shows its button). */
   showToast(text: string) {
-    this.toast.textContent = text;
+    this.toast.innerHTML = this.format(text);
     this.toast.classList.add('show');
     this.toastTimer = 2.5;
   }

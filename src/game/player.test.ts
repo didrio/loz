@@ -36,7 +36,7 @@ function setup() {
     }
     return p.pos.z - z;
   };
-  return { p, health, settle, step, run };
+  return { p, health, env, settle, step, run };
 }
 
 const front = new THREE.Vector3(0, 0, 3);
@@ -142,6 +142,38 @@ describe('Player.receiveHit', () => {
     expect(dealt).toEqual([1, 2]);
   });
 
+  it('the sword bounces off armor (a weapon, a shell) only when it\'s nearer than the body', () => {
+    const physics = new Physics();
+    physics.box(0, -0.5, 0, 30, 0.5, 30);
+    physics.refreshQueries();
+    const p = new Player(new THREE.Scene(), physics, { hp: 6, maxHp: 6 });
+    p.teleport(0, 0, 0, 0); // facing +z
+    const parts: string[] = [];
+    let armorAt = new THREE.Vector3();
+    const target = {
+      alive: true, pos: new THREE.Vector3(0, 0, 2.2),
+      hurtboxes: () => [
+        { center: new THREE.Vector3(0, 1, 2.2), radius: 0.6, part: 'body', priority: 0 },
+        { center: armorAt, radius: 0.3, part: 'maul', priority: 0, armor: true },
+      ],
+      hurt: (_dmg: number, _from: THREE.Vector3, part: string) => (parts.push(part), part === 'maul' ? 'guarded' : 'hit'),
+    };
+    const env = {
+      area: { waterLevel: null, cut: () => [] } as unknown as Area,
+      lockTarget: null, enemies: [target] as unknown as PlayerEnv['enemies'], hasSword: true,
+      onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
+    } satisfies PlayerEnv;
+    const swing = () => {
+      p.update(1 / 60, { ...NO_CONTROLS, attack: true }, env);
+      for (let t = 0; t < 1.2; t += 1 / 60) p.update(1 / 60, NO_CONTROLS, env);
+    };
+    armorAt = new THREE.Vector3(0, 1, 1.1); // held out between Wren and the body
+    swing();
+    armorAt = new THREE.Vector3(1.4, 1, 2.4); // off to the side: the body is open
+    swing();
+    expect(parts).toEqual(['maul', 'body']);
+  });
+
   it('only recovers guard while the shield is lowered', () => {
     const { p, step } = setup();
     step(0.5, true);
@@ -152,7 +184,7 @@ describe('Player.receiveHit', () => {
     expect(p.guard.slots).toBe(3);
   });
 
-  it('a guard break staggers: a crawl at a tenth of running speed and no jumping until it wears off', () => {
+  it('a guard break staggers: a crawl (6% of running speed) and no jumping until it wears off', () => {
     const { p, step, run } = setup();
     step(0.5, true);
     expect(p.receiveHit(front, CRUSH)).toBe('blocked');
@@ -160,11 +192,51 @@ describe('Player.receiveHit', () => {
     step(0.5); // let the knockback die down
     const crawl = run(0.5);
     expect(crawl).toBeGreaterThan(0);
-    expect(crawl).toBeLessThan(8.5 * 0.5 * 0.15);
+    expect(crawl).toBeLessThan(8.5 * 0.5 * 0.08);
     run(0.1, true);
     expect(p.grounded).toBe(true);
     step(1.2); // the break wears off
     expect(p.guard.broken).toBe(0);
     expect(run(0.5)).toBeGreaterThan(8.5 * 0.5 * 0.8);
+  });
+
+  it('no sword while the guard is broken (a swing would lunge Wren out of the stagger)', () => {
+    const { p, env, step } = setup();
+    let swings = 0;
+    const counting = { ...env, onSwing: () => swings++ };
+    step(0.5, true);
+    p.receiveHit(front, CRUSH);
+    expect(p.receiveHit(front, LIGHT)).toBe('broken');
+    p.update(1 / 60, { ...NO_CONTROLS, attack: true }, counting);
+    expect(swings).toBe(0);
+    step(2.5); // the break wears off
+    p.update(1 / 60, { ...NO_CONTROLS, attack: true }, counting);
+    expect(swings).toBe(1);
+  });
+});
+
+describe('Player dev sprint', () => {
+  it('devSpeed 5 covers about five times the ground (dev builds only, toggled with G)', () => {
+    const a = setup();
+    a.settle();
+    const normal = a.run(0.5);
+    const b = setup();
+    b.settle();
+    b.p.devSpeed = 5;
+    const fast = b.run(0.5);
+    expect(fast / normal).toBeGreaterThan(4);
+  });
+});
+
+describe('Player.setOpacity', () => {
+  it('fades Wren without fading the shared materials other things use', async () => {
+    const { mat } = await import('../render/materials');
+    const physics = new Physics();
+    const p = new Player(new THREE.Scene(), physics, { hp: 6, maxHp: 6 });
+    p.setOpacity(0.4);
+    expect(mat(0xb4532a).opacity).toBe(1); // her coat color, shared
+    const faded: number[] = [];
+    p['h'].root.traverse((o) => { if (o instanceof THREE.Mesh) faded.push((o.material as THREE.Material).opacity); });
+    expect(faded.filter((o) => o === 0.4).length).toBeGreaterThan(5);
   });
 });

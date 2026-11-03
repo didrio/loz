@@ -19,9 +19,13 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
   const queued: Script[] = [];
   const enemies: Enemy[] = [];
   const travels: { area: AreaId; entrance?: string }[] = [];
+  /** Every `silenceMusic` call, in order. */
+  const music: boolean[] = [];
+  /** Every toast shown, in order. */
+  const toasts: string[] = [];
   const noop = () => {};
   const pushes: THREE.Vector3[] = [];
-  const player = { pos: new THREE.Vector3(), teleport: noop, setSword: noop, push: (from: THREE.Vector3) => void pushes.push(from.clone()) } as unknown as Player;
+  const player = { pos: new THREE.Vector3(), forward: new THREE.Vector3(0, 0, 1), teleport: noop, setSword: noop, push: (from: THREE.Vector3) => void pushes.push(from.clone()) } as unknown as Player;
   const sfx = new Proxy({}, { get: () => noop }) as Sfx;
   const api: ScriptApi = {
     state, sfx, player, area,
@@ -41,16 +45,16 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
     shot: noop,
     releaseCamera: noop,
     showAreaName: noop,
-    toast: noop,
+    toast: (t) => void toasts.push(t),
     warpTime: noop,
     respawn: noop,
     giveSword: () => state.set('hasSword'),
-    silenceMusic: noop,
+    silenceMusic: (on) => void music.push(on),
     travel: async (a, entrance) => void travels.push({ area: a, entrance }),
   };
   /** Runs (and empties) the scripts that were queued with `api.run`. */
   const runQueued = async () => {
     while (queued.length) await queued.shift()!(api);
   };
-  return { api, said, state, queued, runQueued, enemies, travels, player, pushes };
+  return { api, said, state, queued, runQueued, enemies, travels, player, pushes, music, toasts };
 }

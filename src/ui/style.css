@@ -34,8 +34,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 }
 .guard-gauge.show { opacity: 1; }
 .bar { position: relative; width: 10px; height: 30px; border-radius: 2px; overflow: hidden; background: #7d838c; }
-.bar-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; background: rgba(90, 220, 110, 0.55); }
-.bar.up .bar-fill { background: #48ff6e; box-shadow: 0 0 6px rgba(72, 255, 110, 0.8); }
+/* Up and recovering bars share one bright green; recovering ones turn red while the shield is up (paused). */
+.bar-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; background: #48ff6e; box-shadow: 0 0 6px rgba(72, 255, 110, 0.8); }
+.bar.paused .bar-fill { background: #ff4a3a; box-shadow: 0 0 6px rgba(255, 74, 58, 0.8); }
 .guard-gauge.broken .bar { background: #8f2a22; }
 .guard-gauge.broken .bar-fill { background: rgba(255, 110, 90, 0.6); box-shadow: none; }
 .guard-gauge.flash { animation: guard-shake 0.45s; }

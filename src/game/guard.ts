@@ -26,6 +26,7 @@ export class Guard {
   /** Seconds left of a guard break (no shield at all while > 0). */
   broken = 0;
   private gaugeT = 0;
+  private shieldUp = false;
 
   /** How many slots are up. */
   get slots() {
@@ -54,6 +55,7 @@ export class Guard {
 
   /** `shieldUp`: the shield is raised this frame (slots don't recover while it is). */
   update(dt: number, shieldUp: boolean) {
+    this.shieldUp = shieldUp;
     const wasDown = this.slots < GUARD_SLOTS || this.broken > 0;
     if (!shieldUp) for (let i = 0; i < this.timers.length; i++) this.timers[i] = Math.max(0, this.timers[i] - dt);
     this.broken = Math.max(0, this.broken - dt);
@@ -61,6 +63,11 @@ export class Guard {
     // (counted from the moment it filled, not eaten by the frame that filled it).
     if (wasDown || this.slots < GUARD_SLOTS || this.broken > 0) this.gaugeT = GAUGE_LINGER;
     else this.gaugeT = Math.max(0, this.gaugeT - dt);
+  }
+
+  /** Slots are down but not recovering, because the shield is up (the HUD shows them red). */
+  get paused() {
+    return this.shieldUp && this.slots < GUARD_SLOTS;
   }
 
   /** Whether the HUD gauge beside Wren should be showing. */
@@ -72,6 +79,7 @@ export class Guard {
     this.timers.fill(0);
     this.broken = 0;
     this.gaugeT = 0;
+    this.shieldUp = false;
   }
 
   /** For the HUD: each slot's fill from 0 (just knocked down) to 1 (up), fullest first. */
