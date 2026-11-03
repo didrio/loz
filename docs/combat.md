@@ -21,7 +21,11 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   (half-hearts) and `guard` (slots a block knocks down: 1 light, 2 heavy, 3 crushing);
   An attack may also be `stone: true` (statues, shells: the Sentinel's swing, the Shellback's
   charge): with the **Stoneward Tunic** (`village.stonewardTunic`, 100 gems from Odo,
-  `Player.setStoneward`) Wren takes `ceil(damage / 2)` from it, and nothing else changes.
+  `Player.setStoneward`) Wren takes `ceil(damage / 2)` from it, and nothing else changes. Shockwaves
+  take `stone` too (`ShockwaveOptions.stone`). **Owner's call, 2026-11-03: stone enemies hit hard so the tunic is
+  felt**: the Sentinel 4 half-hearts (tunic 2), the Shellback 2 (1), and **every Gravelheart attack 4 (two
+  hearts; tunic 2)**. Wren has 4 hearts at the shrine, so it's two hits, or four in the tunic. The Lamplighter
+  and the non-stone enemies are unchanged (the tunic does nothing against them).
   TypeScript requires both, and each enemy keeps its numbers in one attack sheet
   (`THORNLING_LUNGE`, the Lamplighter's `ATTACKS`). Each knocked-down slot returns on its
   own after 2 s, **but only while the shield is lowered** (its timer pauses, not resets,
@@ -56,7 +60,7 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   (0.9 s, `GroundEnemy.spot`), so walking into a small room gives a moment to read it.
 - **Dozing Sentinel** (`game/sentinel.ts`): a statue until Wren comes within 5 m in sight
   (or hits it: no damage, the stone rings and it wakes). 1.1 s grinding wake, slow chase,
-  then `SENTINEL_SWING` (2 half-hearts, guard 2) after a ~1 s overhead windup. Its reach
+  then `SENTINEL_SWING` (4 half-hearts, guard 2) after a ~1 s overhead windup. Its reach
   comes from the model, not a padded hitbox: a long haft, the arms pushing out 0.35 m and
   a 0.6 m lunge during the blow; it catches Wren in a strip ±0.8 m either side of its line,
   out to 3.1 m (`SWING_REACH`, `SWING_HALF_WIDTH`). History: 3.1 m / ±1.2 rad missed
@@ -119,7 +123,20 @@ stones in flight and `Area.tether`. Gravelheart (`bosses/gravelheart/`): a stuck
 three chest plates loose (`loosenPlate`, ~2.4 s); the glove tears it off; with none left it plays
 `staggered` (chest open ~3 s, `chest` hits are `weak`, x2), then `replate` pulls new plates from the
 wall sockets, then from rubble (it never runs out; rubble crumbles after 7 s). Thrown stones fly at 18 m/s and
-bend toward Wren for their first 0.7 s (`homing`). `Boss.walkable` keeps a boss off drops. Sweep, Volley and Grind round out phase 1.
+bend toward Wren for their first 0.7 s (`homing`). `Boss.walkable` keeps a boss off drops. Sweep, Volley (five stones: owner's call, three were too easy to block) and Grind round out phase 1. **Swipe**
+(both phases, d < 3.8 m): a quick high backhand (windup 0.6 s / 0.5 s in phase 2), blockable (cost 2), not jumpable, so crowding it is punished. The Hammerfall ring runs at 15 m/s (was 10.5: too easy to jump).
+**Phase 2** (`HOWL` is its `phaseMove`: unhurtable; plates drop away, the ember sinks into the head, `hearth.raiseRing()`,
+two hearts drop, Wren and the boss are shoved inside the ring so no tile rises on them): Sweep becomes
+`doubleSweep` (two blows 0.75 s apart, cost 2 each: block one, jump the other); **Cairn Roll** (1 s rocking
+tell, then it rolls at 13 m/s along the line it locked, `ROLL_SPEED`; sidestep). On reaching the wall (`walkable` says no 0.7 m
+ahead) it is dazed 3.2 s and `keyT` = 3 s: the keystone in its back glows and `tetherAt` pulls it (only from
+behind or the side), which plays `kneel` (head bowed toward Wren, ember hurtbox `chest` x2, ~3.5 s). With the ember in the
+head the plates don't matter any more: Roll -> keystone -> kneel is the only way to hurt it. Phase 2's
+`walkable` margin includes the ring (`RING_WIDTH`).
+
+**Exposed tint (reusable):** a boss with a "hit it now" window overrides `Boss.exposed` (Gravelheart: `chestOpen`); the base class
+then pulses every `flashMats` material red (`Boss.applyFlash`) so the window reads at a glance. Hit flashes still win. Use it for any
+future stagger.
 
 ## Fairness rules
 
@@ -135,4 +152,4 @@ Keep these for every boss; they're what "tough but fair" means here:
 - Big attacks leave big openings (the slam's stuck hook brings the weak point down).
 - Greed gets punished, not forbidden (the Lamplighter spins if you keep hitting its back).
 - A phase change drops a couple of hearts; arenas have a few cuttable bushes.
-- Damage: 1–2 half-hearts per hit for an early boss (Wren starts with 3 hearts).
+- Damage: 1–2 half-hearts per hit for an early boss (Wren starts with 3 hearts). Gravelheart is the exception: 4 (see above).

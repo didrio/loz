@@ -28,11 +28,15 @@ export interface Pose {
   ember: number;
   /** How loose the arm stones float (gaps between them). */
   float: number;
+  /** 0 = the ember sits in the chest, 1 = it has risen into the head (phase two). */
+  emberUp: number;
+  /** Legs folded up (0–1) regardless of the hips' height: the curled-up boulder of Cairn Roll. */
+  tuck: number;
 }
 
 export const STAND: Pose = {
   hipsY: 1.7, lean: 0.08, twist: 0, headPitch: 0.05, lids: 0.45, eyes: 0.6, red: 0,
-  rArm: 0.15, rOut: 0.18, rBend: 0.25, lArm: 0.15, lOut: 0.18, lBend: 0.25, ember: 1, float: 1,
+  rArm: 0.15, rOut: 0.18, rBend: 0.25, lArm: 0.15, lOut: 0.18, lBend: 0.25, ember: 1, float: 1, emberUp: 0, tuck: 0,
 };
 
 /** Sleeping in a heap: kneeling low, slumped forward, head bowed, knuckles on the floor, eyes shut. */
@@ -73,6 +77,10 @@ export class GravelheartRig {
   readonly light = new THREE.PointLight(EMBER, 6, 16, 1.5);
   /** Every material that should flash on a hit. */
   readonly flashMats: THREE.MeshLambertMaterial[];
+  /** The keystone's face: glows teal when it is loose (the glove can pull it). */
+  readonly keyMat = uniqueMat(0xa9a293, { emissive: 0x000000 });
+  /** Roll angle of the whole body about its hips (Cairn Roll sets it directly, no blending). */
+  spin = 0;
   readonly eyeMat = uniqueMat(0x0a0908, { emissive: 0x000000 });
   readonly emberMat = uniqueMat(0x401206, { emissive: 0x000000 });
   readonly plateMats: THREE.MeshLambertMaterial[] = [];
@@ -83,7 +91,7 @@ export class GravelheartRig {
 
   constructor(root: THREE.Group) {
     const stone = uniqueMat(0x8f887c), dark = uniqueMat(0x5f5850), pale = uniqueMat(0xa9a293), teal = uniqueMat(0x2f8a7a, { emissive: 0x0d3a33 });
-    this.flashMats = [stone, dark, pale, teal];
+    this.flashMats = [stone, dark, pale, teal, this.keyMat];
     const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0) => {
       const mesh = new THREE.Mesh(geo, m);
       mesh.position.set(x, y, z);
@@ -143,7 +151,7 @@ export class GravelheartRig {
     // The keystone in its back: carved, with the shrine's spiral.
     this.keystone.position.set(0, 1.3, -0.85);
     this.torso.add(this.keystone);
-    add(this.keystone, block(0.9, 0.9, 0.3), pale);
+    add(this.keystone, block(0.9, 0.9, 0.3), this.keyMat);
     const ks = add(this.keystone, new THREE.TorusGeometry(0.26, 0.05, 5, 12), teal, 0, 0, -0.16);
     ks.rotation.y = Math.PI;
 
@@ -191,7 +199,9 @@ export class GravelheartRig {
     this.t += dt;
     this.hips.position.y = p.hipsY;
     // Legs fold as the hips drop (a kneel at ~0.8).
-    const fold = Math.max(0, Math.min(1, (LEG_STAND - p.hipsY) / 0.95));
+    const fold = Math.max(p.tuck, Math.min(1, (LEG_STAND - p.hipsY) / 0.95));
+    this.hips.rotation.x = this.spin;
+    this.ember.position.set(0, 1.15 + 1.75 * p.emberUp, 0.6 - 0.15 * p.emberUp);
     for (const l of this.legs) {
       l.thigh.rotation.x = -fold * 1.3;
       l.shin.rotation.x = fold * 1.9;
@@ -216,6 +226,11 @@ export class GravelheartRig {
     this.emberMat.emissive.setRGB(1 * p.ember * flick * 0.6, 0.35 * p.ember * flick * 0.6, 0.05 * p.ember * 0.6);
     (this.emberGlow.material as THREE.MeshBasicMaterial).opacity = Math.min(0.7, 0.3 * p.ember * flick);
     this.light.intensity = 5 * p.ember * flick;
+  }
+
+  /** The keystone glows loose (0–1), ready to be pulled out with the glove. */
+  setKeystoneGlow(g: number) {
+    this.keyMat.emissive.setRGB(0.2 * g, 0.75 * g, 0.65 * g);
   }
 
   /** A plate glows loose (0–1), ready to be torn off with the glove. */

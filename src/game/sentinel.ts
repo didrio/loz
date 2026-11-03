@@ -5,7 +5,7 @@ import { uniqueMat } from '../render/materials';
 import { GroundEnemy, type Attack, type EnemyEnv, type HurtResult } from './enemies';
 
 /** The two-handed maul: heavy on the guard (block one, then back off and lower the shield). */
-export const SENTINEL_SWING: Attack = { damage: 2, guard: 2, knockback: 16, stone: true };
+export const SENTINEL_SWING: Attack = { damage: 4, guard: 2, knockback: 16, stone: true };
 
 /** It wakes when Wren comes this close (and it can see Wren). */
 export const SENTINEL_WAKE_RANGE = 5;

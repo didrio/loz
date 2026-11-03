@@ -19,15 +19,13 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-03: Emberfield (the valley) plays start to finish: the Hollow Lamplighter (night
-only), the quest thread, all music, and the village (Tobin's mill with a bed; Odo sells the
-Stoneward Tunic and refills flasks). **The Waking Shrine** (25 rooms, four wings, plus the Bell Shaft
-trial) is playable to the end of the boss door and into Warden's Hearth, a 48×40 m hall with drops
-along three edges and holes in the floor (falls cost a half-heart). **Gravelheart** fights through phase 1
-(Hammerfall, Sweep, Stone volley, Grind; glove off three chest plates, then sword the ember); phase 2 and the
-defeat are stand-ins until sessions C–D ([docs/shrine.md](docs/shrine.md)). **Bells** and both trials work
+As of 2026-11-03: Emberfield (the valley) plays start to finish (Lamplighter, quest thread, music, village).
+**The Waking Shrine** (25 rooms, four wings, the Bell Shaft trial) is playable into Warden's Hearth, a 48×40 m hall
+with drops. **Gravelheart** fights through both phases (phase 2: the ring rises, Cairn Roll, glove the keystone,
+sword the ember in its head); its hits cost two hearts (one in the tunic, as do the Sentinel's and Shellback's
+doubled hits); the defeat is a stand-in ([docs/shrine.md](docs/shrine.md)). **Bells** and both trials work
 ([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states.
-**Next: shrine milestone 6, session C** (Gravelheart's phase 2; no plan mode).
+**Next: shrine milestone 6, session D** (defeat, theme, smoke; no plan mode).
 
 ## Docs: read the one for the area you're touching
 

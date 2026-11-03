@@ -13,7 +13,7 @@ export default async function run(t) {
     game(([which, room]) => {
       const g = window.embervale;
       const tag = `smoke-${which}`;
-      const e = g.enemies.list.find((e) => e[tag]) ?? g.enemies.list.find((e) => which in e && e.alive && g.area.roomAt(e.pos)?.id === room);
+      const e = g.enemies.list.find((e) => e[tag]) ?? g.enemies.list.find((e) => which in e && e.alive && !('title' in e) && g.area.roomAt(e.pos)?.id === room);
       if (!e || !e.alive) return null;
       e[tag] = true;
       return { x: e.pos.x, y: e.pos.y, z: e.pos.z, facing: e.facing, hp: e.hp, state: e.state, asleep: e.asleep };
@@ -26,7 +26,7 @@ export default async function run(t) {
 
   await step('the shrine spawns sentinels and shellbacks where its data says, not thornlings', async () => {
     const n = await game(() => {
-      const g = window.embervale, count = (k) => g.enemies.list.filter((e) => k in e).length;
+      const g = window.embervale, count = (k) => g.enemies.list.filter((e) => k in e && !('title' in e)).length; // Gravelheart also has `asleep`
       return { sentinels: count('asleep'), shells: count('exposed'), wantS: g.area.spawns.filter((s) => s.type === 'sentinel').length, wantB: g.area.spawns.filter((s) => s.type === 'shellback').length };
     });
     check(n.sentinels === n.wantS && n.sentinels > 0, `${n.sentinels} sentinels, data has ${n.wantS}`);
@@ -44,7 +44,7 @@ export default async function run(t) {
     const hp = (await state()).hp;
     await stand(s, 2.4);
     await until((hp) => window.embervale.state.hp < hp, 30000, hp);
-    check((await state()).hp === hp - 2, `its swing took ${hp - (await state()).hp} half-hearts, not 2`);
+    check((await state()).hp === hp - 4, `its swing took ${hp - (await state()).hp} half-hearts, not 4`);
     await game(() => (window.embervale.player.invuln = 1e6)); // the rest is about hitting it
     await shot('01-sentinel-awake');
     // Each recovery (maul in the floor), step in front and swing: front hits land only then.

@@ -140,6 +140,18 @@ describe('Player.receiveHit', () => {
     expect(health.hp).toBe(4);
   });
 
+  it('a stone hit of 4 half-hearts costs two hearts, or one in the Stoneward Tunic', () => {
+    const { p, health, step } = setup();
+    step(0.5);
+    expect(p.receiveHit(front, { damage: 4, guard: 1, stone: true })).toBe('hit');
+    expect(health.hp).toBe(2);
+    step(1.3);
+    health.hp = 6;
+    p.setStoneward(true);
+    expect(p.receiveHit(front, { damage: 4, guard: 1, stone: true })).toBe('hit');
+    expect(health.hp).toBe(4);
+  });
+
   it('can jump with the shield up, and keeps blocking in the air', () => {
     const { p, health, step } = setup();
     step(0.5, true);

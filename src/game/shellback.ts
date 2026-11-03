@@ -5,7 +5,7 @@ import { uniqueMat } from '../render/materials';
 import { GroundEnemy, type Attack, type EnemyEnv, type HurtResult } from './enemies';
 
 /** The charge: light, but it comes fast. */
-export const SHELLBACK_CHARGE: Attack = { damage: 1, guard: 1, knockback: 14, stone: true };
+export const SHELLBACK_CHARGE: Attack = { damage: 2, guard: 1, knockback: 14, stone: true };
 
 /** The shell as armor: a ball over its front half (centre in its own frame, radius). */
 const SHELL_ARMOR = { at: new THREE.Vector3(0, 0.4, 0.35), radius: 0.85 };

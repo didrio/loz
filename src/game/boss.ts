@@ -163,6 +163,19 @@ export abstract class Boss extends Enemy {
   protected damageMultiplier(_part: string) {
     return 1;
   }
+  /**
+   * Open to the sword right now (a stagger, a kneel). While true, the body pulses red so the
+   * player can see it: every boss with a "now!" window just returns its flag here.
+   */
+  protected get exposed() {
+    return false;
+  }
+  protected applyFlash(dt: number) {
+    super.applyFlash(dt);
+    if (this.flash > 0 || !this.exposed || !this.alive) return;
+    const k = 0.32 + 0.22 * Math.sin(this.stateT * 9);
+    for (const m of this.flashMats) m.emissive.setRGB(k, k * 0.06, k * 0.06);
+  }
   /** Seconds to wait between moves. */
   protected decideDelay() {
     return 1;

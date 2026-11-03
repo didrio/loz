@@ -22,6 +22,8 @@ export interface ShockwaveOptions {
   maxRadius?: number;
   /** Half-hearts on a hit. Shockwaves are always unblockable and ground-only: jump them. */
   damage?: number;
+  /** Stone strikes: the Stoneward Tunic halves the damage (see Attack.stone). */
+  stone?: boolean;
   color?: number;
   /** Height of the visible wall of fire. */
   height?: number;
@@ -76,6 +78,7 @@ interface Wave {
   speed: number;
   max: number;
   damage: number;
+  stone: boolean;
   hit: boolean;
   mesh: THREE.Mesh;
   ring: THREE.Mesh;
@@ -125,7 +128,7 @@ export class Hazards {
     const ring = new THREE.Mesh(this.ringGeo, material());
     ring.position.copy(center).setY(center.y + 0.05);
     this.scene.add(mesh, ring);
-    this.waves.push({ center: center.clone(), r: 0.5, speed: o.speed ?? 9, max: o.maxRadius ?? 15, damage: o.damage ?? 1, hit: false, mesh, ring });
+    this.waves.push({ center: center.clone(), r: 0.5, speed: o.speed ?? 9, max: o.maxRadius ?? 15, damage: o.damage ?? 1, stone: !!o.stone, hit: false, mesh, ring });
   }
 
   /** A glowing orb fired from `from` along `dir`, curving toward the player for a while. */
@@ -197,7 +200,7 @@ export class Hazards {
       (w.ring.material as THREE.MeshBasicMaterial).opacity = 0.9 * fade;
       const d = Math.hypot(p.x - w.center.x, p.z - w.center.z);
       if (!w.hit && Math.abs(d - w.r) < WAVE_BAND && p.y < w.center.y + 1.2) {
-        const r = env.hitPlayer(new THREE.Vector3(w.center.x, p.y, w.center.z), { damage: w.damage, guard: 0, unblockable: true, groundOnly: true, knockback: 9 });
+        const r = env.hitPlayer(new THREE.Vector3(w.center.x, p.y, w.center.z), { damage: w.damage, guard: 0, unblockable: true, groundOnly: true, knockback: 9, stone: w.stone });
         if (r === 'hit') w.hit = true;
       }
       if (w.r >= w.max) {

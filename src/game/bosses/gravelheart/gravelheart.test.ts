@@ -6,7 +6,7 @@ import { Hazards } from '../../hazards';
 import { swordTarget } from '../../player';
 import { mulberry32 } from '../../../core/math';
 import { Gravelheart } from './index';
-import { GRIND } from './moves';
+import { ATTACKS, DOUBLE_SWEEP, GRIND, ROLL, SWEEP, SWIPE } from './moves';
 
 beforeAll(async () => {
   await initPhysics();
@@ -122,23 +122,65 @@ describe('Gravelheart', () => {
     expect(j.hits.length).toBe(0);
   });
 
-  it('stone volley: three stones pulled out and thrown in turn, then they lie as rubble', () => {
+  it('stone volley: five stones pulled out and thrown in turn, then they lie as rubble', () => {
     const { b, physics, env, hits, hazards } = fighting(8);
     let pulled = 0;
     (b as unknown as { hearth: unknown }).hearth = { take: () => (pulled++, new THREE.Vector3(-8 + pulled, 3, 4)) };
     b.forceMove('volley');
     expect(b.move?.timing(b).windup).toBeGreaterThanOrEqual(0.5);
     runEnemy(b, physics, env, 0.1);
-    expect(pulled).toBe(3);
-    expect(hazards.active).toBe(3);
-    for (let t = 0; t < 4; t += 1 / 60) {
+    expect(pulled).toBe(5);
+    expect(hazards.active).toBe(5);
+    for (let t = 0; t < 5; t += 1 / 60) {
       b.update(1 / 60, env);
       hazards.update(1 / 60, { ...env, onPop: undefined });
       physics.step(1 / 60);
     }
-    expect(hits.length).toBe(3);
+    expect(hits.length).toBe(5);
     expect(hits.every((h) => h.attack.guard === 1)).toBe(true);
-    expect(b.rubble.length).toBe(3);
+    expect(b.rubble.length).toBe(5);
+  });
+
+  it('swipe: a quick close-range backhand that a jump does not clear; out of reach it misses', () => {
+    const near = fighting(2.5);
+    expect(SWIPE.weight(near.b, 2.5)).toBeGreaterThan(0);
+    expect(SWIPE.weight(near.b, 6)).toBe(0);
+    near.b.forceMove('swipe');
+    expect(near.b.move?.timing(near.b).windup).toBeGreaterThanOrEqual(0.5);
+    runEnemy(near.b, near.physics, near.env, 2, () => near.b.step === 'recover');
+    expect(near.hits.map((h) => h.attack)).toEqual([ATTACKS.swipe]);
+    const jump = fighting(2.5);
+    jump.b.forceMove('swipe');
+    runEnemy(jump.b, jump.physics, jump.env, 0.6);
+    jump.player.y = 1.4;
+    runEnemy(jump.b, jump.physics, jump.env, 2, () => jump.b.step === 'recover');
+    expect(jump.hits.length).toBe(1);
+    const far = fighting(2.5);
+    far.b.forceMove('swipe');
+    runEnemy(far.b, far.physics, far.env, 0.5);
+    far.player.z = 6; // stepped back
+    runEnemy(far.b, far.physics, far.env, 2, () => far.b.step === 'recover');
+    expect(far.hits.length).toBe(0);
+  });
+
+  it('pulses red while it can be struck (the stagger), and only then', () => {
+    const { b, physics, env } = fighting(5);
+    const mat = b.rig.flashMats[0];
+    runEnemy(b, physics, env, 0.2);
+    expect(mat.emissive.r).toBe(0);
+    b.forceMove('staggered');
+    runEnemy(b, physics, env, 1, () => b.chestOpen);
+    const seen: number[] = [];
+    for (let i = 0; i < 40; i++) {
+      runEnemy(b, physics, env, 0.05);
+      seen.push(mat.emissive.r);
+    }
+    expect(Math.min(...seen)).toBeGreaterThan(0.05);
+    expect(Math.max(...seen) - Math.min(...seen)).toBeGreaterThan(0.2); // it pulses
+    expect(mat.emissive.g).toBeLessThan(0.05); // red, not white
+    runEnemy(b, physics, env, 6, () => !b.move);
+    runEnemy(b, physics, env, 0.1);
+    expect(mat.emissive.r).toBe(0);
   });
 
   it('grind: only when Wren hugs its back, and it is a short ring', () => {
@@ -211,5 +253,162 @@ describe('Gravelheart', () => {
     expect(b.targetable).toBe(false);
     expect(runEnemy(b, physics, env, 6, () => b.asleep)).toBe(true);
     expect(b.gone).toBe(false); // it stays, asleep in its hall
+  });
+
+  it('every attack is two whole hearts (four half-hearts), and stone, so the tunic halves it', () => {
+    for (const a of Object.values(ATTACKS)) {
+      expect(a.damage).toBe(4);
+      expect(a.stone).toBe(true);
+    }
+    const { b, physics, env, hits } = fighting(3);
+    b.forceMove('hammerfall');
+    runEnemy(b, physics, env, 1.3, () => b.step === 'recover');
+    expect(hits[0].attack.damage).toBe(4);
+  });
+
+  it('the ground pound ring comes out fast (15 m/s): it reaches 6 m away in under half a second, and it is stone', () => {
+    const { b, physics, env, hits, hazards } = fighting(6);
+    hits.length = 0;
+    b.forceMove('hammerfall');
+    runEnemy(b, physics, env, 1.3, () => b.step === 'recover');
+    hits.length = 0; // the slam itself missed (6 m away); now the ring
+    let t = 0;
+    for (; t < 1 && !hits.length; t += 1 / 60) {
+      hazards.update(1 / 60, { ...env, onPop: undefined });
+      b.update(1 / 60, env);
+    }
+    expect(hits.length).toBe(1);
+    expect(t).toBeLessThan(0.5);
+    expect(hits[0].attack.stone).toBe(true);
+    expect(hits[0].attack.damage).toBe(4);
+  });
+
+  describe('phase 2', () => {
+    /** A fake hearth: the ring is a flag; the platform is 40 m square. */
+    function withHearth(b: Gravelheart) {
+      const log = { raised: 0 };
+      (b as unknown as { hearth: unknown }).hearth = {
+        raiseRing: () => log.raised++, ringUp: false, center: new THREE.Vector3(0, 0, 0), insideRing: () => true,
+        platform: { x0: -20, x1: 20, z0: -20, z1: 20 }, take: () => null,
+      };
+      return log;
+    }
+    /** Fighting, with the howl played out: phase 2 proper. */
+    function phaseTwo(dist = 6) {
+      const s = fighting(dist);
+      const log = withHearth(s.b);
+      s.b.hp = 21;
+      s.b.hurt(2, s.b.pos.clone().addScaledVector(s.b.forward, 2.6), 'chest');
+      runEnemy(s.b, s.physics, s.env, 5, () => s.b.phase === 2 && !s.b.move);
+      return { ...s, log };
+    }
+
+    it('at half health it howls (unhurtable), raises the ring, drops two hearts and loses its plates', () => {
+      const s = fighting(6);
+      const log = withHearth(s.b);
+      const drops: string[] = [];
+      const env = { ...s.env, drop: (k: string) => drops.push(k) };
+      s.b.pos.x = 18; // out where the tiles will rise
+      s.b.hp = 21;
+      s.b.hurt(2, s.b.pos.clone().addScaledVector(s.b.forward, 2.6), 'chest');
+      expect(s.b.phase).toBe(2);
+      runEnemy(s.b, s.physics, env, 0.1);
+      expect(s.b.move?.name).toBe('howl');
+      expect(s.b.invulnerable).toBe(true);
+      expect(s.b.hurt(5, s.player, 'chest')).toBe('ignored');
+      runEnemy(s.b, s.physics, env, 4, () => !s.b.move);
+      expect(s.b.invulnerable).toBe(false);
+      expect(log.raised).toBe(1);
+      expect(drops).toEqual(['heart', 'heart']);
+      expect(s.b.platesOn).toBe(0);
+      expect(s.b.pos.x).toBeLessThanOrEqual(16.01); // not left under a tile
+    });
+
+    it('swaps Sweep for the double sweep: two blows, each cost 2, the second one jumpable', () => {
+      const { b, physics, env, hits } = phaseTwo(3);
+      expect(SWEEP.weight(b, 3)).toBe(0);
+      expect(DOUBLE_SWEEP.weight(b, 3)).toBeGreaterThan(0);
+      b.forceMove('doubleSweep');
+      expect(b.move?.timing(b).windup).toBeGreaterThanOrEqual(0.5);
+      hits.length = 0;
+      runEnemy(b, physics, env, 3, () => b.step === 'recover');
+      expect(hits.map((h) => h.attack.guard)).toEqual([2, 2]);
+      const j = phaseTwo(3);
+      j.b.forceMove('doubleSweep');
+      j.hits.length = 0;
+      runEnemy(j.b, j.physics, j.env, 0.8, () => j.b.step === 'active');
+      runEnemy(j.b, j.physics, j.env, 0.3);
+      expect(j.hits.length).toBe(1);
+      j.player.y = 1.4; // up for the second
+      runEnemy(j.b, j.physics, j.env, 3, () => j.b.step === 'recover');
+      expect(j.hits.length).toBe(1);
+    });
+
+    it('Cairn Roll: a full second of tell, then it rolls at Wren; a sidestep makes it miss', () => {
+      const { b, physics, env, hits, player } = phaseTwo(6);
+      expect(ROLL.weight(b, 8)).toBeGreaterThan(0);
+      b.forceMove('cairnRoll');
+      expect(b.move?.timing(b).windup).toBeGreaterThanOrEqual(1);
+      hits.length = 0;
+      runEnemy(b, physics, env, 2, () => b.step === 'active');
+      player.x = 4; // a sidestep once it commits
+      runEnemy(b, physics, env, 1.2);
+      expect(hits.length).toBe(0);
+      const s = phaseTwo(6);
+      s.b.forceMove('cairnRoll');
+      s.hits.length = 0;
+      runEnemy(s.b, s.physics, s.env, 2.5, () => s.hits.length > 0);
+      expect(s.hits.map((h) => h.attack)).toEqual([ATTACKS.roll]);
+    });
+
+    it('hitting the wall daze it: the keystone glows, the glove pulls it, it kneels and the ember takes double', () => {
+      const { b, physics, env, player } = phaseTwo(6);
+      const back = b.pos.clone().addScaledVector(b.forward, -6);
+      expect(b.tetherAt(back, b.forward.clone())).toBeNull(); // nothing loose yet
+      b.walkable = (_x, z) => z < 12; // a wall 12 m out
+      b.forceMove('cairnRoll');
+      player.set(0, 0, 10); // it rolls toward her, into the wall behind her
+      expect(runEnemy(b, physics, env, 4, () => b.keyT > 0)).toBe(true);
+      expect(b.step).toBe('recover');
+      expect(b.pos.z).toBeGreaterThan(8);
+      // Thrown from behind it, the glove finds the keystone (from the front or the side it doesn't).
+      const from = b.pos.clone().addScaledVector(b.forward, -6);
+      expect(b.tetherAt(b.pos.clone().addScaledVector(b.forward, 6), b.forward.clone().negate())).toBeNull();
+      expect(b.tetherAt(from, b.forward.clone())).not.toBeNull();
+      expect(b.move?.name).toBe('kneel');
+      expect(b.keyT).toBe(0);
+      runEnemy(b, physics, env, 1, () => b.chestOpen);
+      expect(b.chestOpen).toBe(true);
+      runEnemy(b, physics, env, 0.8); // the pose settles
+      const hp = b.hp;
+      expect(swing(b, b.pos.clone().addScaledVector(b.forward, 2.6))).toBe('weak');
+      expect(b.hp).toBe(hp - 2);
+      runEnemy(b, physics, env, 6, () => !b.move);
+      expect(b.chestOpen).toBe(false);
+    });
+
+    it('a roll that runs into something solid (a pillar, Wren herself) is a wall hit too', () => {
+      const { b, physics, env, player } = phaseTwo(6);
+      physics.box(0, 2, 9, 10, 2, 0.5); // a wall of stone across its path (no walkable rule here)
+      physics.refreshQueries();
+      player.set(0, 0, 14);
+      b.forceMove('cairnRoll');
+      expect(runEnemy(b, physics, env, 5, () => b.keyT > 0)).toBe(true);
+      expect(b.pos.z).toBeLessThan(8);
+    });
+
+    it('a roll that finds no wall is not dazed; the daze runs out and the keystone dims', () => {
+      const { b, physics, env, player } = phaseTwo(6);
+      player.set(0, 0, 10);
+      b.forceMove('cairnRoll');
+      runEnemy(b, physics, env, 6, () => !b.move);
+      expect(b.keyT).toBe(0);
+      b.walkable = (_x, z) => z < 12;
+      b.forceMove('cairnRoll');
+      runEnemy(b, physics, env, 4, () => b.keyT > 0);
+      runEnemy(b, physics, env, 4, () => !b.move);
+      expect(b.keyT).toBe(0);
+      expect(b.tetherAt(b.pos.clone().addScaledVector(b.forward, -6), b.forward.clone())).toBeNull();
+    });
   });
 });

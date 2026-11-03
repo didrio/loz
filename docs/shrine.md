@@ -135,9 +135,10 @@ sword), the arena changes in phase two, and the item is the key to the fight. Bu
   (jump it). Its fists stick in the floor for ~1.5 s and one chest plate **glows loose**:
   tether it to rip it off.
 - **Sweep**: one arm sweeps low across the front (blockable, cost 2; or jump).
-- **Stone volley**: pulls three wakestones out of the walls and throws them in sequence
+- **Stone volley**: pulls five wakestones out of the walls and throws them in sequence
   (block, cost 1 each, or sidestep). A thrown stone can be tethered mid-air to yank it
   aside (a skill shot, never required).
+- **Swipe**: a quick high backhand when Wren crowds it (blockable, not jumpable).
 - **Grind** (greed punish): if Wren stays behind it, it turns on its waist and grinds
   (short-range shockwave, jumpable).
 - With all three plates off, the ember is exposed and it staggers for ~3 s: sword it (the
@@ -205,8 +206,10 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
      settles it and opens the door (session D). The ring rises 2.4 m (Wren jumps ~2 m). To judge in
      play: the palette is low contrast, and the sleeping heap barely reads as kneeling.
    - ~~**B, phase 1**~~ done (details in [combat.md](combat.md), "Bosses"; the owner has played it and likes it).
-   - **C, phase 2**: the phase move (howl, smash, ring rises, hearts drop, ember into the head);
-     Cairn Roll → dazed on the ring → keystone → kneel; double sweep; faster moves; tests.
+   - ~~**C, phase 2**~~ done (2026-11-03; the owner hasn't played it): `HOWL`, `ROLL`, `KNEEL`, `DOUBLE_SWEEP` in
+     `bosses/gravelheart/moves.ts` (details in [combat.md](combat.md), "Bosses"). Also the owner's damage call: every
+     Gravelheart attack is 4 half-hearts (2 in the tunic); the Hammerfall ring is faster. Look scene `gravelheart2`.
+     To judge in play: Cairn Roll's speed and tell, the keystone window, the ring shrinking the arena (~20x16 m).
    - **D, defeat, music, smoke, docs**: the defeat script, Heart Vessel, lantern at 2 embers; the
      `warden` theme; fixture `shrine-boss.json` + smoke scenario `shrine-boss`; docs.
 7. **The Northpass**: the new road, the cut, the heavy stone, the sign and dialog, the

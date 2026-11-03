@@ -5,7 +5,8 @@ import type { Physics } from '../../../core/physics';
 import type { WardenHearth } from '../../../world/dungeon/hearth';
 import { Boss, type Move } from '../../boss';
 import type { EnemyEnv, Hurtbox } from '../../enemies';
-import { MOVES, STAGGER } from './moves';
+import { RING_WIDTH } from '../../../world/dungeon/hearth';
+import { HOWL, KNEEL, MOVES, STAGGER } from './moves';
 import { blendPose, GravelheartRig, SLEEP, STAND, type Pose } from './rig';
 
 /**
@@ -34,6 +35,13 @@ export class Gravelheart extends Boss {
   asleep = false;
   /** Which chest plates are on. */
   readonly plates = [true, true, true];
+  /** Seconds the keystone in its back stays loose (Cairn Roll's daze), and the roll's angle and heading. */
+  keyT = 0;
+  spin = 0;
+  readonly rollDir = new THREE.Vector3();
+  /** Cairn Roll's stall detector: where it was last frame, and how long it has barely moved. */
+  readonly rollLast = new THREE.Vector3();
+  rollStall = 0;
   /** The plate glowing loose (or -1) and how long it stays loose. */
   loose = -1;
   looseT = 0;
@@ -54,7 +62,7 @@ export class Gravelheart extends Boss {
   constructor(private readonly stage: THREE.Object3D, physics: Physics, readonly hearth: WardenHearth | null, x: number, y: number, z: number, yaw: number) {
     super(stage, physics, hearth, { x, y, z, yaw, hp: 40, radius: 1.5, halfHeight: 1.3, phases: [0.5] });
     this.lockHeight = 3;
-    if (hearth) this.walkable = (px, pz) => hearth.walkable(px, pz, 2);
+    if (hearth) this.walkable = (px, pz) => hearth.walkable(px, pz, this.phase >= 2 ? 2 + RING_WIDTH : 2);
     this.deathColor = 0x8f887c;
     this.rig = new GravelheartRig(this.root);
     this.flashMats.push(...this.rig.flashMats);
@@ -65,6 +73,27 @@ export class Gravelheart extends Boss {
     return MOVES as Move<this>[];
   }
 
+  protected phaseMove(phase: number): Move<this> | null {
+    return phase === 2 ? (HOWL as Move<this>) : null;
+  }
+
+  /** The ring is rising (or up): it stands inside the shrunken arena, not under a tile. */
+  keepInside() {
+    const f = this.hearth?.platform;
+    if (!f) return;
+    const m = RING_WIDTH + 2;
+    const x = clamp(this.pos.x, f.x0 + m, f.x1 - m), z = clamp(this.pos.z, f.z0 + m, f.z1 - m);
+    if (x === this.pos.x && z === this.pos.z) return;
+    this.pos.set(x, this.pos.y, z);
+    this.character.teleport(this.pos);
+  }
+
+  /** Eases the roll angle to a whole turn, so the body comes to rest upright. */
+  settleSpin(dt: number) {
+    const turn = Math.PI * 2;
+    this.spin += (Math.round(this.spin / turn) * turn - this.spin) * Math.min(1, dt * 8);
+  }
+
   get platesOn() {
     return this.plates.filter(Boolean).length;
   }
@@ -72,6 +101,10 @@ export class Gravelheart extends Boss {
   /** Stone everywhere: the sword clanks off anything but an open chest. */
   protected isGuarding(_toAttacker: THREE.Vector3, part: string) {
     return part !== 'chest';
+  }
+
+  protected get exposed() {
+    return this.chestOpen;
   }
 
   protected damageMultiplier(part: string) {
@@ -104,7 +137,9 @@ export class Gravelheart extends Boss {
 
   /** The glove, thrown from `from` along `dir`: if the loose plate is in front, it tears free. */
   tetherAt(from: THREE.Vector3, dir: THREE.Vector3) {
-    if (this.state !== 'fight' || this.loose < 0 || this.looseT <= 0) return null;
+    if (this.state !== 'fight') return null;
+    if (this.keyT > 0) return this.tetherKeystone(from, dir);
+    if (this.loose < 0 || this.looseT <= 0) return null;
     this.root.updateMatrixWorld(true);
     const at = new THREE.Vector3().setFromMatrixPosition(this.rig.plates[this.loose].matrixWorld);
     const to = at.clone().sub(from).setY(0);
@@ -119,6 +154,22 @@ export class Gravelheart extends Boss {
     this.env?.shake(0.5);
     this.env?.sfx.boom();
     if (!this.platesOn) this.interruptWith(STAGGER.name);
+    return { at };
+  }
+
+  /** Phase two: the glove pulls the loose keystone out of its back, and it drops to its knees. */
+  private tetherKeystone(from: THREE.Vector3, dir: THREE.Vector3) {
+    this.root.updateMatrixWorld(true);
+    const at = new THREE.Vector3().setFromMatrixPosition(this.rig.keystone.matrixWorld);
+    const to = at.clone().sub(from).setY(0);
+    // The keystone sits in its back: the cord only finds it from behind or the side.
+    if (to.length() > 14 || to.normalize().dot(dir) < 0.9 || to.dot(this.forward) < 0.2) return null;
+    this.keyT = 0;
+    this.addRubble(from.clone().addScaledVector(dir, 1.8));
+    this.env?.particles.burst(at, 0x9b9486, 18, 5, 0.6);
+    this.env?.shake(0.6);
+    this.env?.sfx.boom();
+    this.interruptWith(KNEEL.name);
     return { at };
   }
 
@@ -188,6 +239,8 @@ export class Gravelheart extends Boss {
     this.looseT = 0;
     for (const r of this.rubble.splice(0)) this.stage.remove(r.mesh);
     this.chestOpen = false;
+    this.keyT = 0;
+    this.spin = 0;
     this.asleep = false;
     this.ground = false;
     Object.assign(this.cur, SLEEP);
@@ -199,7 +252,7 @@ export class Gravelheart extends Boss {
 
   update(dt: number, env: EnemyEnv) {
     // Each frame starts from the base pose; the active move then bends it.
-    this.target = this.state === 'dormant' ? { ...SLEEP } : { ...STAND };
+    this.target = this.state === 'dormant' ? { ...SLEEP } : { ...STAND, emberUp: this.phase >= 2 ? 1 : 0 };
     this.rate = this.state === 'dormant' ? 2 : 6;
     this.gloom = this.state === 'fight' ? (this.phase === 1 ? 0.25 : 0.55) : 0;
     if (this.state === 'intro') this.poseIntro(env);
@@ -213,6 +266,7 @@ export class Gravelheart extends Boss {
         this.rubble.splice(i, 1);
       } else if (r.age > RUBBLE_LIFE - 1) r.mesh.scale.setScalar(RUBBLE_LIFE - r.age);
     }
+    if (this.keyT > 0) this.keyT -= dt;
     if (this.looseT > 0) {
       this.looseT -= dt;
       if (this.looseT <= 0) this.loose = -1;
@@ -266,7 +320,9 @@ export class Gravelheart extends Boss {
     this.stepPhase += moving ? dt * 2.2 : 0;
     const sway = moving ? Math.sin(this.stepPhase) * 0.05 : 0;
     const p: Pose = { ...this.cur, hipsY: this.cur.hipsY + Math.sin(this.breath * 1.3) * 0.03 + (moving ? Math.abs(Math.sin(this.stepPhase)) * 0.05 : 0) };
+    this.rig.spin = this.spin;
     this.rig.apply(p, dt);
+    this.rig.setKeystoneGlow(this.keyT > 0 ? 0.65 + Math.sin(this.breath * 14) * 0.35 : 0);
     for (let i = 0; i < this.plates.length; i++) {
       this.rig.plates[i].visible = this.plates[i];
       this.rig.setPlateGlow(i, i === this.loose && this.looseT > 0 ? 0.65 + Math.sin(this.breath * 14) * 0.35 : 0);

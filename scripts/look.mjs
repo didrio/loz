@@ -656,6 +656,81 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('gravelheart-ring');
   },
+  /** Gravelheart phase 2: the howl and the risen ring, Cairn Roll's tell and roll, the daze with the keystone glowing, the kneel. */
+  async gravelheart2(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.loadArea('shrine'));
+    await h.wait(1500);
+    const r = await h.game(() => window.embervale.area.def.rooms.find((r) => r.id === 'boss'));
+    const door = await h.game(() => window.embervale.area.doors.get('bossDoor').group.position);
+    const y = r.floor * 8 + 0.05;
+    await h.game(([x, y, z]) => {
+      const g = window.embervale;
+      g.area.doors.get('bossDoor').setOpen();
+      g.player.teleport(x, y, z, Math.PI);
+      g.rig.snap(g.player.pos, Math.PI);
+    }, [door.x, y, door.z - 5]);
+    await h.until(() => window.embervale.mode === 'play' && !!window.embervale.activeBoss, 60000);
+    await h.game(() => (window.embervale.player.invuln = 1e6));
+    await h.until(() => !document.querySelector('.boss-title.show'), 15000);
+    // Half health: the howl plays on its own.
+    await h.game(() => {
+      const b = window.embervale.activeBoss;
+      b.hp = 21;
+      b.hurt(2, b.pos, 'chest');
+    });
+    await waitStep(h, 'howl', 'windup', 0.8);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 9, side: 4, height: 2.6, lookHeight: 3.5, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart2-howl');
+    await h.game(() => window.embervale.setTimeScale(1));
+    await h.until(() => !window.embervale.activeBoss.move, 20000);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 9, side: 3, height: 2.6, lookHeight: 3, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart2-head');
+    await h.game(([cx, cz, fy]) => {
+      const g = window.embervale, T = g.player.pos.constructor;
+      g.rig.shot(new T(cx + 2, fy + 10.5, cz + 19), new T(cx, fy + 1, cz - 2), true);
+    }, [r.x + r.w / 2, r.z + r.d / 2, y]);
+    await h.wait(1200);
+    await h.shot('gravelheart2-ring');
+    // Cairn Roll: the rocking tell, the boulder, then dazed against the wall.
+    await h.game(() => {
+      window.embervale.setTimeScale(0.5);
+      window.embervale.activeBoss.forceMove('cairnRoll');
+    });
+    await waitStep(h, 'cairnRoll', 'windup', 0.9);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 9, side: 4, height: 2.6, lookHeight: 2.4, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart2-roll-windup');
+    await h.game(() => window.embervale.setTimeScale(0.5));
+    await waitStep(h, 'cairnRoll', 'active', 0.2);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 7, side: 5, height: 2.4, lookHeight: 2, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart2-rolling');
+    await h.game(() => window.embervale.setTimeScale(0.5));
+    await h.until(() => window.embervale.activeBoss.keyT > 0, 20000);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: -8, side: 2.5, height: 3, lookHeight: 2.8, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart2-dazed-keystone');
+    // The glove pulls the keystone: it kneels, head bowed to Wren.
+    await h.game(() => {
+      const g = window.embervale, b = g.activeBoss;
+      g.setTimeScale(0.5);
+      b.tetherAt(b.pos.clone().addScaledVector(b.forward, -6), b.forward.clone());
+    });
+    await h.until(() => window.embervale.activeBoss.chestOpen, 20000);
+    await h.wait(1500);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 6, side: 3, height: 2.4, lookHeight: 2.2, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart2-kneel');
+  },
   /** The shrine's enemies: a Dozing Sentinel asleep, winding up and stuck after its swing; a Shellback from front and back, and tucked to charge. */
   async enemies(h) {
     await h.newGame();

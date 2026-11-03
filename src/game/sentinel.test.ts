@@ -35,7 +35,7 @@ describe('Dozing Sentinel', () => {
     expect(s.asleep).toBe(false);
     expect(s.targetable).toBe(true);
     expect(hits[0].attack).toBe(SENTINEL_SWING);
-    expect(SENTINEL_SWING.damage).toBe(2);
+    expect(SENTINEL_SWING.damage).toBe(4);
     expect(SENTINEL_SWING.guard).toBe(2);
   });
 
