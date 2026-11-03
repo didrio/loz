@@ -58,6 +58,10 @@ export function shrineContent(area: DungeonArea): AreaContent {
     }
   };
 
+  /** Rooms whose chest appears once they're cleared: beating them is permanent. */
+  const challengeRooms = new Set(
+    def.things.flatMap((t) => (t.kind === 'chest' && t.appears && 'cleared' in t.appears ? [t.appears.cleared] : [])),
+  );
   const alive = (room: string) => (roomEnemies.get(room) ?? []).some((e) => e.alive);
 
   const lootMessage = (loot: Loot) => {
@@ -135,12 +139,15 @@ export function shrineContent(area: DungeonArea): AreaContent {
   /**
    * Every enemy in the shrine, fresh: on arrival, and again whenever Wren dies (the
    * checkpoint rule: death keeps your keys, chests and doors, but the shrine refills with
-   * enemies). Rooms already cleared stay cleared.
+   * enemies). Beaten challenge rooms stay empty.
    */
   const spawnAll = (api: ScriptApi) => {
     for (const list of roomEnemies.values()) for (const e of list) api.removeEnemy(e);
     roomEnemies.clear();
+    const p = progress(api.state);
     for (const s of area.spawns) {
+      // A beaten challenge room (one a chest waits on) stays empty; other rooms refill.
+      if (p.cleared.has(s.room) && challengeRooms.has(s.room)) continue;
       // Each enemy minds its own room: it ignores Wren until Wren walks in.
       const inRoom = (pos: THREE.Vector3) => area.roomAt(pos)?.id === s.room;
       // ...and keeps off the stairs (hard to fight on), though it still sees Wren standing on them.

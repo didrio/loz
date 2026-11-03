@@ -23,8 +23,8 @@ As of 2026-11-02: Emberfield (the valley) plays start to finish: the Hollow Lamp
 only), the quest thread, all music, and the village (Tobin's mill with a bed, Odo's stall selling
 the Stoneward Tunic). **The Waking Shrine** (25 rooms, four wings) is playable up to the boss
 door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy feel is untuned until played.
-**Next, the owner's playtest tweaks** ([docs/roadmap.md](docs/roadmap.md), A–D and G done):
-**E** flasks (plan mode), **F** dungeon fixes (cleared rooms keep their enemies dead); then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
+**Next, the owner's playtest tweaks** ([docs/roadmap.md](docs/roadmap.md), A–D, F and G done):
+**E** flasks (plan mode) is next; then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
 
 ## Docs: read the one for the area you're touching
 

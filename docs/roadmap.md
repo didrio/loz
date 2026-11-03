@@ -39,13 +39,7 @@ Next, in order:
      Update the checkpoint rule in AGENTS.md, combat.md, shrine.md ("drinks refill on death"),
      the save format (migration) and the HUD. Check the gem economy (gems now pay for refills).
    - ~~G: text and dialog quality pass~~ done (the owner still reads it in-game; tone is theirs).
-   - **F: dungeon fixes** (after E, or before it; no plan mode): (1) challenge rooms (a chest or
-     progress appears when their enemies are beaten) keep their enemies dead after death, and
-     the chest stays visible and open; plain scattered enemies still respawn. Today
-     `content/shrine.ts` respawns every enemy on death. (2) A stray sound plays after the
-     statues (sentinels) wake, matching none of their actions: trace what sentinel.ts
-     (`grind`, `heavySwing`, `stoneThunk`) and old door code (`rumble`, 3.2 s) play and when.
-     The owner has to listen to confirm (we can't hear audio).
+   - ~~F: dungeon fixes~~ done (beaten challenge rooms stay empty; sentinel windup sound shortened).
 1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
    in [shrine.md](shrine.md)); **next is milestone 6** (Gravelheart and its theme), then the
    **Northpass** valley exit the glove opens (7), polish (8).

@@ -72,7 +72,14 @@ export default async function run(t) {
     check(await inShrine(() => window.embervale.state.dungeon('shrine').doors.has('cryptCistern') && window.embervale.area.doors.get('cryptCistern').open), 'progress lost');
     check(await inShrine(() => window.embervale.state.drinks.left.get('restore') === 1), 'drink not refilled');
     const alive = await inShrine(() => window.embervale.enemies.list.filter((e) => e.alive).length);
-    check(alive === enemiesBefore, `${alive} enemies after respawning, expected all ${enemiesBefore}`);
+    // Beaten challenge rooms (the ones a chest waits on) stay empty; everything else is back.
+    const stayEmpty = await inShrine(() => {
+      const g = window.embervale;
+      const cleared = g.state.dungeon('shrine').cleared;
+      const rooms = new Set(g.area.def.things.filter((t) => t.kind === 'chest' && t.appears && 'cleared' in t.appears).map((t) => t.appears.cleared));
+      return g.area.spawns.filter((s) => s.type !== 'gravelheart' && cleared.has(s.room) && rooms.has(s.room)).length;
+    });
+    check(stayEmpty > 0 && alive === enemiesBefore - stayEmpty, `${alive} enemies after respawning, expected ${enemiesBefore} minus ${stayEmpty} in beaten challenge rooms`);
   });
 
   await step('a game saved in the shrine continues in the shrine', async () => {

@@ -194,7 +194,7 @@ export class DozingSentinel extends GroundEnemy {
           this.calm = 3;
         } else if (dist < 2.8 && this.unseen === 0) {
           this.go('windup');
-          env.sfx.grind();
+          env.sfx.grind(WINDUP_TIME * 0.8); // ends before the blow, so no grinding bleeds into it
         }
         break;
       case 'windup':

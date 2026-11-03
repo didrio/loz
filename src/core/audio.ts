@@ -129,7 +129,7 @@ export class Sfx {
 
   // --- enemy sounds ---
   /** A statue coming alive (and a sentinel heaving its maul up): stone grinding on stone. */
-  grind() { this.noise(1.0, 350, 120, 0.4, 'lowpass'); this.tone(55, 1.0, 'sawtooth', 0.06, 48); this.noise(0.8, 1800, 900, 0.06, 'bandpass'); }
+  grind(len = 1.0) { this.noise(len, 350, 120, 0.4, 'lowpass'); this.tone(55, len, 'sawtooth', 0.06, 48); this.noise(len * 0.8, 1800, 900, 0.06, 'bandpass'); }
   /** A shellback tucking into its shell before a charge. */
   shellTuck() { this.tone(260, 0.12, 'square', 0.07, 140); this.noise(0.15, 1200, 400, 0.18, 'lowpass'); }
   /** A shellback's charge: claws scrabbling on stone. */

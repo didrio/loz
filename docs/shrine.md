@@ -54,7 +54,7 @@ heart), the Lookout and Cistern chests (gems), the Ossuary (a heart).
 
 The shrine leans a little toward a Souls-like feel: dying sends Wren back to the Hall of
 Sleepers; keys, the glove, opened chests and doors, pressed switches and plates stay, but
-**every enemy respawns** and **every drink found refills** (cleared rooms stay cleared). Chests hold two single-use drinks instead of a map and compass: the **Restoring
+**every enemy respawns** (except in beaten challenge rooms, the ones a chest waits on: they stay empty and the chest stays) and **every drink found refills**. Chests hold two single-use drinks instead of a map and compass: the **Restoring
 Draught** (Key Vault) and the **Ember Tonic** (Sunken Court). Every
 stone has a purpose (the checker proves it), stones can't get stuck (bounce-back), and
 heavy stones look nothing like light ones (dark violet, bronze bands, glowing teal spirals).

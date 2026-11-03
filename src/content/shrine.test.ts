@@ -209,6 +209,23 @@ describe('shrine content', () => {
     expect(area.stoneCell('naveStone')).toMatchObject({ i: 2, j: 5 });
   });
 
+  it('a beaten challenge room stays empty after death and on reload; its chest stays', async () => {
+    const { area, content, api, enemies, runQueued, stand, p } = setup();
+    content.start!(api);
+    await runQueued();
+    stand('southCell');
+    const inCell = () => enemies.filter((e) => e.alive && e.pos.x > 14 && e.pos.x < 30 && e.pos.z > 16 && e.pos.z < 26);
+    for (const e of inCell()) e.alive = false;
+    content.update!(api, 1 / 60);
+    await runQueued();
+    expect(p.cleared.has('southCell')).toBe(true);
+    content.onRespawn!(api);
+    expect(inCell().length).toBe(0);
+    expect(area.chests.get('southChest')!.present).toBe(true);
+    // Elsewhere the enemies are back.
+    expect(enemies.filter((e) => e.alive).length).toBeGreaterThan(0);
+  });
+
   it('dying brings every enemy back (keys, chests and doors stay)', async () => {
     const { content, api, runQueued, enemies, p } = setup();
     content.start!(api);
