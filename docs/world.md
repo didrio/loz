@@ -28,6 +28,9 @@ recheck old text against them when you touch it.
 - **Signs and flavor text carry the world's history**, one idea each, short enough to read at
   a glance. Items say what they are in the first line.
 - **No spelling out what the screen shows.** Don't narrate the HUD or the obvious.
+- **No kin** (owner's rule, 2026-11-03): villagers are neighbors, never family. No one says mum, father, grandmother,
+  sister and so on; they can remember people who are gone by name (old Bram, old Hesper, Corwin). A unit test in
+  `content/overworld.test.ts` scans every content string for kin words.
 - Text lives in content scripts today; when dialog moves to data (roadmap), these rules still
   apply.
 
@@ -36,7 +39,7 @@ recheck old text against them when you touch it.
 - **Emberfield**, the valley at the heart of the land of **Embervale**: a gentle field
   ringed by mountains. **Thistledown Village** (northwest: cottages, a well, a windmill that
   turns without wind), **the Whispering Grove** (northeast: dense trees, a clearing with
-  Maren's father's padlocked chest), **the Waking Shrine** (east hill: a stone shrine with a
+  old Bram's padlocked chest), **the Waking Shrine** (east hill: a stone shrine with a
   dead lantern on its roof, ringed by old pillars), **Glimmer Lake** (southwest), a river
   across the south with a wooden bridge.
 - **Gloaming Hollow**: a sunken, dead clearing at the end of the south road, ringed by bare
@@ -46,6 +49,7 @@ recheck old text against them when you touch it.
 - **Ruins**: Thistledown's ring has two standing cottages (east, southwest) and two ruined ones (northeast, northwest); more
   ruined homes lie across the valley (the shield's cottage north of the village, one by the south road, one by Glimmer Lake, one by
   the Northpass gate). Each holds clay **jars** a sword breaks once (saved): one with a blue gem (5), one or two with a heart, the rest empty.
+  The lake home was Pip's: its sixth jar (`lakeHome.5`) holds her doll, Button (`jar.doll` script, flag `village.dollFound`).
 
 - **The Hushing Gorge** (working name; built): a winding cut in the western mountain ring, west of the
   valley, where the keepers hid the Morrowbell. A sign at its mouth warns walkers off; a statue of a
@@ -168,8 +172,8 @@ in.
 
 - **Wren** (hero): rust-orange coat, teal scarf, dark hair; finds the round wooden shield in a ruined cottage and the
   **Wayfarer's Blade** in the grove.
-- **Maren**: older villager in purple by the well (warm and worried; her advice changes at night); her father locked his blade in the
-  grove chest and she gives Wren the key.
+- **Maren**: older villager in purple by the well (warm and worried; her advice changes at night); old Bram (who kept the fence
+  before the blight, now gone) locked his blade in the grove chest, and she gives Wren the key.
 - **Tobin the Miller**: dry humor, runs the windmill; saw the flame carried off south. Once
   Wren is armed he gives the **Mill Key** (`village.millKey`); the windmill's door (west side of
   the square) opens onto his mill, where the bed sleeps to the next 06:00/18:00 and fully
@@ -181,6 +185,10 @@ in.
 - **Odo the Peddler**: warm, wry (he remarks on a sword without armor, and on the tunic by day or night); a stall beside the well. Refills empty flasks and sells the **Stoneward Tunic**
   (50 gems; stone hits do half damage, rounded up; Wren's tunic turns slate-blue). Flask
   refills (roadmap E) will be sold here through the same `offerWare`.
+- **Pip**: a smaller kid east of the well (shy, solemn; talks about her patched doll **Button** as if she were a person).
+  She left Button in a jar at her old house by Glimmer Lake (`lakeHome`, far southwest) and every ask says where. Breaking
+  that jar finds the doll (`village.dollFound`; nothing in the HUD); taking it back earns **20 gems** (`village.dollReturned`).
+  Her lines change by night, the sword and the lifted blight; she has her own sigil and relief news. Optional side errand.
 - **The Hollow Lamplighter**, Keeper of a Stolen Flame (mini-boss, Gloaming Hollow): a
   4.4 m gaunt figure in a tattered lamplighter's coat, bone legs and arms, a hooked pole
   with a snuffer bell, candles on one shoulder, caged wisps on its belt, and an iron

@@ -17,7 +17,11 @@ export const GUARD_TUTORIAL = 'Hold [shield] to block. Each block wears down you
  * the scare, the villagers scold Wren for being out past the fence, Maren won't hand over anything
  * sharp, and Lark whispers about a shield in the ruined cottage north of the fence. Taking it (any
  * time) sets off a scream in the village; afterwards everyone talks about what came over the fence,
- * and Maren, shaken, gives Wren the key to her father's blade.
+ * and Maren, shaken, gives Wren the key to old Bram's blade. Pip misses her doll, left in a jar at the
+ * lake house; bringing it back earns 20 gems.
+ *
+ * Villagers never name kin (owner's rule, 2026-11-03): they're neighbors, not family. They can
+ * remember people who are gone (old Bram, old Hesper, Corwin).
  */
 export function villageContent(ow: Overworld) {
   const scripts: Record<string, Script> = {
@@ -48,7 +52,7 @@ export function villageContent(ow: Overworld) {
       // Once, after the Morrowbell is back on its post (it's the freshest news in the village).
       if (state.has('gotGroveKey') && state.bells.hung.has('morrow') && !state.has('village.marenBell')) {
         state.set('village.marenBell');
-        await api.say([{ who, text: 'That bell on the square... My mother said the shrine\'s keepers rang it every dawn, and the whole valley got up with it. I never thought I\'d hear it myself.' }]);
+        await api.say([{ who, text: 'That bell on the square... Old Hesper used to say the shrine\'s keepers rang it every dawn, and the whole valley got up with it. I never thought I\'d hear it myself.' }]);
         return;
       }
       // Before the scare she won't hear of it (a save from before the new opening, which met her, skips this).
@@ -63,7 +67,7 @@ export function villageContent(ow: Overworld) {
         await api.say([
           { who, text: 'Wren! It was here, right by the well. I threw the bucket at it, and it just... went over the fence.' },
           { who, text: 'Is that a shield? Where did you... No. Don\'t tell me.' },
-          { who, text: 'My father left a blade in an old chest in the *Whispering Grove*, northeast of the field. He locked it so no fool child would lose a finger.' },
+          { who, text: 'Old Bram, who kept the fence before all this, locked his blade in a chest in the *Whispering Grove*, northeast of the field. So no fool child would lose a finger.' },
           { who, text: 'I\'d rather you stayed inside. But that thing came over our fence, and I\'d rather you had a blade. Here.' },
         ]);
         state.set('metMaren');
@@ -77,10 +81,10 @@ export function villageContent(ow: Overworld) {
       } else if (!state.has('hasSword')) {
         await api.say([{ who, text: state.isNight
           ? 'Out at night? Wait for morning, Wren. The grove road is dark enough by day. Northeast, past the lone oak.'
-          : 'Northeast, past the lone oak, to the clearing at the end of the road. Father\'s chest is waiting.' }]);
+          : 'Northeast, past the lone oak, to the clearing at the end of the road. Bram\'s chest is waiting.' }]);
       } else if (!state.has('lamplighterDefeated')) {
         await api.say([
-          { who, text: 'Father\'s blade! It suits you better than it ever suited him.' },
+          { who, text: 'Bram\'s blade! It suits you better than it ever suited him.' },
           { who, text: 'I\'ve been asking around. The shrine door hasn\'t budged since the lantern went out. The pedestal says the stone wakes while the lantern burns, and Tobin swears the flame wasn\'t snuffed. It was *carried off*, south.' },
           { who, text: 'South past the bridge is the *Gloaming Hollow*, where old Corwin lit the lamps for forty years. They say he still walks his rounds after dark... only taller than he was.' },
           { who, text: state.isNight
@@ -122,7 +126,7 @@ export function villageContent(ow: Overworld) {
       }
       if (state.bells.hung.has('morrow') && !state.has('village.tobinBell')) {
         state.set('village.tobinBell');
-        lines = ['Heard that bell ring out over the square. Haven\'t heard it since I was a boy. I thought it was a story my father made up to get me out of bed.'];
+        lines = ['Heard that bell ring out over the square. Haven\'t heard it since I was a boy. I thought it was a story old Hesper made up to get us out of bed.'];
       }
       await api.say(lines.map((text) => ({ who, text })));
       // Once Wren is armed, Tobin trusts them with the mill (whichever thing he talked about).
@@ -161,8 +165,68 @@ export function villageContent(ow: Overworld) {
         return;
       }
       await api.say([{ who, text: state.isNight
-        ? 'I saw you go past in the dark in a cloud of dust. Mum says I\'m too little to ride at night. She says that about the daytime too.'
+        ? 'I saw you go past in the dark in a cloud of dust. Maren says I\'m too little to ride at night. She says that about the daytime too.'
         : 'I saw you! You went right past the well! Tobin\'s tray is slower. Don\'t tell him I said that either.' }]);
+    },
+
+    // Pip lost her doll, Button, in a jar at her old house by Glimmer Lake (`lakeHome`'s sixth jar). She
+    // talks about Button as if she were a person. Every ask says where to look.
+    async 'npc.pip'(api) {
+      const { state } = api;
+      const who = 'Pip';
+      state.set('village.metPip');
+      if (state.has('village.dollReturned')) {
+        await api.say([{ who, text: state.has('valleyOpen')
+          ? 'Button wants to see the lake again, now the sky\'s the right color. I said when the grass grows back over the path.'
+          : state.isNight
+            ? 'Shh. Button\'s asleep. She hasn\'t slept properly since the lake house. Neither have I.'
+            : 'Button says thank you again. She says it every morning. She\'s very polite.' }]);
+        return;
+      }
+      if (state.has('village.dollFound')) {
+        await api.say([
+          { who, text: 'That\'s... Button! You found her! She\'s not even wet.' },
+          { who, text: 'I hid her in the jar so she\'d keep dry. I was going to go back for her. Then nobody went out anymore.' },
+          { who, text: 'Odo gave me these for sweeping his stall. Button says you should have them.' },
+        ]);
+        state.set('village.dollReturned');
+        state.addGems(20);
+        api.sfx.gem();
+        await api.say([{ text: 'Pip gives you *20 gems*.' }]);
+        return;
+      }
+      const where = 'She\'s at my old house by *Glimmer Lake*, far southwest, past the river. In one of the jars. I hid her there to keep dry.';
+      if (state.has('valleyOpen')) {
+        await api.say([
+          { who, text: 'The sky\'s the right color again. Button will have seen it, even from inside a jar.' },
+          { who, text: where },
+        ]);
+      } else if (state.isNight) {
+        await api.say([
+          { who, text: 'Button doesn\'t like the dark. She\'s out there by herself, and it\'s very dark tonight.' },
+          { who, text: where },
+        ]);
+      } else if (state.has('hasSword')) {
+        await api.say([
+          { who, text: 'You\'ve got a sword now. Could you go and get Button? Jars break if you hit them. She won\'t mind.' },
+          { who, text: where },
+        ]);
+      } else {
+        await api.say([
+          { who, text: 'Have you seen Button? She\'s small. Patched. One button eye, one stitched one.' },
+          { who, text: where },
+        ]);
+      }
+    },
+
+    // Breaking the doll's jar (game/combat.ts runs this for a `doll` drop).
+    async 'jar.doll'(api) {
+      const { state } = api;
+      state.set('village.dollFound');
+      api.sfx.fanfare();
+      await api.say([{ text: state.has('village.metPip')
+        ? 'You found *Button*!\nPatched, one button eye, and dry. Pip is waiting in Thistledown.'
+        : 'You found a *stuffed doll*!\nPatched, one button eye, and dry. Someone in Thistledown must miss her.' }]);
     },
 
     async 'door.mill'(api) {
@@ -223,6 +287,9 @@ export function villageContent(ow: Overworld) {
   };
 
   for (const v of ['maren', 'tobin', 'lark', 'odo'] as const) scripts[`npc.${v}`] = withNews(v, scripts[`npc.${v}`]);
+  // Handing the doll back comes before any news (it's what Wren came to say).
+  const pip = scripts['npc.pip'], pipNews = withNews('pip', pip);
+  scripts['npc.pip'] = (api) => (api.state.has('village.dollFound') && !api.state.has('village.dollReturned') ? pip(api) : pipNews(api));
   return {
     scripts,
     restore(state: GameState) {

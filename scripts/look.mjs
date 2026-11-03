@@ -158,6 +158,17 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('surf-lark');
   },
+  /** Pip, the smallest villager, east of the well by the standing cottage, by day and by night. */
+  async pip(h) {
+    await h.newGame();
+    // Looking past her (north of her), so Wren isn't between her and the camera.
+    await h.teleport(-58, -50, Math.atan2(6.2, -8.4));
+    await h.wait(1200);
+    await h.shot('pip');
+    await h.game(() => (window.embervale.state.hours = 22));
+    await h.wait(1200);
+    await h.shot('pip-night');
+  },
   /** The bigger cottages from the square, Odo's stall, Wren in the Stoneward Tunic, and the mill inside. */
   async mill(h) {
     await h.newGame();

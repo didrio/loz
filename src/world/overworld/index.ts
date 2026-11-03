@@ -58,7 +58,7 @@ export class Overworld implements Area {
   private platformT = 0;
   readonly interactables: Interactable[];
   readonly triggers: Trigger[];
-  readonly npcs: { maren: Npc; tobin: Npc; odo: Npc; lark: Npc };
+  readonly npcs: { maren: Npc; tobin: Npc; odo: Npc; lark: Npc; pip: Npc };
   readonly chest: Chest;
   readonly door: StoneDoor;
   /** The shield in the ruined cottage north of Thistledown (Wren starts without it). */
@@ -143,6 +143,9 @@ export class Overworld implements Area {
       // A small kid on the far side of the well from Maren, facing the square (shield surfing).
       lark: npc(VILLAGE.x - 3, VILLAGE.z + 4.5, Math.PI * 0.8, 0.66,
         { skin: 0xf0c49a, hair: 0x7a4a24, coat: 0x5e8a4a, pants: 0x6b5a3a, boots: 0x3a2a1e, accent: 0xe0b84a }),
+      // Smaller still, east of the well by the standing cottage, looking across the square (her doll: content/village.ts).
+      pip: npc(VILLAGE.x + 10.2, VILLAGE.z + 2.6, Math.atan2(-10.2, -2.6), 0.58,
+        { skin: 0xe6b48c, hair: 0x2a1c14, coat: 0xb5566a, pants: 0x5a4048, boots: 0x3a2a1e, accent: 0xf0d9a0 }),
     };
     // Its front faces down the grove road (which arrives from the southwest), locked until
     // Maren hands over the key.
@@ -165,6 +168,7 @@ export class Overworld implements Area {
       { id: 'npc.maren', x: this.npcs.maren.x, z: this.npcs.maren.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.maren.x, this.npcs.maren.z, 2.5), enabled: always },
       { id: 'npc.tobin', x: this.npcs.tobin.x, z: this.npcs.tobin.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.tobin.x, this.npcs.tobin.z, 2.6), enabled: always },
       { id: 'npc.lark', x: this.npcs.lark.x, z: this.npcs.lark.z, r: 2.2, label: 'Talk', promptY: above(this.npcs.lark.x, this.npcs.lark.z, 1.9), enabled: always },
+      { id: 'npc.pip', x: this.npcs.pip.x, z: this.npcs.pip.z, r: 2.1, label: 'Talk', promptY: above(this.npcs.pip.x, this.npcs.pip.z, 1.75), enabled: always },
       { id: 'npc.odo', x: STALL.x + 1.2, z: STALL.z, r: 2.4, label: 'Talk', promptY: above(STALL.x, STALL.z, 2.7), enabled: always },
       { id: 'door.mill', x: MILL.x + 3.3, z: MILL.z, r: 1.7, label: 'Enter', promptY: above(MILL.x + 2.6, MILL.z, 2.2), enabled: always },
       { id: 'pickup.shield', x: this.shield.x, z: this.shield.z, r: 2.2, label: 'Take', promptY: this.shield.y + 1.6, enabled: () => this.shield.present },
@@ -282,6 +286,7 @@ export class Overworld implements Area {
     this.npcs.tobin.update(dt, env.playerPos);
     this.npcs.odo.update(dt, env.playerPos);
     this.npcs.lark.update(dt, env.playerPos);
+    this.npcs.pip.update(dt, env.playerPos);
   }
 
   dispose() {

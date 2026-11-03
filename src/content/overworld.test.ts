@@ -189,6 +189,56 @@ describe('overworld content', () => {
     area.dispose();
   });
 
+  it('Pip asks for her doll (always saying where), takes it back once for 20 gems, before any news', async () => {
+    const area = new Overworld(physics);
+    const st = new GameState();
+    const { api, said } = fakeApi(area, physics, st);
+    const { scripts } = overworldContent(area);
+    const talk = async (id: string) => {
+      said.length = 0;
+      await scripts[id](api);
+      return said.map((p) => p.text).join(' ');
+    };
+    st.hours = 12;
+    expect(await talk('npc.pip')).toContain('Glimmer Lake');
+    st.hours = 22;
+    expect(await talk('npc.pip')).toMatch(/dark tonight.*Glimmer Lake/);
+    st.set('hasSword');
+    st.set('valleyOpen');
+    st.set('village.pipRelief');
+    expect(await talk('npc.pip')).toMatch(/right color again.*Glimmer Lake/);
+    // Breaking the jar: she's named now Wren has met her.
+    expect(await talk('jar.doll')).toContain('You found *Button*');
+    expect(st.has('village.dollFound')).toBe(true);
+    // News waits: the doll goes back first, and only once.
+    st.flags.delete('village.pipRelief');
+    const gems = st.gems;
+    expect(await talk('npc.pip')).toContain('Pip gives you *20 gems*');
+    expect(st.gems).toBe(gems + 20);
+    expect(await talk('npc.pip')).toContain('right color!'); // the news, now
+    expect(await talk('npc.pip')).toContain('grass grows back');
+    expect(st.gems).toBe(gems + 20);
+    area.dispose();
+  });
+
+  it('finding the doll before meeting Pip doesn\'t name her', async () => {
+    const area = new Overworld(physics);
+    const { api, said } = fakeApi(area, physics, new GameState());
+    await overworldContent(area).scripts['jar.doll'](api);
+    expect(said[0].text).toContain('stuffed doll');
+    area.dispose();
+  });
+
+  it('no one names kin: villagers are neighbors, not family', () => {
+    const kin = /\b(mum|mom|mother|father|dad|papa|mama|grand\w*|sister|brother|aunt\w*|uncle|cousin|son|daughter|husband|wife|niece|nephew|parents?)\b/i;
+    const files = import.meta.glob('./*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+    for (const [f, text] of Object.entries(files)) {
+      if (f.endsWith('.test.ts')) continue;
+      const strings = text.match(/'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`/g) ?? [];
+      for (const str of strings) expect(str, f).not.toMatch(kin);
+    }
+  });
+
   it('opens the shrine door by interacting with it once the lantern is relit', async () => {
     const area = new Overworld(physics);
     const { api, state } = fakeApi(area, physics);

@@ -168,6 +168,12 @@ describe('ruins', () => {
       expect(r.jars.length, r.id).toBeLessThanOrEqual(6);
     }
   });
+
+  it('hide Pip\'s doll in one jar, in the lake home, far from Thistledown', () => {
+    const dolls = RUINS.flatMap((r) => r.jars.map((d, i) => ({ r, d, i }))).filter((j) => j.d === 'doll');
+    expect(dolls.map((j) => `${j.r.id}.${j.i}`)).toEqual(['lakeHome.5']);
+    expect(Math.hypot(dolls[0].r.x - VILLAGE.x, dolls[0].r.z - VILLAGE.z)).toBeGreaterThan(120);
+  });
 });
 
 describe('murmurbuds', () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GameState } from '../game/state';
 import { newsFor, type Villager } from './villageNews';
 
-const VILLAGERS: Villager[] = ['maren', 'tobin', 'lark', 'odo'];
+const VILLAGERS: Villager[] = ['maren', 'tobin', 'lark', 'odo', 'pip'];
 
 describe('villagers\' news', () => {
   it('has nothing to say until Wren reads a sigil, then says it once', () => {

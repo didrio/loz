@@ -315,7 +315,8 @@ export const RUINS = [
   { id: 'ringNorthwest', ...ringHome(-2.2), r: 7, scale: 1.3, flip: 1, jars: ['heart', 'empty', 'empty', 'bluegem', 'empty'] },
   // Out in the valley, each a short walk off a road or a shore.
   { id: 'roadsideHome', x: 12, z: 38, yaw: Math.atan2(-20, -3), r: 6, scale: 1.15, flip: -1, jars: ['empty', 'bluegem', 'heart', 'empty', 'heart'] },
-  { id: 'lakeHome', x: -60, z: 98, yaw: Math.atan2(-40, 2), r: 6, scale: 1.2, flip: 1, jars: ['heart', 'empty', 'bluegem', 'empty', 'heart'] },
+  // Pip's old home: her doll waits in the sixth jar (appended, so the saved `jar.lakeHome.<i>` flags keep their jars).
+  { id: 'lakeHome', x: -60, z: 98, yaw: Math.atan2(-40, 2), r: 6, scale: 1.2, flip: 1, jars: ['heart', 'empty', 'bluegem', 'empty', 'heart', 'doll'] },
   { id: 'gateHome', x: 20, z: -95, yaw: Math.atan2(10, 35), r: 6, scale: 1.1, flip: -1, jars: ['empty', 'heart', 'bluegem', 'heart', 'empty'] },
 ] as const;
 

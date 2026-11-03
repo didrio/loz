@@ -58,7 +58,7 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | `northpass` | `northpass` | the Cragstalker stands on the canyon's far side once the region is built; a fall in the crossing returns Wren to the last ledge (half a heart); it lunges at Wren; taking the Waybell, hanging it at the camp, the travel menu offers both other bells and Morrowbell → Wayfarers' Camp arrives at its post |
 | `bells` | `field-sword` | the empty Thistledown post, hanging the Morrowbell (nothing answers), the travel menu to the shrine's post and back, Stay, hearts unchanged |
 | `hints` | `field-sword` | P pauses (empty notes page), M toggles music, lock-on holds a Murmurbud, mashing overloads it, a strike-and-rest rhythm opens it (not read yet), E reads the floating note (gone, kept), the pause menu lists and reads it, a read sigil shows under Messages |
-| `jars` | `field-sword` | a sword swing breaks an empty jar in a ruin (flag `jar.<id>` saved, no pickup) and the blue gem jar (a gem is collected) |
+| `jars` | `field-sword` | a sword swing breaks an empty jar in a ruin (flag `jar.<id>` saved, no pickup) and the blue gem jar (a gem is collected); the doll jar, then Pip takes the doll back for 20 gems |
 
 **Fixtures** are real saves in `scripts/fixtures/<name>.json` (current `SAVE_VERSION`).
 `openGame(env, dir, { fixture })` plants the file in the page's localStorage before the game

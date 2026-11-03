@@ -3,8 +3,8 @@ import { Layer } from '../core/physics';
 import { mat } from '../render/materials';
 import type { AreaBuilder } from './area';
 
-/** What a jar holds: nothing, a blue gem (5 gems) or a heart. */
-export type JarDrop = 'empty' | 'bluegem' | 'heart';
+/** What a jar holds: nothing, a blue gem (5 gems), a heart, or Pip's doll (a story script, `jar.doll`). */
+export type JarDrop = 'empty' | 'bluegem' | 'heart' | 'doll';
 
 export interface JarSpot {
   /** Saved as the flag `jar.<id>` once broken. */

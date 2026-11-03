@@ -24,7 +24,7 @@ then **the Waking Shrine** through **Gravelheart** and the Keepers' Seal, which 
 The valley lies under **the blight** until the seal breaks. **Sigils** (messages in the air, listed under the pause menu's Messages) and the
 villagers' reactions are in; the dungeon's lights are pooled (perf). Unplayed by the owner: surfing, the sealed gate, D3, the prism. Open: a
 Lamplighter-fight report (stuck at the arena edge, "inverted" controls) that didn't reproduce (roadmap, "Known quirks").
-The Keepers' Seal is a **prism** that takes four sword hits (S5, the story revamp's last step). **Next:** the pause menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
+The Keepers' Seal is a **prism** that takes four sword hits (S5). A side errand: **Pip**'s doll, in a lake-home jar (20 gems). Villagers never name kin. **Next:** the pause menu's inventory and settings. (Gamepad: attack X/RB/RT, guard LB/LT.)
 
 ## Docs: read the one for the area you're touching
 
@@ -156,7 +156,7 @@ src/
   content/                 the game's story; what things DO
     areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death
     overworld.ts           scripts for every overworld interactable/trigger, save restore
-    village.ts             Thistledown: the villagers, the mill door, Odo's stall, the opening (the shield, the scream)
+    village.ts             Thistledown: the villagers, the mill door, Odo's stall, the opening (the shield, the scream), Pip's doll
     mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
     bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
     sigils.ts, villageNews.ts   the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)

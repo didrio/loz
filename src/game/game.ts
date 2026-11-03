@@ -423,6 +423,12 @@ export class Game implements ScriptApi {
   // Scripts (ScriptApi)
   // ---------------------------------------------------------------------------
 
+  /** Runs the loaded area's script with this id, if it has one (e.g. `jar.doll`, from combat). */
+  runScript(id: string) {
+    const script = this.content.scripts[id];
+    if (script) this.run(script);
+  }
+
   /** Runs a story script. The player has no control until it finishes; then the game saves. */
   run(script: Script) {
     if (this.mode === 'cutscene') {

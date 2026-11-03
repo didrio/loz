@@ -28,6 +28,8 @@ export interface CombatHost {
   readonly rig: CameraRig;
   readonly area: Area;
   readonly enemies: EnemyManager;
+  /** Runs the loaded area's story script with this id, if it has one. */
+  runScript(id: string): void;
 }
 
 /**
@@ -175,7 +177,8 @@ export class Combat {
         this.g.state.set(`jar.${jar.id}`);
         sfx.jar();
         particles.burst(jar.at, 0xa8683a, 16, 5, 0.7);
-        if (jar.drop !== 'empty') pickups.spawn(jar.drop, jar.at);
+        if (jar.drop === 'doll') this.g.runScript('jar.doll');
+        else if (jar.drop !== 'empty') pickups.spawn(jar.drop, jar.at);
       },
     };
   }

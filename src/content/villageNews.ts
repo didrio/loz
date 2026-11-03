@@ -8,7 +8,7 @@ import { foundSigils } from './sigils';
  * blight has lifted: relief, and confusion that he was stone. Either one pre-empts the villager's
  * usual talk for one visit; they go back to it afterwards.
  */
-export type Villager = 'maren' | 'tobin' | 'lark' | 'odo';
+export type Villager = 'maren' | 'tobin' | 'lark' | 'odo' | 'pip';
 
 interface News {
   flag: Flag;
@@ -16,7 +16,7 @@ interface News {
   lines: string[];
 }
 
-const NAMES: Record<Villager, string> = { maren: 'Maren', tobin: 'Tobin the Miller', lark: 'Lark', odo: 'Odo the Peddler' };
+const NAMES: Record<Villager, string> = { maren: 'Maren', tobin: 'Tobin the Miller', lark: 'Lark', odo: 'Odo the Peddler', pip: 'Pip' };
 
 const SIGIL: Record<Villager, string[]> = {
   maren: [
@@ -24,7 +24,7 @@ const SIGIL: Record<Villager, string[]> = {
     'Don\'t tell me what it says. If I hear it, it\'s true. Just come back, whatever it asks.',
   ],
   tobin: [
-    'Words in the air. Sigils, my grandmother called them. I haven\'t seen one since I was a boy.',
+    'Words in the air. Sigils, old Hesper called them. I haven\'t seen one since I was a boy.',
     'He was one of ours, you know. There. I\'ve said it. I\'ll not say his name, and neither will you, if you\'re wise.',
   ],
   lark: [
@@ -34,6 +34,10 @@ const SIGIL: Record<Villager, string[]> = {
   odo: [
     'A letter written on the air, and addressed to you. I have traveled a long way, friend, and I have never been this glad to be a stranger.',
     'Whoever he is, he knows you. Everyone in this village has gone quiet since you told me. I won\'t ask.',
+  ],
+  pip: [
+    'Everyone\'s whispering about writing in the air. Button doesn\'t want to know what it says.',
+    'If it says somebody\'s name, don\'t tell me whose. Button gets nightmares.',
   ],
 };
 
@@ -47,12 +51,16 @@ const RELIEF: Record<Villager, string[]> = {
     'Stone, they tell me. All that time we were afraid of a man, and he was a rock. It doesn\'t make me less afraid. It makes me sadder, and I don\'t care for it.',
   ],
   lark: [
-    'The purple\'s gone! Mum let me out to the well, and nobody even shouted!',
+    'The purple\'s gone! Maren let me out to the well, and nobody even shouted!',
     'Is it true he was a rock? A big one? Did he say anything at the end?',
   ],
   odo: [
     'The pass is open, the sky is blue, and I still have a full cart. Friend, this is the best week of my career.',
     'Stone, all that time. Well. The road past the mountains will have stories, I expect. Mind it.',
+  ],
+  pip: [
+    'The sky\'s the right color! Button always said it would come back. Well. I said it. She agreed.',
+    'Was he really stone the whole time? Button thinks that\'s sad. So do I, a bit.',
   ],
 };
 

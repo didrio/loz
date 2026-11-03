@@ -1,9 +1,10 @@
 // Jars in the ruins: a sword swing breaks the jar in front of Wren and not the ones behind, the break
-// is saved as a flag, a blue gem jar drops a pickup, and an empty jar drops nothing.
+// is saved as a flag, a blue gem jar drops a pickup, and an empty jar drops nothing. Pip's doll is in
+// one: it's found, and taken back to Pip for 20 gems.
 export const fixture = 'field-sword';
 
 export default async function run(t) {
-  const { wait, game, until, press, state, teleport, continueGame, step, check } = t;
+  const { wait, game, until, press, state, teleport, continueGame, step, check, finishScript } = t;
   await continueGame();
   await until(() => window.embervale.mode === 'play');
   await wait(800);
@@ -37,5 +38,22 @@ export default async function run(t) {
     check((await state()).flags.includes('jar.lakeHome.2'), 'jar.lakeHome.2 not saved');
     await until(() => window.embervale.state.gems >= 5, 5000).catch(() => {});
     check((await game(() => window.embervale.state.gems)) >= 5, 'the blue gem was not collected (5 gems)');
+  });
+
+  await step('the doll jar finds Button; Pip takes her back for 20 gems', async () => {
+    check((await jar('lakeHome.5')).drop === 'doll', 'lakeHome.5 should hold the doll');
+    await swingAt('lakeHome.5');
+    await until(() => window.embervale.mode === 'cutscene', 5000);
+    await finishScript();
+    check((await state()).flags.includes('village.dollFound'), 'village.dollFound not set');
+    const p = await game(() => window.embervale.area.interactables.find((i) => i.id === 'npc.pip'));
+    const gems = await game(() => window.embervale.state.gems);
+    await teleport(p.x + 1.2, p.z, -Math.PI / 2);
+    await wait(300);
+    await press('KeyE');
+    await until(() => window.embervale.mode === 'cutscene', 5000);
+    await finishScript();
+    check((await state()).flags.includes('village.dollReturned'), 'village.dollReturned not set');
+    check((await game(() => window.embervale.state.gems)) === gems + 20, 'Pip did not give 20 gems');
   });
 }
