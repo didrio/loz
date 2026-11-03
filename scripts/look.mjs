@@ -790,6 +790,43 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('northpass-seam-from-valley');
   },
+  /** Wayfarers' Camp and the canyon beyond (shrine D3): the camp from its entrance, the post, the chasm and crossing from both sides, the Cragstalker and the bell behind it. */
+  async camp(h) {
+    await h.newGame();
+    await h.game(() => { window.embervale.enemies.list.forEach((e) => (e.alive = false)); window.embervale.area.gate.setOpen(); });
+    const stand = async (x, z, yaw) => {
+      await h.game(([x, z]) => window.embervale.area.streamAt(x, z), [x, z]);
+      await h.teleport(x, z, yaw);
+      await h.wait(1500);
+    };
+    const cam = (eye, target) => h.game(([eye, target]) => {
+      const g = window.embervale, T = g.player.pos.constructor;
+      g.rig.shot(new T(...eye), new T(...target), true);
+    }, [eye, target]);
+    await stand(-10, -236, Math.PI);
+    await cam([-12, 16, -240], [-12, 12, -256]);
+    await h.wait(800);
+    await h.shot('camp-entrance');
+    await cam([-12, 16, -250], [-5, 13, -261]);
+    await h.wait(500);
+    await h.shot('camp-post');
+    await cam([-10, 16, -266], [-10, 11, -300]);
+    await h.wait(500);
+    await h.shot('canyon-mouth');
+    await cam([-7, 14.5, -278], [-10, 10, -296]);
+    await h.wait(500);
+    await h.shot('canyon-crossing-from-camp');
+    await stand(-10, -298, 0);
+    await cam([-10, 16, -306], [-10, 10, -274]);
+    await h.wait(800);
+    await h.shot('canyon-crossing-from-far-side');
+    await cam([-6, 16, -296], [-10, 12, -310]);
+    await h.wait(800);
+    await h.shot('canyon-cragstalker-and-bell');
+    await cam([-3, 110, -270], [-10, 12, -292]);
+    await h.wait(800);
+    await h.shot('canyon-from-above');
+  },
   /** Gravelheart's intro, first shots: the camera looking back past Wren as the door rises (it must not sit inside her), then over the shoulder. */
   async wardenIntro(h) {
     await h.newGame();

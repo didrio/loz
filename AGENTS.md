@@ -19,13 +19,13 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-03: Emberfield (the valley) plays start to finish (Lamplighter, quest thread, music, village).
-**The Waking Shrine** (25 rooms, four wings, the Bell Shaft trial) is playable into Warden's Hearth, a 48×40 m hall
-with drops. **Gravelheart** fights through both phases (its hits cost two hearts, one in the tunic) and its defeat plays: the
-ember leaves, a Heart Vessel, a causeway to the Keepers' Seal, whose stone breaks the magic gate at the valley's
-north edge ([docs/shrine.md](docs/shrine.md)). **Bells** and both trials work
-([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states.
-The Northpass behind it is carved and streams in as a region; phase two of the Warden takes three kneels. **Next: shrine milestone 6, session D3** (the Cragstalker, the Waybell, the camp; plan in [docs/shrine.md](docs/shrine.md); Sonnet, no plan mode).
+As of 2026-11-03: Emberfield (the valley) plays start to finish (Lamplighter, quest thread, music, village), and **the Waking
+Shrine** (25 rooms, the Bell Shaft trial) through **Gravelheart**, whose defeat leads to the Keepers' Seal, which opens the magic
+gate ([docs/shrine.md](docs/shrine.md)). Beyond it the Northpass streams in and ends at **Wayfarers' Camp** (the Waybell's post);
+a canyon crossing leads to the **Cragstalker** and the Waybell, the third fast-travel stop (D3, unplayed). **Bells** and three
+trials work ([docs/bells.md](docs/bells.md)); the dev menu (~ / L3) has sprint, invincibility and save states (one at the opened gate).
+**Next: the owner plays D3** (Cragstalker and crossing difficulty, the canyon's look; the `camp` look scene's cameras still need
+fixing), then shrine polish (milestone 8).
 
 ## Docs: read the one for the area you're touching
 
@@ -133,7 +133,7 @@ src/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
-    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, gate (the magic gate),
+    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp, the canyon crossing, the Waybell), gate (the magic gate),
                            region (RegionStreamer: parts that stream in by distance), northpass (the first region), index (Overworld)
     dungeon/               dungeon data format, validator, softlock solver, text map, DUNGEONS registry;
                            defs/ the dungeons; build.ts + pieces.ts turn the data into a 3D indoor Area;
@@ -149,6 +149,7 @@ src/
     player.ts, guard.ts    Wren (movement, sword, shield, stagger); the shield's guard
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
     sentinel.ts, shellback.ts  the shrine's Dozing Sentinel and Shellback (on GroundEnemy)
+    cragstalker.ts         the Northpass's Cragstalker (circles, crouches, lunges; on GroundEnemy)
     enemyTestEnv.ts        the stand-in game enemy unit tests run against
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss)
     lockon.ts              which enemy lock-on picks (same level, in sight)
@@ -161,6 +162,7 @@ src/
     mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
     bells.ts               the bell registry (BELLS) and scripts: check, hang, ring, travel, take
     gorge.ts               the Hushing Gorge: its monsters, the trial's fall rule
+    northpass.ts           the canyon beyond Wayfarers' Camp: the Cragstalker (spawns while the region is built), the crossing's fall rule
     shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
     gravelheart.ts         the shrine's boss encounter: spawn, the seal, the intro, the defeat, the Keepers' Seal vision
     devStates.ts           dev-menu save states (new game, night by the Hollow, shrine, boss door, bells)

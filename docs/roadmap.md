@@ -24,7 +24,7 @@ Next, in order:
    (owner's redesign, 2026-11-03, replacing the old glove-stone Northpass): beating the boss opens a
    hidden room whose seal-stone breaks the magic gate at the valley's north edge; beyond it, the
    Northpass (streamed in, one continuous world), the Cragstalker, a third bell and a camp. Three
-   sessions, **D1 (done, unplayed), D2, D3**, in [shrine.md](shrine.md) "Build plan". Then polish (8).
+   sessions, **D1 (done, unplayed), D2, D3 (built 2026-11-03, unplayed)**, in [shrine.md](shrine.md) "Build plan". Then polish (8).
 2. **Pause menu** (build it on `MenuStack`, `game/menu.ts`): inventory, settings (mouse sensitivity, invert Y, volumes). (No dungeon
    map or compass by design.)
 3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later.
@@ -80,7 +80,8 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   continuous world, no loading between field regions; dungeons and interiors still load). The valley stays
   loaded; the Northpass is the first region (`world/overworld/region.ts`, `northpass.ts`). See
   [engine.md](engine.md), "Regions". Later regions: add a `RegionDef` and a seed; bell posts and entrances
-  inside a region join `Overworld.entrances` when D3 needs them.
+  inside a region join `Overworld.entrances` when D3 needs them. (D3 2026-11-03: the Waybell's post, bell and the camp are built in
+  the overworld proper, with `bell.way` in `Overworld.entrances`, so their state survives streaming; see [bells.md](bells.md).)
 
 ### Later triggers
 

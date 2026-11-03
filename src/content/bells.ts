@@ -42,6 +42,11 @@ export const BELLS: Record<BellId, BellSite> = {
     found: 'The keepers rang it at dusk, to tell the shrine\'s stones it was time to sleep. Its post can\'t be far: somewhere in these halls.',
     carries: 'Its low note rolls away through the sleeping halls',
   },
+  way: {
+    id: 'way', name: 'Waybell', carving: 'WAY', site: 'Wayfarers\' Camp', area: 'overworld', entrance: 'bell.way', note: 329.63,
+    found: 'The keepers rang it at noon, to call travelers in off the pass. Its post must stand at the camp, back across the gap.',
+    carries: 'Its green note rolls down the pass and out over the valley',
+  },
 };
 
 /** The other hung bells, the ones that answer `bell`. */

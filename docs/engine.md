@@ -82,7 +82,7 @@ that can be seen from afar, like the Northpass, loads at 260 m and drops at 300 
 and in `placeAtSpawn` *before* Wren is placed, so a teleport (a bell, a save) finds ground. A region builds in
 one frame (a small hitch; spread it over frames if regions get big). Regions use the same `terrainHeight`
 and the same 2 m grid as the valley (`buildTerrain(b, rect)`), so seams match; each has its own seed in
-`REGION_SEEDS` (`layout.ts`). The only region so far is the Northpass (`northpass.ts`). Scenery of the valley
+`REGION_SEEDS` (`layout.ts`). The only region so far is the Northpass (`northpass.ts`). Objects whose state must survive streaming (the camp's bell post, the canyon's crossing, the Waybell) are built in the overworld proper instead; enemies that need the region's ground (the Cragstalker) are spawned by content while `loadedRegions` has it. Scenery of the valley
 stays out of a region's carved land with an `inX` check (as `inGorge`, `inPass`), applied after the seeded
 placement so it never reshuffles.
 

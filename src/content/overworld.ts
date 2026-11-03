@@ -8,6 +8,7 @@ import type { Overworld } from '../world/overworld';
 import { HOLLOW, HOLLOW_ENTRANCE } from '../world/overworld/layout';
 import { POTIONS, REFILL_PRICE, type Potion } from '../game/flasks';
 import { bellContent } from './bells';
+import { northpassContent } from './northpass';
 import { gorgeContent } from './gorge';
 import { offerWares, type Ware } from './shop';
 
@@ -59,7 +60,8 @@ function arc(a: THREE.Vector3, mid: THREE.Vector3, b: THREE.Vector3, t: number) 
 export function overworldContent(ow: Overworld): AreaContent {
   let lamplighter: HollowLamplighter | null = null;
   const gorge = gorgeContent(ow);
-  const bells = bellContent({ 'bellPost.morrow': ow.morrowPost }, { 'bellPickup.morrow': ow.morrowBell });
+  const northpass = northpassContent(ow);
+  const bells = bellContent({ 'bellPost.morrow': ow.morrowPost, 'bellPost.way': ow.wayPost }, { 'bellPickup.morrow': ow.morrowBell, 'bellPickup.way': ow.wayBell });
 
   /** Waking the Lamplighter: the ring of cold fire seals the hollow, and it turns around. */
   const lamplighterWakes: Script = async (api) => {
@@ -363,6 +365,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       await api.say([{ text: 'You got a *Heart Vessel*!\nYour life grew by one heart, and you feel completely restored.' }]);
     },
     'sign.village': say('Thistledown Village\n"Mind the windmill. Mind the thornlings more."'),
+    'sign.canyon': say('WAYFARERS\' CAMP\n"Rest if you have a bed. Cross if you have the nerve. The Waybell went over the gap, and nobody has come back with it."'),
     'sign.gate': (api) => api.say([{ text: api.state.has('valleyOpen') ? 'The Northpass\nThe old ward is broken. Mind the road: nobody has walked it in a long while.' : 'The Northpass\nClosed by the Keepers\' ward. It has not opened since the lantern went dark.' }]),
     'sign.grove': say('The Whispering Grove\nThe trees here are said to remember every word ever spoken beneath them.'),
     'sign.pedestal': say('Old letters, worn by rain:\n"While the lantern burns, the sleeping stone shall wake. Rekindle the lantern, and the night shall break."'),
@@ -391,11 +394,13 @@ export function overworldContent(ow: Overworld): AreaContent {
 
     onRespawn(api) {
       gorge.onRespawn(api);
+      northpass.onRespawn(api);
     },
 
     update(api) {
       watchTheHollow(api);
       gorge.update(api);
+      northpass.update(api);
     },
   };
 }

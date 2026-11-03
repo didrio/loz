@@ -192,7 +192,8 @@ of that was built. The boss, not the glove, opens the way out of the valley.
   in, no loading). On it are a new enemy, the **Cragstalker** (it circles, crouches as a tell, and
   lunges ~7 m; guard it and it's dazed; it gives up at its leash), then a bell lying on the road, then
   **Wayfarers' Camp**: a camp-looking rest area (no resting yet) with that bell's empty post, the
-  third fast-travel stop. That's the end of what's built for now.
+  third fast-travel stop. That's the end of what's built for now. (Built as: the camp and its empty post first, then a
+  canyon with a chasm crossing, then the Cragstalker with the bell behind it; the bell is carried back across to the post.)
 - **Villagers react**: Maren, Tobin and Odo each get a line for when the shrine is done and for when
   the valley is open. A sign stands at the gate.
 - Optional, later: a half-sunk wakestone in Glimmer Lake that the glove pulls out, opening a grotto
@@ -256,13 +257,12 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
        - Cutscene rules: a vision hides Wren (`api.hidePlayer`) and sets its first shot in `travel`'s `arrive` callback,
          before the fade-in; Gravelheart's intro shot sits on the doorway's own axis (look scene `wardenIntro`).
        - Look scene `northpass`. Not done here (D3): the camp's props, bell, NPC, the Cragstalker.
-     - **D3, the Cragstalker, the third bell, the camp.**
-       - `game/cragstalker.ts` on `GroundEnemy`.
-       - Bell id `way` ("Waybell"): its pickup on the pass and its post at the camp.
-       - The camp's props.
-       - The NPC lines.
-       - Fixture `northpass.json` and smoke scenario `northpass`.
-       - Look scenes `gate`, `northpass`, `camp`.
+     - ~~D3, the Cragstalker, the third bell, the camp~~ built 2026-11-03 (owner's redesign: the post at the camp, a canyon
+       crossing beyond it, the Cragstalker and the bell on the far side; details in [bells.md](bells.md), "The Waybell's canyon"):
+       - `game/cragstalker.ts` on `GroundEnemy` (combat.md), bell id `way` ("Waybell"), `world/overworld/camp.ts`, `content/northpass.ts`.
+       - No camp NPC and no other paths yet (owner: later).
+       - Dev state "Northpass: at the opened gate, Warden beaten"; fixture `northpass.json`, smoke `northpass`, look scene `camp`.
+       - Unplayed: the owner judges the Cragstalker, the crossing and the canyon.
 7. (Folded into 6D: the Northpass. The lake grotto stays optional, for later.)
 8. **Polish**: decoration passes, smoke scenarios for the dungeon. (Dungeon music is done:
    "The Sleeping Stones".) **No map or compass** (owner's call, 2026-11-02): those chests hold

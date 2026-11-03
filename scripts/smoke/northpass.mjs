@@ -1,0 +1,90 @@
+// The Northpass (shrine D3): the Cragstalker guards the far side of the canyon, the crossing returns a fall to its
+// last ledge, the Waybell can be taken from behind it and hung on the camp's post, and the post joins the network.
+export const fixture = 'northpass';
+
+export default async function run(t) {
+  const { wait, game, until, finishScript, teleport, continueGame, press, step, check } = t;
+  await continueGame();
+  await wait(1500);
+  const pos = () => game(() => ({ x: window.embervale.player.pos.x, y: window.embervale.player.pos.y, z: window.embervale.player.pos.z, hp: window.embervale.state.hp }));
+  const ledges = () => game(() => window.embervale.area.canyonCourse.platforms.map((p) => ({ x: p.x, z: p.z, y: p.top, checkpoint: !!p.checkpoint, moves: !!p.move })));
+
+  await step('walking into the Northpass builds the camp\'s ground and the Cragstalker waits on the far side', async () => {
+    await game(() => window.embervale.enemies.list.filter((e) => e.constructor.name !== 'Cragstalker').forEach((e) => (e.alive = false)));
+    await teleport(-10, -245, Math.PI);
+    await until(() => window.embervale.enemies.list.some((e) => e.constructor.name === 'Cragstalker'), 20000);
+    await wait(500);
+    const c = await game(() => window.embervale.enemies.list.filter((e) => e.constructor.name === 'Cragstalker').map((e) => ({ x: e.pos.x, y: e.pos.y, z: e.pos.z })));
+    check(c.length === 1, `${c.length} Cragstalkers`);
+    check(Math.abs(c[0].y - 12) < 1 && c[0].z < -295, `it stands at (${c[0].x.toFixed(1)}, ${c[0].y.toFixed(1)}, ${c[0].z.toFixed(1)})`);
+  });
+
+  await step('a fall in the crossing returns Wren to the last ledge she stood on, half a heart lost', async () => {
+    const cps = (await ledges()).filter((p) => p.checkpoint);
+    await teleport(cps[1].x, cps[1].z, 0, cps[1].y + 0.1);
+    await wait(900);
+    const hp = (await pos()).hp;
+    await teleport(cps[1].x + 3.2, cps[1].z - 3, 0, cps[1].y + 2); // into the chasm beside it
+    await until(() => window.embervale.mode === 'cutscene', 8000);
+    await wait(1500);
+    await finishScript();
+    const p = await pos();
+    check(Math.hypot(p.x - cps[1].x, p.z - cps[1].z) < 2.6 && Math.abs(p.y - cps[1].y) < 0.6, `back at (${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)})`);
+    check(p.hp === hp - 1, `hp ${p.hp}, was ${hp}`);
+  });
+
+  await step('the Cragstalker lunges at Wren near it', async () => {
+    const c = await game(() => { const e = window.embervale.enemies.list.find((e) => e.constructor.name === 'Cragstalker'); return { x: e.pos.x, z: e.pos.z }; });
+    const hp = (await pos()).hp;
+    await teleport(c.x, c.z + 6, Math.PI);
+    await until((hp) => window.embervale.state.hp < hp, 30000, hp);
+  });
+
+  const menu = () => game(() => {
+    const m = document.querySelector('.gmenu');
+    return m.classList.contains('hidden') ? null : { title: m.querySelector('.gmenu-title').textContent, rows: [...m.querySelectorAll('.gmenu-row span:first-child')].map((r) => r.textContent) };
+  });
+  /** Pages through the dialog (Enter) until the travel menu is up. */
+  const menuOpen = async () => {
+    for (let i = 0; i < 40 && !(await menu()); i++) await press('Enter', 1, 400);
+    check(!!(await menu()), 'the travel menu never opened');
+  };
+  const spot = (id) => game((id) => { const i = window.embervale.area.interactables.find((i) => i.id === id); return { x: i.x, z: i.z, y: i.y }; }, id);
+
+  await step('the Waybell can be taken from behind the Cragstalker, and hung on the camp\'s post: the network offers both other bells', async () => {
+    await game(() => { window.embervale.enemies.list.forEach((e) => (e.alive = false)); window.embervale.player.invuln = 5; });
+    const b = await spot('bellPickup.way');
+    await teleport(b.x, b.z + 1.2, 0, b.y + 0.1);
+    await wait(700);
+    await press('KeyE');
+    await until(() => window.embervale.state.bells.carried.has('way'), 10000);
+    await finishScript();
+    const post = await spot('bellPost.way');
+    await teleport(post.x, post.z, 0);
+    await wait(700);
+    await press('KeyE');
+    await menuOpen();
+    const m = await menu();
+    check(m.rows.join('|') === 'Thistledown|Hall of Sleepers|Stay', `menu ${JSON.stringify(m)}`);
+    check(await game(() => window.embervale.state.bells.hung.has('way')), 'the Waybell is not hung');
+    await press('Enter'); // Thistledown
+    await until(() => window.embervale.player.pos.x < -40, 20000);
+    await finishScript();
+  });
+
+  await step('from Thistledown, ringing the Morrowbell offers Wayfarers\' Camp, and Wren arrives at the camp\'s post', async () => {
+    const post = await spot('bellPost.morrow');
+    await teleport(post.x, post.z, 0);
+    await wait(700);
+    await press('KeyE');
+    await menuOpen();
+    const m = await menu();
+    check(m.rows.join('|') === 'Hall of Sleepers|Wayfarers\' Camp|Stay', `menu ${JSON.stringify(m)}`);
+    await press('ArrowDown');
+    await press('Enter');
+    await until(() => window.embervale.player.pos.z < -240, 20000);
+    await finishScript();
+    const r = await game(() => { const g = window.embervale, e = g.area.entrances['bell.way']; return { d: Math.hypot(g.player.pos.x - e.x, g.player.pos.z - e.z), y: g.player.pos.y }; });
+    check(r.d < 1.5 && Math.abs(r.y - 12) < 1, `arrived ${r.d.toFixed(2)} m from the post's spot at y ${r.y.toFixed(1)}`);
+  });
+}

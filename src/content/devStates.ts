@@ -1,7 +1,7 @@
 import { SAVE_VERSION, type DungeonSave, type SaveData } from '../core/save';
 import { floorY, worldPos, type DungeonDef } from '../world/dungeon/format';
 import { SHRINE } from '../world/dungeon/defs/shrine';
-import { GORGE, gorgePoint, MORROW_POST, VILLAGE } from '../world/overworld/layout';
+import { GATE, GORGE, gorgePoint, MORROW_POST, VILLAGE } from '../world/overworld/layout';
 
 /**
  * Dev-menu save states: ready-made points in the game to jump to while testing. Loading one
@@ -79,6 +79,27 @@ function shrineAfterBoss(): DevState {
   };
 }
 
+/**
+ * The Warden beaten, the Heart Vessel taken, the Keepers' ward broken (the gate stands open), both bells hung, Wren on the
+ * field in front of the gate facing the Northpass: where the next stretch of the game starts.
+ */
+function atTheGate(): DevState {
+  const { progress, gems } = completedDungeon(SHRINE);
+  const hearth = SHRINE.rooms.find((r) => r.id === 'boss')!;
+  const seal = SHRINE.doors.find((d) => d.lock && typeof d.lock === 'object' && 'cleared' in d.lock)!;
+  progress.done = true;
+  progress.cleared.push(hearth.id);
+  progress.doors.push(seal.id);
+  return {
+    name: 'Northpass: at the opened gate, Warden beaten',
+    save: base({
+      flags: [...SHRINE_OPEN, 'village.stonewardTunic', 'gravelheartVessel', 'valleyOpen'], items: ['tether'], dungeons: { shrine: progress },
+      flasks: ['life', 'attack'], gems, hp: 10, maxHp: 10, hours: 10, bells: { carried: [], hung: ['morrow', 'lull'] },
+    }),
+    at: { x: GATE.x, z: GATE.z + 9, facing: Math.PI },
+  };
+}
+
 /** On Thistledown's square, 3 m from the Morrowbell's post toward the well, facing it. */
 function atMorrowPost(): DevState['at'] {
   const dx = VILLAGE.x - MORROW_POST.x, dz = VILLAGE.z - MORROW_POST.z, len = Math.hypot(dx, dz);
@@ -132,5 +153,6 @@ export const DEV_STATES: DevState[] = [
   },
   shrineAtBossDoor(),
   shrineAfterBoss(),
+  atTheGate(),
   ...bellStates(),
 ];

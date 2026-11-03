@@ -13,7 +13,7 @@ import type { AreaBuilder } from './area';
  * hanging *do* lives in `content/bells.ts`; this file is only how they look and move.
  * See docs/bells.md.
  */
-export const BELL_IDS = ['morrow', 'lull'] as const;
+export const BELL_IDS = ['morrow', 'lull', 'way'] as const;
 export type BellId = (typeof BELL_IDS)[number];
 
 export const isBellId = (v: string): v is BellId => (BELL_IDS as readonly string[]).includes(v);
@@ -22,6 +22,7 @@ export const isBellId = (v: string): v is BellId => (BELL_IDS as readonly string
 const LOOKS: Record<BellId, { bronze: number; ring: number }> = {
   morrow: { bronze: 0xc9a24a, ring: 0xffe7a3 }, // dawn: pale gold
   lull: { bronze: 0x9a6a3a, ring: 0xb3b8ff }, // dusk: deep bronze, violet rings
+  way: { bronze: 0x6f9a86, ring: 0xc4f5dc }, // noon, the travelers' hour: verdigris, pale green rings
 };
 
 /** How high above the post's foot the hook is, and how far out along the arm. */

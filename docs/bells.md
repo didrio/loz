@@ -33,6 +33,7 @@ Later bells take other hours (a Noonbell, a Vesperbell...).
 |---|---|---|---|---|
 | **Morrowbell** (`morrow`) | dawn: "Thistledown woke to its note" | Thistledown's square (`MORROW_POST`, between the east and northeast cottages), facing the well | A4, pale gold rings | **the Hushing Gorge** (working name), western cliffs (milestone 3) |
 | **Lullbell** (`lull`) | dusk: told the shrine's stones to sleep | the shrine's Hall of Sleepers (`lullPost`, the respawn room) | D4, violet rings | **the Bell Shaft**, off the Antechamber (milestone 3) |
+| **Waybell** (`way`) | noon, the travelers' hour: called people in off the pass | Wayfarers' Camp, at the end of the Northpass (`bellPost.way`, entrance `bell.way`) | E4, verdigris bronze, pale green rings | **the canyon beyond the camp**: a chasm crossing, then the Cragstalker (below) |
 
 The intended path: the Morrowbell first. In the shrine, the empty post in the entry hall is
 there from the first visit. The Lullbell waits near the boss door; the Barred Cell shortcut
@@ -167,6 +168,27 @@ with a sign (`sign.gorge`) at its mouth that warns. It reuses the shaft's lesson
   last checkpoint pillar (`TrialFalls`, half a heart; only checked past the pit's lip). Two stubs of a
   broken plank bridge sit at the rim.
 - **Verify**: dev states "Bells: gorge mouth" and "Bells: gorge climb", look scene `gorge`, smoke `gorge`.
+
+### The Waybell's canyon (built, D3)
+
+Owner's design (2026-11-03): the camp's post comes first, with its bell missing; a bit beyond the camp a narrow canyon is
+cut by a chasm, crossed on rock pillars; the Cragstalker waits on the far side with the bell behind it. The bell can be
+taken without killing the enemy (it is aggressive, so that is hard), and Wren must cross back to hang it at the camp's post.
+No NPC or other paths from the camp yet.
+
+- **Terrain** (`layout.ts`, `BEYOND`, `carveBeyond`): a centerline north from the camp's centre (z -255 to -324), flat at
+  the camp's height (12), walls 4.5 m in then rising 11 m, a chasm 6 m deep from `s` 21 to 41 (`s` is metres from the camp's
+  centre). It only ever cuts (`min` with the land), so it can't raise a wall. `beyondFrame`, `beyondPoint`, `inBeyond`;
+  `areaNameAt` says "Wayfarers' Camp" in the camp and "The Northpass" in the canyon.
+- **Camp and crossing** (`world/overworld/camp.ts`): fire, tents, seats, crates, a lantern pole, the post (`WAYBELL_POST`),
+  and `CANYON_COURSE` (`COURSES.canyon`, proved by `checkCourse` in `camp.test.ts`): ledge, pillar, checkpoint pillar, a slider,
+  the far ledge. They live in the overworld proper, not in the Northpass region, so their state survives the region
+  streaming out and in (the props are 30 m or so of fog away from Wren before the ground exists; fine).
+- **Content** (`content/northpass.ts`): `TrialFalls` on the crossing (only counted inside the canyon; half a heart; edge
+  stickiness on there). The Cragstalker spawns once the region is built (its ground is part of it), is removed when the region
+  drops, stays dead until Wren dies (the checkpoint rule). Only `onFarSide` ground is walkable for it.
+- **Verify**: dev state "Northpass: at the opened gate, Warden beaten" (valley open, both bells hung, 5 hearts), look scene
+  `camp`, smoke `northpass`. To judge in play: the Cragstalker's difficulty, the crossing, the canyon's look.
 
 ## Open questions
 

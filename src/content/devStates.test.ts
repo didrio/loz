@@ -4,6 +4,7 @@ import { FLAGS, ITEMS } from '../game/state';
 import { DUNGEONS } from '../world/dungeon';
 import { BELL_IDS } from '../world/bell';
 import { SHRINE } from '../world/dungeon/defs/shrine';
+import { GATE } from '../world/overworld/layout';
 import { AREA_IDS } from './areas';
 import { completedDungeon, DEV_STATES } from './devStates';
 
@@ -19,8 +20,8 @@ describe('dev save states', () => {
     });
   }
 
-  it('lists a new game, the night outside the hollow, the shrine start, the boss door, the beaten boss and six bell states', () => {
-    expect(DEV_STATES.map((s) => s.save?.area ?? 'new')).toEqual(['new', 'overworld', 'shrine', 'shrine', 'shrine', 'overworld', 'shrine', 'shrine', 'overworld', 'overworld', 'overworld']);
+  it('lists a new game, the night outside the hollow, the shrine start, the boss door, the beaten boss, the opened gate and six bell states', () => {
+    expect(DEV_STATES.map((s) => s.save?.area ?? 'new')).toEqual(['new', 'overworld', 'shrine', 'shrine', 'shrine', 'overworld', 'overworld', 'shrine', 'shrine', 'overworld', 'overworld', 'overworld']);
   });
 
   it('the bell states carry or hang only known bells, never one both carried and hung', () => {
@@ -61,6 +62,15 @@ describe('dev save states', () => {
     expect(p.switches).not.toContain('sealStone');
     expect(s.save!.flags).toContain('village.stonewardTunic');
     expect(s.save!.bells.hung).toEqual(['morrow', 'lull']);
+  });
+
+  it('the gate state: the Warden beaten, the vessel taken, the ward broken, both bells hung, Wren at the gate', () => {
+    const s = DEV_STATES.find((x) => x.name.includes('at the opened gate'))!;
+    expect(s.save!.dungeons.shrine.done).toBe(true);
+    expect(s.save!.flags).toEqual(expect.arrayContaining(['village.stonewardTunic', 'gravelheartVessel', 'valleyOpen']));
+    expect(s.save!.maxHp).toBe(10);
+    expect(s.save!.bells.hung).toEqual(['morrow', 'lull']);
+    expect(Math.hypot(s.at!.x - GATE.x, s.at!.z - GATE.z)).toBeLessThan(12);
   });
 
   it('the night state is at night, with the sword and the bed key, before the Lamplighter', () => {

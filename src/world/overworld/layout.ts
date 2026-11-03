@@ -145,13 +145,51 @@ export function passFrame(x: number, z: number) {
 
 /** True within `margin` meters of the pass's carved area (or inside it). */
 export function inPass(x: number, z: number, margin = 0) {
-  return passFrame(x, z).d < PASS.reach + margin;
+  return passFrame(x, z).d < PASS.reach + margin || inBeyond(x, z, margin);
 }
 
 /** The pass floor's height `s` meters along: the field's level at the gate up to `floor` at the camp. */
 export function passFloor(s: number) {
   const [mx, mz] = PASS.path[0];
   return mix(placementHeight(mx, mz), PASS.floor, smoothstep(0, PASS_LENGTH, s));
+}
+
+/**
+ * The canyon beyond the camp (shrine session D3): a narrow cut north from the camp's middle, flat at the camp's
+ * height, with a chasm across it (`pitFrom`..`pitTo`, `s` from the camp's centre). Wren crosses on rock pillars
+ * (`world/overworld/camp.ts`); the Cragstalker and the Waybell wait on the far side.
+ */
+export const BEYOND = {
+  path: [[-10, -255], [-10, -324]] as [number, number][],
+  floor: 12,
+  pitFrom: 21,
+  pitTo: 41,
+  pitDepth: 6,
+  halfWidth: 4.5,
+  wallTop: 10,
+  reach: 26,
+  wall: 11,
+};
+const beyondLine = centerline(BEYOND.path);
+export const BEYOND_LENGTH = beyondLine.length;
+export const beyondPoint = beyondLine.point;
+export const beyondFrame = beyondLine.frame;
+
+/** True within `margin` meters of the canyon's carved area (or inside it). */
+export function inBeyond(x: number, z: number, margin = 0) {
+  return beyondFrame(x, z).d < BEYOND.reach + margin;
+}
+
+/** The canyon cut into the land: never higher than the land it cuts through, flat inside the camp, a chasm across it. */
+function carveBeyond(h: number, x: number, z: number) {
+  const { d, s } = beyondFrame(x, z);
+  if (d >= BEYOND.reach) return h;
+  const pit = smoothstep(BEYOND.pitFrom, BEYOND.pitFrom + 3, s) * (1 - smoothstep(BEYOND.pitTo - 3, BEYOND.pitTo, s))
+    * (1 - smoothstep(BEYOND.halfWidth - 1, BEYOND.halfWidth + 2, d));
+  const floor = BEYOND.floor - BEYOND.pitDepth * pit;
+  // The camp's own bowl is already walled; the canyon's walls start where the camp's flat ground ends.
+  const wall = BEYOND.wall * smoothstep(BEYOND.halfWidth, BEYOND.wallTop, d) * smoothstep(10, 18, s);
+  return Math.min(h, mix(floor + wall, h, smoothstep(BEYOND.wallTop, BEYOND.reach, d)));
 }
 
 /** The land with the pass cut into it (walls rise in the first 30 m so the gate stands between rock). */
@@ -223,7 +261,7 @@ export function placementHeight(x: number, z: number) {
 export function terrainHeight(x: number, z: number) {
   const h = placementHeight(x, z);
   const withHollow = mix(h, HOLLOW.floor, smoothstep(HOLLOW.r + 9, HOLLOW.r, Math.hypot(x - HOLLOW.x, z - HOLLOW.z)));
-  return carvePass(carveGorge(withHollow, x, z), x, z);
+  return carveBeyond(carvePass(carveGorge(withHollow, x, z), x, z), x, z);
 }
 
 /** True within `margin` meters of the hollow's edge (or inside it). */
@@ -244,7 +282,8 @@ export function areaNameAt(x: number, z: number) {
   if (Math.hypot(x - LAKE.x, z - LAKE.z) < 38) return 'Glimmer Lake';
   if (inHollow(x, z, 3)) return 'Gloaming Hollow';
   if (gorgeFrame(x, z).d < GORGE.wallTop) return 'The Hushing Gorge';
-  if (passFrame(x, z).d < PASS.wallTop && z < GATE.z) return 'The Northpass';
+  if (Math.hypot(x - PASS.camp.x, z - PASS.camp.z) < PASS.camp.r - 4) return 'Wayfarers\' Camp';
+  if ((passFrame(x, z).d < PASS.wallTop && z < GATE.z) || beyondFrame(x, z).d < BEYOND.wallTop) return 'The Northpass';
   return 'Emberfield';
 }
 

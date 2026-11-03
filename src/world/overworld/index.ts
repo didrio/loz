@@ -3,6 +3,7 @@ import type { Physics } from '../../core/physics';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
 import { BossArena, BushField, Chest, GreatLantern, HeartVessel, Npc, StoneDoor } from '../objects';
+import { buildCamp, CANYON_COURSE, WAYBELL_PICKUP } from './camp';
 import { Gate } from './gate';
 import { buildGorge, GORGE_BELL, GORGE_COURSE, gorgeAt } from './gorge';
 import { buildHollow } from './hollow';
@@ -42,6 +43,12 @@ export class Overworld implements Area {
   readonly gorgeCourse = GORGE_COURSE;
   /** A point on the gorge (`s` m in, `lat` m left of its centerline): for look scenes. */
   readonly gorgeAt = gorgeAt;
+  /** The Waybell's post at Wayfarers' Camp, and the bell waiting across the canyon. */
+  readonly wayPost: BellPost;
+  readonly wayBell: BellPickup;
+  /** The canyon's crossing (tests and smoke read the ledges from here). */
+  readonly canyonCourse = CANYON_COURSE;
+  private readonly canyonCrossing: { update(t: number): void; dispose(): void };
   private readonly gorgeClimb: { update(t: number): void; dispose(): void };
   private platformT = 0;
   readonly interactables: Interactable[];
@@ -90,6 +97,10 @@ export class Overworld implements Area {
     const gorge = buildGorge(b);
     this.gorgeClimb = gorge.course;
     this.morrowBell = gorge.bell;
+    const camp = buildCamp(b);
+    this.wayPost = camp.post;
+    this.wayBell = camp.bell;
+    this.canyonCrossing = camp.course;
     this.bushes = new BushField(b, [...bushSpots(b), ...hollow.bushes]);
     for (const s of SIGNS) buildSign(b, s.x, s.z);
     this.hollow = new BossArena(b, HOLLOW.x, HOLLOW.z, HOLLOW.floor, HOLLOW.r, hollow.lamps);
@@ -114,13 +125,15 @@ export class Overworld implements Area {
     const morrow = new BellPost(b, 'morrow', MORROW_POST.x, terrainHeight(MORROW_POST.x, MORROW_POST.z), MORROW_POST.z, Math.atan2(VILLAGE.x - MORROW_POST.x, VILLAGE.z - MORROW_POST.z));
     b.dynamic(morrow.group);
     this.morrowPost = morrow;
-    this.bellPosts = new Map([['morrow', morrow]]);
+    this.bellPosts = new Map([['morrow', morrow], ['way', this.wayPost]]);
     this.entrances['bell.morrow'] = morrow.arrival();
+    this.entrances['bell.way'] = this.wayPost.arrival();
 
     const always = () => true;
     /** The prompt floats this high above the ground at a spot. */
     const above = (x: number, z: number, h: number) => terrainHeight(x, z) + h;
     const door = this.door;
+    const way = this.wayPost;
     this.interactables = [
       { id: 'npc.maren', x: this.npcs.maren.x, z: this.npcs.maren.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.maren.x, this.npcs.maren.z, 2.5), enabled: always },
       { id: 'npc.tobin', x: this.npcs.tobin.x, z: this.npcs.tobin.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.tobin.x, this.npcs.tobin.z, 2.6), enabled: always },
@@ -134,6 +147,8 @@ export class Overworld implements Area {
       },
       { id: 'bellPost.morrow', x: morrow.front.x, z: morrow.front.z, r: 2.2, get label() { return morrow.label; }, promptY: morrow.y + 3.2, enabled: () => !morrow.hanging },
       { id: 'bellPickup.morrow', x: GORGE_BELL.x, z: GORGE_BELL.z, y: GORGE_BELL.y, r: 2, label: 'Take', promptY: GORGE_BELL.y + 2.2, enabled: () => this.morrowBell.present },
+      { id: 'bellPost.way', x: this.wayPost.front.x, z: this.wayPost.front.z, r: 2.2, get label() { return way.label; }, promptY: way.y + 3.2, enabled: () => !way.hanging },
+      { id: 'bellPickup.way', x: WAYBELL_PICKUP.x, z: WAYBELL_PICKUP.z, y: WAYBELL_PICKUP.y, r: 2, label: 'Take', promptY: WAYBELL_PICKUP.y + 2.2, enabled: () => this.wayBell.present },
       { id: 'sign.pedestal', x: shrine.pedestal.x, z: shrine.pedestal.z, r: 2.3, label: 'Read', promptY: above(shrine.pedestal.x, shrine.pedestal.z, 2), enabled: always },
       ...SIGNS.map((s) => ({ id: s.id, x: s.x, z: s.z, r: 2.3, label: 'Read', promptY: above(s.x, s.z, 2.4), enabled: always })),
     ];
@@ -193,6 +208,7 @@ export class Overworld implements Area {
   movePlatforms(dt: number) {
     this.platformT += dt;
     this.gorgeClimb.update(this.platformT);
+    this.canyonCrossing.update(this.platformT);
   }
 
   update(dt: number, env: AreaEnv) {
@@ -210,6 +226,8 @@ export class Overworld implements Area {
     this.vessel.update(dt);
     this.morrowPost.update(dt);
     this.morrowBell.update(dt);
+    this.wayPost.update(dt);
+    this.wayBell.update(dt);
     this.hollowFx.update(dt);
     this.bushes.update(dt);
     this.regions.update(dt);
@@ -221,6 +239,7 @@ export class Overworld implements Area {
   dispose() {
     this.regions.dispose();
     this.gorgeClimb.dispose();
+    this.canyonCrossing.dispose();
     this.disposer();
   }
 }
