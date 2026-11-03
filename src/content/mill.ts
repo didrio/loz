@@ -16,7 +16,7 @@ export function millContent(_area: MillInterior): AreaContent {
     async bed(api) {
       const wake = wakeHour(api.state.hours);
       const when = wake === 6 ? 'morning' : 'evening';
-      const pick = await api.ask([{ text: `A narrow bed under a patchwork blanket.\nSleep until ${when}? You'll wake fully rested.` }], ['Sleep', 'Not now']);
+      const pick = await api.ask([{ text: `A narrow bed under a patchwork blanket.\nSleep until ${when}? You'll wake rested.` }], ['Sleep', 'Not now']);
       if (pick !== 0) return;
       await api.fade(1, 0.8);
       api.warpTime(wake);

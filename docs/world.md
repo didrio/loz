@@ -71,13 +71,13 @@ in.
 
 - **Wren** (hero): rust-orange coat, teal scarf, dark hair, round wooden shield; finds the
   **Wayfarer's Blade** in the grove.
-- **Maren**: older villager in purple by the well; her father locked his blade in the
+- **Maren**: older villager in purple by the well (warm and worried; her advice changes at night); her father locked his blade in the
   grove chest and she gives Wren the key.
 - **Tobin the Miller**: dry humor, runs the windmill; saw the flame carried off south. Once
   Wren is armed he gives the **Mill Key** (`village.millKey`); the windmill's door (west side of
   the square) opens onto his mill, where the bed sleeps to the next 06:00/18:00 and fully
   heals.
-- **Odo the Peddler**: warm, wry; a stall beside the well. Sells the **Stoneward Tunic**
+- **Odo the Peddler**: warm, wry (he remarks on a sword without armor, and on the tunic by day or night); a stall beside the well. Sells the **Stoneward Tunic**
   (100 gems; stone hits do half damage, rounded up; Wren's tunic turns slate-blue). Flask
   refills (roadmap E) will be sold here through the same `offerWare`.
 - **The Hollow Lamplighter**, Keeper of a Stolen Flame (mini-boss, Gloaming Hollow): a

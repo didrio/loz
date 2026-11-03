@@ -65,6 +65,30 @@ describe('overworld content', () => {
     area.dispose();
   });
 
+  it('villagers react to night and to Wren\'s gear', async () => {
+    const area = new Overworld(physics);
+    const line = async (id: string, setup: (st: GameState) => void) => {
+      const st = new GameState();
+      setup(st);
+      const { api, said } = fakeApi(area, physics, st);
+      await overworldContent(area).scripts[id](api);
+      return said.map((p) => p.text).join(' ');
+    };
+    const armed = (st: GameState) => (st.set('gotGroveKey'), st.set('hasSword'));
+    // Maren, armed: the night warning differs from the day advice.
+    expect(await line('npc.maren', (st) => (armed(st), (st.hours = 22)))).toContain('exactly when he walks');
+    expect(await line('npc.maren', (st) => (armed(st), (st.hours = 12)))).toContain('Go at night');
+    // Odo notices the tunic, and the time of day.
+    const tunic = (st: GameState) => st.set('village.stonewardTunic');
+    expect(await line('npc.odo', (st) => (tunic(st), (st.hours = 22)))).toContain('lamplight');
+    expect(await line('npc.odo', (st) => (tunic(st), (st.hours = 12)))).toContain('suits you');
+    // Tobin after the Lamplighter falls.
+    const done = (st: GameState) => st.set('lamplighterDefeated');
+    expect(await line('npc.tobin', (st) => (done(st), (st.hours = 22)))).toContain('burning');
+    expect(await line('npc.tobin', (st) => (done(st), (st.hours = 12)))).toContain('lit again');
+    area.dispose();
+  });
+
   it('opens the shrine door by interacting with it once the lantern is relit', async () => {
     const area = new Overworld(physics);
     const { api, state } = fakeApi(area, physics);

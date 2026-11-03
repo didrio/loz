@@ -19,9 +19,9 @@ import type { AreaContent } from './overworld';
 const LOOT_TEXT: Record<string, string> = {
   bossKey: 'You found the *Boss Key*!\nIts great teeth fit the door to the shrine\'s keeper.',
   heart: 'A *Heart*! You feel completely restored.',
-  restore: 'You found a *Restoring Draught*!\nDrink it ([drinkRestore]) to restore every heart. Once drunk it\'s gone... until you fall, when every drink you\'ve found fills again.',
-  attack: 'You found an *Ember Tonic*!\nDrink it ([drinkAttack]) and your sword strikes twice as hard for 30 seconds. Like every drink, it fills again when you fall.',
-  tether: 'You got the *Tether Glove*!\nA glowing cord coils around the old leather. It tugs gently toward the shrine\'s stones, as if it knows them.',
+  restore: 'You found a *Restoring Draught*!\n[drinkRestore] drinks it and restores every heart. Once drunk it\'s gone, until you fall and every drink you\'ve found fills again.',
+  attack: 'You found an *Ember Tonic*!\n[drinkAttack] drinks it, and your sword strikes twice as hard for 30 seconds. It fills again when you fall.',
+  tether: 'You got the *Tether Glove*!\nA glowing cord coils around the old leather and tugs toward the shrine\'s stones, as if it knows them.',
 };
 
 export function shrineContent(area: DungeonArea): AreaContent {
@@ -62,7 +62,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
 
   const lootMessage = (loot: Loot) => {
     if (typeof loot === 'string') return LOOT_TEXT[loot];
-    if ('key' in loot) return `You found the *${keyName(loot.key)}*!\nIt opens one locked door in this shrine, the one marked ${loot.key}.`;
+    if ('key' in loot) return `You found the *${keyName(loot.key)}*!\nIt opens one locked door in this shrine: the ${loot.key} one.`;
     if ('item' in loot) return LOOT_TEXT[loot.item] ?? `You got the *${loot.item}*!`;
     if ('drink' in loot) return LOOT_TEXT[loot.drink];
     return `You found ${loot.gems} gems!`;
@@ -117,12 +117,12 @@ export function shrineContent(area: DungeonArea): AreaContent {
       const p = progress(api.state);
       if (door.style === 'key') {
         const color = door.keyColor!;
-        if (!p.keys.has(color)) return api.say([{ text: `It's locked tight. It needs the *${keyName(color)}*.` }]);
+        if (!p.keys.has(color)) return api.say([{ text: `Locked. It needs the *${keyName(color)}*.` }]);
         p.keys.delete(color);
       } else if (door.style === 'boss') {
-        if (!p.bossKey) return api.say([{ text: 'A heavy door, sealed with a great iron lock.\nIt needs the shrine\'s *Boss Key*.' }]);
+        if (!p.bossKey) return api.say([{ text: 'A heavy door with a great iron lock.\nIt needs the shrine\'s *Boss Key*.' }]);
       } else {
-        return api.say([{ text: 'Iron bars block the way. Something in this shrine must raise them.' }]);
+        return api.say([{ text: 'Iron bars. Something in this shrine must raise them.' }]);
       }
       p.doors.add(d.id);
       api.sfx.clank();
@@ -206,7 +206,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
           // The first heavy stone a blade meets: say why it won't budge.
           heavyHinted = true;
           api.sfx.stoneThunk();
-          api.toast(api.state.items.has('tether') ? 'Too heavy for a blade. Try the [item] Tether Glove.' : 'Too heavy to wake with a blade.');
+          api.toast(api.state.items.has('tether') ? 'Too heavy for a blade. Try the [item] Tether Glove.' : 'Too heavy for a blade.');
         }
         else if (result === 'sunk') {
           api.sfx.stoneSlide();

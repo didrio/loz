@@ -19,12 +19,12 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-02: Emberfield (the valley) plays start to finish; the Hollow Lamplighter (night
-only), the quest thread and all music are done. **The Waking Shrine** (25 rooms, four wings) is
-playable up to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy
-feel is untuned until the owner plays.
-**Next: the owner's playtest tweaks G (text and dialog quality pass, see "Text the player reads"), E (flasks, plan mode), then F (dungeon fixes, incl. cleared rooms keeping their enemies dead)** ([docs/roadmap.md](docs/roadmap.md), A–D done),
-then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
+As of 2026-11-02: Emberfield (the valley) plays start to finish: the Hollow Lamplighter (night
+only), the quest thread, all music, and the village (Tobin's mill with a bed, Odo's stall selling
+the Stoneward Tunic). **The Waking Shrine** (25 rooms, four wings) is playable up to the boss
+door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy feel is untuned until played.
+**Next, the owner's playtest tweaks** ([docs/roadmap.md](docs/roadmap.md), A–D and G done):
+**E** flasks (plan mode), **F** dungeon fixes (cleared rooms keep their enemies dead); then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
 
 ## Docs: read the one for the area you're touching
 

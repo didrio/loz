@@ -34,7 +34,7 @@ function doorFace(ow: Overworld, dy = 0) {
 
 /** The shrine door cutscene: the camera cuts to the door and watches it sink. */
 async function shrineDoorOpens(api: ScriptApi, ow: Overworld) {
-  await api.say([{ text: 'You press your hand to the glowing spiral. With a deep grinding groan, the stone door begins to sink into the earth...' }]);
+  await api.say([{ text: 'You press your hand to the glowing spiral. The stone groans, and the door begins to sink into the earth.' }]);
   const at = doorFace(ow, -0.5);
   api.shot(new THREE.Vector3(ow.door.x - 11, at.y + 3, ow.door.z + 7), at);
   await api.wait(0.9);
@@ -135,7 +135,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     await api.wait(2.4);
     api.releaseCamera();
     ow.vessel.show();
-    await api.say([{ text: 'The stolen flame is free. Far to the east, the great lantern holds a single warm ember again, and the spiral on the shrine door has begun to glow.' }]);
+    await api.say([{ text: 'The flame is free. Far to the east, the great lantern holds one warm ember again, and the spiral on the shrine door has begun to glow.' }]);
   };
 
   /**
@@ -168,10 +168,9 @@ export function overworldContent(ow: Overworld): AreaContent {
       const who = 'Maren';
       if (!state.has('gotGroveKey')) {
         await api.say([
-          { who, text: 'Wren! You\'re up at last. Did you see it? The lantern on the Waking Shrine went dark last night.' },
-          { who, text: 'That light has burned on the eastern hill since before my grandmother\'s grandmother. Now the thornlings are crawling all over Emberfield.' },
-          { who, text: 'You can\'t go wandering out there with nothing but a pot lid. My father left a blade in an old chest in the *Whispering Grove*, northeast of the field.' },
-          { who, text: 'He locked it so no fool child would cut their fingers off. Well... you\'re not a child anymore. Here.' },
+          { who, text: 'Wren! You\'re up at last. Did you see the shrine? The lantern on the eastern hill went dark last night. It has burned there since my grandmother\'s grandmother, and now the thornlings are all over Emberfield.' },
+          { who, text: 'You can\'t go out there with nothing but a pot lid. My father left a blade in an old chest in the *Whispering Grove*, northeast of the field. He locked it so no fool child would lose a finger.' },
+          { who, text: 'Well... you\'re not a child anymore. Here.' },
         ]);
         state.set('metMaren');
         state.set('gotGroveKey');
@@ -179,25 +178,28 @@ export function overworldContent(ow: Overworld): AreaContent {
         api.sfx.fanfare();
         await api.say([
           { text: 'You got a *Small Key*!\nIt opens the old chest in the Whispering Grove.' },
-          { who, text: 'Follow the road northeast past the big lone oak. The chest sits in the clearing at the end.' },
+          { who, text: 'Follow the road northeast, past the big lone oak. The chest sits in the clearing at the end.' },
         ]);
       } else if (!state.has('hasSword')) {
-        await api.say([{ who, text: 'The Whispering Grove is northeast of the field. Follow the road past the big lone oak. The chest sits in the clearing at the end.' }]);
+        await api.say([{ who, text: state.isNight
+          ? 'Out at night? Wait for morning, Wren. The grove road is dark enough by day. Northeast, past the lone oak.'
+          : 'Northeast, past the lone oak, to the clearing at the end of the road. Father\'s chest is waiting.' }]);
       } else if (!state.has('lamplighterDefeated')) {
         await api.say([
           { who, text: 'Father\'s blade! It suits you better than it ever suited him.' },
-          { who, text: 'Wren, I\'ve been asking around. The shrine door has been shut tight since the lantern went out. Nobody can budge it.' },
-          { who, text: 'The old words on the pedestal say the stone wakes while the lantern burns. And the lantern didn\'t just go out. Tobin swears he saw its flame *carried off*, south.' },
-          { who, text: 'South past the bridge is the *Gloaming Hollow*. Old Corwin lit the lamps down there for forty years. Since last night, people say he\'s still walking his rounds after dark... only taller than he was.' },
-          { who, text: 'If something down there has our flame, taking it back is the only way that door is ever opening. Be careful.' },
+          { who, text: 'I\'ve been asking around. The shrine door hasn\'t budged since the lantern went out. The pedestal says the stone wakes while the lantern burns, and Tobin swears the flame wasn\'t snuffed. It was *carried off*, south.' },
+          { who, text: 'South past the bridge is the *Gloaming Hollow*, where old Corwin lit the lamps for forty years. They say he still walks his rounds after dark... only taller than he was.' },
+          { who, text: state.isNight
+            ? 'Be careful, Wren. It\'s night now, and that is exactly when he walks.'
+            : 'If he has our flame, that is the only way the door ever opens. Go at night, when he walks. And be careful.' },
         ]);
       } else if (!ow.door.open) {
         await api.say([
-          { who, text: 'Did you see the shrine? The lantern is glowing again, just a little. Something came home last night... that was you, wasn\'t it?' },
+          { who, text: 'The lantern is glowing again, just a little. Something came home last night... that was you, wasn\'t it?' },
           { who, text: 'If the lantern burns, the door should wake. Go and see, Wren.' },
         ]);
       } else {
-        await api.say([{ who, text: 'You opened it?! Then the old stories are true... Whatever is down there, Wren, come back in one piece.' }]);
+        await api.say([{ who, text: state.has('village.stonewardTunic') ? 'You opened it?! Then the old stories are true. At least you\'ll go down there in good slate. Come back in one piece, Wren.' : 'You opened it?! Then the old stories are true. Whatever is down there, Wren, come back in one piece.' }]);
       }
     },
 
@@ -206,12 +208,12 @@ export function overworldContent(ow: Overworld): AreaContent {
       const who = 'Tobin the Miller';
       let lines: string[];
       if (state.has('lamplighterDefeated')) {
-        lines = ['Saw a light streak across the sky, east toward the shrine. Either that\'s good news or I need more sleep.'];
+        lines = [state.isNight ? 'Saw a light streak east across the sky, toward the shrine. Look at it up there now, burning. Either that\'s good news or I need more sleep.' : 'The lantern\'s lit again, and the mill is turning like nothing happened. Good news, I think. I\'m not used to it.'];
       } else if (state.has('hasSword')) {
         lines = [
           'Going up to the shrine? Don\'t bother. That door\'s shut tighter than my wallet.',
-          'The night the lantern died I was up with the mill. Saw a cold blue light drift off the hill, slow, like someone carrying it. Went south. Down toward the Gloaming Hollow. Folk only see it there after dark.',
-          'Whatever took it is still down there. If you want that door open, you\'ll have to get the flame back first. Rather you than me.',
+          'The night the lantern died, I saw a cold blue light drift off the hill, slow, like someone carrying it. It went south, toward the Gloaming Hollow. Folk only see anything down there after dark.',
+          'Get the flame back and the door opens. Rather you than me.',
         ];
       } else if (!state.has('gotGroveKey')) {
         lines = ['Maren\'s been asking after you all morning. She\'s by the well, in the purple. Go on, before she starts asking me.'];
@@ -226,7 +228,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       // Once Wren is armed, Tobin trusts them with the mill (whichever thing he talked about).
       if (state.has('hasSword') && !state.has('village.millKey')) {
         await api.say([
-          { who, text: 'Say, you look like you\'ve not slept in a week. Take this. The mill\'s door, round the west side of the square. There\'s a bed in there that\'s doing nothing.' },
+          { who, text: 'You look like you haven\'t slept in a week. Take this: the mill door, west side of the square. There\'s a bed in there doing nothing.' },
         ]);
         state.set('village.millKey');
         api.sfx.fanfare();
@@ -246,15 +248,15 @@ export function overworldContent(ow: Overworld): AreaContent {
       const { state } = api;
       const who = 'Odo the Peddler';
       if (state.has('village.stonewardTunic')) {
-        await api.say([{ who, text: 'It suits you! Slate looks well on a hero. Come back if you ever need a hand with anything else.' }]);
+        await api.say([{ who, text: state.isNight ? 'Slate in the lamplight. Very good, very mysterious. Stay safe out there.' : 'It suits you! Slate looks well on a hero. Come by if you need anything else.' }]);
         return;
       }
       const result = await offerWare(api, [
-        { who, text: 'Gems for goods, friend! I carry things the valley\'s forgotten it needs.' },
-        { who, text: 'Take this *Stoneward Tunic*, woven with grit from the old shrine quarry. Statues and stone shells hit you *half as hard*. A bargain at 100 gems.' },
+        { who, text: state.has('hasSword') ? 'A blade, and no armor! Gems for goods, friend. I carry what the valley forgot it needs.' : 'Gems for goods, friend! I carry what the valley forgot it needs.' },
+        { who, text: 'This is a *Stoneward Tunic*, woven with grit from the old shrine quarry. Statues and stone shells hit you *half as hard*. A bargain at 100 gems.' },
       ], 100);
       if (result === 'short') {
-        await api.say([{ who, text: `You're short, friend. That's 100 gems, and you have ${state.gems}. The bushes by the fence grow back, you know.` }]);
+        await api.say([{ who, text: `You're short, friend: 100 gems, and you have ${state.gems}. Those bushes by the fence grow back, you know.` }]);
       } else if (result === 'declined') {
         await api.say([{ who, text: 'Take your time. I\'m not going anywhere. Stalls don\'t walk.' }]);
       } else {
@@ -262,7 +264,7 @@ export function overworldContent(ow: Overworld): AreaContent {
         api.player.setStoneward(true);
         api.sfx.fanfare();
         await api.say([
-          { text: 'You got the *Stoneward Tunic*!\nStone hits (statues, shells) do half damage, rounded up. Your tunic turns slate-blue.' },
+          { text: 'You got the *Stoneward Tunic*!\nStone hits (statues, shells) do half damage. Your tunic turns slate-blue.' },
           { who, text: 'Wear it in good health!' },
         ]);
       }
@@ -283,9 +285,8 @@ export function overworldContent(ow: Overworld): AreaContent {
       api.particles.burst(new THREE.Vector3(ow.chest.x, api.player.pos.y + 1.2, ow.chest.z), 0xfff1a8, 30, 4, 1.2, false);
       await api.say([
         { text: 'You found the *Wayfarer\'s Blade*!\nIts edge is nicked, but it still sings when you swing it.' },
-        { text: 'Press [attack] to swing. Keep pressing in rhythm for a three-hit combo. Press [lock] to lock on to an enemy.' },
-        { text: 'Hold [shield] to raise your shield (you can still jump with it up). Each block knocks down some of its *guard*, the green bars beside you.' },
-        { text: 'Guard only comes back while your shield is *lowered* (the bars turn red while they wait), so back off and let it recover. Block with too little guard left and it *breaks*: you stagger, barely able to move, until you catch your balance.' },
+        { text: '[attack] swings; press it again in rhythm for a three-hit combo. [lock] locks on to an enemy.' },
+        { text: 'Hold [shield] to block. Each block wears down your *guard* (the green bars), which refills only while the shield is *lowered*. If it runs out, your guard breaks and you stagger.' },
         { text: 'Maren will want to see this. Head back to *Thistledown*.' },
       ]);
     },
@@ -298,7 +299,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       const hint = api.state.has('hasSword')
         ? 'The lantern above it is dark. Whatever took its flame went south, to the Gloaming Hollow.'
         : 'Maybe someone in *Thistledown* knows how to open it.';
-      await api.say([{ text: `A sealed slab of stone with a spiral carved into it, cold and dark. It won't budge.\n${hint}` }]);
+      await api.say([{ text: `A slab of cold stone with a spiral carved into it. It won't budge.\n${hint}` }]);
     },
 
     async 'trigger.shrineEntrance'(api) {
@@ -310,7 +311,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     async 'trigger.hollow'(api) {
       if (api.state.has('hasSword')) return lamplighterWakes(api);
       // Unarmed: it doesn't wake, and Wren thinks better of it.
-      await api.say([{ text: 'Something tall stands in the middle of the hollow, perfectly still, its back to you.\nWithout a weapon, you\'d rather not get any closer.' }]);
+      await api.say([{ text: 'Something tall stands in the middle of the hollow, perfectly still, its back to you.\nYou\'d rather not go closer without a weapon.' }]);
       await api.fade(1, 0.4);
       api.player.teleport(HOLLOW_ENTRANCE.x, api.physics.groundY(HOLLOW_ENTRANCE.x, HOLLOW_ENTRANCE.z - 6) ?? api.player.pos.y, HOLLOW_ENTRANCE.z - 6, Math.PI);
       await api.fade(0, 0.4);
