@@ -104,7 +104,10 @@ and `reset()` when the player dies mid-fight (full HP, dormant, arena re-armed).
 concrete boss provides its rig + `animate`, `moves()`, `hurtboxes()` (from rig nodes, so
 weak points are reachable only when the pose brings them down; weapons as `armor` boxes,
 as the Lamplighter's pole while it's held at the ready), `isGuarding` (say which part parries) and
-`damageMultiplier`. Content spawns it in `AreaContent.start`, arms its `BossArena`, runs
+`damageMultiplier`, and its song (`music`, a `MusicMood`; `BOSS_MOODS` in `core/tracks.ts` lists the
+fast-crossfading ones). Indoors, pass `y` (the floor) in its config: floors stack, so the ground is
+looked for just above it. Content spawns it in `AreaContent.start`, arms its arena (any `ArenaSeal`:
+the hollow's `BossArena`, the shrine's `WardenHearth`), runs
 the intro script on the arena trigger (`wake()` → `until(ready)` → `engage()`), and its
 `onDefeated` runs the defeat script. The HUD bar, darkening (`gloom`) and boss music
 follow whichever boss is engaged. `game/boss.test.ts` shows how to test a boss headlessly.

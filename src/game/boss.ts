@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { angleDiff } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
-import type { BossArena } from '../world/objects';
+import type { MusicMood } from '../core/tracks';
 import { Enemy, type EnemyEnv, type Hurtbox, type HurtResult } from './enemies';
 
 /**
@@ -43,9 +43,20 @@ export interface Move<B extends Boss = Boss> {
   exit?(boss: B): void;
 }
 
+/**
+ * Where a boss fights: it seals when the fight starts (content does that), and the boss
+ * unseals and re-arms it if Wren dies mid-fight (`BossArena`, `WardenHearth`).
+ */
+export interface ArenaSeal {
+  armed: boolean;
+  unseal(): void;
+}
+
 export interface BossConfig {
   x: number;
   z: number;
+  /** Floor height, indoors (floors stack in a dungeon, so the ground is found just above it). */
+  y?: number;
   /** Facing while dormant. */
   yaw: number;
   hp: number;
@@ -66,6 +77,8 @@ export interface BossConfig {
 export abstract class Boss extends Enemy {
   abstract readonly title: string;
   abstract readonly epithet: string;
+  /** The song while it's engaged. */
+  readonly music: MusicMood = 'boss';
   readonly maxHp: number;
   state: BossState = 'dormant';
   phase = 1;
@@ -113,13 +126,13 @@ export abstract class Boss extends Enemy {
   constructor(
     parent: THREE.Object3D,
     protected readonly physics: Physics,
-    protected readonly arena: BossArena | null,
+    protected readonly arena: ArenaSeal | null,
     cfg: BossConfig,
   ) {
     super();
     this.maxHp = this.hp = cfg.hp;
     this.phaseAt = cfg.phases ?? [];
-    const y = physics.groundY(cfg.x, cfg.z, 400, Layer.World) ?? 0;
+    const y = cfg.y === undefined ? physics.groundY(cfg.x, cfg.z, 400, Layer.World) ?? 0 : physics.groundY(cfg.x, cfg.z, cfg.y + 1, Layer.World) ?? cfg.y;
     this.home = new THREE.Vector3(cfg.x, y, cfg.z);
     this.pos.copy(this.home);
     this.yaw = this.homeYaw = cfg.yaw;

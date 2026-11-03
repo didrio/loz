@@ -4,7 +4,7 @@
  */
 
 import { MusicPlayer } from './synth';
-import { compiledSong, type MusicMood } from './tracks';
+import { BOSS_MOODS, compiledSong, type MusicMood } from './tracks';
 
 export type { MusicMood } from './tracks';
 
@@ -199,7 +199,7 @@ export class Sfx {
     const want = this.musicOn && playing ? mood : null;
     if (want !== this.musicMood) {
       // Silence cuts in at once (death, a boss's entrance); the boss theme fast; day and night slowly.
-      const fast = want === 'boss' || this.musicMood === 'boss';
+      const fast = (want !== null && BOSS_MOODS.has(want)) || (this.musicMood !== null && BOSS_MOODS.has(this.musicMood));
       this.music.play(want && compiledSong(want), want === null ? 0.12 : fast ? 0.6 : 2.5);
       this.musicMood = want;
     }

@@ -16,6 +16,7 @@ import { buildLandmark } from './landmarks';
 import { FallenColumn } from './bridge';
 import { PULL_RANGE } from './puzzle';
 import { decorateRoom, THEMES, themeOf, type WallSpot } from './decor';
+import { WardenHearth } from './hearth';
 import { buildSconce, buildTablet, doorStyle, DungeonDoor, DungeonSwitch, Wakestone } from './pieces';
 
 /** What happened when a stone was struck or pulled. */
@@ -115,6 +116,8 @@ export class DungeonArea implements Area {
   /** Where travelers arrive: in front of each bell post, named by its id. */
   readonly entrances: Record<string, Spot> = {};
   readonly spawns: Spawn[] = [];
+  /** Gravelheart's arena, if this dungeon has it (the room with a `gravelheart` boss thing). */
+  hearth: WardenHearth | null = null;
   /** Called when a switch is pressed: a crystal struck, or a plate under a stone (content decides what it opens). */
   onSwitch: ((id: string) => void) | null = null;
   /**
@@ -367,6 +370,13 @@ export class DungeonArea implements Area {
       const fy = floorY(def, r.floor), p = part(r.floor);
       if (t.kind === 'boss') {
         this.spawns.push({ id: t.id, type: t.type, room: r.id, x: r.x + r.w / 2, y: fy, z: r.z + r.d / 2 });
+        if (t.type === 'gravelheart') {
+          const door = def.doors.find((d) => d.lock === 'boss' && (d.to === r.id || d.from === r.id));
+          const hearth = new WardenHearth(b, p.dynamic, r, fy, door ? this.doors.get(door.id) ?? null : null);
+          this.hearth = hearth;
+          // Walking well into the room (3 m past the door) springs the fight, once content arms it.
+          this.triggers.push({ id: 'trigger.warden', x: hearth.center.x, z: hearth.center.z, y: fy, r: Math.min(r.w, r.d) / 2 - 3, enabled: () => hearth.armed && !hearth.sealed });
+        }
         continue;
       }
       const [x, z] = worldPos(r, t.at);
@@ -880,6 +890,7 @@ export class DungeonArea implements Area {
   update(dt: number, _env: AreaEnv) {
     this.t += dt;
     for (const d of this.doors.values()) d.update(dt);
+    this.hearth?.update(dt);
     for (const c of this.chests.values()) c.update(dt);
     for (const s of this.switches.values()) s.update(dt);
     for (const s of this.stones.values()) s.update(dt);

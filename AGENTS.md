@@ -22,11 +22,11 @@ built almost entirely by AI agents. Build everything as if it will ship.
 As of 2026-11-03: Emberfield (the valley) plays start to finish: the Hollow Lamplighter (night
 only), the quest thread, all music, and the village (Tobin's mill with a bed; Odo sells the
 Stoneward Tunic and refills flasks). **The Waking Shrine** (25 rooms, four wings, plus the Bell Shaft
-trial) is playable up to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done).
-**Bells** (bonfires with fast travel, [docs/bells.md](docs/bells.md)): posts, ringing, the travel menu,
-the platforming base and both trials work (the Bell Shaft; the Hushing Gorge, west of the valley,
-built and awaiting the owner's play); a dev menu (~ / L3) has sprint, invincibility, a trial-fall-damage
-toggle and save states. **Next: shrine milestone 6** (Gravelheart; plan mode).
+trial) is playable to the end of the boss door and into Warden's Hearth, where **Gravelheart** wakes
+and fights with one move (Hammerfall); it's a stand-in until sessions B–D ([docs/shrine.md](docs/shrine.md)).
+**Bells** (fast-travel bonfires, [docs/bells.md](docs/bells.md)) and both trials work (the Hushing Gorge
+awaits the owner's play); a dev menu (~ / L3) has sprint, invincibility and save states.
+**Next: shrine milestone 6, session B** (Gravelheart's phase 1; no plan mode).
 
 ## Docs: read the one for the area you're touching
 
@@ -138,7 +138,7 @@ src/
     dungeon/               dungeon data format, validator, softlock solver, text map, DUNGEONS registry;
                            defs/ the dungeons; build.ts + pieces.ts turn the data into a 3D indoor Area;
                            grid.ts + puzzle.ts: rooms as 2 m grids, the wakestone puzzle checker;
-                           landmarks.ts: the three big landmark statues;
+                           landmarks.ts: the three big landmark statues; hearth.ts: Gravelheart's arena;
                            decor.ts: each wing's palette, light and decoration
   game/
     game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
@@ -150,7 +150,7 @@ src/
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
     sentinel.ts, shellback.ts  the shrine's Dozing Sentinel and Shellback (on GroundEnemy)
     enemyTestEnv.ts        the stand-in game enemy unit tests run against
-    boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter
+    boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss)
     lockon.ts              which enemy lock-on picks (same level, in sight)
     trialFalls.ts          bell trials' fall rule (TRIAL_RULES.fallDamage switch, last checkpoint ledge)
     flasks.ts              the two flasks (life / attack potion; drinking empties one, Odo refills it)
@@ -162,6 +162,7 @@ src/
     bells.ts               the bell registry (BELLS) and scripts: check, hang, ring, travel, take
     gorge.ts               the Hushing Gorge: its monsters, the trial's fall rule
     shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
+    gravelheart.ts         the shrine's boss encounter: spawn, the seal, the intro, the defeat
     devStates.ts           dev-menu save states (new game, night by the Hollow, shrine, boss door, bells)
     fakeApi.ts             the fake ScriptApi content tests run against
     story.ts               intro, death

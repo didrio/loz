@@ -28,7 +28,6 @@ export class DungeonProgress {
   readonly switches = new Set<string>();
   /** Fight rooms whose enemies are beaten. */
   readonly cleared = new Set<string>();
-  /** Wren has been inside (the seal closed behind them). */
   /** The boss is beaten. */
   done = false;
 

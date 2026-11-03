@@ -3,8 +3,8 @@
 Status: **design approved by the owner** (2026-11-02), being built milestone by milestone.
 Done: the shrine's theme music (owner's progressions), plus milestones 1–5 and the
 expansion (25 rooms in four themed wings; multi-crystal
-locks; the puzzle checker proves chests across pits reachable). Playable now up to the
-boss door, glove and all; the boss is milestone 6. The layout is data in
+locks; the puzzle checker proves chests across pits reachable). Playable now through the
+boss door, glove and all; the boss (milestone 6) is partly built (see the build plan). The layout is data in
 `src/world/dungeon/defs/shrine.ts` (validated and solved by the tests; `npm run map --
 shrine` to see it). This doc covers what the data doesn't: the gimmick's progression, the
 item, the enemies, the boss, the overworld gate, and the build plan. Keep the two in step.
@@ -112,7 +112,13 @@ The shrine's guardian was meant to sleep while the lantern burned. When the flam
 stolen, the thief pushed an ember into its chest, and now it can't sleep. About 5 m of
 stacked wakestones: a blocky torso, arms that are chains of floating stones, a carved
 spiral mask with heavy-lidded eyes, the second ember glowing through cracks in its chest.
-Arena: Warden's Hearth, a 20×20 m room with spare wakestones set into the walls.
+Arena: Warden's Hearth, a 24×20 m room (12 m high) with spare wakestones set into the walls.
+
+**Owner's calls (2026-11-03):** a stone slab seals the boss door when the fight starts and lifts on
+a win or a death (the boss is the one exception to "never sealed"). Phase 2's tiles don't slide:
+the outer 2 m ring **rises into a low wall and stays** (arena ~20×16 m), and Cairn Roll is dazed
+against it. Harder than the Lamplighter: ~4–5 minutes, about two plate cycles per phase, hits of
+1–2 half-hearts. The theme is ours to write (a boss version of The Sleeping Stones); the owner listens.
 
 More intricate than the Lamplighter because every opening takes **two steps** (glove, then
 sword), the arena changes in phase two, and the item is the key to the fight. Built on
@@ -134,8 +140,7 @@ sword), the arena changes in phase two, and the item is the key to the fight. Bu
   The walls visibly run out of stones as the fight goes on.
 
 **Phase 2 (at half health).** It howls, smashes the floor, and the arena's floor tiles
-wake: a ring of tiles slides around the room's edge (moving hazards, the arena shrinks
-toward the middle). Its ember rises into its head, out of sword reach. Drops a couple of
+wake: the outer ring rises into a low wall (the arena shrinks toward the middle). Its ember rises into its head, out of sword reach. Drops a couple of
 hearts.
 - **Cairn Roll**: curls into a boulder and rolls at Wren (1 s windup of rocking back;
   sidestep). If it hits a wall it's dazed, and the **keystone** in its back glows: tether
@@ -189,8 +194,20 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
    Enemies take `REACTION` (0.9 s) to react on sight; the camera rule is in
    [engine.md](engine.md). Not yet confirmed by eye: the cord in flight, the camera in
    small rooms.
-6. **Gravelheart**: rig, moves, phases, arena tiles, intro and defeat cutscenes, music
-   (a boss theme of its own), tests.
+6. **Gravelheart**, in four sessions (planned 2026-11-03; each ends with check passing):
+   - ~~**A, rig, arena, intro**~~ done (the owner hasn't played it): `game/bosses/gravelheart/`,
+     `world/dungeon/hearth.ts`, `content/gravelheart.ts`, `Boss.music`. Stand-ins until B–D: its only
+     move is Hammerfall, whose stuck slam opens its chest straight to the sword; the defeat just
+     settles it and opens the door. The ring rises 2.4 m (Wren jumps ~2 m). To judge in play: the
+     palette is low contrast, and the sleeping heap barely reads as kneeling.
+   - **B, phase 1**: Hammerfall, Sweep, Stone volley, Grind; loose plates; the glove on boss parts
+     (`Enemy.tetherAt`, checked in `Combat.throwTether` before `area.tether`); a thrown-`stone`
+     hazard; ember stagger; re-plating from sockets, then from landed rubble (it never runs out);
+     inject an RNG into boss move picks and Thornling/Shellback wandering (scaling item); tests.
+   - **C, phase 2**: the phase move (howl, smash, ring rises, hearts drop, ember into the head);
+     Cairn Roll → dazed on the ring → keystone → kneel; double sweep; faster moves; tests.
+   - **D, defeat, music, smoke, docs**: the defeat script, Heart Vessel, lantern at 2 embers; the
+     `warden` theme; fixture `shrine-boss.json` + smoke scenario `shrine-boss`; docs.
 7. **The Northpass**: the new road, the cut, the heavy stone, the sign and dialog, the
    lake grotto (minding the seeded-scenery rules; the per-region seeds scaling item is done
    first by the bells' Hushing Gorge, see [bells.md](bells.md)).

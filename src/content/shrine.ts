@@ -8,6 +8,7 @@ import type { DungeonProgress, GameState } from '../game/state';
 import type { DungeonArea } from '../world/dungeon/build';
 import { floorY, keyName, lockSwitches, type Condition, type Loot, type Potion, type RoomDef } from '../world/dungeon/format';
 import { bellContent } from './bells';
+import { wardenContent } from './gravelheart';
 import type { AreaContent } from './overworld';
 
 /**
@@ -90,12 +91,14 @@ export function shrineContent(area: DungeonArea): AreaContent {
   };
 
   const bells = bellContent(Object.fromEntries(area.bellPostsById), Object.fromEntries(area.bellPickups));
+  const warden = wardenContent(area);
   const scripts: Record<string, Script> = {
     // Leaving: the entrance is always open.
     async exit(api) {
       await api.travel('overworld', 'shrineDoor');
     },
     ...bells.scripts,
+    ...warden.scripts,
   };
 
   for (const t of def.things) {
@@ -178,7 +181,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
         const r = area.def.rooms.find((room) => room.id === s.room)!;
         const facing = Math.atan2(r.x + r.w / 2 - s.x, r.z + r.d / 2 - s.z);
         e = new DozingSentinel(area.root, api.physics, s.x, s.z, s.y + 1, inRoom, facing);
-      } else continue; // the boss arrives in its own milestone
+      } else continue; // the boss is content/gravelheart.ts's
       if (e instanceof GroundEnemy) {
         e.setWalkable(walkable);
         if (s.facing !== undefined) e.faceAngle(s.facing);
@@ -193,6 +196,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
 
     restore(state) {
       bells.restore(state);
+      warden.restore(state);
       const p = progress(state);
       for (const id of p.doors) area.doors.get(id)?.setOpen();
       for (const id of p.switches) {
@@ -275,6 +279,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
         await a.wait(0.6);
       });
       spawnAll(api);
+      warden.start(api);
     },
 
     update(api) {

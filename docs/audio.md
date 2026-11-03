@@ -30,7 +30,7 @@ for a shuffle. Chord names: `C`, `Cm`, `C7`, `Cm7`, `Cmaj7`, `C6`, `Cm6`, `Cadd9
 `C7sus4`, `C7b9`, `Cm7b5`, `Cdim7`, `Cmmaj7`, `Cmaj7#5`, `Csus4`, `Csus2`, `Cdim` (with `#`/`b`);
 add a quality to `QUALITIES` in `music.ts` when a song needs one (no music library needed).
 
-**Which theme plays** (`Game.updateWorld`): the boss theme while a boss is engaged (its
+**Which theme plays** (`Game.updateWorld`): the engaged boss's theme (`Boss.music`) (its
 entrance cutscene plays in silence: the encounter script calls `silenceMusic(true)` as the
 trap springs and `false` right after `engage()`, so the song starts with the fight);
 otherwise the area's own theme (`Area.music`, e.g. a dungeon's `DungeonDef.music`);

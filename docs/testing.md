@@ -23,7 +23,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   end, before a commit, or after shared systems (player, physics, camera, saves, game.ts)
   changed, asking the owner first. CI runs everything on every push anyway.
 - `npm run look -- <scenes>` (`--list` for names: title, field, village, mill, grove, chest,
-  door, dungeon, camera, glove, landmarks, bells, bellShaft, gorge, shrine, enemies, hollow, night, guard, shield, orbs, boss, boss-moves): captures named scenes to
+  door, dungeon, camera, glove, landmarks, bells, bellShaft, gorge, shrine, enemies, hollow, night, guard, shield, orbs, boss, boss-moves, gravelheart): captures named scenes to
   `look-output/` for you to inspect. Boss scenes slow time, make Wren invulnerable, park
   the camera and force moves. Add a scene when you add a place, a boss or a visual system.
 - Both scripts share `scripts/browser.mjs` (dev server, Chrome, `newGame`, `teleport`,
@@ -83,6 +83,9 @@ Tests live next to their modules (`*.test.ts`).
 - `content/shrine.test.ts` does the same for the shrine: keys and doors, the boss
   door, cleared rooms, the crystal, respawn, restore and the exit. It plays the
   quest thread in order and checks the edge cases (locked chest first, old saves).
+- `game/bosses/gravelheart/gravelheart.test.ts` does the same for Gravelheart (stone armor,
+  Hammerfall's window, reset, settling asleep); `build.test.ts` covers its arena (wall stones,
+  the door seal, the ring).
 - `game/boss.test.ts` runs the Lamplighter's state machine headlessly (guarding, slam
   reach, phase two, death, reset) and a minimal `Dummy` boss for the move system; copy
   that pattern for new bosses.

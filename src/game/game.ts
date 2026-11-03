@@ -369,7 +369,7 @@ export class Game implements ScriptApi {
     hud.setKeys(state.keysHere, state.dungeonKeysHere, !!state.dungeons.get(state.area)?.bossKey);
     hud.setClock(state.hours, state.day);
     if (this.mode !== 'play') hud.setActions([]);
-    const mood = boss ? 'boss' : this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day');
+    const mood = boss ? boss.music : this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day');
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced);
     if (input.pressed('music')) {
       this.sfx.musicOn = this.settings.music = !this.settings.music;

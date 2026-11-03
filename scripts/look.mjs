@@ -164,6 +164,7 @@ const SCENES = {
     await inside('dungeon-cistern', 'cistern', 0.4, 0.15, 0);
     await inside('dungeon-pithall', 'pitHall', 0.85, 0.5, -Math.PI / 2);
     await inside('dungeon-gauntlet', 'gauntlet', 0.5, 0.85, Math.PI);
+    await h.game(() => window.embervale.area.hearth && (window.embervale.area.hearth.armed = false)); // no fight, just the room
     await inside('dungeon-boss', 'boss', 0.5, 0.6, Math.PI);
     for (const floor of [1, 0, -1, -2]) {
       await h.game((floor) => {
@@ -553,6 +554,75 @@ const SCENES = {
     await park(h, { dist: 7, side: 3, height: 2.6, lookHeight: 2.6, boss: true });
     await h.wait(1200);
     await h.shot('boss-howl');
+  },
+  /** Gravelheart: asleep in its hall, waking, posed from four sides, Hammerfall's windup and stuck slam, the wall stones and the risen ring. */
+  async gravelheart(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.loadArea('shrine'));
+    await h.wait(1500);
+    const r = await h.game(() => window.embervale.area.def.rooms.find((r) => r.id === 'boss'));
+    const door = await h.game(() => window.embervale.area.doors.get('bossDoor').group.position);
+    const y = r.floor * 8 + 0.05;
+    // Just inside the door, looking across the hall at the heap (outside the trigger).
+    await h.game(([x, y, z]) => {
+      const g = window.embervale;
+      g.area.doors.get('bossDoor').setOpen();
+      g.player.teleport(x, y, z, Math.PI);
+      g.rig.snap(g.player.pos, Math.PI);
+    }, [door.x, y, door.z - 1.5]);
+    await h.wait(1500);
+    await h.shot('gravelheart-asleep');
+    // Walk in: the door shuts, it wakes, the fight starts.
+    await h.game(([x, y, z]) => window.embervale.player.teleport(x, y, z, Math.PI), [door.x, y, door.z - 5]);
+    await h.until(() => window.embervale.mode === 'play' && !!window.embervale.activeBoss, 60000);
+    await h.game(() => (window.embervale.player.invuln = 1e6));
+    await h.until(() => !document.querySelector('.boss-title.show'), 15000);
+    await h.shot('gravelheart-fight');
+    await h.game(() => window.embervale.setTimeScale(0.03));
+    for (const [name, o] of Object.entries({
+      front: { dist: 9, side: 3, height: 2.6, lookHeight: 3 },
+      face: { dist: 4, side: 1, height: 5.2, lookHeight: 4.8 },
+      side: { dist: 0.5, side: 8, height: 2.4, lookHeight: 2.8 },
+      back: { dist: -8, side: 2.5, height: 3, lookHeight: 2.8 },
+    })) {
+      await park(h, { ...o, boss: true });
+      await h.wait(1200);
+      await h.shot(`gravelheart-${name}`);
+    }
+    // Hammerfall: fists overhead with red eyes, then stuck in the floor with the chest low.
+    await h.game(() => window.embervale.setTimeScale(0.5));
+    await h.until(() => !window.embervale.activeBoss.move, 20000);
+    await h.game(() => window.embervale.activeBoss.forceMove('hammerfall'));
+    await waitStep(h, 'hammerfall', 'windup', 0.85);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 9, side: 4, height: 2.6, lookHeight: 3.5, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart-hammer-windup');
+    await h.game(() => window.embervale.setTimeScale(0.5));
+    await waitStep(h, 'hammerfall', 'recover', 0.4);
+    await h.game(() => window.embervale.setTimeScale(0.02));
+    await park(h, { dist: 6, side: 4, height: 2.2, lookHeight: 1.6, boss: true });
+    await h.wait(1200);
+    await h.shot('gravelheart-hammer-stuck');
+    // The hall: wall stones all round, then the ring risen (phase two's wall).
+    await h.game(([cx, cz, fy]) => {
+      const g = window.embervale, T = g.player.pos.constructor;
+      g.rig.shot(new T(cx + 2, fy + 10, cz + 9), new T(cx, fy + 1, cz - 2), true);
+    }, [r.x + r.w / 2, r.z + r.d / 2, y]);
+    await h.wait(1200);
+    await h.shot('gravelheart-hall');
+    await h.game(() => {
+      window.embervale.setTimeScale(1);
+      window.embervale.area.hearth.raiseRing();
+    });
+    await h.wait(3000);
+    await h.game(([cx, cz, fy]) => {
+      const g = window.embervale, T = g.player.pos.constructor;
+      g.setTimeScale(0.02);
+      g.rig.shot(new T(cx + 2, fy + 10, cz + 9), new T(cx, fy + 1, cz - 2), true);
+    }, [r.x + r.w / 2, r.z + r.d / 2, y]);
+    await h.wait(1200);
+    await h.shot('gravelheart-ring');
   },
   /** The shrine's enemies: a Dozing Sentinel asleep, winding up and stuck after its swing; a Shellback from front and back, and tucked to charge. */
   async enemies(h) {

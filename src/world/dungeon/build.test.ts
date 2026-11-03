@@ -121,7 +121,7 @@ describe('the built shrine', () => {
     const ids = area.interactables.map((i) => i.id);
     for (const id of ['anteSign', 'entrySign', 'courtFlaskChest', 'southChest', 'tetherDoor', 'cryptPit', 'bossDoor', 'naveEast']) expect(ids, id).toContain(id);
     expect(ids).not.toContain('entryNave'); // an open doorway
-    expect(area.triggers.map((t) => t.id)).toEqual(['exit']);
+    expect(area.triggers.map((t) => t.id)).toEqual(['exit', 'trigger.warden']);
   });
 
   it('wakestones: the sword pushes one cell, things in the way stop it, heavy ones don\'t budge', () => {
@@ -273,5 +273,57 @@ describe('trial room platforms', () => {
     area.dispose();
     physics.refreshQueries();
     expect(top(12, 4)).toBeNull();
+  });
+});
+
+describe("Warden's Hearth (Gravelheart's arena)", () => {
+  it('has wall stones to pull, and gives them back on a reset', () => {
+    const { area } = setup();
+    const h = area.hearth!;
+    expect(h.sockets.length).toBeGreaterThanOrEqual(12);
+    const n = h.stonesLeft;
+    const at = h.take(h.center)!;
+    expect(at.y).toBeGreaterThan(h.floorY + 2.5); // up on the wall, out of reach
+    expect(h.stonesLeft).toBe(n - 1);
+    h.refill();
+    expect(h.stonesLeft).toBe(n);
+    for (let i = 0; i < n; i++) h.take(h.center);
+    expect(h.take(h.center)).toBeNull();
+  });
+
+  it('shuts the boss door as the seal and reopens it on a reset or a win', () => {
+    const { area } = setup();
+    const h = area.hearth!, door = area.doors.get('bossDoor')!;
+    door.setOpen(); // unlocked with the boss key
+    h.armed = true;
+    const trigger = area.triggers.find((t) => t.id === 'trigger.warden')!;
+    expect(trigger.enabled()).toBe(true);
+    h.seal();
+    expect(door.open).toBe(false);
+    expect(trigger.enabled()).toBe(false);
+    h.unseal();
+    expect(door.opening).toBe(true);
+    h.clear(true);
+    expect(door.open).toBe(true);
+    expect(trigger.enabled()).toBe(false);
+  });
+
+  it('raises the outer ring into a wall too tall to jump, and sinks it again', () => {
+    const { area, physics } = setup();
+    const h = area.hearth!, r = h.room;
+    const tile = { x: r.x + 1, z: r.z + 9 }, middle = { x: h.center.x, z: h.center.z };
+    const top = () => physics.groundY(tile.x, tile.z, h.floorY + 6);
+    expect(top()).toBeCloseTo(h.floorY, 1);
+    h.raiseRing();
+    for (let i = 0; i < 180; i++) h.update(1 / 60);
+    physics.refreshQueries();
+    expect(h.ringUp).toBe(true);
+    expect(top()!).toBeGreaterThan(h.floorY + 2.2);
+    expect(physics.groundY(middle.x, middle.z, h.floorY + 6)).toBeCloseTo(h.floorY, 1);
+    expect(h.insideRing(new THREE.Vector3(middle.x, 0, middle.z))).toBe(true);
+    expect(h.insideRing(new THREE.Vector3(tile.x, 0, tile.z))).toBe(false);
+    h.lowerRing(true);
+    physics.refreshQueries();
+    expect(top()).toBeCloseTo(h.floorY, 1);
   });
 });

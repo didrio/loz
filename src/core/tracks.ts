@@ -9,6 +9,8 @@ import { compile, type CompiledSong, type Instrument, type Layer, type Song } fr
 
 /** Which theme plays: the field by day or night, the village, a boss fight, or a dungeon. */
 export type MusicMood = 'day' | 'night' | 'village' | 'boss' | 'shrine';
+/** Boss fights' songs: they crossfade in fast, with the fight. */
+export const BOSS_MOODS: ReadonlySet<MusicMood> = new Set<MusicMood>(['boss']);
 
 const melody = (inst: Instrument, shift = 0, vel = 1): Layer => ({ type: 'melody', inst, shift, vel });
 
