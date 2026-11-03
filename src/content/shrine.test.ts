@@ -36,19 +36,13 @@ describe('shrine content', () => {
     expect(said[0].text).toMatch(/Sleep, stones/);
   });
 
-  it('seals the entrance behind Wren on the first visit only', async () => {
-    const { area, content, api, runQueued, p, queued } = setup();
-    expect(area.entranceDoor.open).toBe(true);
+  it('the entrance is an open doorway that never closes: the exit works from the start', async () => {
+    const { area, content, api, queued, travels } = setup();
     content.start!(api);
-    await runQueued();
-    expect(p.entered).toBe(true);
-    expect(area.entranceDoor.open).toBe(false);
-    // Back again (continue, or after a death and reload): already sealed, no cutscene.
-    const again = setup(api.state);
-    again.content.start!(again.api);
-    expect(again.queued.length).toBe(0);
-    expect(again.area.entranceDoor.open).toBe(false);
-    expect(queued.length).toBe(0);
+    expect(queued.length).toBe(0); // no entry cutscene
+    expect(area.triggers.find((t) => t.id === 'exit')!.enabled()).toBe(true);
+    await content.scripts.exit(api);
+    expect(travels).toEqual([{ area: 'overworld', entrance: 'shrineDoor' }]);
   });
 
   it('chest keys belong to the shrine and open its locked doors', async () => {
@@ -82,35 +76,22 @@ describe('shrine content', () => {
     expect(toasts.filter((t) => t.includes('[item]'))).toHaveLength(1); // how to use it, once
   });
 
-  it('a fight room shutters when Wren walks in, and opens with its chest once its enemies fall', async () => {
+  it('a room is cleared, and its chest appears, once its enemies fall', async () => {
     const { area, content, api, enemies, runQueued, stand, p } = setup();
     content.start!(api);
-    await runQueued(); // the seal
-    const shutter = area.shutters.get('southCell')![0];
+    await runQueued();
     const chest = area.chests.get('southChest')!;
     stand('southCell');
     content.update!(api, 1 / 60);
-    expect(shutter.closing).toBe(true);
     expect(chest.present).toBe(false);
-    // Beat the room's enemies (two sentinels and a thornling; stand-ins for now), and it opens.
+    // Beat the room's enemies (two sentinels and a thornling; stand-ins for now).
     const cell = enemies.filter((e) => e.pos.x > 14 && e.pos.x < 30 && e.pos.z > 16 && e.pos.z < 26);
     expect(cell.length).toBe(3);
     for (const e of cell) e.alive = false;
     content.update!(api, 1 / 60);
     await runQueued();
     expect(p.cleared.has('southCell')).toBe(true);
-    expect(shutter.opening || shutter.open).toBe(true);
     expect(chest.present).toBe(true);
-  });
-
-  it('dying mid-fight lifts the shutters; enemies stay', async () => {
-    const { area, content, api, runQueued, stand } = setup();
-    content.start!(api);
-    await runQueued();
-    stand('southCell');
-    content.update!(api, 1 / 60);
-    content.onRespawn!(api);
-    expect(area.shutters.get('southCell')![0].open).toBe(true);
   });
 
   it('striking the crystal raises the bars it holds, and that survives a reload', async () => {
@@ -270,19 +251,16 @@ describe('shrine content', () => {
     expect(pushes.length).toBe(1); // three cells to the wall, the fourth strike bounces
   });
 
-  it('restores opened doors and chests, and opens the seal once the keeper is beaten', async () => {
+  it('restores opened doors and chests, and the exit still works after the keeper is beaten', async () => {
     const state = new GameState();
     const p = state.dungeon('shrine');
-    p.entered = true;
     p.doors.add('tetherDoor');
     p.chests.add('courtDrinkChest');
     let s = setup(state);
     expect(s.area.doors.get('tetherDoor')!.open).toBe(true);
     expect(s.area.chests.get('courtDrinkChest')!.opened).toBe(true);
-    expect(s.area.entranceDoor.open).toBe(false);
     p.done = true;
     s = setup(state);
-    expect(s.area.entranceDoor.open).toBe(true);
     await s.content.scripts.exit(s.api);
     expect(s.travels).toEqual([{ area: 'overworld', entrance: 'shrineDoor' }]);
   });

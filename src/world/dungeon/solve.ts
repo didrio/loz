@@ -16,7 +16,7 @@ import { type Condition, type DoorDef, type DungeonDef, type Loot } from './form
  * Simplifications, deliberately: switches stay pressed (a plate counts as pressed once its
  * room is reached, plus its `needs` item if any: whether the stones can actually get there
  * is a per-room puzzle question, not a key/door one), enemies can always be beaten, a
- * fight room counts as cleared once reached, and items work anywhere. If a dungeon needs
+ * room counts as cleared once reached, and items work anywhere. If a dungeon needs
  * something cleverer (timed switches, a key that can be lost), extend the model here
  * first, with a test.
  */

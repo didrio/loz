@@ -90,9 +90,7 @@ const SCENES = {
     // of each floor (ceilings hidden, daylight on so the layout reads) to compare with
     // `npm run map -- shrine`.
     await h.newGame();
-    // Already entered, so the seal cutscene doesn't play (it would hold the camera).
     await h.game(() => {
-      window.embervale.state.dungeon('shrine').entered = true;
       window.embervale.loadArea('shrine');
     });
     await h.wait(1500);
@@ -144,7 +142,6 @@ const SCENES = {
     // close, with Wren faded (dithered) when it's very close. Plus an open room for comparison.
     await h.newGame();
     await h.game(() => {
-      window.embervale.state.dungeon('shrine').entered = true;
       window.embervale.loadArea('shrine');
     });
     await h.wait(1500);
@@ -169,7 +166,6 @@ const SCENES = {
     await h.newGame();
     await h.game(() => {
       const g = window.embervale;
-      g.state.dungeon('shrine').entered = true;
       g.state.items.add('tether');
       g.loadArea('shrine');
     });
@@ -197,7 +193,6 @@ const SCENES = {
     // The three landmark statues, each seen from the doorway Wren usually arrives by.
     await h.newGame();
     await h.game(() => {
-      window.embervale.state.dungeon('shrine').entered = true;
       window.embervale.loadArea('shrine');
     });
     await h.wait(1500);
@@ -221,24 +216,44 @@ const SCENES = {
     await view('landmark-gallery-side', 1, [38.5, 3, 2.2], [35, -5, 3]);
     await view('landmark-crypt-side', -1, [27, 4, 2.2], [33, 10, 1.8]);
   },
-  /** The shrine's first-entry seal cutscene, mid-way: the doorway behind Wren should show only darkness. */
-  async seal(h) {
+  /** The Deep Shaft stairs (shaftUp): tread nosings must be clean (no flicker) and the top landing clear. */
+  async stairs(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.loadArea('shrine'));
+    await h.wait(1500);
+    await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+    const view = async (name, floor, from, to) => {
+      await h.game(([floor, from, to]) => {
+        const g = window.embervale;
+        g.player.teleport(from[0], floor * 8 + 0.05, from[1], 0);
+        g.rig.frozen = true;
+        g.camera.position.set(from[0], floor * 8 + from[2], from[1]);
+        g.camera.lookAt(to[0], floor * 8 + to[2], to[1]);
+      }, [floor, from, to]);
+      await h.wait(900);
+      await h.shot(name);
+    };
+    await view('stairs-foot', -1, [26.5, -4.6, 1.7], [26.5, -10, 2.2]); // up the flight from its foot
+    await view('stairs-treads', -1, [27.4, -5.4, 2.6], [26.3, -9, 1.4]); // close on the nosings, from the foot's side
+    await view('stairs-landing', 0, [26.5, -11, 2.6], [26.5, -19, 0.4]); // the top landing, from above the shaft
+  },
+  /** The shrine's entrance: an open doorway that must show only darkness beyond. */
+  async entrance(h) {
     await h.newGame();
     await h.game(() => window.embervale.loadArea('shrine'));
     await h.wait(900);
-    await h.shot('seal-open');
-    await h.wait(1500);
-    await h.shot('seal-closing');
+    await h.shot('entrance-inside');
     // From beside the doorway, looking out and down at the threshold.
     await h.game(() => {
       const g = window.embervale;
-      const d = g.area.entranceDoor.group.position, s = g.area.spawn;
+      const t = g.area.triggers.find((x) => x.id === 'exit'), s = g.area.spawn;
+      const d = { x: t.x, y: t.y, z: t.z };
       const T = g.player.pos.constructor;
       const k = new T(d.x - s.x, 0, d.z - s.z).normalize();
       g.rig.shot(new T(d.x - k.x * 1.6 - k.z * 0.9, d.y + 1.3, d.z - k.z * 1.6 + k.x * 0.9), new T(d.x + k.x * 2, d.y + 0.2, d.z + k.z * 2), true);
     });
     await h.wait(600);
-    await h.shot('seal-threshold');
+    await h.shot('entrance-threshold');
   },
   /** A chest with its lid open: the underside of the lid must be solid. */
   async chestOpen(h) {
@@ -370,7 +385,6 @@ const SCENES = {
   async enemies(h) {
     await h.newGame();
     await h.game(() => {
-      window.embervale.state.dungeon('shrine').entered = true;
       window.embervale.loadArea('shrine');
     });
     await h.game(() => {

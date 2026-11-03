@@ -23,7 +23,7 @@ As of 2026-11-02: Emberfield (the valley) plays start to finish; the Hollow Lamp
 only), the quest thread and all music are done. **The Waking Shrine** (25 rooms, four wings) is
 playable up to the boss door ([docs/shrine.md](docs/shrine.md), milestones 1–5 done). Enemy
 feel is untuned until the owner plays.
-**Next: the owner's playtest tweaks B, C, D** ([docs/roadmap.md](docs/roadmap.md), A done),
+**Next: the owner's playtest tweaks C, D** ([docs/roadmap.md](docs/roadmap.md), A and B done),
 then shrine milestone 6 (Gravelheart and its music), 7 (the Northpass), 8 (polish).
 
 ## Docs: read the one for the area you're touching
@@ -143,7 +143,7 @@ src/
   content/                 the game's story; what things DO
     areas.ts               createArea(id): builds an area and binds its content
     overworld.ts           scripts for every overworld interactable/trigger, save restore
-    shrine.ts              the Waking Shrine: chests, keys, doors, fight rooms, switches, the seal, the exit
+    shrine.ts              the Waking Shrine: chests, keys, doors, cleared rooms, switches, the exit
     fakeApi.ts             the fake ScriptApi content tests run against
     story.ts               intro, death
   ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, interact prompt, dialog, cards, title menu
@@ -174,12 +174,13 @@ CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/ (scout,
 - **The checkpoint rule** (a Souls-leaning choice, owner's call): dying sends Wren back to the
   area's start with full hearts; keys, items, opened chests and doors, pressed switches stay,
   but every enemy respawns and every drink found refills. Shortcuts matter because of it.
-  Cleared fight rooms don't seal again.
+  Rooms stay cleared (their chests stay revealed).
 - No map or compass (owner's call): dungeon chests hold keys, items, drinks (single-use,
   refilled on death: `game/drinks.ts`) and gems instead. Every interactable thing must serve
   a purpose (the puzzle checker fails a stone that doesn't).
-- A dungeon's small keys only open that dungeon's doors. Entering a dungeon seals it behind
-  Wren until its boss falls (the first dungeon: so its item is earned before the world opens).
+- A dungeon's small keys only open that dungeon's doors. Dungeons are never sealed: the
+  entrance is an open doorway you can walk out of any time (owner's call, 2026-11-02; no
+  fight-room shutters either). Progress gates are items and keys, e.g. the glove for the Northpass.
 - Gamepad A doubles as interact and jump (context action button).
 - Enemies and the clock freeze during dialog and cutscenes; the clock also stands still indoors.
 - The Hollow Lamplighter only appears at night (so its fight and theme are always night ones).

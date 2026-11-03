@@ -35,7 +35,6 @@ export interface DungeonSave {
   chests: string[];
   switches: string[];
   cleared: string[];
-  entered: boolean;
   done: boolean;
 }
 
@@ -154,7 +153,6 @@ function decodeDungeons(v: unknown): Record<string, DungeonSave> {
       chests: strings(d.chests),
       switches: strings(d.switches),
       cleared: strings(d.cleared),
-      entered: d.entered === true,
       done: d.done === true,
     };
   }

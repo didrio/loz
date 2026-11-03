@@ -57,7 +57,7 @@ Adding an area = an `Area` class + a content file + a case (and id) in `content/
 with Wren at a named entrance (`Area.entrances`, e.g. the overworld's `shrineDoor`) or its
 spawn, shows its name and fades in. `loadArea` during play calls the new content's
 `restore(state)` then `start(api)`, so an area always comes up as the save says. Content
-also has `update(api, dt)` (every frame of play: fight rooms) and `onRespawn(api)` (after a
+also has `update(api, dt)` (every frame of play: cleared rooms) and `onRespawn(api)` (after a
 death). Where floors stack (dungeons), interactables and triggers carry the `y` of their
 floor and only count on that level (`sameLevel`). `Area.strike` lets the sword hit things
 that aren't enemies (crystal switches).
@@ -142,7 +142,7 @@ logic: waits must follow game time.
 
 `GameState` holds quest `FLAGS`, the field's small `keys`, the current `area`, carried
 `items` (`ITEMS`), per-dungeon progress (`dungeon(id)`: its own keys, boss key, and sets of opened doors, opened chests, pressed switches and cleared rooms, all
-keyed by the dungeon's data ids, plus `entered`/`done`), hearts, gems and the clock. It's
+keyed by the dungeon's data ids, plus `done`), hearts, gems and the clock. It's
 mutated in place (systems keep references). `keysHere` is what the HUD shows: the
 dungeon's keys inside one, the field's outside. Add flags to `FLAGS`; **never rename a shipped flag**
 (old saves would silently lose it). New flags use a namespaced name, `<area>.<thing>`

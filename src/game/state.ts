@@ -27,21 +27,20 @@ export class DungeonProgress {
   /** Fight rooms whose enemies are beaten. */
   readonly cleared = new Set<string>();
   /** Wren has been inside (the seal closed behind them). */
-  entered = false;
-  /** The boss is beaten: the seal is open for good. */
+  /** The boss is beaten. */
   done = false;
 
   toSave(): DungeonSave {
     return {
       keys: this.keys, bossKey: this.bossKey,
       doors: [...this.doors], chests: [...this.chests], switches: [...this.switches], cleared: [...this.cleared],
-      entered: this.entered, done: this.done,
+      done: this.done,
     };
   }
 
   static from(d: DungeonSave) {
     const p = new DungeonProgress();
-    Object.assign(p, { keys: d.keys, bossKey: d.bossKey, entered: d.entered, done: d.done });
+    Object.assign(p, { keys: d.keys, bossKey: d.bossKey, done: d.done });
     for (const id of d.doors) p.doors.add(id);
     for (const id of d.chests) p.chests.add(id);
     for (const id of d.switches) p.switches.add(id);

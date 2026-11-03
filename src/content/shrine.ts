@@ -9,8 +9,8 @@ import { floorY, lockSwitches, type Condition, type Loot } from '../world/dungeo
 import type { AreaContent } from './overworld';
 
 /**
- * The Waking Shrine's content: what its chests hold and say, what unlocks what, how fight
- * rooms seal and open, the seal behind you on the way in and the way out at the end.
+ * The Waking Shrine's content: what its chests hold and say, what unlocks what, when a
+ * room counts as cleared, and the way out (the entrance never closes).
  * Everything is driven by the dungeon's data ids and saved per dungeon
  * (`GameState.dungeon('shrine')`), so adding a chest or door to the data needs no code here.
  * See docs/shrine.md for the design and milestones.
@@ -27,11 +27,8 @@ const LOOT_TEXT: Record<string, string> = {
 
 export function shrineContent(area: DungeonArea): AreaContent {
   const def = area.def;
-  const rooms = new Map(def.rooms.map((r) => [r.id, r]));
-  /** Enemies by the room they belong to (fight rooms open when theirs are all beaten). */
+  /** Enemies by the room they belong to (a room is cleared when all of theirs are beaten). */
   const roomEnemies = new Map<string, Enemy[]>();
-  /** The fight room whose shutters are down right now. */
-  let fighting: string | null = null;
   /** The room Wren was last in (leaving a room resets its stones). */
   let lastRoom: string | null = null;
   /** The last solid floor Wren stood on, where a fall into a pit puts them back. */
@@ -62,7 +59,6 @@ export function shrineContent(area: DungeonArea): AreaContent {
     }
   };
 
-  const shuttersOf = (room: string) => area.shutters.get(room) ?? [];
   const alive = (room: string) => (roomEnemies.get(room) ?? []).some((e) => e.alive);
 
   const lootMessage = (loot: Loot) => {
@@ -73,7 +69,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
   };
 
   const scripts: Record<string, Script> = {
-    // Leaving, once the keeper is beaten and the seal stands open.
+    // Leaving: the entrance is always open.
     async exit(api) {
       await api.travel('overworld', 'shrineDoor');
     },
@@ -138,7 +134,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
   /**
    * Every enemy in the shrine, fresh: on arrival, and again whenever Wren dies (the
    * checkpoint rule: death keeps your keys, chests and doors, but the shrine refills with
-   * enemies). Rooms already cleared stay cleared: their doors don't seal again.
+   * enemies). Rooms already cleared stay cleared.
    */
   const spawnAll = (api: ScriptApi) => {
     for (const list of roomEnemies.values()) for (const e of list) api.removeEnemy(e);
@@ -163,30 +159,6 @@ export function shrineContent(area: DungeonArea): AreaContent {
     }
   };
 
-  /** The seal: the first time in, the entrance slab rises behind Wren and its spiral goes dark. */
-  const seal: Script = async (api) => {
-    const p = progress(api.state);
-    p.entered = true;
-    const door = area.entranceDoor.group.position;
-    const spawn = area.spawn;
-    const toDoor = new THREE.Vector3(door.x - spawn.x, 0, door.z - spawn.z).normalize();
-    // From inside the hall, past Wren's shoulder, looking back at the doorway. (Aim in front
-    // of the slab, never at it: a look-at point inside a collider pulls the camera onto it.)
-    const aim = door.clone().addScaledVector(toDoor, -1.2).setY(door.y + 1.6);
-    api.shot(new THREE.Vector3(spawn.x - toDoor.x * 3.5 + toDoor.z * 1.5, spawn.y + 2.2, spawn.z - toDoor.z * 3.5 - toDoor.x * 1.5), aim, true);
-    await api.wait(0.7);
-    area.entranceDoor.setGlyph(false);
-    area.entranceDoor.startClosing();
-    api.sfx.rumble();
-    await api.until(() => !area.entranceDoor.closing);
-    await api.wait(0.6);
-    await api.say([
-      { text: 'Behind you, the stone slab grinds up out of the floor and shuts. The spiral on it goes dark.' },
-      { text: 'Far below, something huge breathes in... and out. Slow as a hillside.' },
-    ]);
-    api.releaseCamera();
-  };
-
   return {
     scripts,
 
@@ -208,18 +180,11 @@ export function shrineContent(area: DungeonArea): AreaContent {
         const needs = lockSwitches(d.lock);
         if (needs.length && needs.every((s) => p.switches.has(s))) area.doors.get(d.id)?.setOpen();
       }
-      // The entrance: open on the way in, sealed while the keeper lives, open for good after.
-      if (p.done) {
-        area.entranceDoor.setOpen();
-        area.entranceDoor.setGlyph(true);
-      } else if (p.entered) area.entranceDoor.close();
-      else area.entranceDoor.setOpen();
     },
 
     start(api) {
       if (started) return;
       started = true;
-      const p = progress(api.state);
       let heavyHinted = false;
       area.onStone = (_id, result, from) => {
         if (result === 'bounced') {
@@ -273,7 +238,6 @@ export function shrineContent(area: DungeonArea): AreaContent {
         await a.wait(0.6);
       });
       spawnAll(api);
-      if (!p.entered) api.run(seal);
     },
 
     update(api) {
@@ -299,22 +263,11 @@ export function shrineContent(area: DungeonArea): AreaContent {
       // Stones stay where they're put when Wren leaves a room (so a stone can be pulled
       // from out in the doorway); puzzle rooms reset when Wren falls (see onRespawn).
       lastRoom = area.roomAt(pos)?.id ?? lastRoom;
-      // Step well inside a fight room with its enemies still up: the shutters drop.
-      const here = area.roomAt(api.player.pos, 1.2);
-      if (!fighting && here?.fight && !p.cleared.has(here.id) && alive(here.id)) {
-        fighting = here.id;
-        for (const s of shuttersOf(here.id)) s.startClosing();
-        api.sfx.rumble();
-      }
-      // Any room whose enemies are all beaten counts as cleared: shutters up, chests appear.
+      // Any room whose enemies are all beaten counts as cleared: its chests appear.
       for (const [room] of roomEnemies) {
         if (p.cleared.has(room) || alive(room)) continue;
         p.cleared.add(room);
-        if (fighting === room) {
-          fighting = null;
-          for (const s of shuttersOf(room)) s.startOpening();
-        }
-        if (rooms.get(room)?.fight || def.things.some((t) => t.kind === 'chest' && t.appears && 'cleared' in t.appears && t.appears.cleared === room)) {
+        if (def.things.some((t) => t.kind === 'chest' && t.appears && 'cleared' in t.appears && t.appears.cleared === room)) {
           api.run(async (a) => {
             a.sfx.solved();
             revealChests(a);
@@ -325,9 +278,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
     },
 
     onRespawn(api) {
-      // Died: the shutters lift, and every enemy is back in its room.
-      if (fighting) for (const s of shuttersOf(fighting)) s.setOpen();
-      fighting = null;
+      // Died: every enemy is back in its room.
       spawnAll(api);
       // A puzzle (a room with a plate) gone wrong comes back with the enemies: stones on a
       // pressed plate or in a pit stay. Elsewhere a moved stone stays moved.

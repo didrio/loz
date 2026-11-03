@@ -4,7 +4,7 @@ import type { DungeonDef } from './format';
  * A small made-up dungeon that uses every feature of the format. It's the reference for
  * writing real ones and the fixture the tests check; it is not in the game.
  *
- * The intended route: take the key from the hall chest → unlock the west room (a fight; a
+ * The intended route: take the key from the hall chest → unlock the west room (a fight room; a
  * second key appears when it's cleared) → drop off the ledge into the cellar (one-way) →
  * press the switch → lift the bar back to the entry (one-way) → the switch has opened the
  * east door → climb the stairs → unlock the vault with the second key → boss key → the boss.
@@ -17,7 +17,7 @@ export const EXAMPLE_DUNGEON: DungeonDef = {
   rooms: [
     { id: 'entry', floor: 0, x: 0, z: 20, w: 12, d: 10 },
     { id: 'hall', floor: 0, x: 0, z: 8, w: 12, d: 12, features: [{ kind: 'pillar', x: 3, z: 3 }, { kind: 'pillar', x: 9, z: 3 }] },
-    { id: 'west', floor: 0, x: -10, z: 8, w: 10, d: 12, fight: true },
+    { id: 'west', floor: 0, x: -10, z: 8, w: 10, d: 12 },
     { id: 'cellar', floor: 0, x: -10, z: 20, w: 10, d: 10, features: [{ kind: 'pit', x: 2, z: 2, w: 3, d: 4 }] },
     { id: 'east', floor: 0, x: 12, z: 4, w: 10, d: 16 },
     { id: 'boss', name: 'The Old Throne', floor: 0, x: 0, z: -6, w: 12, d: 14, height: 9 },

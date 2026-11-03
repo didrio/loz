@@ -81,6 +81,17 @@ describe('the built shrine', () => {
     expect(p.pos.y).toBeCloseTo(-8, 0);
   });
 
+  it('leaves a clear landing at the top of the Deep Shaft stairs (no statue to squeeze past)', () => {
+    const { p, walk, rooms } = setup();
+    const s = stairPlacement(SHRINE.doors.find((d) => d.id === 'shaftUp')!, rooms.get('deepShaft')!, rooms.get('northCell')!)!;
+    expect(s.up).toBe('n');
+    const topZ = s.foot[1] - 12;
+    p.teleport(s.foot[0], -8 + 0.05, s.foot[1] + 1, Math.PI);
+    walk(0, -1, 6); // up the flight and on, straight ahead
+    expect(p.pos.y).toBeCloseTo(0, 0);
+    expect(p.pos.z).toBeLessThan(topZ - 1.2); // well past the top step, not wedged against something
+  });
+
   it('lets Wren through an open doorway but not a locked door', () => {
     const { p, walk, area, rooms } = setup();
     // From the nave south into the sentinel cell, through an open doorway.
@@ -110,7 +121,6 @@ describe('the built shrine', () => {
     const ids = area.interactables.map((i) => i.id);
     for (const id of ['anteSign', 'entrySign', 'courtDrinkChest', 'southChest', 'tetherDoor', 'cryptPit', 'bossDoor', 'naveEast']) expect(ids, id).toContain(id);
     expect(ids).not.toContain('entryNave'); // an open doorway
-    expect(area.shutters.get('southCell')!.length).toBe(2); // one per doorway
     expect(area.triggers.map((t) => t.id)).toEqual(['exit']);
   });
 

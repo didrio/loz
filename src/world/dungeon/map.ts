@@ -128,8 +128,6 @@ function legendList(def: DungeonDef, rooms: Map<string, RoomDef>) {
     const bits = [d.kind === 'stairs' || d.kind === 'drop' ? d.kind : null, d.lock ? lockName(d.lock) : null, d.oneWay ? 'one-way' : null].filter(Boolean);
     lines.push(`  ${d.id}: ${d.from} → ${d.to} (${bits.join(', ')})`);
   }
-  const fights = def.rooms.filter((r) => r.fight).map((r) => r.id);
-  if (fights.length) lines.push(`Fight rooms (doors shutter until cleared): ${fights.join(', ')}`);
   lines.push(`Entrance: ${def.entrance.room} · Goal: ${def.goal}${rooms.has(def.goal) ? '' : ' (missing!)'}`);
   return lines.join('\n');
 }

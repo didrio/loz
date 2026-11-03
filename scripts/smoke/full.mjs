@@ -211,19 +211,17 @@ export default async function run(t) {
     await shot('10-continued');
   });
 
-  await step('walking into the open shrine enters the dungeon, and the seal closes behind Wren', async () => {
+  await step('walking into the open shrine enters the dungeon (no seal, no cutscene)', async () => {
     await doorFront();
     await page.keyboard.down('KeyW');
     await until(() => window.embervale.area.id === 'shrine', 20000);
     await page.keyboard.up('KeyW');
-    await until(() => window.embervale.area.entranceDoor.closing || !window.embervale.area.entranceDoor.open, 20000);
     await wait(900);
-    await shot('16-shrine-seal');
-    await finishScript();
+    await shot('16-shrine-entered');
     const ok = await inShrine(() => {
       const g = window.embervale;
-      return g.state.area === 'shrine' && g.state.dungeon('shrine').entered && !g.area.entranceDoor.open && g.area.indoor;
+      return g.state.area === 'shrine' && g.mode === 'play' && g.area.indoor;
     });
-    check(ok, 'not sealed inside the shrine');
+    check(ok, 'not inside the shrine, free to move');
   });
 }

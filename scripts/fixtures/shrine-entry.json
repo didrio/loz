@@ -5,7 +5,7 @@
   "area": "shrine",
   "items": [],
   "dungeons": {
-    "shrine": { "keys": 0, "bossKey": false, "doors": [], "chests": [], "switches": [], "cleared": [], "entered": true, "done": false }
+    "shrine": { "keys": 0, "bossKey": false, "doors": [], "chests": [], "switches": [], "cleared": [], "done": false }
   },
   "drinks": {},
   "gems": 0,

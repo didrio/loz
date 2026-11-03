@@ -61,7 +61,6 @@ describe('save files', () => {
     const d = s.dungeon('shrine');
     d.keys = 1;
     d.bossKey = true;
-    d.entered = true;
     d.doors.add('tetherDoor');
     d.chests.add('southChest');
     d.switches.add('northBar');
@@ -71,7 +70,7 @@ describe('save files', () => {
     expect(loaded.area).toBe('shrine');
     expect(loaded.items.has('tether')).toBe(true);
     const l = loaded.dungeon('shrine');
-    expect([l.keys, l.bossKey, l.entered, l.done]).toEqual([1, true, true, false]);
+    expect([l.keys, l.bossKey, l.done]).toEqual([1, true, false]);
     expect([...l.doors, ...l.chests, ...l.switches, ...l.cleared]).toEqual(['tetherDoor', 'southChest', 'northBar', 'southCell']);
     expect(loaded.keysHere).toBe(1); // in the shrine, its own keys count
     loaded.area = 'overworld';

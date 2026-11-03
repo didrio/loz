@@ -22,7 +22,6 @@ export const STONE = {
   pit: 0x24211e,
   pitFloor: 0x0d0c0b,
   pillar: 0x8a9093,
-  glyph: 0x5ff2d6,
   iron: 0x4a4d52,
   gold: 0xc9a227,
 };
@@ -33,10 +32,9 @@ export const STONE = {
  * - small key: a stone slab with an iron keyhole plate,
  * - boss key: a taller, darker slab with a gold spiral and studs,
  * - switch: iron bars that slide up into the lintel,
- * - the entrance seal: a slab with the shrine's spiral (dark while sealed).
  * Item locks have no door: the obstacle is in the room (a pit, a heavy stone).
  */
-export type DoorStyle = 'open' | 'small' | 'boss' | 'bars' | 'seal';
+export type DoorStyle = 'open' | 'small' | 'boss' | 'bars';
 
 export function doorStyle(lock: Lock | undefined): DoorStyle {
   if (!lock) return 'open';
@@ -50,7 +48,6 @@ export class DungeonDoor {
   /** The part that moves when the door opens (null for open doorways). */
   private readonly leaf: THREE.Group | null = null;
   private readonly collider: RAPIER.Collider | null = null;
-  private readonly glyphMat: THREE.MeshBasicMaterial | null = null;
   opening = false;
   closing = false;
   open = false;
@@ -97,7 +94,7 @@ export class DungeonDoor {
         leaf.add(rail);
       }
     } else {
-      const color = style === 'boss' ? 0x4a4440 : style === 'seal' ? 0x77736a : 0x847d70;
+      const color = style === 'boss' ? 0x4a4440 : 0x847d70;
       const slab = new THREE.Mesh(new THREE.BoxGeometry(width, DOOR_HEIGHT, 0.4), mat(color));
       slab.position.y = DOOR_HEIGHT / 2;
       slab.castShadow = true;
@@ -118,11 +115,6 @@ export class DungeonDoor {
             stud.position.set(sx * (width / 2 - 0.3), sy, face * 0.22);
             leaf.add(stud);
           }
-        } else {
-          this.glyphMat ??= new THREE.MeshBasicMaterial({ color: 0x2a3a37 });
-          const ring = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.1, 6, 18), this.glyphMat);
-          ring.position.set(0, 1.7, face * 0.22);
-          leaf.add(ring);
         }
       }
     }
@@ -159,11 +151,6 @@ export class DungeonDoor {
     this.t = 0;
     this.pose();
     this.collider?.setEnabled(true);
-  }
-
-  /** The seal's spiral: dark while sealed, glowing when it can be opened. */
-  setGlyph(lit: boolean) {
-    this.glyphMat?.color.setHex(lit ? STONE.glyph : 0x2a3a37);
   }
 
   private pose() {

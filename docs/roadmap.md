@@ -17,10 +17,11 @@ Next, in order:
 0. **The owner's playtest tweaks (2026-11-02), before milestone 6**, one session each:
    - ~~A: combat and visuals~~ **done**: no sword while staggered (crawl at 6%), the shield's
      two poses (side of the arm / square in front), blob shadows under orbs and wisps.
-   - **B: shrine fixes**: no fight-room shutters; no entrance seal or entry cutscene (exit
-     always open); the railing at the top of the Deep Shaft stairs (`shaftUp`) you have to
-     jump over (repro in a scratch Playwright run first); z-fighting (stair trim top is
-     coplanar with each tread, `build.ts` stairs; audit the rest).
+   - ~~B: shrine fixes~~ **done**: no fight-room shutters (`fight` flag removed; rooms just
+     count as cleared), no entrance seal or entry cutscene (open doorway, `entered` dropped
+     from the save), the "railing" was a statue 0.4 m past the top of the `shaftUp` stairs
+     (statues now keep a 2 m landing clear of stairs), stair-trim z-fighting fixed. Smoke
+     scenarios edited for the open entrance but not run (owner's call).
    - **C: colored keys, one key per door** (Resident Evil style): `Lock`/`Loot` `{ key: color }`,
      a validator rule that every key has exactly one chest and one door (today: 5 keys, 4
      doors). Key web: crimson Loft → Pit Hall, azure Root Cellar → Gauntlet, jade Court →

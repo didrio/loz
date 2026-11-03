@@ -11,7 +11,7 @@ item, the enemies, the boss, the overworld gate, and the build plan. Keep the tw
 
 **Size (revised 2026-11-02 at the owner's request: "3–4× bigger, every room its own
 identity, a decent amount harder")**: 25 rooms on four floors (about 2× the first draft's
-12), 7 fight rooms, 39 enemies, 12 wakestones on 5 plates, 13 chests, aiming at 75–90
+12), 7 rooms of enemies, 39 enemies, 12 wakestones on 5 plates, 13 chests, aiming at 75–90
 minutes for a first-time player. I proposed 2× the rooms with every room denser and harder
 rather than 3–4× the room count (a 1–2 hour first dungeon would outlast most later ones in
 a 10–15 hour game, and size from repetition drags); more rooms are cheap to add if the
@@ -51,8 +51,7 @@ heart), the Lookout and Cistern chests (gems), the Ossuary (a heart).
 
 The shrine leans a little toward a Souls-like feel: dying sends Wren back to the Hall of
 Sleepers; keys, the glove, opened chests and doors, pressed switches and plates stay, but
-**every enemy respawns** and **every drink found refills** (cleared fight rooms don't seal
-again). Chests hold two single-use drinks instead of a map and compass: the **Restoring
+**every enemy respawns** and **every drink found refills** (cleared rooms stay cleared). Chests hold two single-use drinks instead of a map and compass: the **Restoring
 Draught** (Gallery of Statues, Key Vault) and the **Ember Tonic** (Sunken Court). Every
 stone has a purpose (the checker proves it), stones can't get stuck (bounce-back), and
 heavy stones look nothing like light ones (dark violet, bronze bands, glowing teal spirals).
@@ -141,24 +140,21 @@ hearts.
   2: blocking both breaks a full guard, so jump the second).
 
 **Defeat**: it slowly settles, finally asleep; the ember drifts out of its chest and flies
-up through the shrine to the lantern (two embers now). A **Heart Vessel** appears, and the
-entrance seal opens.
+up through the shrine to the lantern (two embers now). A **Heart Vessel** appears.
 
-## Locked in: the seal, death and the shortcut
+## The way in and out, death and the shortcut
 
-- Walking into the Hall of Sleepers for the first time triggers a short cutscene: the
-  entrance slab rises behind Wren, its spiral goes dark, and a deep breath rumbles from far
-  below. Wren can't leave until Gravelheart falls.
+- The entrance is an open doorway (frame, black beyond) with no seal and no entry cutscene:
+  Wren can walk out any time. (Owner's call, 2026-11-02, after playtesting: the lock-in
+  felt bad. The Northpass is still gated by the glove, so the order "glove, then the world"
+  holds without it.)
 - Dying (or continuing a save made in the dungeon) puts Wren at the entrance hall with full
   hearts. **Progress is kept**: opened doors, keys, chests, the glove, pressed switches
   (stone puzzles reset, but their plates stay pressed once solved).
 - The **shortcut**: from the antechamber, stairs lead up to the Barred Cell, whose crystal
   lifts the bar into the nave. After that, the boss door is a short walk from the entrance.
-- After the boss, the seal opens and Wren can walk out (or take a light in the boss room
-  back to the entrance hall).
-
-Why lock in at all: it guarantees the order "glove, then boss, then the world opens",
-which the overworld gate depends on, and it suits the story (the shrine wakes).
+- Fight rooms have no shutters: Wren can leave a fight. A room counts as cleared when its
+  enemies are all beaten; its chests appear then.
 
 ## The overworld gate: the Northpass
 

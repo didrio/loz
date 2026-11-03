@@ -41,11 +41,11 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 
 | Scenario | Starts from | Covers |
 |---|---|---|
-| `full` | new game | title, intro, walking, collisions, bridge, bounds, locked chest, Maren's key, the sword, the sealed door, the Lamplighter fight and its heart vessel, the door opening, night + save/Continue, entering the shrine and the seal |
+| `full` | new game | title, intro, walking, collisions, bridge, bounds, locked chest, Maren's key, the sword, the sealed door, the Lamplighter fight and its heart vessel, the door opening, night + save/Continue, entering the shrine (no seal) |
 | `combat` | `field-sword` | the shield's guard and guard break, lock-on and the sword vs a thornling |
 | `shrine-puzzle` | `shrine-entry` | pushing stones, plates, the crystal switch, the solved puzzle surviving Continue |
-| `shrine-keys` | `shrine-entry` | fight-room shutters, key chest, locked door, dying (the checkpoint rule), Continue inside |
-| `shrine-exit` | `shrine-entry` | the seal opening once the keeper is beaten, the way out |
+| `shrine-keys` | `shrine-entry` | a room clearing, key chest, locked door, dying (the checkpoint rule), Continue inside |
+| `shrine-exit` | `shrine-entry` | the way out (always open) |
 | `shrine-enemies` | `shrine-entry` | sentinels and shellbacks spawn from the data; a sentinel sleeps, wakes, swings (2 half-hearts), falls to hits in its recovery and from behind; a shellback's shell turns a frontal hit, it falls from behind |
 
 **Fixtures** are real saves in `scripts/fixtures/<name>.json` (current `SAVE_VERSION`).
@@ -72,8 +72,8 @@ Tests live next to their modules (`*.test.ts`).
   travel).
 - `content/overworld.test.ts` builds the real overworld in Node and runs its scripts
   against the fake API; every interactable/trigger must have a script.
-- `content/shrine.test.ts` does the same for the shrine: the seal, keys and doors, the boss
-  door, fight rooms, the crystal, respawn, restore and the exit. It plays the
+- `content/shrine.test.ts` does the same for the shrine: keys and doors, the boss
+  door, cleared rooms, the crystal, respawn, restore and the exit. It plays the
   quest thread in order and checks the edge cases (locked chest first, old saves).
 - `game/boss.test.ts` runs the Lamplighter's state machine headlessly (guarding, slam
   reach, phase two, death, reset) and a minimal `Dummy` boss for the move system; copy
@@ -114,7 +114,7 @@ longer a mystery.
 
 - `finishScript` presses Enter, which is also an interact key: right after a script ends,
   a stray Enter can re-trigger the interactable you're standing at. Harmless so far.
-- Don't "beat every enemy" in the shrine to clear the way: that clears the fight rooms ahead
+- Don't "beat every enemy" in the shrine to clear the way: that clears the rooms ahead
   too (and queues their reveal cutscenes, which ignore input while they play). Clear only
   the rooms the step uses, and wait for `mode === 'play'` before acting.
 - After a strike, wait for the stone to change cells (not just "not moving": in headless

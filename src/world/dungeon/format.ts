@@ -53,8 +53,6 @@ export interface RoomDef {
    * against the floor above. Taller rooms are fine where nothing is built above them.
    */
   height?: number;
-  /** A fight room: its doors shutter while enemies are alive, open when they're cleared. */
-  fight?: boolean;
   /** The room's look: stone colors, light and decoration (see `build.ts`). Default `sandstone`. */
   theme?: RoomTheme;
   /** Shapes inside the room; they don't affect the key/door logic. */

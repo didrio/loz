@@ -102,8 +102,6 @@ export class DungeonArea implements Area {
   /** Fallen columns (`role: 'bridge'` stones): the glove swings them across their pits. */
   readonly columns = new Map<string, FallenColumn>();
   readonly spawns: Spawn[] = [];
-  /** Fight rooms' shutters: bars on the room side of each of its doorways, open until a fight starts. */
-  readonly shutters = new Map<string, DungeonDoor[]>();
   /** Called when a switch is pressed: a crystal struck, or a plate under a stone (content decides what it opens). */
   onSwitch: ((id: string) => void) | null = null;
   /**
@@ -117,8 +115,6 @@ export class DungeonArea implements Area {
   private readonly grids = new Map<string, RoomGrid>();
   /** Pits filled by stones, by room: `i,j` cell keys. */
   private readonly filled = new Map<string, Set<string>>();
-  /** The slab Wren came in through (sealed behind them on entry, content decides). */
-  readonly entranceDoor: DungeonDoor;
   private readonly floors = new Map<number, FloorParts>();
   private readonly lights: { light: THREE.PointLight; base: number; phase: number }[] = [];
   private readonly waterMat = new THREE.MeshLambertMaterial({ color: 0x2f6f74, transparent: true, opacity: 0.75, emissive: 0x0c2a2c });
@@ -246,25 +242,15 @@ export class DungeonArea implements Area {
         const label = door.style === 'bars' ? 'Check' : 'Unlock';
         this.interactables.push({ id: d.id, x: pl.x, z: pl.z, y: fy, r: 2.6, label, promptY: fy + DOOR_HEIGHT + 0.6, enabled: () => !door.open && !door.opening });
       }
-      // A fight room gets a shutter on its side of every doorway (behind any lock door).
-      for (const room of [a, c]) {
-        if (!room.fight) continue;
-        const inward = pl.wall === 'x' ? Math.sign(room.z + room.d / 2 - pl.z) : Math.sign(room.x + room.w / 2 - pl.x);
-        const off = WALL_T / 2 + 0.2;
-        const sx = pl.wall === 'z' ? pl.x + inward * off : pl.x, sz = pl.wall === 'x' ? pl.z + inward * off : pl.z;
-        const shutter = new DungeonDoor(b, part(a.floor).dynamic, `${d.id}:shutter`, 'bars', sx, fy, sz, pl.wall, w);
-        shutter.setOpen();
-        this.shutters.set(room.id, [...(this.shutters.get(room.id) ?? []), shutter]);
-      }
     }
-    // The way in from outside: a sealable slab in the wall behind the entrance spot.
+    // The way out: an open doorway in the wall behind the entrance spot (never closed).
     const er = rooms.get(def.entrance.room)!;
     const [ex, ez] = worldPos(er, def.entrance.at);
     const back = { n: 's', s: 'n', e: 'w', w: 'e' }[def.entrance.facing] as Dir;
     const entrance = back === 'n' ? { wall: 'x' as const, x: ex, z: er.z } : back === 's' ? { wall: 'x' as const, x: ex, z: er.z + er.d }
       : back === 'w' ? { wall: 'z' as const, x: er.x, z: ez } : { wall: 'z' as const, x: er.x + er.w, z: ez };
     gap(entrance.wall === 'x' ? `${er.floor}:x:${entrance.z}` : `${er.floor}:z:${entrance.x}`, entrance.wall === 'x' ? entrance.x : entrance.z, DEFAULT_DOOR_WIDTH);
-    this.entranceDoor = new DungeonDoor(b, part(er.floor).dynamic, 'entrance', 'seal', entrance.x, floorY(def, er.floor), entrance.z, entrance.wall, DEFAULT_DOOR_WIDTH);
+    new DungeonDoor(b, part(er.floor).dynamic, 'entrance', 'open', entrance.x, floorY(def, er.floor), entrance.z, entrance.wall, DEFAULT_DOOR_WIDTH);
     // Beyond the doorway is nothing, so the view out would show whatever lies down there (the
     // rooms of the floor below); a black unlit panel just outside makes it read as darkness.
     {
@@ -276,8 +262,7 @@ export class DungeonArea implements Area {
     }
     // Walking back out through the open entrance leaves the dungeon (content decides where to).
     const [ix, iz] = DIRS[def.entrance.facing];
-    const exitDoor = this.entranceDoor;
-    this.triggers.push({ id: 'exit', x: entrance.x + ix * 0.8, z: entrance.z + iz * 0.8, y: floorY(def, er.floor), r: 1.1, enabled: () => exitDoor.open });
+    this.triggers.push({ id: 'exit', x: entrance.x + ix * 0.8, z: entrance.z + iz * 0.8, y: floorY(def, er.floor), r: 1.1, enabled: () => true });
 
     for (const [floor] of this.floors) {
       const fy = floorY(def, floor);
@@ -407,7 +392,9 @@ export class DungeonArea implements Area {
       const cx = s.foot[0] + dx * along, cz = s.foot[1] + dz * along;
       const sx = dx ? tread : s.width, sz = dz ? tread : s.width;
       box(lowerG, THEMES[themeOf(s.lower)].stair, cx, fy + top / 2, cz, sx, top, sz);
-      box(lowerG, THEMES[themeOf(s.lower)].trim, cx + dx * (tread / 2 - 0.04), fy + top - 0.03, cz + dz * (tread / 2 - 0.04), dx ? 0.08 : s.width, 0.06, dz ? 0.08 : s.width, null);
+      // The nosing: a strip along each tread's front edge, 1 cm proud of the tread's top, front and sides
+      // (flush faces would z-fight with it).
+      box(lowerG, THEMES[themeOf(s.lower)].trim, cx + dx * (tread / 2 - 0.03), fy + top - 0.02, cz + dz * (tread / 2 - 0.03), dx ? 0.08 : s.width + 0.02, 0.06, dz ? 0.08 : s.width + 0.02, null);
     }
     // The ramp: a thin box whose top surface runs from the foot (floor) to the top (floor above).
     const L = Math.hypot(run, rise), t = 0.4;
@@ -431,14 +418,17 @@ export class DungeonArea implements Area {
 
   /**
    * Evenly spaced spots along a room's walls (inner face), clear of doorways and corners;
-   * with `deep` (free-standing statues), also clear of stairs, holes, pillars and blocks
-   * for the 1.5 m in front of the wall.
+   * with `deep` (free-standing statues), also clear of stairs (with a 2 m landing), holes,
+   * pillars and blocks for the 1.5 m in front of the wall.
    */
   private wallSpots(def: DungeonDef, r: RoomDef, gapsBy: Map<string, [number, number][]>, spacing: number, deep: boolean): WallSpot[] {
     const out: WallSpot[] = [];
     const inset = WALL_T / 2;
     const { holes, stairs } = roomOpenings(def, r);
-    const solids: Rect[] = [...holes.map((h) => h.rect), ...stairs.map((s) => s.rect)];
+    // Stairs (and the shaft at their top) also keep a 2 m landing free, so a statue never
+    // stands where Wren steps off.
+    const landing = (q: Rect): Rect => ({ x: q.x - 2, z: q.z - 2, w: q.w + 4, d: q.d + 4 });
+    const solids: Rect[] = [...holes.map((h) => (h.kind === 'stairs' ? landing(h.rect) : h.rect)), ...stairs.map((s) => landing(s.rect))];
     for (const f of r.features ?? []) {
       if (f.kind === 'pillar') solids.push({ x: r.x + f.x - 1, z: r.z + f.z - 1, w: 2, d: 2 });
       else solids.push({ x: r.x + f.x, z: r.z + f.z, w: f.w, d: f.d });
@@ -809,8 +799,6 @@ export class DungeonArea implements Area {
   update(dt: number, _env: AreaEnv) {
     this.t += dt;
     for (const d of this.doors.values()) d.update(dt);
-    for (const list of this.shutters.values()) for (const d of list) d.update(dt);
-    this.entranceDoor.update(dt);
     for (const c of this.chests.values()) c.update(dt);
     for (const s of this.switches.values()) s.update(dt);
     for (const s of this.stones.values()) s.update(dt);

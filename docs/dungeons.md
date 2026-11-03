@@ -32,8 +32,8 @@ of them. Units are meters, +x east, −z north (same as the overworld).
 
 - **Rooms** are rectangles on a floor (`floor: 0` entrance level, `1` up, `-1` down) with a
   northwest corner (`x`, `z`) and a size (`w` along x, `d` along z), at least 4×4 m.
-  Rooms on the same floor may share walls but not overlap. `fight: true` makes the doors
-  shutter until the room's enemies are beaten. `features`: `pit`, `block` (raised), `pillar`,
+  Rooms on the same floor may share walls but not overlap. A room with enemies counts as
+  cleared once they're beaten (chests can `appear` on that). `features`: `pit`, `block` (raised), `pillar`,
   positioned relative to the room.
 - **Doors** join two rooms. A normal door needs the rooms to share a wall (one room's edge
   exactly on the other's) long enough for the doorway (default 3 m wide, plus 0.5 m of
@@ -95,8 +95,8 @@ shafts coming up through it, pillars and blocks, a warm point light and two wall
 Pits have a floor 3 m down. Stairs are solid steps (looks, side collisions) with one smooth
 ramp collider on top, and railings round the shaft upstairs except at the top. Doors are
 `DungeonDoor`s styled by their lock (open frame, small-key slab, boss slab, bars for switch
-doors; item locks have no door, the obstacle is in the room), plus a sealable `entrance`
-slab in the wall behind the entrance spot. Things become `Chest`s (hidden until they
+doors; item locks have no door, the obstacle is in the room), plus an open doorway (frame only,
+black beyond) in the wall behind the entrance spot: it never closes. Things become `Chest`s (hidden until they
 `appear`), `DungeonSwitch`es, `Wakestone`s and tablets (signs are interactables); enemies
 and the boss become `spawns` for content to create. Floors are merged separately so
 `showFloor(n)` can show one floor without ceilings (the top-down look). `roomAt(pos)` and
@@ -153,7 +153,7 @@ free and done greedily) and reports:
 - **route**: one winning order of small-key doors (handy when describing the dungeon).
 
 Its simplifications: switches stay pressed, a plate counts as pressed once its room is
-reached (plus its `needs` item), enemies can always be beaten, fight rooms count as
+reached (plus its `needs` item), enemies can always be beaten, rooms count as
 cleared once reached, items work anywhere. Whether a room's stones can actually reach its
 plates is a per-room puzzle question for a separate puzzle checker (planned with the
 wakestones; see [shrine.md](shrine.md)). If a dungeon needs more (a timed
@@ -189,5 +189,5 @@ example`):
 - Every dungeon has one **gimmick** it teaches, tests, then twists (genre convention; the
   gimmick itself must be original to this game).
 - Prefer loops (a one-way door back to an earlier room) over long backtracking.
-- A fight room or a switch is a better gate than a third small key.
+- A room of enemies or a switch is a better gate than a third small key.
 - Keep `npm run map` output readable: that's also a sign the layout is readable to players.

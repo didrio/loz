@@ -1,4 +1,4 @@
-// Inside the shrine: a fight room and its key chest, a locked door, dying, saving and continuing.
+// Inside the shrine: a room's enemies and its key chest, a locked door, dying, saving and continuing.
 export const fixture = 'shrine-entry';
 
 export default async function run(t) {
@@ -8,10 +8,9 @@ export default async function run(t) {
 
     await continueGame();
 
-  await step('a fight room shutters until its enemies fall; its chest holds a key (shown in the HUD)', async () => {
+  await step('a room is cleared once its enemies fall; its chest holds a key (shown in the HUD)', async () => {
     const r = await shrineRoom('southCell');
     await teleport(r.x + r.w / 2, r.z + r.d / 2, Math.PI, 2);
-    await until(() => window.embervale.area.shutters.get('southCell').every((s) => s.closing || !s.open), 30000);
     await wait(500);
     await shot('17-shrine-fight');
     // Beat the room's enemies (stand-ins until the sentinels exist).
@@ -32,7 +31,7 @@ export default async function run(t) {
   });
 
   await step('the key unlocks a locked door downstairs', async () => {
-    // The crypt's door to the Pit Hall (clear the crypt first: it's a fight room).
+    // The crypt's door to the Pit Hall (clear the crypt first).
     await inShrine(() => {
       const g = window.embervale;
       for (const e of g.enemies.list) if (g.area.roomAt(e.pos)?.id === 'crypt') e.alive = false;
@@ -83,7 +82,7 @@ export default async function run(t) {
     await wait(800);
     const ok = await inShrine(() => {
       const g = window.embervale;
-      return g.area.id === 'shrine' && g.mode === 'play' && !g.area.entranceDoor.open && g.area.doors.get('cryptPit').open;
+      return g.area.id === 'shrine' && g.mode === 'play' && g.area.doors.get('cryptPit').open;
     });
     check(ok, 'did not resume inside the shrine with its progress');
     await shot('19-shrine-continued');

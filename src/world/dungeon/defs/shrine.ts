@@ -27,8 +27,8 @@ export const SHRINE: DungeonDef = {
       id: 'nave', name: 'The Nave', floor: 0, x: 14, z: -4, w: 16, d: 20, theme: 'sandstone',
       features: [{ kind: 'pillar', x: 4, z: 4 }, { kind: 'pillar', x: 12, z: 4 }, { kind: 'pillar', x: 4, z: 16 }, { kind: 'pillar', x: 12, z: 16 }],
     },
-    { id: 'statueGallery', name: 'Gallery of Statues', floor: 0, x: 0, z: 12, w: 14, d: 14, height: 9, fight: true, theme: 'sandstone' },
-    { id: 'southCell', name: 'Sentinel Cell', floor: 0, x: 14, z: 16, w: 16, d: 10, fight: true, theme: 'sandstone' },
+    { id: 'statueGallery', name: 'Gallery of Statues', floor: 0, x: 0, z: 12, w: 14, d: 14, height: 9, theme: 'sandstone' },
+    { id: 'southCell', name: 'Sentinel Cell', floor: 0, x: 14, z: 16, w: 16, d: 10, theme: 'sandstone' },
     { id: 'northCell', name: 'Barred Cell', floor: 0, x: 14, z: -20, w: 16, d: 16, theme: 'sandstone' },
     { id: 'stairwell', name: 'Stairwell', floor: 0, x: 30, z: -4, w: 10, d: 20, theme: 'sandstone' },
     {
@@ -41,24 +41,24 @@ export const SHRINE: DungeonDef = {
     },
     // ── The Upper Galleries (floor 1) ───────────────────────────────────────────────────
     { id: 'gallery', name: 'Long Gallery', floor: 1, x: 30, z: -14, w: 10, d: 30, theme: 'marble' },
-    { id: 'tetherRoom', name: 'Glove Shrine', floor: 1, x: 40, z: -14, w: 12, d: 12, fight: true, theme: 'marble' },
-    { id: 'echoHall', name: 'Echo Hall', floor: 1, x: 52, z: -14, w: 12, d: 14, fight: true, theme: 'marble' },
+    { id: 'tetherRoom', name: 'Glove Shrine', floor: 1, x: 40, z: -14, w: 12, d: 12, theme: 'marble' },
+    { id: 'echoHall', name: 'Echo Hall', floor: 1, x: 52, z: -14, w: 12, d: 14, theme: 'marble' },
     { id: 'loft', name: 'Stone Loft', floor: 1, x: 14, z: -14, w: 16, d: 16, theme: 'marble' },
     { id: 'crystalWalk', name: 'Crystal Walk', floor: 1, x: 30, z: 16, w: 16, d: 12, theme: 'marble' },
     { id: 'lookout', name: 'Lookout', floor: 1, x: 46, z: 16, w: 8, d: 12, theme: 'marble' },
     // ── The Undercroft (floor -1) ───────────────────────────────────────────────────────
-    { id: 'crypt', name: 'Crypt', floor: -1, x: 24, z: -4, w: 16, d: 20, fight: true, theme: 'moss' },
+    { id: 'crypt', name: 'Crypt', floor: -1, x: 24, z: -4, w: 16, d: 20, theme: 'moss' },
     { id: 'pitHall', name: 'Pit Hall', floor: -1, x: 8, z: -4, w: 16, d: 20, theme: 'moss', features: [{ kind: 'pit', x: 4, z: 0, w: 8, d: 20 }] },
     {
       id: 'rootCellar', name: 'Root Cellar', floor: -1, x: -8, z: -4, w: 16, d: 20, theme: 'moss',
       features: [{ kind: 'block', x: 6, z: 0, w: 2, d: 10, h: 3 }, { kind: 'block', x: 6, z: 12, w: 2, d: 8, h: 3 }],
     },
-    { id: 'ossuary', name: 'Ossuary', floor: -1, x: 40, z: -4, w: 14, d: 20, fight: true, theme: 'moss' },
+    { id: 'ossuary', name: 'Ossuary', floor: -1, x: 40, z: -4, w: 14, d: 20, theme: 'moss' },
     { id: 'cistern', name: 'Cistern', floor: -1, x: 24, z: 16, w: 20, d: 14, theme: 'moss', features: [{ kind: 'pit', x: 0, z: 6, w: 20, d: 2 }] },
     { id: 'deepShaft', name: 'Deep Shaft', floor: -1, x: 14, z: -20, w: 16, d: 16, theme: 'moss' },
     // ── The Deep Hearth (floor -2) ──────────────────────────────────────────────────────
     { id: 'emberHall', name: 'Ember Hall', floor: -2, x: 40, z: -4, w: 14, d: 20, theme: 'basalt' },
-    { id: 'gauntlet', name: 'The Gauntlet', floor: -2, x: 24, z: -4, w: 16, d: 20, fight: true, theme: 'basalt' },
+    { id: 'gauntlet', name: 'The Gauntlet', floor: -2, x: 24, z: -4, w: 16, d: 20, theme: 'basalt' },
     {
       id: 'keyVault', name: 'Key Vault', floor: -2, x: 54, z: -4, w: 14, d: 20, height: 9, theme: 'basalt',
       features: [{ kind: 'block', x: 4, z: 8, w: 6, d: 2, h: 3 }],
