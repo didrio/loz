@@ -130,7 +130,7 @@ export class Player {
   attackBoost = 0;
   /** Seconds left of a glove throw: the arm is out, no sword or shield until it's back. */
   throwT = 0;
-  /** Dev builds only (G): multiplies run speed to cross the map quickly. Never on in the shipped game. */
+  /** Dev builds and the GitHub Pages test build only (G; `VITE_DEV_SPRINT`): multiplies run speed to cross the map quickly. Never on in the shipped game. */
   devSpeed = 1;
   private opacity = 1;
   private fadeMats: THREE.Material[] | null = null;

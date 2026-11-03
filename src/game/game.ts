@@ -355,7 +355,7 @@ export class Game implements ScriptApi {
     const mood = boss ? 'boss' : this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day');
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced);
     // Dev sprint: G / L3 toggles 5x run speed to get through the valley fast. Never in the shipped build.
-    if ((import.meta.env.DEV || this.debug) && input.pressed('devSprint')) {
+    if ((import.meta.env.DEV || import.meta.env.VITE_DEV_SPRINT || this.debug) && input.pressed('devSprint')) {
       player.devSpeed = player.devSpeed === 1 ? 5 : 1;
       hud.showToast(player.devSpeed === 1 ? 'Dev sprint off' : 'Dev sprint on (x5)');
     }

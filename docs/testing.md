@@ -32,6 +32,8 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
 - CI (`.github/workflows/deploy.yml`) runs check and smoke on every push and PR; deploys
   `main` to GitHub Pages as soon as check passes (smoke runs alongside but doesn't gate the
   deploy: owner's call, 2026-11-02), and uploads smoke screenshots when smoke fails.
+  The Pages build sets `VITE_DEV_SPRINT=1`, so the dev sprint (G / L3) works there; Steam and
+  itch builds must not set it.
 
 ## Smoke scenarios and save fixtures
 
