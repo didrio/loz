@@ -154,7 +154,7 @@ export default async function run(t) {
     check(!(await game(() => window.embervale.area.door.opening)), 'door opened without the lantern');
   });
 
-  await step('the Hollow Lamplighter (night only): intro, fight, phase two, defeat cutscene, heart vessel', async () => {
+  await step('the Hollow Lamplighter (night only): intro, fight, phase two, the dawn burn, defeat cutscene, heart vessel', async () => {
     // By day the hollow is empty; at nightfall the Lamplighter walks in.
     await game(() => (window.embervale.state.hours = 14));
     await until(() => !window.embervale.enemies.list.some((e) => e.title), 30000);
@@ -180,6 +180,11 @@ export default async function run(t) {
     await until(() => { const b = window.embervale.activeBoss; return b.phase === 2 && b.move?.name !== 'howl'; }, 30000);
     await wait(800);
     await shot('12-boss-phase2');
+    // Dawn mid-fight: the "Dawn" card shows and the daylight burns it (the dawn burn).
+    const before = await game(() => window.embervale.activeBoss.hp);
+    await game(() => (window.embervale.state.hours = 5.99));
+    await until(() => document.querySelector('.area')?.textContent === 'Dawn', 15000);
+    await until((hp) => window.embervale.activeBoss.hp < hp, 15000, before);
     await until(() => !window.embervale.activeBoss.move, 20000);
     await game(() => (window.embervale.activeBoss.hp = 1));
     check((await hurt(1)) === 'hit', 'finishing blow did not land');

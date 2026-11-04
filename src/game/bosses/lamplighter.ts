@@ -77,6 +77,12 @@ function coatStrip(width: number, len: number, seed: number) {
 }
 const FLAME_COLD = new THREE.Color(0x7fdcff);
 const FLAME_WARM = new THREE.Color(0xffb35a);
+/** Caught in a fight past dawn, the daylight burns it from full health to nothing in about this long. */
+const BURN_SECONDS = 60;
+/** The burn lands in small bites this far apart, each with a puff of embers. */
+const BURN_TICK = 0.4;
+/** How long it takes to rise out of the dusk or gutter out at dawn. */
+const FADE_SECONDS = 1.6;
 
 export class HollowLamplighter extends Boss {
   readonly title = 'The Hollow Lamplighter';
@@ -85,6 +91,12 @@ export class HollowLamplighter extends Boss {
   protected readonly dyingDuration = 6;
   /** The cage has burst and the flame is free (content's defeat cutscene waits for this). */
   shattered = false;
+  /** It has guttered out at dawn (content removes it then). */
+  vanished = false;
+  /** 0..1 while it rises at dusk or gutters out at dawn (1: all here). */
+  private presence = 1;
+  private fading: 'in' | 'out' | null = null;
+  private burnT = 0;
 
   // Rig.
   private readonly hips = new THREE.Group();
@@ -487,6 +499,9 @@ export class HollowLamplighter extends Boss {
     }
     this.cage.visible = this.mask.visible = true;
     this.root.scale.setScalar(1);
+    this.presence = 1;
+    this.fading = null;
+    this.burnT = 0;
     this.backHits = [];
   }
 
@@ -506,7 +521,52 @@ export class HollowLamplighter extends Boss {
     if (this.state === 'dormant') this.poseDormant(dt);
     if (this.state === 'intro') this.poseIntro(env, dt);
     if (this.state === 'dying') this.poseDying(env, dt);
+    // Kept from going home by the fight, it burns in the daylight.
+    if (this.state === 'fight' && !env.night) this.dawnBurn(dt, env);
+    if (this.fading && this.state === 'dormant') this.fade(dt, env);
     super.update(dt, env);
+  }
+
+  /** At dusk: rises out of a swirl of embers and smoke. */
+  rise() {
+    this.presence = 0;
+    this.fading = 'in';
+    this.root.scale.set(0.7, 0.01, 0.7);
+  }
+
+  /** At dawn, outside a fight: gutters out like a snuffed lamp; `vanished` once it's gone. */
+  vanish() {
+    this.fading = 'out';
+  }
+
+  private fade(dt: number, env: EnemyEnv) {
+    const rising = this.fading === 'in';
+    this.presence = clamp(this.presence + (rising ? dt : -dt) / FADE_SECONDS, 0, 1);
+    const k = easeOut(this.presence);
+    this.root.scale.set(0.7 + k * 0.3, Math.max(0.01, k), 0.7 + k * 0.3);
+    if (Math.random() < dt * 40) {
+      const at = this.pos.clone().setY(this.pos.y - 1 + Math.random() * 3.5 * k);
+      env.particles.burst(at, Math.random() < 0.5 ? 0xffb35a : 0x7fdcff, 2, 2, 0.7);
+      env.particles.burst(at, 0x3a3633, 2, 1.2, 1.2, false);
+    }
+    if (rising && this.presence >= 1) this.fading = null;
+    if (!rising && this.presence <= 0) {
+      this.fading = null;
+      this.vanished = true;
+    }
+  }
+
+  private dawnBurn(dt: number, env: EnemyEnv) {
+    this.burnT += dt;
+    while (this.burnT >= BURN_TICK) {
+      this.burnT -= BURN_TICK;
+      if (!this.sear((this.maxHp * BURN_TICK) / BURN_SECONDS)) continue;
+      const at = this.pos.clone().setY(this.pos.y + 0.5 + Math.random() * 2.5);
+      at.x += (Math.random() - 0.5) * 1.2;
+      at.z += (Math.random() - 0.5) * 1.2;
+      env.particles.burst(at, 0xffb35a, 6, 3, 0.5);
+      env.particles.burst(at, 0x3a3633, 3, 1.5, 0.9, false);
+    }
   }
 
   /** Lets moves bend the pose: `pose({ rx: -1.4 }, 25)` with an optional snappier rate. */
@@ -654,7 +714,7 @@ export class HollowLamplighter extends Boss {
     this.flameMat.color.copy(color);
     (this.flameGlow.material as THREE.MeshBasicMaterial).color.copy(color);
     this.light.color.copy(color);
-    this.light.intensity = (this.shattered ? 0 : 7) * f;
+    this.light.intensity = (this.shattered ? 0 : 7) * f * this.presence;
     this.eyeMat.emissive.setRGB(c.eyes, 0.05 * c.eyes, 0.02 * c.eyes);
     (this.hookGlow.material as THREE.MeshBasicMaterial).opacity = c.hook * 0.6;
   }

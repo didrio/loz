@@ -24,9 +24,9 @@ through **Gravelheart** and the **prism**, which opens the gate to the Northpass
 valley, with thorn clumps and thickets that cost a heart a touch; after it, Maren, Tobin and Odo are gone and only Lark and Pip remain.
 The HUD has a sky dial (sun and moon over the ground) and a compass strip; villagers' directions are true from where they stand.
 Beating Gravelheart takes the Morrowbell off the village post (it lies behind the windmill until rehung), so Wren walks home.
-Unplayed by the owner: that bell hunt, the thorns, dial, compass and lone oak; the village polish; day/night lighting; Settings; surfing; the gate, D3, the prism.
+Unplayed by the owner: the 10-minute day, Dawn/Nightfall cards and the Lamplighter's dawn burn and rise/gutter; that bell hunt, the thorns, dial, compass and lone oak; the village polish; day/night lighting; Settings; surfing; the gate, D3, the prism.
 Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks").
-**Next:** the pause menu's inventory tab (tabs today: Settings, Hints, Messages, Dev). Dev server: port 5273.
+**Next:** the owner's batch of 2026-11-04, chunks C2–C6 (roadmap: text styling, the text pass, dungeon fog, blight scars), then the pause menu's inventory tab. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -63,7 +63,7 @@ Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks")
 - They pay for every token: read narrowly (the layout below names the files), keep a
   session to one task, and leave the docs ready for a fresh session instead of relying on
   chat history.
-- Commit or push only when asked.
+- Commit or push only when asked, with one standing exception (owner's call, 2026-11-04): **`/wrap` commits and pushes to `main`** (see the wrap skill).
 - **Guide them; they follow your lead on process.** End every reply that finishes a step
   with a short **Next for you** line saying exactly what to do: a command to type (`/wrap`,
   `/clear`, `/start <task>`, `/model sonnet`), something to play or listen to, a question to

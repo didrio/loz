@@ -275,15 +275,30 @@ export abstract class Boss extends Enemy {
     const toAttacker = from.clone().sub(this.pos).setY(0).normalize();
     if (this.isGuarding(toAttacker, part)) return 'guarded';
     const mult = this.damageMultiplier(part);
-    this.hp = Math.max(this.hpFloor(), this.hp - dmg * mult);
-    this.flash = 0.15;
+    this.takeDamage(dmg * mult);
     this.onHurt();
+    if (this.hp <= 0) this.die();
+    return mult > 1 ? 'weak' : 'hit';
+  }
+
+  /**
+   * Damage from nothing Wren did (the Lamplighter's dawn burn): no guard, no weak point and no
+   * `onHurt` reaction, but it still respects invulnerability and moves the phases. False when ignored.
+   */
+  sear(dmg: number) {
+    if (!this.alive || this.state !== 'fight' || this.invulnerable) return false;
+    this.takeDamage(dmg);
+    if (this.hp <= 0) this.die();
+    return true;
+  }
+
+  private takeDamage(dmg: number) {
+    this.hp = Math.max(this.hpFloor(), this.hp - dmg);
+    this.flash = 0.15;
     while (this.phase - 1 < this.phaseAt.length && this.hp <= this.maxHp * this.phaseAt[this.phase - 1] && this.hp > 0) {
       this.phase++;
       this.pendingPhase = this.phase;
     }
-    if (this.hp <= 0) this.die();
-    return mult > 1 ? 'weak' : 'hit';
   }
 
   onPlayerRespawn() {

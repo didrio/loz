@@ -207,7 +207,7 @@ in.
   (50 gems; stone hits do half damage, rounded up; Wren's tunic turns slate-blue). Flask
   refills (roadmap E) will be sold here through the same `offerWare`.
 - **Pip**: a smaller kid east of the well (shy, solemn; talks about her patched doll **Button** as if she were a person).
-  She left Button in a jar at her old house by Glimmer Lake (`lakeHome`, far southwest) and every ask says where. Breaking
+  She left Button in a jar at her old house by Glimmer Lake (`lakeHome`, far southwest). She only asks once Wren has the sword (before it she couldn't break the jar), and every ask says where; before the sword she's just scared of the thorns and the night. Breaking
   that jar finds the doll (`village.dollFound`; nothing in the HUD); taking it back earns **20 gems** (`village.dollReturned`).
   Her lines change by night, the sword and the lifted blight; she has her own sigil and relief news. Optional side errand.
 - **The Hollow Lamplighter**, Keeper of a Stolen Flame (mini-boss, Gloaming Hollow): a
@@ -215,10 +215,12 @@ in.
   with a snuffer bell, candles on one shoulder, caged wisps on its belt, and an iron
   lantern cage for a head holding a cracked porcelain mask and the stolen flame, gone cold
   and blue. Villagers say old Corwin, who lit the hollow's lamps for forty years, still
-  walks his rounds, "only taller than he was". **It only walks at night**: it's in the
-  hollow from dusk to dawn and gone by day (unless a fight is under way), so the fight is
-  always at night (the owner's call: an early nudge to think about the time of day; villagers
-  hint "after dark"). Beaten, its flame turns warm and flies
+  walks his rounds, "only taller than he was". **It only walks at night**: it rises in the
+  hollow at dusk in a swirl of embers and smoke and gutters out the same way at dawn, so the fight
+  starts at night (the owner's call: an early nudge to think about the time of day; villagers
+  hint "after dark"). **The dawn burn** (owner's idea, 2026-11-04): a fight that runs past dawn keeps it from
+  going home, and the daylight burns it from full health to nothing in about a minute (`BURN_SECONDS` in
+  `game/bosses/lamplighter.ts`, via `Boss.sear`), phase two and death as usual. A patient player can win by guarding. Beaten, its flame turns warm and flies
   home: the shrine lantern's first ember. Leaves a **Heart Vessel** (+1 heart).
 
 ## Murmurbuds and the keepers' notes

@@ -19,6 +19,11 @@ export type Item = (typeof ITEMS)[number];
  * Progress inside one dungeon. Everything is keyed by ids from the dungeon's data, so a new
  * door or chest never needs a hand-added flag.
  */
+/** The card shown when the clock crosses 6:00 or 18:00 (null when it didn't). */
+export function dayTurn(wasNight: boolean, isNight: boolean): string | null {
+  return wasNight === isNight ? null : isNight ? 'Nightfall' : 'Dawn';
+}
+
 export class DungeonProgress {
   /** Colored small keys held: each opens one door, and only in this dungeon. Spent when the door opens. */
   readonly keys = new Set<KeyColor>();

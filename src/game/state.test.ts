@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GameState } from './state';
+import { GameState, dayTurn } from './state';
 
 describe('GameState', () => {
   it('starts a new game with nothing: no flags, no keys, full hearts', () => {
@@ -59,5 +59,21 @@ describe('GameState invincibility (dev menu)', () => {
     s.invincible = false;
     s.damage(2);
     expect(s.hp).toBe(4);
+  });
+});
+
+describe('dayTurn (the Dawn / Nightfall card)', () => {
+  it('names the turn only when the clock crosses 6:00 or 18:00', () => {
+    const s = new GameState();
+    s.hours = 17.99;
+    const was = s.isNight;
+    s.advance(0.02);
+    expect(dayTurn(was, s.isNight)).toBe('Nightfall');
+    s.hours = 5.99;
+    const before = s.isNight;
+    s.advance(0.02);
+    expect(dayTurn(before, s.isNight)).toBe('Dawn');
+    expect(dayTurn(false, false)).toBeNull();
+    expect(dayTurn(true, true)).toBeNull();
   });
 });

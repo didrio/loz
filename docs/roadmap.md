@@ -14,6 +14,33 @@ asks: they're best designed against the real use case.
 
 Next, in order:
 
+- **The owner's batch of 2026-11-04** (before the inventory tab). Five chunks, one Sonnet session each, no plan mode; run
+  each with `/start batch C<n>`. Owner's calls already made: four highlight colors, a ~60 s dawn burn, "Dawn"/"Nightfall"
+  cards, the text pass sample-first.
+  - ~~**C1, quick wins**~~ done 2026-11-04 (unplayed: the burn's pacing, the rise/gutter effect up close, the cards' fade): no "Day N" on the clock; the clock 2× slower (`HOURS_PER_SECOND` 1/24, a day ≈ 10 min); a one-word
+    "Dawn"/"Nightfall" card at 6:00/18:00; Pip asks for Button only once Wren has the sword (before: just scared); the
+    Lamplighter's **dawn burn** (engaged past dawn, it loses HP to 0 in ~60 s, phase 2 as normal, normal death) and an
+    ember/smoke effect when it appears at dusk or leaves at dawn outside a fight.
+  - **C2, text styling + the terse-text rule**: semantic tags `[item]` gold, `[place]` pale blue, `[danger]` ember red,
+    `[old]` violet (the blight, Keepers, sigils, names from the past), `[key]` bold (buttons), `[soft]` italics (whispers),
+    `[shake]` tremble and `[fade]` slow fade-in (both rare), closed by `[/]`; `*x*` migrated and dropped. **Mind the clash:** `[shield]`, `[interact]` etc. already show a button glyph
+    (`Action` names in `core/input.ts`), so tag names must never equal an action name (a test should check). `ui/hud.ts` format +
+    typewriter, `ui/style.css`. A content test: valid tags, ≤ 2 highlights a box, ≤ ~120 chars a box (tiny exceptions list).
+    Rewrite "Writing for the player" in [world.md](world.md) (every word earns its place; before/after examples; the tag table).
+  - **C3, text pass sample**: the village (`village.ts`, `shop.ts`, `villageNews.ts`), about half the words, retagged. **The
+    owner approves the voice before C4.**
+  - **C4, text pass, the rest**: every other content file, item/pickup messages and signs (scout for strings outside `content/`).
+  - **C5, dungeon fog and lighting**: fog color/near/far per wing in `world/dungeon/decor.ts`, optional per-room override,
+    `scene.fog` blends to Wren's room; sparing accents (ground haze over pits, motes in the window shafts, sconce flicker).
+    Independent of C2–C4.
+  - **C6, blight scars and routing** (owner's ask, 2026-11-04; **plan mode**: it's level design across the valley). While the
+    blight lies on the valley: jagged violet **scars** streak the ground (not in the village, not in water) and hurt exactly
+    like a thorn clump (`THORN_ATTACK`: same damage, same shove), and they can't be destroyed. **Thorn clumps become
+    breakable** (changes the "sword never cuts them" rule in [world.md](world.md), "The blight"): only with the sword, about
+    5 hits. Then re-place clumps and scars together so the routes to the POIs take a little thought (the field, the grove,
+    the Hushing Gorge on the way to the Morrowbell), never a maze: e.g. the way to the sword chest runs past enemies, so
+    Wren turns round armed and fights them. It should look grown, not designed, and the valley's ground must still make
+    sense once the blight lifts and it all shrinks away. Extend `layout.test.ts` (roads, POIs still reachable, gaps).
 0. ~~The owner's playtest tweaks A–G (2026-11-02)~~ done. Untested by play: the gem economy
    (95 in the shrine plus bushes, against the 50-gem tunic (it was 100 until 2026-11-03) and 20 per flask refill).
 0.5. **Bells: bell posts, fast travel, bell trials** (owner's request, 2026-11-02, before the

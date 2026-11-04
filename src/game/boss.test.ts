@@ -30,7 +30,7 @@ function setup(playerAt = new THREE.Vector3(0, 0, 4)) {
   const env: EnemyEnv = {
     playerPos: playerAt,
     playerAlive: true,
-    night: false,
+    night: true, // the Lamplighter only fights at night (the dawn burn tests turn this off)
     physics,
     hazards,
     sfx: new Proxy({}, { get: () => noop }) as Sfx,
@@ -220,6 +220,41 @@ class Dummy extends Boss {
     return 0.1;
   }
 }
+
+describe('The Lamplighter at dawn', () => {
+  it('burns in a fight that runs past dawn: phase two as usual, dead in about a minute', () => {
+    const { physics, scene, env } = setup(new THREE.Vector3(0, 0, 40)); // out of its reach
+    const b = lamplighter(physics, scene);
+    let defeated = 0;
+    b.onDefeated = () => defeated++;
+    b.engage();
+    run(b, env, physics, 10);
+    expect(b.hp).toBe(b.maxHp); // no burn at night
+    env.night = false;
+    run(b, env, physics, 20);
+    expect(b.hp).toBeLessThan(b.maxHp * 0.75);
+    expect(b.hp).toBeGreaterThan(b.maxHp * 0.5);
+    run(b, env, physics, 40);
+    expect(b.phase).toBe(2);
+    expect(b.alive).toBe(true); // the howl held the burn off for a moment
+    run(b, env, physics, 15);
+    expect(b.alive).toBe(false);
+    run(b, env, physics, 8);
+    expect(defeated).toBe(1);
+  });
+
+  it('only burns while fighting: dormant in daylight it gutters out instead', () => {
+    const { physics, scene, env } = setup();
+    env.night = false;
+    const b = lamplighter(physics, scene);
+    run(b, env, physics, 5);
+    expect(b.hp).toBe(b.maxHp);
+    expect(b.vanished).toBe(false);
+    b.vanish();
+    run(b, env, physics, 2);
+    expect(b.vanished).toBe(true);
+  });
+});
 
 describe('Boss move system', () => {
   it('runs windup → active → recover, and keeps going with its only move', () => {

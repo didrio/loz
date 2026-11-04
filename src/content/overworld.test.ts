@@ -256,11 +256,16 @@ describe('overworld content', () => {
       await scripts[id](api);
       return said.map((p) => p.text).join(' ');
     };
+    // Before the sword she doesn't ask (Wren couldn't break the jar): she's only scared.
     st.hours = 12;
-    expect(await talk('npc.pip')).toContain('Glimmer Lake');
+    expect(await talk('npc.pip')).toContain('thorns');
+    st.hours = 22;
+    expect(await talk('npc.pip')).not.toContain('Button');
+    st.set('hasSword');
+    st.hours = 12;
+    expect(await talk('npc.pip')).toMatch(/sword now.*Glimmer Lake/);
     st.hours = 22;
     expect(await talk('npc.pip')).toMatch(/dark tonight.*Glimmer Lake/);
-    st.set('hasSword');
     st.set('valleyOpen');
     st.set('village.searchAsked');
     expect(await talk('npc.pip')).toMatch(/Everyone's away.*Glimmer Lake/);

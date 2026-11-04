@@ -182,7 +182,7 @@ export function villageContent(ow: Overworld) {
     },
 
     // Pip lost her doll, Button, in a jar at her old house by Glimmer Lake (`lakeHome`'s sixth jar). She
-    // talks about Button as if she were a person. Every ask says where to look.
+    // talks about Button as if she were a person. Every ask says where to look, but she only asks once Wren has the sword.
     async 'npc.pip'(api) {
       const { state } = api;
       const who = 'Pip';
@@ -209,6 +209,13 @@ export function villageContent(ow: Overworld) {
         await api.say([{ text: 'Pip gives you *20 gems*.' }]);
         return;
       }
+      // Before the sword she can't ask for Button (Wren couldn't break the jar): she's just scared.
+      if (!state.has('hasSword')) {
+        await api.say([{ who, text: state.isNight
+          ? 'Something walked past the fence last night. Maren says it was the wind. The wind doesn\'t have feet.'
+          : 'The thorns came closer again. Maren says they can\'t get in. She says it very fast.' }]);
+        return;
+      }
       const where = 'She\'s at my old house by *Glimmer Lake*, far south of here, over the bridge, on the lake\'s east shore. In one of the jars. I hid her there to keep dry.';
       if (adultsGone(state)) {
         await api.say([
@@ -220,14 +227,9 @@ export function villageContent(ow: Overworld) {
           { who, text: 'Button doesn\'t like the dark. She\'s out there by herself, and it\'s very dark tonight.' },
           { who, text: where },
         ]);
-      } else if (state.has('hasSword')) {
-        await api.say([
-          { who, text: 'You\'ve got a sword now. Could you go and get Button? Jars break if you hit them. She won\'t mind.' },
-          { who, text: where },
-        ]);
       } else {
         await api.say([
-          { who, text: 'Have you seen Button? She\'s small. Patched. One button eye, one stitched one.' },
+          { who, text: 'You\'ve got a sword now. Could you go and get Button? Jars break if you hit them. She won\'t mind.' },
           { who, text: where },
         ]);
       }

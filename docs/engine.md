@@ -246,7 +246,9 @@ desktop build can write real files.
 ## Conventions
 
 - +x is east, −z is north. Models face +z; `yaw = atan2(dx, dz)`.
-- A full day is about 5 minutes (`HOURS_PER_SECOND = 1/12`); night is 18:00–6:00.
+- A full day is about 10 minutes (`HOURS_PER_SECOND = 1/24`, owner's call 2026-11-04); night is 18:00–6:00. Crossing
+  6:00 or 18:00 shows a one-word card, "Dawn" / "Nightfall" (`dayTurn` in `game/state.ts`, on the HUD's area-name card).
+  The HUD clock shows only the time (no day number).
 - Materials from `mat(color)` are shared: **never mutate them**; use `uniqueMat` for
   anything that flashes or glows.
 - Overworld scenery is placed with a seeded RNG (`regionRng('valley')`, 1337) in a fixed build

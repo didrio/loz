@@ -28,7 +28,7 @@ import { PauseMenu } from './pauseMenu';
 import { Pickups } from './pickups';
 import { NO_CONTROLS, Player, type Controls } from './player';
 import type { Page, Script, ScriptApi } from './script';
-import { GameState } from './state';
+import { GameState, dayTurn } from './state';
 import { TitleMenu } from './title';
 
 /**
@@ -43,7 +43,7 @@ const SETTINGS_KEY = 'embervale:settings';
 const QUALITY_PIXEL_RATIO = [1, 1.5, 2];
 const AUTOSAVE_SECONDS = 30;
 /** A full day passes in about five minutes. */
-const HOURS_PER_SECOND = 1 / 12;
+const HOURS_PER_SECOND = 1 / 24; // a day and night take 10 minutes
 const WARP_HOURS_PER_SECOND = 6;
 
 /**
@@ -345,16 +345,18 @@ export class Game implements ScriptApi {
   }
 
   private advanceClock(dt: number) {
-    if (this.warpTo === null) {
-      this.state.advance(dt * HOURS_PER_SECOND);
-      return;
+    const wasNight = this.state.isNight;
+    if (this.warpTo === null) this.state.advance(dt * HOURS_PER_SECOND);
+    else {
+      const left = (this.warpTo - this.state.hours + 24) % 24;
+      const step = dt * WARP_HOURS_PER_SECOND;
+      if (step >= left) {
+        this.state.advance(left);
+        this.warpTo = null;
+      } else this.state.advance(step);
     }
-    const left = (this.warpTo - this.state.hours + 24) % 24;
-    const step = dt * WARP_HOURS_PER_SECOND;
-    if (step >= left) {
-      this.state.advance(left);
-      this.warpTo = null;
-    } else this.state.advance(step);
+    const turn = dayTurn(wasNight, this.state.isNight);
+    if (turn) this.hud.showArea(turn);
   }
 
   /** Turns stick/WASD input into a world-space direction relative to the camera. */
@@ -397,7 +399,7 @@ export class Game implements ScriptApi {
     hud.setGems(state.gems);
     hud.setFlasks(state.flasks.slots, player.attackBoost / ATTACK_BOOST_SECONDS, state.items.has('tether'));
     hud.setKeys(state.keysHere, state.dungeonKeysHere, !!state.dungeons.get(state.area)?.bossKey);
-    hud.setClock(state.hours, state.day);
+    hud.setClock(state.hours);
     if (this.mode !== 'play') hud.setActions([]);
     const mood = boss ? boss.music : blightMood(this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day'), isBlighted);
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced);

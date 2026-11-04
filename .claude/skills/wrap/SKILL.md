@@ -38,7 +38,16 @@ which ones you skipped.
    - what you could not verify (audio, game feel, a real GPU or gamepad): ask them to
      play or listen;
    - where you deviated from the request.
-7. **End with "Next for you"**, a short list of exactly what the owner should do, in order:
-   commit if they want (don't commit unless asked), what to play-test, then `/clear`, then
+7. **Commit and push** (owner's standing call, 2026-11-04: `/wrap` always does this; it's the one time you commit
+   without being asked). Only after check passes, and never with failing tests: stop and report instead.
+   `git status --short` and `git diff --stat` (read the diff only as far as you need), stage everything with
+   `git add -A` (the repo's `.gitignore` keeps `dist/`, screenshots and scratch out; if something odd shows up
+   untracked, such as a secret, a big binary or a log, leave it out and say so), then commit with a message that
+   summarizes the diff: a short imperative subject (≤ 70 chars) naming the main change, a blank line, then a few
+   bullets on what changed and why, grouped by area (and a line for anything unverified). End it with the
+   attribution line from the session's system-reminder. Then `git push origin main` (never force). If the push is
+   rejected or fails, report it and stop; don't rebase or force on your own.
+8. **End with "Next for you"**, a short list of exactly what the owner should do, in order:
+   say the commit is pushed (with its short hash), what to play-test, then `/clear`, then
    the exact next command (e.g. `/start C: colored keys`), and whether that task wants plan
    mode (shift+tab) or not. Plan mode only for real design work; see CLAUDE.md.

@@ -177,9 +177,9 @@ export function overworldContent(ow: Overworld): AreaContent {
   };
 
   /**
-   * The Lamplighter walks its rounds only at night: it's in the hollow from dusk to dawn
-   * (so the fight is always at night, with the night theme's boss version), and gone by day
-   * unless a fight is already under way.
+   * The Lamplighter walks its rounds only at night: it rises in the hollow at dusk (so the fight
+   * starts at night, with the night theme's boss version) and gutters out at dawn, unless a fight
+   * is under way. Then it can't leave, and the daylight burns it to death (its dawn burn).
    */
   const watchTheHollow = (api: ScriptApi) => {
     if (api.state.has('lamplighterDefeated')) return;
@@ -187,12 +187,16 @@ export function overworldContent(ow: Overworld): AreaContent {
       // Waits in the middle of the hollow with its back to the road.
       lamplighter = new HollowLamplighter(ow.root, api.physics, ow.hollow, HOLLOW.x, HOLLOW.z + 3, 0);
       lamplighter.onDefeated = () => api.run(lamplighterFalls);
+      lamplighter.rise();
       api.addEnemy(lamplighter);
       ow.hollow.armed = true;
     } else if (!api.state.isNight && lamplighter && !lamplighter.engaged && !ow.hollow.sealed && lamplighter.alive) {
-      api.removeEnemy(lamplighter);
-      lamplighter = null;
-      ow.hollow.armed = false;
+      ow.hollow.armed = false; // no waking it while it fades
+      lamplighter.vanish();
+      if (lamplighter.vanished) {
+        api.removeEnemy(lamplighter);
+        lamplighter = null;
+      }
     }
   };
 

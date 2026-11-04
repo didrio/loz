@@ -408,11 +408,11 @@ export class Hud {
     this.compass.set(dx, dz);
   }
 
-  setClock(hours: number, day: number) {
+  setClock(hours: number) {
     const h = Math.floor(hours), m = Math.floor(((hours % 1) * 60) / 10) * 10;
     const ampm = h < 12 ? 'AM' : 'PM';
     const h12 = h % 12 === 0 ? 12 : h % 12;
-    const s = `Day ${day} · ${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    const s = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
     if (this.clock.textContent !== s) this.clock.textContent = s;
     this.dial.set(hours);
   }

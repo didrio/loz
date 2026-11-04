@@ -133,7 +133,8 @@ A boss is an `Enemy` with states `dormant → intro → fight → dying`. Every 
 picks moves (never the same one three times running unless it's the only option), runs
 the steps, turns at `turnRate`, handles HP phases (`phases: [0.5]` → `phaseMove` plays,
 invulnerable), follow-ups (`later`, `queue`, `skipStep`), per-move `scratch` notes,
-and `reset()` when the player dies mid-fight (full HP, dormant, arena re-armed). A
+and `reset()` when the player dies mid-fight (full HP, dormant, arena re-armed). `sear(dmg)` is damage from no one
+(the Lamplighter's dawn burn): no guard, weak point or `onHurt`, but it respects invulnerability and moves the phases. A
 concrete boss provides its rig + `animate`, `moves()`, `hurtboxes()` (from rig nodes, so
 weak points are reachable only when the pose brings them down; weapons as `armor` boxes,
 as the Lamplighter's pole while it's held at the ready), `isGuarding` (say which part parries) and
