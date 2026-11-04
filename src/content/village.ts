@@ -73,7 +73,7 @@ export function villageContent(ow: Overworld) {
         await api.say([
           { who, text: 'Wren! It was here, right by the well. I threw the bucket at it, and it just... went over the fence.' },
           { who, text: 'Is that a shield? Where did you... No. Don\'t tell me.' },
-          { who, text: 'Old Bram, who kept the fence before all this, locked his blade in a chest in the *Whispering Grove*, northeast of the field. So no fool child would lose a finger.' },
+          { who, text: 'Old Bram, who kept the fence before all this, locked his blade in a chest in the *Whispering Grove*, east of here, across the field. So no fool child would lose a finger.' },
           { who, text: 'I\'d rather you stayed inside. But that thing came over our fence, and I\'d rather you had a blade. Here.' },
         ]);
         state.set('metMaren');
@@ -82,12 +82,12 @@ export function villageContent(ow: Overworld) {
         api.sfx.fanfare();
         await api.say([
           { text: 'You got a *Small Key*!\nIt opens the old chest in the Whispering Grove.' },
-          { who, text: 'Follow the road northeast, past the big lone oak. The chest sits in the clearing at the end.' },
+          { who, text: 'Go back to the crossroads sign and take the road northeast, past the big lone oak. The chest sits in the clearing at the end.' },
         ]);
       } else if (!state.has('hasSword')) {
         await api.say([{ who, text: state.isNight
-          ? 'Out at night? Wait for morning, Wren. The grove road is dark enough by day. Northeast, past the lone oak.'
-          : 'Northeast, past the lone oak, to the clearing at the end of the road. Bram\'s chest is waiting.' }]);
+          ? 'Out at night? Wait for morning, Wren. The grove road is dark enough by day. From the crossroads, northeast, past the lone oak.'
+          : 'From the crossroads, take the road northeast, past the lone oak, to the clearing at the end. Bram\'s chest is waiting.' }]);
       } else if (!state.has('lamplighterDefeated')) {
         await api.say([
           { who, text: 'Bram\'s blade! It suits you better than it ever suited him.' },
@@ -209,7 +209,7 @@ export function villageContent(ow: Overworld) {
         await api.say([{ text: 'Pip gives you *20 gems*.' }]);
         return;
       }
-      const where = 'She\'s at my old house by *Glimmer Lake*, far southwest, past the river. In one of the jars. I hid her there to keep dry.';
+      const where = 'She\'s at my old house by *Glimmer Lake*, far south of here, over the bridge, on the lake\'s east shore. In one of the jars. I hid her there to keep dry.';
       if (adultsGone(state)) {
         await api.say([
           { who, text: 'Everyone\'s away, and Button\'s away too. I don\'t like anybody being away.' },

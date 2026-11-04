@@ -23,7 +23,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   end, before a commit, or after shared systems (player, physics, camera, saves, game.ts)
   changed, asking the owner first. CI runs everything on every push anyway.
 - `npm run look -- <scenes>` (`--list` for names: title, field, village, villageDetails (well, cottage fronts, mill doorstep, night lighting), mill (incl. its room), grove, chest,
-  door, dungeon, camera, glove, landmarks, buds, bells, bellShaft, gorge, shrine, enemies, hollow, night, guard, shield, surf, orbs, boss, boss-moves, gravelheart, gravelheart2, gate, northpass, camp, wardenIntro, seal, blight, emptyVillage): captures named scenes to
+  door, dungeon, camera, glove, landmarks, buds, bells, bellShaft, gorge, shrine, enemies, hollow, night, guard, shield, surf, orbs, boss, boss-moves, gravelheart, gravelheart2, gate, northpass, camp, wardenIntro, seal, blight, emptyVillage, hud (the sky dial through the day, the compass), lostBell (the Morrowbell behind the windmill), thorns (a thicket and its gap, a lone clump, the lone oak)): captures named scenes to
   `look-output/` for you to inspect. Boss scenes slow time, make Wren invulnerable, park
   the camera and force moves. Add a scene when you add a place, a boss or a visual system.
 - Both scripts share `scripts/browser.mjs` (dev server, Chrome, `newGame`, `teleport`,
@@ -45,7 +45,7 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | Scenario | Starts from | Covers |
 |---|---|---|
 | `full` | new game | title, a wordless start and the crossroads sign, walking, collisions, bridge, bounds, locked chest, the shield in the ruined cottage (guard, the scream), Maren's key, the sword, the sealed door, the Lamplighter fight and its heart vessel, the door opening, night + save/Continue, entering the shrine (no seal) |
-| `combat` | `field-sword` | the shield's guard and guard break, lock-on and the sword vs a thornling |
+| `combat` | `field-sword` | the shield's guard and guard break, lock-on and the sword vs a thornling, a blight thorn clump (a heart lost, shoved out) |
 | `shrine-puzzle` | `shrine-entry` | pushing stones, plates, the crystal switch, the solved puzzle surviving Continue |
 | `shrine-keys` | `shrine-entry` | a room clearing, the amber key chest, the Cistern door, the HUD key, dying (the checkpoint rule: beaten challenge rooms stay empty), Continue inside |
 | `shrine-exit` | `shrine-entry` | the way out (always open) |
@@ -56,7 +56,7 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | `trials` | `shrine-entry` | the Bell Shaft: a fall from a checkpoint ledge returns Wren there, half a heart lost; riding a rising ledge; taking the Lullbell from the top ledge |
 | `gorge` | `field-sword` | the Hushing Gorge: its five thornlings and sentinel, a fall off the climb returns Wren to the last pillar (half a heart), taking the Morrowbell |
 | `northpass` | `northpass` | the Cragstalker stands on the canyon's far side once the region is built; a fall in the crossing returns Wren to the last ledge (half a heart); it lunges at Wren; taking the Waybell, hanging it at the camp, the travel menu offers both other bells and Morrowbell → Wayfarers' Camp arrives at its post; back in Thistledown only Lark and Pip remain, Pip asks Wren to find the grown-ups, Odo's stall refills a flask unattended |
-| `bells` | `field-sword` | the empty Thistledown post, hanging the Morrowbell (nothing answers), the travel menu to the shrine's post and back, Stay, hearts unchanged |
+| `bells` | `field-sword` | the empty Thistledown post, hanging the Morrowbell (nothing answers), the travel menu to the shrine's post and back, Stay, hearts unchanged; the village bell taken off after the boss (Lullbell rings alone), found behind the mill and rehung (menu returns) |
 | `hints` | `field-sword` | P pauses on a lone Settings tab, a slider changes and saves, lock-on holds a Murmurbud, mashing overloads it, a strike-and-rest rhythm opens it (not read yet), E reads the floating note (gone, kept), the Hints tab lists and shows it, a read sigil adds a Messages tab |
 | `jars` | `field-sword` | a sword swing breaks an empty jar in a ruin (flag `jar.<id>` saved, no pickup) and the blue gem jar (a gem is collected); the doll jar, then Pip takes the doll back for 20 gems |
 

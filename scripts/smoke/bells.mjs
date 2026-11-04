@@ -87,4 +87,43 @@ export default async function run(t) {
     });
     check(d < 1.5, `arrived ${d.toFixed(2)} m from the Morrowbell's spot`);
   });
+  await step('after Gravelheart falls the village bell is off its post: the Lullbell rings alone, the bell lies behind the mill, and hanging it restores the menu', async () => {
+    await game(() => {
+      const g = window.embervale;
+      g.state.bells.hung.add('morrow');
+      g.state.bells.hung.add('lull');
+      g.state.bells.carried.clear();
+      g.state.set('village.bellMoved');
+      g.state.bells.hung.delete('morrow');
+      g.loadArea('shrine');
+    });
+    await until(() => window.embervale.area.id === 'shrine', 20000);
+    await finishScript();
+    await toPost('lullPost', 2);
+    await press('KeyE');
+    await finishScript();
+    const text = await dialogText();
+    check(text.includes('nothing answers'), `lone Lullbell said: ${text}`);
+    check(await game(() => document.querySelector('.gmenu').classList.contains('hidden')), 'a travel menu opened');
+    await game(() => window.embervale.loadArea('overworld'));
+    await until(() => window.embervale.area.id === 'overworld', 20000);
+    await finishScript();
+    check(await game(() => window.embervale.area.morrowLost.present && !window.embervale.area.morrowPost.hung), 'the bell is not lying behind the mill, or the post still shows it hung');
+    await toPost('bellPickup.morrowLost');
+    await press('KeyE');
+    await finishScript();
+    check(await game(() => window.embervale.state.bells.carried.has('morrow')), 'taking the bell did not carry it');
+    await toPost('bellPost.morrow');
+    await wait(700);
+    await press('KeyE');
+    // Hanging it wakes the network again: the answer and a tutorial line (Enter turns the pages), then the menu.
+    let m = null;
+    for (let i = 0; i < 60 && !m; i++) {
+      await wait(500);
+      m = await menu();
+      if (!m) await press('Enter', 1, 200);
+    }
+    check(m !== null, 'no travel menu after rehanging');
+    check(m.rows.join('|') === 'Hall of Sleepers|Stay', `menu after rehanging ${JSON.stringify(m)}`);
+  });
 }

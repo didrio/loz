@@ -62,6 +62,8 @@ export interface Area {
   streamAt?(x: number, z: number): void;
   /** The sky's blight level (0–1) each frame, for scenery that grows or shrinks with it (the overworld's thorns). */
   setBlight?(level: number): void;
+  /** The blight's thorn clump a body at (x, y, z) is touching, if any (the overworld's; see game/blight.ts). */
+  thornAt?(x: number, y: number, z: number): { x: number; z: number } | null;
   update(dt: number, env: AreaEnv): void;
   /**
    * Moves the area's moving platforms. The game calls it *before* the player updates, so a

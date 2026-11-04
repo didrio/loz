@@ -40,7 +40,7 @@ Next, in order:
    sessions, **D1 (done, unplayed), D2, D3 (built 2026-11-03, unplayed)**, in [shrine.md](shrine.md) "Build plan". Then polish (8).
 2. **Pause menu**: one tabbed menu (P / Start, `game/pauseMenu.ts`, [engine.md](engine.md) "The pause menu"): Settings (built 2026-11-03,
    unplayed: volumes, sensitivities, invert Y, sharpness, fullscreen), Hints, Messages. Still to come: inventory / equipment / character tabs
-   (a tab appears when there is something to show). Settings for the Steam build (key rebinding, resolution, quit) are deferred. (No dungeon map or compass by design.)
+   (a tab appears when there is something to show). Settings for the Steam build (key rebinding, resolution, quit) are deferred. (No dungeon map or compass items by design; the HUD's compass strip only shows heading.)
 2.5. ~~Shield surfing~~ built, unplayed (rules in [combat.md](combat.md), Lark in [world.md](world.md)). Tune `SURF_SPEED`, the carve and the dust by play.
 3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later.
 4. **Load/perf pass**: Rapier WASM as a file, code splitting, character mesh merging.

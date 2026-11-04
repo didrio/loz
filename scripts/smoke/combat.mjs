@@ -61,4 +61,24 @@ export default async function run(t) {
     while ((await state()).enemies >= before && Date.now() < end) await press('KeyJ', 1, 150);
     check((await state()).enemies < before, 'thornling survived');
   });
+
+  await step('the blight\'s thorns: brushing a clump costs a heart and shoves Wren out of it', async () => {
+    await until(() => window.embervale.sky.blight > 0.99 && window.embervale.player.invuln <= 0, 15000);
+    const c = await game(() => {
+      const g = window.embervale, p = g.player.pos;
+      const all = g.area.growths.clusters;
+      const near = all.reduce((a, b) => (Math.hypot(b.x - p.x, b.z - p.z) < Math.hypot(a.x - p.x, a.z - p.z) ? b : a));
+      return { x: near.x, z: near.z, r: near.r };
+    });
+    await teleport(c.x + c.r + 0.2, c.z, -Math.PI / 2); // just inside the reach, facing the clump
+    const hp = (await state()).hp;
+    await until(() => window.embervale.player.invuln > 0, 5000).catch(() => {});
+    const after = await state();
+    check(after.hp === hp - 2, `thorns took ${hp - after.hp} half-hearts, not 2`);
+    await wait(800);
+    const p = (await state()).pos;
+    const d = Math.hypot(p.x - c.x, p.z - c.z);
+    check(d > c.r + 0.4, `Wren is still in the thorns (${d.toFixed(2)} m from the clump's middle)`);
+    await shot('06-thorns');
+  });
 }

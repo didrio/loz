@@ -19,14 +19,14 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield in a ruined cottage, the village, the Lamplighter,
-then **the Waking Shrine** through **Gravelheart** and the Keepers' **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**.
-The valley lies under **the blight** until the prism breaks; then **Maren, Tobin and Odo vanish** and only Lark and Pip remain.
-Thistledown has its own day and night songs over a wide zone (the name shows on the same ground), lamplit nights, a well shaft, **Tobin's room as
-the windmill's ground floor** (a hinged door, no loading), two cottages with locked doors, and a safe zone: field enemies drop a chase at its edge.
-Unplayed by the owner: the village polish (fog 50-215 m, night song, mill room, gate lanterns' new lights, fearful pre-scare lines), brighter day/night, the Settings tab, surfing (now a push that glides down; scrape sound), the sealed gate, D3, the prism.
-Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks"). Villagers never name kin.
-**Next:** the pause menu's inventory tab (its tabs: Settings, Hints, Messages, Dev; Dev drops from the Steam build). Dev server: port 5273.
+As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine**
+through **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the
+valley, with thorn clumps and thickets that cost a heart a touch; after it, Maren, Tobin and Odo are gone and only Lark and Pip remain.
+The HUD has a sky dial (sun and moon over the ground) and a compass strip; villagers' directions are true from where they stand.
+Beating Gravelheart takes the Morrowbell off the village post (it lies behind the windmill until rehung), so Wren walks home.
+Unplayed by the owner: that bell hunt, the thorns, dial, compass and lone oak; the village polish; day/night lighting; Settings; surfing; the gate, D3, the prism.
+Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks").
+**Next:** the pause menu's inventory tab (tabs today: Settings, Hints, Messages, Dev). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -125,11 +125,10 @@ src/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern
     jars.ts                JarField: clay jars in the ruins (a sword breaks one; blue gem / heart / empty; saved as `jar.<id>` flags)
-    sigil.ts               SigilLook: a message in the air (the hollow's, the shrine's three)
-    bell.ts, murmurbud.ts  BELL_IDS, BellPost, BellPickup; MurmurbudLook (hint bulb: swells, sulks, opens, floating note, wisp)
+    sigil.ts, bell.ts, murmurbud.ts   SigilLook (a message in the air); BellPost, BellPickup; MurmurbudLook (the hint bulb)
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
     overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp,
-                           the crossing, the Waybell), ruins (ruined homes; the shield's cottage), blight (thorn growths), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
+                           the crossing, the Waybell), ruins (ruined homes; the shield's cottage), blight (thorn clumps and thickets, thornTouch), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
     dungeon/               data format, validator, softlock solver, text map, DUNGEONS; defs/ the dungeons; build.ts + pieces.ts
                            (data → 3D Area); grid.ts + puzzle.ts (2 m grids, wakestone checker); landmarks.ts (statues);
                            hearth.ts (Gravelheart's arena, causeway, Heart Vessel); prism.ts (the Keepers' Seal's prism); decor.ts (each wing's palette and light)
@@ -140,14 +139,12 @@ src/
     pauseMenu.ts           the pause menu (P / Start): tabs Settings, Hints, Messages, Dev (sprint, invincible, save states)
     murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, sounds, the gauge)
     script.ts              ScriptApi + Script + Page (the contract content uses)
-    player.ts, guard.ts    Wren (movement, sword, shield, stagger); the shield's guard
-    surf.ts                shield surfing's rule (when a ride starts and ends; SURF_SPEED)
+    player.ts, guard.ts, surf.ts   Wren (movement, sword, shield, stagger); the shield's guard; surfing's rule
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
     sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
-    blight.ts              the blight's rules (where it lies, the lift, the restored field's strays, its songs)
+    blight.ts              the blight's rules (where it lies, the lift, the strays, its songs, THORN_ATTACK)
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss)
-    lockon.ts, trialFalls.ts   what lock-on picks (enemies, closed buds: LockTarget); bell trials' fall rule
-    flasks.ts              the two flasks (life / attack potion; drinking empties one, Odo refills it)
+    lockon.ts, trialFalls.ts, flasks.ts   what lock-on picks; bell trials' fall rule; the two flasks (Odo refills them)
     camera.ts, dialog.ts (say + ask), pickups.ts, state.ts, debug.ts, enemyTestEnv.ts (enemy unit tests' stand-in game)
   content/                 the game's story; what things DO
     areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death
@@ -160,6 +157,7 @@ src/
     shrine.ts, gravelheart.ts  the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
     devStates.ts, fakeApi.ts   the Dev tab's save states; the fake ScriptApi content tests run against
   ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title
+       skyDial.ts, compass.ts   the clock's sky dial (sun and moon over the ground); the compass strip
 scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers
   map.mjs                  text map + problems for a dungeon (npm run map -- <id>)
@@ -186,8 +184,8 @@ CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/, skills
 - Continue starts at the spawn of the area you saved in (a dungeon's entrance inside one), with at least 3 hearts.
 - **The checkpoint rule** (owner's call): dying sends Wren back to the area's start with full hearts; keys, items, opened chests
   and doors, pressed switches and cleared rooms stay, but every enemy respawns (except in a beaten challenge room: one a chest or a sigil waits on). Flasks don't refill (only Odo fills them, for gems).
-- No map or compass (owner's call): dungeon chests hold keys, items, flasks (`game/flasks.ts`)
-  and gems instead. Max hearts grow only from bosses (no heart chests in dungeons). Every interactable thing must serve
+- No map or compass *items* (owner's call): dungeon chests hold keys, items, flasks (`game/flasks.ts`)
+  and gems instead (the HUD's compass strip, which only shows heading, is fine: owner's call, 2026-11-04). Max hearts grow only from bosses (no heart chests in dungeons). Every interactable thing must serve
   a purpose (the puzzle checker fails a stone that doesn't).
 - A dungeon's small keys are colored (one chest, one door each) and only open that dungeon's doors. Dungeons are never sealed
   (owner's call, 2026-11-02: an open entrance, no fight-room shutters); progress gates are items and keys.

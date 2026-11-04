@@ -3,7 +3,7 @@ import { fbm } from '../../core/math';
 import { Layer } from '../../core/physics';
 import { mat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
-import { GROVE, inGate, inGorge, inRuin, inHollow, inPass, isOpen, onVillageStep, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
+import { GROVE, LONE_OAK, inGate, inGorge, inRuin, inHollow, inPass, isOpen, onVillageStep, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
 
 function instanced(b: AreaBuilder, geo: THREE.BufferGeometry, material: THREE.Material, ms: THREE.Matrix4[], colors?: THREE.Color[], shadow = true) {
   const im = new THREE.InstancedMesh(geo, material, ms.length);
@@ -31,7 +31,7 @@ export function buildTrees(b: AreaBuilder) {
     const s = 0.8 + rand() * 0.7;
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rand() * Math.PI * 2, 0));
     const c1 = rand(), c2 = rand();
-    if (inHollow(x, z, 8) || inGorge(x, z, 2) || inGate(x, z, 1) || inPass(x, z, 2) || inRuin(x, z, 2)) return; // the hollow's rim has its own dead trees
+    if (inHollow(x, z, 8) || inGorge(x, z, 2) || inGate(x, z, 1) || inPass(x, z, 2) || inRuin(x, z, 2) || Math.hypot(x - LONE_OAK.x, z - LONE_OAK.z) < 9) return; // the lone oak stands alone; the hollow's rim has its own dead trees
     trunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 1.2 * s, z), q, new THREE.Vector3(s, s, s)));
     if (kind === 'round') {
       round.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 3.6 * s, z), q, new THREE.Vector3(s * 2.2, s * 2, s * 2.2)));
@@ -69,6 +69,17 @@ export function buildTrees(b: AreaBuilder) {
   instanced(b, new THREE.CylinderGeometry(0.22, 0.35, 2.4, 6), mat(0x6b4423), trunks);
   instanced(b, new THREE.IcosahedronGeometry(1, 0), mat(0xffffff), round, roundC);
   instanced(b, new THREE.ConeGeometry(1.6, 5, 7), mat(0xffffff), pine, pineC);
+}
+
+/** The lone oak at the grove road's bend: twice a field tree's size, broad and dark, so it reads from the crossroads. */
+export function buildLoneOak(b: AreaBuilder) {
+  const { x, z } = LONE_OAK;
+  const y = terrainHeight(x, z);
+  b.mesh(new THREE.CylinderGeometry(0.55, 0.9, 6, 7), mat(0x5a3a1e), x, y + 3, z);
+  for (const [dx, dy, dz, r, c] of [[0, 7.6, 0, 3.6, 0x2f5a26], [2.4, 6.6, 1, 2.6, 0x37662c], [-2.2, 6.9, -0.8, 2.8, 0x2a5222], [0.4, 9.4, -0.4, 2.4, 0x3b6e30]] as const) {
+    b.mesh(new THREE.IcosahedronGeometry(r, 0), mat(c), x + dx, y + dy, z + dz);
+  }
+  b.cylinder(x, y + 3, z, 3, 0.8, Layer.Prop);
 }
 
 export function buildRocks(b: AreaBuilder) {

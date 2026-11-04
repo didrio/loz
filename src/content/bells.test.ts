@@ -8,7 +8,7 @@ import { DungeonArea } from '../world/dungeon/build';
 import { DUNGEONS } from '../world/dungeon';
 import { SHRINE } from '../world/dungeon/defs/shrine';
 import { Overworld } from '../world/overworld';
-import { BELLS, bellContent, emptyPostText } from './bells';
+import { BELLS, bellContent, emptyPostText, liftVillageBell } from './bells';
 import { fakeApi } from './fakeApi';
 import { overworldContent } from './overworld';
 import { shrineContent } from './shrine';
@@ -129,6 +129,68 @@ describe('the keepers\' bells', () => {
     expect(await talk('npc.tobin')).toContain('Heard that bell');
     expect(await talk('npc.tobin')).not.toContain('Heard that bell');
     area.dispose();
+  });
+
+  describe('the village goes quiet when Gravelheart falls', () => {
+    it('only a hung Morrowbell is taken off its post, and the flag says so', () => {
+      const s = new GameState();
+      expect(liftVillageBell(s)).toBe(false);
+      expect(s.has('village.bellMoved')).toBe(false);
+      s.bells.carried.add('morrow');
+      expect(liftVillageBell(s)).toBe(false);
+      s.bells.carried.clear();
+      s.bells.hung.add('morrow');
+      s.bells.hung.add('lull');
+      expect(liftVillageBell(s)).toBe(true);
+      expect([...s.bells.hung]).toEqual(['lull']);
+      expect(s.has('village.bellMoved')).toBe(true);
+    });
+
+    it('the dungeon bell then rings as if alone, the other bells still answer each other, and rehanging restores the menu', async () => {
+      const area = new DungeonArea(physics, SHRINE);
+      const { api, state, said, chosen, choices, travels } = fakeApi(area, physics);
+      const content = shrineContent(area);
+      state.bells.hung.add('morrow');
+      state.bells.hung.add('lull');
+      liftVillageBell(state);
+      content.restore(state);
+      await content.scripts.lullPost(api);
+      expect(chosen).toEqual([]);
+      expect(said.at(-1)!.text).toBe(`${BELLS.lull.carries}... and nothing answers.`);
+      state.bells.hung.add('way');
+      choices.push(0);
+      await content.scripts.lullPost(api);
+      expect(chosen).toEqual([{ title: 'Follow the answer', options: [BELLS.way.site, 'Stay'] }]);
+      expect(travels).toEqual([{ area: 'overworld', entrance: 'bell.way' }]);
+      state.bells.hung.add('morrow');
+      choices.length = 0;
+      choices.push(null);
+      await content.scripts.lullPost(api);
+      expect(chosen.at(-1)!.options).toEqual([BELLS.morrow.site, BELLS.way.site, 'Stay']);
+      area.dispose();
+    });
+
+    it('the bell lies behind the mill, the gorge plinth stays empty, and taking it lets the post take it back', async () => {
+      const { api, state } = fakeApi(ow, physics);
+      const { scripts, restore } = overworldContent(ow);
+      state.bells.hung.add('morrow');
+      liftVillageBell(state);
+      restore(state);
+      expect(ow.morrowPost.hung).toBe(false);
+      expect(ow.morrowLost.present).toBe(true);
+      expect(ow.morrowBell.present).toBe(false);
+      expect(ow.morrowPost.label).toBe('Check');
+      await scripts['bellPickup.morrowLost'](api);
+      expect(ow.morrowLost.present).toBe(false);
+      expect([...state.bells.carried]).toEqual(['morrow']);
+      expect(ow.morrowPost.canHang).toBe(true);
+      await scripts['bellPost.morrow'](api);
+      ow.morrowPost.update(2);
+      expect([...state.bells.hung]).toEqual(['morrow']);
+      restore(state);
+      expect(ow.morrowLost.present).toBe(false);
+      expect(ow.morrowBell.present).toBe(false);
+    });
   });
 
   it('taking a bell carries it, readies its post in the same area, and a save brings neither back', async () => {

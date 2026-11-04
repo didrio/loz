@@ -11,12 +11,12 @@ import { buildHollow } from './hollow';
 import { MurmurbudLook } from '../murmurbud';
 import { SigilLook } from '../sigil';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
-import { areaNameAt, BUDS, HOMES, MILL_BED, MILL_TOWER, inVillageGuard, inVillageMusic, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { areaNameAt, BUDS, HOMES, MILL_BED, MILL_TOWER, inVillageGuard, inVillageMusic, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_LOST, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { NORTHPASS } from './northpass';
 import { RegionStreamer } from './region';
-import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
+import { buildGrass, buildLoneOak, buildRocks, buildTrees, bushSpots } from './nature';
 import { buildRuins } from './ruins';
-import { buildBlightGrowths } from './blight';
+import { buildBlightGrowths, thornTouch } from './blight';
 import { buildBounds, buildTerrain, buildWater } from './terrain';
 import { buildVillage } from './village';
 
@@ -42,6 +42,8 @@ export class Overworld implements Area {
   readonly bellPosts: Map<BellId, BellPost>;
   /** The Morrowbell waiting at the end of the Hushing Gorge. */
   readonly morrowBell: BellPickup;
+  /** The Morrowbell on the ground behind the windmill, once Gravelheart's fall has taken it off its post (`village.bellMoved`). */
+  readonly morrowLost: BellPickup;
   /** The gorge's climb (tests and smoke read the pillars from here). */
   readonly gorgeCourse = GORGE_COURSE;
   /** A point on the gorge (`s` m in, `lat` m left of its centerline): for look scenes. */
@@ -74,6 +76,7 @@ export class Overworld implements Area {
   readonly jars: JarField;
   /** The blight's thorns in the field; they shrink away as the blight lifts. */
   private readonly growths: ReturnType<typeof buildBlightGrowths>;
+  private blightLevel = 0;
   /** The sigil in the hollow, once the Lamplighter falls (`sigil.hollow`). */
   readonly sigil: SigilLook;
   /** The Murmurbuds, by id (`bud.<hint>`). */
@@ -110,6 +113,7 @@ export class Overworld implements Area {
     const shrine = buildShrine(b);
     this.lantern = shrine.lantern;
     buildTrees(b);
+    buildLoneOak(b);
     this.gate = new Gate(b);
     buildRocks(b);
     buildGrass(b);
@@ -119,6 +123,8 @@ export class Overworld implements Area {
     const gorge = buildGorge(b);
     this.gorgeClimb = gorge.course;
     this.morrowBell = gorge.bell;
+    this.morrowLost = new BellPickup(b, 'morrow', MORROW_LOST.x, terrainHeight(MORROW_LOST.x, MORROW_LOST.z), MORROW_LOST.z, true);
+    b.dynamic(this.morrowLost.group);
     const camp = buildCamp(b);
     this.wayPost = camp.post;
     this.wayBell = camp.bell;
@@ -195,6 +201,7 @@ export class Overworld implements Area {
       },
       { id: 'bellPost.morrow', x: morrow.front.x, z: morrow.front.z, r: 2.2, get label() { return morrow.label; }, promptY: morrow.y + 3.2, enabled: () => !morrow.hanging },
       { id: 'bellPickup.morrow', x: GORGE_BELL.x, z: GORGE_BELL.z, y: GORGE_BELL.y, r: 2, label: 'Take', promptY: GORGE_BELL.y + 2.2, enabled: () => this.morrowBell.present },
+      { id: 'bellPickup.morrowLost', x: MORROW_LOST.x, z: MORROW_LOST.z, r: 2, label: 'Take', promptY: terrainHeight(MORROW_LOST.x, MORROW_LOST.z) + 1.6, enabled: () => this.morrowLost.present },
       { id: 'bellPost.way', x: this.wayPost.front.x, z: this.wayPost.front.z, r: 2.2, get label() { return way.label; }, promptY: way.y + 3.2, enabled: () => !way.hanging },
       { id: 'bellPickup.way', x: WAYBELL_PICKUP.x, z: WAYBELL_PICKUP.z, y: WAYBELL_PICKUP.y, r: 2, label: 'Take', promptY: WAYBELL_PICKUP.y + 2.2, enabled: () => this.wayBell.present },
       { id: 'sign.pedestal', x: shrine.pedestal.x, z: shrine.pedestal.z, r: 2.3, label: 'Read', promptY: above(shrine.pedestal.x, shrine.pedestal.z, 2), enabled: always },
@@ -217,7 +224,12 @@ export class Overworld implements Area {
 
   /** The sky's blight level, 0–1 (the game feeds it every frame). */
   setBlight(level: number) {
+    this.blightLevel = level;
     this.growths.setLevel(level);
+  }
+
+  thornAt(x: number, y: number, z: number) {
+    return thornTouch(this.growths.clusters, x, y, z, this.blightLevel);
   }
 
   streamAt(x: number, z: number) {
@@ -299,6 +311,7 @@ export class Overworld implements Area {
     this.shield.update(dt);
     this.morrowPost.update(dt);
     this.morrowBell.update(dt);
+    this.morrowLost.update(dt);
     this.wayPost.update(dt);
     this.wayBell.update(dt);
     this.hollowFx.update(dt);

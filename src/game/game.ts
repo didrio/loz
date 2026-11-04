@@ -54,6 +54,7 @@ export class Game implements ScriptApi {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1500);
+  private lookDir = new THREE.Vector3();
   readonly input: Input;
   readonly sfx = new Sfx();
   readonly hud = new Hud();
@@ -408,6 +409,8 @@ export class Game implements ScriptApi {
       this.rig.update(dt, canLook ? input.look(dt) : { yaw: 0, pitch: 0 }, player.pos, this.combat.lockAt);
       player.setOpacity(this.hiddenIn ? 0 : this.rig.playerOpacity);
     }
+    const look = this.camera.getWorldDirection(this.lookDir);
+    hud.setHeading(look.x, look.z);
     hud.setGuard(player.guard.fills(), player.guard.broken, player.guard.paused, this.guardGaugePosition());
     hud.setBudGauge(this.buds.gauge());
     hud.setPrompt(this.interactPrompt());

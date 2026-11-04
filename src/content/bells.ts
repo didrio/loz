@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { Script, ScriptApi } from '../game/script';
-import type { GameState } from '../game/state';
+import type { Flag, GameState } from '../game/state';
 import { BELL_IDS, type BellId, type BellPickup, type BellPost } from '../world/bell';
 import type { AreaId } from './areas';
 
@@ -48,6 +48,22 @@ export const BELLS: Record<BellId, BellSite> = {
     carries: 'Its green note rolls down the pass and out over the valley',
   },
 };
+
+/**
+ * Bells Gravelheart's fall takes off their posts (docs/bells.md, "The village goes quiet"): the flag says it happened, and the bell
+ * then lies on the ground somewhere in the valley until Wren hangs it again.
+ */
+const BELL_MOVED: Partial<Record<BellId, Flag>> = { morrow: 'village.bellMoved' };
+
+/**
+ * The boss is beaten: the village's bell is taken off its post (if it was hung), so the first thing Wren sees of the valley is
+ * on foot. Nothing answers the other bells until it is hung again. Returns whether it moved.
+ */
+export function liftVillageBell(state: GameState) {
+  if (!state.bells.hung.delete('morrow')) return false;
+  state.set('village.bellMoved');
+  return true;
+}
 
 /** The other hung bells, the ones that answer `bell`. */
 export function answering(state: GameState, bell: BellId) {
@@ -161,19 +177,30 @@ export function bellPickupScript(pickup: BellPickup, posts: Iterable<BellPost>):
  * An area's bell scripts (by interactable id) and how to restore them from a save: hung
  * bells back on their hooks, taken bells gone from their plinths.
  */
-export function bellContent(posts: Record<string, BellPost>, pickups: Record<string, BellPickup> = {}) {
+export function bellContent(posts: Record<string, BellPost>, pickups: Record<string, BellPickup> = {}, lost: Record<string, BellPickup> = {}) {
   const scripts: Record<string, Script> = {};
   for (const [id, post] of Object.entries(posts)) scripts[id] = bellPostScript(post);
-  for (const [id, pickup] of Object.entries(pickups)) scripts[id] = bellPickupScript(pickup, Object.values(posts));
+  for (const [id, pickup] of Object.entries({ ...pickups, ...lost })) scripts[id] = bellPickupScript(pickup, Object.values(posts));
   return {
     scripts,
     restore(state: GameState) {
       for (const post of Object.values(posts)) {
         if (state.bells.hung.has(post.bell)) post.setHung();
+        else if (post.hung) post.setEmpty();
         post.canHang = state.bells.carried.has(post.bell);
       }
+      // A bell that was ever found never reappears on its plinth, even when it was taken off its post.
+      const wasMoved = (bell: BellId) => {
+        const flag = BELL_MOVED[bell];
+        return flag !== undefined && state.has(flag);
+      };
       for (const p of Object.values(pickups)) {
-        if (p.present && (state.bells.carried.has(p.bell) || state.bells.hung.has(p.bell))) p.take();
+        if (p.present && (state.bells.carried.has(p.bell) || state.bells.hung.has(p.bell) || wasMoved(p.bell))) p.take();
+      }
+      for (const p of Object.values(lost)) {
+        const moved = wasMoved(p.bell);
+        if (moved && !state.bells.carried.has(p.bell) && !state.bells.hung.has(p.bell)) p.show();
+        else p.take();
       }
     },
   };

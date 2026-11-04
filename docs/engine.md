@@ -30,6 +30,13 @@ frames are slow), times the **time scale** (slow motion in cutscenes) and zero d
 environments, hit feedback both ways, hit-stop) and `TitleMenu` (`game/title.ts`: the
 orbit and the menu; `Game` acts on its choice). Scripts reach them as `g.combat.*`.
 
+**The HUD's dial and compass** (2026-11-04). The clock's dial (`ui/skyDial.ts`) is a window onto the sky: ground
+across the bottom 30%, sky above; the sun rises out of the ground on the left at 6:00, stands near the top at noon
+and has sunk out of sight by 18:00, and the moon does the same overnight, so the dial agrees with `isNight`
+(18:00–6:00). `dialView(hours)` is the pure, tested part. The compass (`ui/compass.ts`) is a strip at the top centre
+fed the render camera's look direction every frame (`Hud.setHeading`), so it is right in cutscene shots too;
+`bearing(dx, dz)` maps +x east, −z north, the same in the field and in dungeons.
+
 ## Menus (`game/menu.ts`, `game/pauseMenu.ts`)
 
 `MenuStack` is the reusable menu: rows are an action, a toggle (flips, stays open) or a

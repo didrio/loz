@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blightMood, blighted, fieldPopulation, STRAY_THORNLINGS, stepBlight } from './blight';
+import { blightMood, blighted, fieldPopulation, STRAY_THORNLINGS, stepBlight, THORN_ATTACK } from './blight';
 
 const field = { id: 'overworld', enemyCount: 14 };
 
@@ -36,5 +36,12 @@ describe('the blight', () => {
     expect(blightMood('villageNight', true)).toBe('blightVillage');
     expect(blightMood('day', false)).toBe('day');
     expect(blightMood('boss', true)).toBe('boss');
+  });
+});
+
+describe('the thorns', () => {
+  it('hurt a full heart, through any shield', () => {
+    expect(THORN_ATTACK.damage).toBe(2);
+    expect(THORN_ATTACK.unblockable).toBe(true);
   });
 });

@@ -1,4 +1,5 @@
 import type { MusicMood } from '../core/tracks';
+import type { Attack } from './enemies';
 
 /**
  * The blight (docs/world.md, "Story"): the violet-black sickness over Emberfield, from the start
@@ -40,3 +41,9 @@ const BLIGHT_MOODS: Partial<Record<MusicMood, MusicMood>> = { day: 'blight', nig
 export function blightMood(mood: MusicMood, isBlighted: boolean): MusicMood {
   return (isBlighted && BLIGHT_MOODS[mood]) || mood;
 }
+
+/**
+ * The blight's thorns (world/overworld/blight.ts) on Wren: a full heart, no shield can stop it, and a hard
+ * shove back out of the clump (the overworld's `thornAt` finds it). The sword never cuts them; they only go when the blight lifts.
+ */
+export const THORN_ATTACK: Attack = { damage: 2, guard: 0, unblockable: true, knockback: 10 };

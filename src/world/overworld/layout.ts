@@ -22,11 +22,15 @@ export const MILL_TOWER = { outer: 4.8, inner: 3.9, top: 3.0, height: 11, ceilin
 export const MILL_BED = { x: -2.5, z: 0.9 };
 /** The Morrowbell's post on the square, between the east and northeast cottages (clear of both doors), facing the well (docs/bells.md). */
 export const MORROW_POST = { x: VILLAGE.x + 9.4, z: VILLAGE.z - 5.7 };
+/** Where the Morrowbell lies after Gravelheart falls: on the ground behind the windmill (its door faces the other way), out of sight from the square. */
+export const MORROW_LOST = { x: MILL.x - MILL_TOWER.outer - 1.6, z: MILL.z + 1.5 };
 /** Odo the merchant's stall: his counter runs north-south, customers stand on its east side. */
 /** Thistledown's two standing homes: the angle (around the square, 17 m out) each stands at; each faces the well. */
 export const HOMES = [-0.15, 2.35].map((a) => ({ a, x: VILLAGE.x + Math.cos(a) * 17, z: VILLAGE.z + Math.sin(a) * 17 }));
 export const STALL = { x: VILLAGE.x - 5.4, z: VILLAGE.z - 4 };
 export const GROVE = { x: 82, z: -78 };
+/** A big lone oak at the grove road's bend: the landmark Maren's directions lean on. */
+export const LONE_OAK = { x: 66, z: -47 };
 export const SHRINE = { x: 108, z: 28 };
 export const LAKE = { x: -100, z: 100 };
 /**
@@ -406,4 +410,49 @@ export function isEnemyGround(x: number, z: number) {
   if (Math.abs(z - riverZ(x)) < 12 || Math.hypot(x - LAKE.x, z - LAKE.z) < 34) return false;
   if (inHollow(x, z, 12) || inGorge(x, z, 6) || inPass(x, z, 6)) return false;
   return true;
+}
+
+/** How far a thorn cluster's thorns spread from its middle (m). Touching inside it hurts (game/blight.ts). */
+export const THORN_SPREAD = 3;
+
+const budAt = (id: (typeof BUDS)[number]['id']) => BUDS.find((b) => b.id === id)!;
+const ruinAt = (id: (typeof RUINS)[number]['id']) => RUINS.find((r) => r.id === id)!;
+
+/**
+ * The blight's thickets: rings of thorn clusters round something worth reaching, each with one opening, so
+ * the way in is a short walk round, never a wall. `gap` is the opening's compass bearing from the middle
+ * (0 north, 90 east), `gapWidth` its clear width in meters. They lie on the valley until the blight lifts.
+ */
+export const THICKETS = [
+  { id: 'flasksBud', ...pick(budAt('bud.flasks')), r: 7, gap: 180, gapWidth: 5 }, // open away from the river
+  { id: 'roadsideHome', ...pick(ruinAt('roadsideHome')), r: 11, gap: 200, gapWidth: 6 },
+  { id: 'lakeHome', ...pick(ruinAt('lakeHome')), r: 11, gap: 45, gapWidth: 6 }, // opens toward the bridge
+] as const;
+
+function pick(p: { x: number; z: number }) {
+  return { x: p.x, z: p.z };
+}
+
+/** A point `dist` m from (x, z) on a compass bearing (degrees). */
+export function atBearing(x: number, z: number, deg: number, dist: number) {
+  const a = (deg * Math.PI) / 180;
+  return { x: x + Math.sin(a) * dist, z: z - Math.cos(a) * dist };
+}
+
+/**
+ * The cluster centres of a thicket's ring: spaced so neighbours overlap (no slipping between), minus the
+ * ones that would close the gap or stand in water. Leaving one out only ever opens a way, never closes one.
+ */
+export function thicketClusters(t: { x: number; z: number; r: number; gap: number; gapWidth: number }) {
+  const n = Math.ceil((2 * Math.PI * t.r) / (THORN_SPREAD * 1.5));
+  const out: { x: number; z: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const deg = t.gap + 180 + (i / n) * 360; // start opposite the gap
+    // Leave out every cluster on the gap's side that would reach into the straight lane out through it.
+    const off = ((deg - t.gap) * Math.PI) / 180;
+    if (Math.cos(off) > 0 && Math.abs(Math.sin(off)) * t.r < t.gapWidth / 2 + THORN_SPREAD) continue;
+    const p = atBearing(t.x, t.z, deg, t.r);
+    if (placementHeight(p.x, p.z) > -0.3) out.push(p);
+  }
+  return out;
 }

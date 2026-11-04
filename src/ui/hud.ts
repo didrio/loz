@@ -3,6 +3,8 @@ import { POTIONS } from '../game/flasks';
 import type { BudGaugeView } from '../game/buds';
 import type { MenuView } from '../game/menu';
 import { KEY_HEX, type KeyColor, type Potion } from '../world/dungeon/format';
+import { Compass } from './compass';
+import { SkyDial } from './skyDial';
 
 /** A little corked bottle in a potion's color (a pale glass one when empty). */
 const bottle = (color: string) => `<svg class="bottle" viewBox="0 0 16 22" width="16" height="22" aria-hidden="true">
@@ -55,7 +57,8 @@ export class Hud {
   private prompt: HTMLElement;
   private promptLabel = '';
   private clock: HTMLElement;
-  private clockIcon: HTMLElement;
+  private dial: SkyDial;
+  private compass: Compass;
   private menuHint: HTMLElement;
   private actions: HTMLElement;
   private area: HTMLElement;
@@ -101,8 +104,9 @@ export class Hud {
         <div class="keys hidden">${SMALL_KEY_SVG}<span class="key-count">×0</span><span class="color-keys"></span>${BOSS_KEY_SVG}</div>
         <div class="drinks"></div>
       </div>
+      <div class="compass"></div>
       <div class="hud-top-right">
-        <div class="clock"><div class="clock-icon"></div></div>
+        <div class="clock"></div>
         <div class="clock-text"></div>
         <div class="menu-hint"></div>
       </div>
@@ -142,7 +146,8 @@ export class Hud {
     this.drinks = q('.drinks');
     this.prompt = q('.prompt');
     this.clock = q('.clock-text');
-    this.clockIcon = q('.clock-icon');
+    this.dial = new SkyDial(q('.clock'));
+    this.compass = new Compass(q('.compass'));
     this.menuHint = q('.menu-hint');
     this.renderMenuHint();
     this.actions = q('.actions');
@@ -398,13 +403,18 @@ export class Hud {
     }
   }
 
+  /** The camera's look direction on the ground (x, z), for the compass strip. */
+  setHeading(dx: number, dz: number) {
+    this.compass.set(dx, dz);
+  }
+
   setClock(hours: number, day: number) {
     const h = Math.floor(hours), m = Math.floor(((hours % 1) * 60) / 10) * 10;
     const ampm = h < 12 ? 'AM' : 'PM';
     const h12 = h % 12 === 0 ? 12 : h % 12;
     const s = `Day ${day} · ${h12}:${String(m).padStart(2, '0')} ${ampm}`;
     if (this.clock.textContent !== s) this.clock.textContent = s;
-    this.clockIcon.style.transform = `rotate(${(hours / 24) * 360 + 180}deg)`;
+    this.dial.set(hours);
   }
 
   /** Context hints in the corner, e.g. [['interact', 'Talk'], ['lock', 'Lock on']]. */

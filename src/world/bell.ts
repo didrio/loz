@@ -185,6 +185,13 @@ export class BellPost {
     this.pivot.position.set(ARM_OUT, HOOK_Y, 0);
   }
 
+  /** The hook is empty again (a bell taken off its post). */
+  setEmpty() {
+    this.hung = false;
+    this.hanging = false;
+    this.pivot.visible = false;
+  }
+
   /** Floats the bell from `from` (world space, e.g. Wren's hands) up onto the hook. */
   hang(from: THREE.Vector3) {
     this.group.updateWorldMatrix(true, false);
@@ -239,28 +246,43 @@ export class BellPickup {
   readonly group = new THREE.Group();
   present = true;
   private readonly bellGroup: THREE.Group;
+  private readonly halo: THREE.Object3D;
   private readonly rings: RingPool;
   private beat = 0;
 
-  constructor(b: AreaBuilder, readonly bell: BellId, readonly x: number, readonly y: number, readonly z: number) {
-    const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.8), mat(0x8d877c));
-    plinth.position.y = 0.35;
-    plinth.castShadow = true;
+  /**
+   * `ground`: no plinth, the bell stands on the earth (the one Gravelheart's fall leaves behind the mill); it starts
+   * out of the world (`present` false) until `show`.
+   */
+  constructor(b: AreaBuilder, readonly bell: BellId, readonly x: number, readonly y: number, readonly z: number, ground = false) {
     const look = LOOKS[bell];
     this.bellGroup = bellModel(uniqueMat(look.bronze, { emissive: new THREE.Color(look.ring).multiplyScalar(0.15) }));
-    this.bellGroup.position.y = 0.7 + 0.6;
-    const halo = glow(look.ring, 0.26, 0.12);
-    halo.position.y = 0.85;
-    this.group.add(plinth, this.bellGroup, halo);
-    this.rings = new RingPool(this.group, look.ring, 0, 1.0);
+    this.bellGroup.position.y = ground ? 0.6 : 0.7 + 0.6;
+    this.halo = glow(look.ring, 0.26, 0.12);
+    this.halo.position.y = ground ? 0.3 : 0.85;
+    this.group.add(this.bellGroup, this.halo);
+    if (!ground) {
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.8), mat(0x8d877c));
+      plinth.position.y = 0.35;
+      plinth.castShadow = true;
+      this.group.add(plinth);
+      b.box(x, y + 0.35, z, 0.4, 0.35, 0.4, 0, Layer.Prop);
+    }
+    this.rings = new RingPool(this.group, look.ring, 0, ground ? 0.4 : 1.0);
     this.group.position.set(x, y, z);
-    b.box(x, y + 0.35, z, 0.4, 0.35, 0.4, 0, Layer.Prop);
+    if (ground) this.take();
+  }
+
+  /** A ground bell appears (see `ground`). */
+  show() {
+    this.present = true;
+    this.bellGroup.visible = this.halo.visible = true;
   }
 
   /** Wren picks it up: the bell is gone, the plinth stays. */
   take() {
     this.present = false;
-    this.group.children.forEach((c, i) => (c.visible = i === 0));
+    this.bellGroup.visible = this.halo.visible = false;
   }
 
   update(dt: number) {

@@ -118,6 +118,9 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
 - `Hazards` holds attacks that outlive their move: `shockwave` (unblockable: jump it) and
   `orb` (homes briefly; the shield pops it for 1 slot) and `stone` (a thrown wakestone: hovers, then
   flies straight at where Wren is; `tetherStone` catches one mid-air; `onLand` leaves rubble). Cleared on respawn and area change.
+- **Standing hazards**: the blight's thorns. `Area.thornAt(x, y, z)` names the clump Wren touches (overworld only),
+  and `Combat.update` hits her with `THORN_ATTACK` (2 half-hearts, unblockable, knockback 10) from the clump's middle,
+  so she's shoved out; the usual 1.2 s of invulnerability stops repeat hits. Details in [world.md](world.md), "The blight".
   Every orb, and every Gloomwisp, casts a blob shadow (`GroundShadow` in `render/shapes.ts`):
   a dark disc on the ground below, smaller and fainter the higher it flies, so its distance
   reads at a glance. Give anything new that floats one too.

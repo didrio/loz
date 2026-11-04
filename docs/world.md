@@ -27,6 +27,11 @@ recheck old text against them when you touch it.
   the freshest story state first.
 - **Signs and flavor text carry the world's history**, one idea each, short enough to read at
   a glance. Items say what they are in the first line.
+- **Directions are true from where they're said** (owner's call, 2026-11-04). A villager in Thistledown says
+  where a place lies *from Thistledown* ("east of here, across the field"), or names a landmark to start from
+  ("from the crossroads, northeast, past the lone oak"). The HUD compass (`ui/compass.ts`) lets the player
+  follow it from that spot. Check every direction against `world/overworld/layout.ts` (+x east, −z north), and
+  every landmark a line names must exist in the world (the lone oak was only in the dialog until 2026-11-04).
 - **No spelling out what the screen shows.** Don't narrate the HUD or the obvious.
 - **No kin** (owner's rule, 2026-11-03): villagers are neighbors, never family. No one says mum, father, grandmother,
   sister and so on; they can remember people who are gone by name (old Bram, old Hesper, Corwin). A unit test in
@@ -96,6 +101,8 @@ change them.
   hearth. Wren shatters it with the sword: the gate falls and **the blight lifts** (owner's call:
   at the prism, not at the boss). The valley returns to today's look and music, with no gloomwisps
   and only a few stray thornlings.
+- **The bell behind the mill** (owner's call, 2026-11-04): beating Gravelheart takes the Morrowbell off the square's post, so the
+  player walks home instead of fast traveling ([bells.md](bells.md)). No NPC mentions it; the player has to look around.
 - **The empty village** (owner's call, 2026-11-03). The moment the prism breaks, **Maren, Tobin and Odo vanish**
   with the blight; nobody saw them go and nothing is left behind. Only the kids, Lark and Pip, remain: glad the sky is
   back, scared and confused about the grown-ups. Lark tells Wren and points at Pip; **Pip, the shy one, asks Wren to
@@ -135,8 +142,14 @@ The valley is sick from the first frame until the Keepers' seal breaks (`valleyO
 `game/blight.ts` (tested), everything else follows them. Dungeons and interiors are never blighted.
 - **Sky** (`Sky.blight`, 0–1): a violet-black sky and fog, weaker sun, dim stars; the same weight by day and night
   (the night sinks as far as the night sky does). Boss gloom stacks on top.
-- **Ash motes** (`render/motes.ts`) drift around the player; **thorn growths** (`world/overworld/blight.ts`, own RNG
-  `blight`, no colliders) stand in the open field and shrink away as the blight lifts.
+- **Ash motes** (`render/motes.ts`) drift around the player.
+- **Thorns** (`world/overworld/blight.ts`, own RNG `blight`; 2026-11-04, owner's design): clumps of 3–8 m violet
+  spikes (`THORN_SPREAD` 3 m), ~30 lone ones in the open field plus **thickets** (`THICKETS` in `layout.ts`): rings
+  round the flasks bud, the roadside ruin and Pip's lake home, each with one opening (`gap`, a compass bearing) so the
+  way in is a short walk round. Touching one costs a heart (`THORN_ATTACK` in `game/blight.ts`, unblockable) and shoves
+  Wren back out (no colliders, so the camera never snags). The sword never cuts them. They shrink away as the blight
+  lifts and are harmless below half grown. Roads, the village's safe zone, the start, signs, buds, the lone oak, the
+  gate and the passes stay clear (`layout.test.ts` checks every thicket: roads, its gap, what it guards).
 - **Music**: placeholder `blight`, `blightNight`, `blightVillage` ([audio.md](audio.md)); the owner listens.
 - **The lift**: when `valleyOpen` is set in the gate vision, the level eases to 0 over ~4 s (`BLIGHT_RATE`) and the
   music crossfades. A loaded area starts at its level (no easing). Not a new cutscene: it happens inside the existing vision.

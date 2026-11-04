@@ -74,7 +74,7 @@ export function overworldContent(ow: Overworld): AreaContent {
   const northpass = northpassContent(ow);
   const hints = hintContent(ow.buds);
   const village = villageContent(ow);
-  const bells = bellContent({ 'bellPost.morrow': ow.morrowPost, 'bellPost.way': ow.wayPost }, { 'bellPickup.morrow': ow.morrowBell, 'bellPickup.way': ow.wayBell });
+  const bells = bellContent({ 'bellPost.morrow': ow.morrowPost, 'bellPost.way': ow.wayPost }, { 'bellPickup.morrow': ow.morrowBell, 'bellPickup.way': ow.wayBell }, { 'bellPickup.morrowLost': ow.morrowLost });
 
   /** Waking the Lamplighter: the ring of cold fire seals the hollow, and it turns around. */
   const lamplighterWakes: Script = async (api) => {
@@ -128,7 +128,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     });
     ow.hollow.clear();
 
-    // It streaks away east; the camera watches it go, then cuts to the shrine as it lands.
+    // It streaks away northeast; the camera watches it go, then cuts to the shrine as it lands.
     const lantern = ow.lantern.mesh.position.clone();
     const mid = up.clone().lerp(lantern, 0.5).setY(Math.max(up.y, lantern.y) + 30);
     const from = boss.pos.clone().addScaledVector(lantern.clone().sub(boss.pos).setY(0).normalize(), -6).setY(boss.pos.y + 1.5);
@@ -173,7 +173,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     // Where the Lamplighter stood, something has been written in the air.
     ow.sigil.setPresent(true);
     api.particles.burst(ow.sigil.group.position, 0xe2d6ff, 24, 2, 1.2, false);
-    await api.say([{ text: 'The flame is free. Far to the east, the great lantern holds one warm ember again, and the spiral on the shrine door has begun to glow.' }]);
+    await api.say([{ text: 'The flame is free. Far to the northeast, the great lantern holds one warm ember again, and the spiral on the shrine door has begun to glow.' }]);
   };
 
   /**
@@ -225,7 +225,7 @@ export function overworldContent(ow: Overworld): AreaContent {
         return;
       }
       const hint = api.state.has('hasSword')
-        ? 'The lantern above it is dark. Whatever took its flame went south, to the Gloaming Hollow.'
+        ? 'The lantern above it is dark. Whatever took its flame went southwest, to the Gloaming Hollow.'
         : 'Maybe someone in *Thistledown* knows how to open it.';
       await api.say([{ text: `A slab of cold stone with a spiral carved into it. It won't budge.\n${hint}` }]);
     },

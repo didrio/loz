@@ -1,6 +1,6 @@
 import { mulberry32 } from '../../core/math';
 import { describe, expect, it } from 'vitest';
-import { areaNameAt, inVillageGuard, inVillageMusic, MILL, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
+import { areaNameAt, inVillageGuard, inVillageMusic, MILL, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS, THICKETS, thicketClusters, THORN_SPREAD, atBearing, inGate, inHollow } from './layout';
 
 describe('overworld layout', () => {
   it('starts the player on dry, fairly flat ground', () => {
@@ -208,4 +208,40 @@ describe('murmurbuds', () => {
       for (let z = -170; z <= 170; z += 4) if (isEnemyGround(x, z)) expect(inVillageGuard(x, z)).toBe(false);
     }
   });
+});
+
+describe('blight thickets', () => {
+  const segDist = (px: number, pz: number, ax: number, az: number, bx: number, bz: number) => {
+    const dx = bx - ax, dz = bz - az;
+    const t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz)));
+    return Math.hypot(px - (ax + dx * t), pz - (az + dz * t));
+  };
+
+  for (const t of THICKETS) {
+    const clusters = thicketClusters(t);
+
+    it(`${t.id}: stays off the roads, the start, the village and the passes`, () => {
+      for (const c of clusters) {
+        expect(pathDist(c.x, c.z)).toBeGreaterThan(THORN_SPREAD + 2);
+        expect(Math.hypot(c.x - SPAWN.x, c.z - SPAWN.z)).toBeGreaterThan(THORN_SPREAD + 10);
+        expect(inVillageGuard(c.x, c.z)).toBe(false);
+        expect(inGate(c.x, c.z, THORN_SPREAD + 1) || inHollow(c.x, c.z, THORN_SPREAD + 3) || inGorge(c.x, c.z, THORN_SPREAD) || inPass(c.x, c.z, THORN_SPREAD)).toBe(false);
+      }
+    });
+
+    it(`${t.id}: is a real ring with a clear way in, and leaves what it guards untouched`, () => {
+      expect(clusters.length).toBeGreaterThan(5);
+      // The lane from the middle straight out through the gap is at least gapWidth wide.
+      const out = atBearing(t.x, t.z, t.gap, t.r + THORN_SPREAD + 2);
+      for (const c of clusters) expect(segDist(c.x, c.z, t.x, t.z, out.x, out.z) - THORN_SPREAD).toBeGreaterThanOrEqual(t.gapWidth / 2 - 1e-6);
+      // Neighbours round the ring overlap, so there's no slipping between them.
+      for (let i = 1; i < clusters.length; i++) {
+        const a = clusters[i - 1], b = clusters[i];
+        const d = Math.hypot(a.x - b.x, a.z - b.z);
+        if (d < t.r) expect(d).toBeLessThan(THORN_SPREAD * 2);
+      }
+      const ruin = RUINS.find((r) => r.id === t.id);
+      for (const c of clusters) expect(Math.hypot(c.x - t.x, c.z - t.z) - THORN_SPREAD).toBeGreaterThan((ruin?.r ?? 1) + 1.5);
+    });
+  }
 });

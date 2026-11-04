@@ -3,6 +3,7 @@ import { easeInOut } from '../core/math';
 import { Gravelheart } from '../game/bosses/gravelheart';
 import type { Script, ScriptApi } from '../game/script';
 import type { GameState } from '../game/state';
+import { liftVillageBell } from './bells';
 import { glow } from '../render/shapes';
 import type { DungeonArea } from '../world/dungeon/build';
 import type { Overworld } from '../world/overworld';
@@ -62,6 +63,7 @@ export function wardenContent(area: DungeonArea) {
     const prog = api.state.dungeon(area.def.id);
     prog.done = true;
     prog.cleared.add(hearth.room.id);
+    liftVillageBell(api.state); // the valley is free: the village's bell is taken off its post, so Wren walks home
     const toPlayer = api.player.pos.clone().sub(b.pos).setY(0).normalize();
     const side = new THREE.Vector3(-toPlayer.z, 0, toPlayer.x);
     api.setTimeScale(0.3);
@@ -121,7 +123,7 @@ export function wardenContent(area: DungeonArea) {
     const prog = api.state.dungeon(area.def.id);
     await api.wait(1.4); // the shards fall and the beams go dark
     api.sfx.solved();
-    await api.say([{ text: 'The prism is gone, and its light runs out through the walls. The room falls away, and you see a gate of floating stones, far to the north.' }]);
+    await api.say([{ text: 'The prism is gone, and its light runs out through the walls. The room falls away, and you see a gate of floating stones, far to the northwest.' }]);
     // The shot is set as the valley loads, before the screen fades in: it is a vision, and Wren isn't standing there.
     await api.travel('overworld', 'gateView', true, () => {
       const gc = (api.area as unknown as Overworld).gate.center;

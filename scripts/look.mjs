@@ -71,6 +71,47 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('blight-lifted-field');
   },
+  /** The HUD's sky dial (ui/skyDial.ts) through the day, and the compass strip (ui/compass.ts) at two headings. */
+  async hud(h) {
+    await h.newGame();
+    await h.wait(1200);
+    for (const hh of [5.5, 7, 12, 17, 18, 19, 0]) {
+      await h.game((n) => (window.embervale.state.hours = n), hh);
+      await h.wait(400);
+      await h.page.locator('.hud-top-right').screenshot({ path: `${OUT}hud-dial-${String(hh).replace('.', '_')}.png` });
+    }
+    await h.game(() => (window.embervale.state.hours = 12));
+    for (const [name, facing] of [['north', Math.PI], ['southwest', -Math.PI / 4]]) {
+      // Models face +z, so facing PI looks north; the camera settles behind Wren.
+      await h.teleport(0, 14, facing);
+      await h.game((f) => (window.embervale.rig.yaw = f + Math.PI), facing);
+      await h.wait(800);
+      await h.page.locator('.compass').screenshot({ path: `${OUT}hud-compass-${name}.png` });
+    }
+    await h.shot('hud-full');
+  },
+  /** The blight's thorns (world/overworld/blight.ts): a thicket's ring and its gap, a lone clump, and the lone oak. */
+  async thorns(h) {
+    await h.newGame();
+    await h.game(() => (window.embervale.state.hours = 11));
+    await h.until(() => window.embervale.sky.blight > 0.99, 15000);
+    const look = async (name, x, z, facing) => {
+      await h.teleport(x, z, facing);
+      await h.game((f) => (window.embervale.rig.yaw = f + Math.PI), facing);
+      await h.wait(1200);
+      await h.shot(name);
+    };
+    // The roadside ruin's thicket opens to the south-southwest: from the north road side, then at its gap.
+    await look('thorns-thicket', 12, 18, 0);
+    await look('thorns-gap', 12 - 0.34 * 20, 38 + 0.94 * 20, Math.PI - 0.35);
+    const c = await h.game(() => {
+      const all = window.embervale.area.growths.clusters;
+      const lone = all.find((a) => all.every((b) => b === a || Math.hypot(a.x - b.x, a.z - b.z) > 10));
+      return { x: lone.x, z: lone.z };
+    });
+    await look('thorns-clump', c.x, c.z + 10, Math.PI);
+    await look('thorns-oak', 50, -38, Math.atan2(16, -9));
+  },
   async field(h) {
     await h.newGame();
     await h.wait(1200);
@@ -595,6 +636,37 @@ const SCENES = {
     await h.wait(450);
     await h.shot('shrine-ringing');
   },
+  /** The Morrowbell after Gravelheart falls (docs/bells.md): the empty post on the square, the bell behind the windmill, and what the player sees walking up to it. */
+  async lostBell(h) {
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.set('village.bellMoved');
+      g.area.morrowLost.show();
+    });
+    const at = await h.game(() => {
+      const a = window.embervale.area;
+      return { x: a.morrowLost.x, y: a.morrowLost.y, z: a.morrowLost.z };
+    });
+    // From the square's side the mill hides it; from the far side, standing where a player looks around.
+    await h.teleport(at.x - 9, at.z - 2, Math.PI / 2 + 0.3);
+    await h.wait(1200);
+    await h.shot('lost-far');
+    await h.teleport(at.x - 3.5, at.z - 0.5, Math.PI / 2);
+    await h.wait(800);
+    await h.shot('lost-near');
+    await h.game(([x, y, z]) => {
+      const g = window.embervale, T = g.player.pos.constructor;
+      g.rig.shot(new T(x - 2.2, y + 1.2, z - 1.2), new T(x, y + 0.4, z), true);
+    }, [at.x, at.y, at.z]);
+    await h.wait(500);
+    await h.shot('lost-close');
+    await h.game(() => window.embervale.rig.release());
+    await h.teleport(at.x + 8, at.z, -Math.PI / 2);
+    await h.wait(800);
+    await h.shot('from-mill-door');
+  },
+
   /** The Bell Shaft (the Lullbell's trial): the climb from the door, the pit from above with the bell up top, the top ledges, and the game camera on a ledge. */
   async bellShaft(h) {
     await h.newGame();

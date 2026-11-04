@@ -8,8 +8,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6);
   user-select: none;
 }
-#hud > .hud-top-left, #hud > .hud-top-right, #hud > .actions { opacity: 0; transition: opacity 0.6s; }
-#hud.playing > .hud-top-left, #hud.playing > .hud-top-right, #hud.playing > .actions { opacity: 1; }
+#hud > .hud-top-left, #hud > .hud-top-right, #hud > .compass, #hud > .actions { opacity: 0; transition: opacity 0.6s; }
+#hud.playing > .hud-top-left, #hud.playing > .hud-top-right, #hud.playing > .compass, #hud.playing > .actions { opacity: 1; }
 .hidden { display: none !important; }
 
 /* Hearts & gems */
@@ -96,16 +96,44 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .hud-top-right { position: absolute; top: 16px; right: 22px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .clock {
   width: 64px; height: 64px; border-radius: 50%; overflow: hidden; position: relative;
-  border: 3px solid #e8c770; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  background: linear-gradient(#5aa7e8 50%, #1c2350 50%);
+  border: 3px solid #e8c770; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); background: #0e1238;
 }
-.clock-icon { position: absolute; inset: 0; }
-.clock-icon::before, .clock-icon::after {
-  content: ''; position: absolute; left: 50%; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%;
+/* The dial (ui/skyDial.ts): sky, stars, sun and moon, then the ground drawn over them so they sink into it. */
+.clock > div { position: absolute; }
+.dial-sky { inset: 0; }
+.dial-stars {
+  inset: 0; transition: opacity 0.6s;
+  background:
+    radial-gradient(circle at 22% 30%, #fff 0.8px, transparent 1.4px), radial-gradient(circle at 70% 18%, #fff 0.8px, transparent 1.4px),
+    radial-gradient(circle at 82% 46%, #dfe6ff 0.7px, transparent 1.3px), radial-gradient(circle at 38% 52%, #dfe6ff 0.7px, transparent 1.3px),
+    radial-gradient(circle at 56% 40%, #fff 0.6px, transparent 1.2px);
 }
-.clock-icon::before { top: 4px; background: #e4ebff; box-shadow: 0 0 6px #fff; }
-.clock-icon::after { bottom: 4px; background: #ffd54a; box-shadow: 0 0 8px #ffb300; }
+.dial-sun, .dial-moon { transform: translate(-50%, -50%); border-radius: 50%; }
+.dial-sun { background: radial-gradient(circle at 40% 40%, #fff6c2, #ffd54a 55%, #ffb300); box-shadow: 0 0 8px #ffb300; }
+.dial-moon {
+  background: #e4ebff; box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  /* A crescent: a sky-dark bite out of the upper right. */
+  -webkit-mask: radial-gradient(circle at 78% 26%, transparent 42%, #000 44%); mask: radial-gradient(circle at 78% 26%, transparent 42%, #000 44%);
+}
+.dial-ground { left: 0; right: 0; bottom: 0; border-top: 2px solid rgba(255, 255, 255, 0.25); }
 .clock-text { font-size: 13px; font-weight: bold; letter-spacing: 0.04em; }
+
+/* Compass (ui/compass.ts): a strip of directions sliding under a fixed centre mark. */
+.compass { position: absolute; top: 14px; left: 50%; width: 300px; margin-left: -150px; height: 26px; }
+.cmp-window {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 13px; background: rgba(10, 20, 40, 0.35);
+  -webkit-mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent); mask: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+}
+.cmp-strip { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; }
+.cmp-strip > span { position: absolute; top: 50%; transform: translate(-50%, -50%); font-weight: bold; line-height: 1; }
+.cmp-tick { width: 2px; height: 6px; background: rgba(255, 255, 255, 0.45); }
+.cmp-major { font-size: 15px; }
+.cmp-minor { font-size: 11px; opacity: 0.75; }
+.cmp-north { font-size: 16px; color: #ffcf5a; }
+.cmp-mark {
+  position: absolute; left: 50%; bottom: -5px; margin-left: -5px;
+  border: 5px solid transparent; border-bottom-color: #e8c770; border-top: 0;
+}
 
 /* Context actions */
 .actions { position: absolute; right: 22px; bottom: 22px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }

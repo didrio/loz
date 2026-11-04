@@ -58,6 +58,12 @@ leads back to the entry, and hanging it there wakes the network.
 - Trial falls (milestone 2): fade out, back on the last checkpoint ledge reached, **half a
   heart lost** (`TRIAL_RULES.fallDamage` = 1; first free, switched on by the owner 2026-11-03);
   enemy hits hurt too; death follows the checkpoint rule.
+- **The village goes quiet** (owner's call, 2026-11-04): when Gravelheart falls, a hung Morrowbell is taken off its post
+  (`liftVillageBell`, `content/bells.ts`; flag `village.bellMoved`), so Wren walks home through the restored valley instead of
+  fast traveling. The bell then lies on the ground behind the windmill (`MORROW_LOST`, `world/overworld/layout.ts`; `BellPickup`
+  with `ground`), never on the gorge's plinth again. Taking it and hanging it on the post restores the old network. Nothing new in the
+  fast-travel code: `answering()` only counts hung bells, so the Lullbell rings "...and nothing answers." exactly as with one bell,
+  and Waybell ↔ Lullbell still travel. Not moved if the bell wasn't hung (or Wren carries it).
 - Maren and Tobin each say one line (once, flags `village.marenBell` / `village.tobinBell`)
   after the Morrowbell is hung.
 

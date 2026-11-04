@@ -4,6 +4,7 @@ import type { Physics } from '../core/physics';
 import type { Particles } from '../render/particles';
 import type { Hud } from '../ui/hud';
 import type { Area } from '../world/area';
+import { THORN_ATTACK } from './blight';
 import { Boss } from './boss';
 import type { CameraRig } from './camera';
 import type { Enemy, EnemyEnv, EnemyManager, HurtResult } from './enemies';
@@ -92,6 +93,9 @@ export class Combat {
     this.cord.update(dt, player.handPos());
     this.g.enemies.update(dt, this.enemyEnv);
     this.g.hazards.update(dt, this.hazardEnv);
+    // The blight's thorns: brushing a clump costs a heart and shoves Wren back out of it.
+    const thorn = this.g.area.thornAt?.(player.pos.x, player.pos.y, player.pos.z);
+    if (thorn) this.hitPlayer(new THREE.Vector3(thorn.x, player.pos.y, thorn.z), THORN_ATTACK);
     this.g.pickups.update(dt, player.pos, (x, z, fromY) => this.g.physics.groundY(x, z, fromY) ?? fromY - 1, (k) => {
       if (k === 'heart') {
         state.heal(2);
