@@ -1,10 +1,12 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Physics } from '../core/physics';
-import { MillInterior } from '../world/interior';
 import { Overworld } from '../world/overworld';
 import { fakeApi } from './fakeApi';
-import { millContent, wakeHour } from './mill';
 import { overworldContent } from './overworld';
+import { wakeHour } from './village';
+import { Layer } from '../core/physics';
+import * as THREE from 'three';
+import { MILL, MILL_TOWER, terrainHeight } from '../world/overworld/layout';
 
 beforeAll(async () => {
   await initPhysics();
@@ -21,51 +23,6 @@ describe('wakeHour', () => {
   });
 });
 
-describe('the mill', () => {
-  let physics: Physics;
-  beforeAll(() => {
-    physics = new Physics();
-  });
-
-  it('has a script for every interactable and trigger', () => {
-    const area = new MillInterior(physics);
-    const { scripts } = millContent(area);
-    for (const it of [...area.interactables, ...area.triggers]) expect(scripts[it.id], it.id).toBeTypeOf('function');
-    area.dispose();
-  });
-
-  it('sleeping heals fully and moves the clock to the next 06:00 / 18:00; declining changes nothing', async () => {
-    const area = new MillInterior(physics);
-    const { api, state, answers } = fakeApi(area, physics);
-    const { scripts } = millContent(area);
-    state.hp = 1;
-    state.hours = 10;
-    answers.push(1); // Not now
-    await scripts.bed(api);
-    expect(state.hp).toBe(1);
-    expect(state.hours).toBe(10);
-    answers.push(0);
-    await scripts.bed(api);
-    expect(state.hp).toBe(state.maxHp);
-    expect(state.hours).toBe(18);
-    state.hp = 2;
-    answers.push(0);
-    await scripts.bed(api);
-    expect(state.hours).toBe(6);
-    expect(state.day).toBe(2);
-    expect(state.hp).toBe(state.maxHp);
-    area.dispose();
-  });
-
-  it('the exit leads back to the village', async () => {
-    const area = new MillInterior(physics);
-    const { api, travels } = fakeApi(area, physics);
-    await millContent(area).scripts.exit(api);
-    expect(travels).toEqual([{ area: 'overworld', entrance: 'mill' }]);
-    area.dispose();
-  });
-});
-
 describe('Tobin, the mill door and Odo', () => {
   let physics: Physics;
   let ow: Overworld;
@@ -75,8 +32,43 @@ describe('Tobin, the mill door and Odo', () => {
     physics.refreshQueries();
   });
 
-  it('the overworld has a mill entrance to come back to', () => {
-    expect(ow.entrances.mill).toBeDefined();
+  it('has a script for the mill door and the bed', () => {
+    const { scripts } = overworldContent(ow);
+    for (const id of ['door.mill', 'bed.mill', 'door.home0', 'door.home1']) {
+      expect(ow.interactables.some((it) => it.id === id), id).toBe(true);
+      expect(scripts[id], id).toBeTypeOf('function');
+    }
+  });
+
+  it('sleeping heals fully and moves the clock to the next 06:00 / 18:00; declining changes nothing', async () => {
+    const { api, state, answers } = fakeApi(ow, physics);
+    const { scripts } = overworldContent(ow);
+    state.hp = 1;
+    state.hours = 10;
+    answers.push(1); // Not now
+    await scripts['bed.mill'](api);
+    expect(state.hp).toBe(1);
+    expect(state.hours).toBe(10);
+    answers.push(0);
+    await scripts['bed.mill'](api);
+    expect(state.hp).toBe(state.maxHp);
+    expect(state.hours).toBe(18);
+    state.hp = 2;
+    answers.push(0);
+    await scripts['bed.mill'](api);
+    expect(state.hours).toBe(6);
+    expect(state.day).toBe(2);
+    expect(state.hp).toBe(state.maxHp);
+  });
+
+  it('the cottages\' doors are locked, with no word of a key', async () => {
+    const { api, said } = fakeApi(ow, physics);
+    const { scripts } = overworldContent(ow);
+    for (const id of ['door.home0', 'door.home1']) {
+      await scripts[id](api);
+      expect(said.at(-1)!.text).toContain('locked');
+      expect(said.at(-1)!.text.toLowerCase()).not.toContain('key');
+    }
   });
 
   it('Tobin gives the mill key once Wren has the sword, and only once', async () => {
@@ -93,15 +85,29 @@ describe('Tobin, the mill door and Odo', () => {
     expect(said.slice(n).some((p) => p.text.includes('Mill Key'))).toBe(false);
   });
 
-  it('the mill door is locked until then', async () => {
+  it('the mill door is locked until then; after, it opens and shuts where it stands (no loading)', async () => {
     const { api, state, travels, said } = fakeApi(ow, physics);
     const { scripts } = overworldContent(ow);
+    // A ray at waist height from the doorstep, straight in through the doorway toward the bed.
+    const y = terrainHeight(MILL.x, MILL.z) + 1;
+    const from = new THREE.Vector3(MILL.x + MILL_TOWER.outer + 1, y, MILL.z);
+    const inward = new THREE.Vector3(-1, 0, 0);
+    const reach = () => {
+      physics.refreshQueries();
+      return physics.rayDistance(from, inward, 10, Layer.World);
+    };
+    expect(reach()).toBeLessThan(2); // the shut door
     await scripts['door.mill'](api);
-    expect(travels).toEqual([]);
     expect(said.at(-1)!.text).toContain('locked');
+    expect(ow.millDoor.open).toBe(false);
     state.set('village.millKey');
     await scripts['door.mill'](api);
-    expect(travels).toEqual([{ area: 'mill', entrance: undefined }]);
+    expect(ow.millDoor.open).toBe(true);
+    expect(reach()).toBeGreaterThan(4); // through the doorway, into the room
+    await scripts['door.mill'](api);
+    expect(ow.millDoor.open).toBe(false);
+    expect(reach()).toBeLessThan(2);
+    expect(travels).toEqual([]);
   });
 
   it('Odo sells the Stoneward Tunic for 50 gems, once', async () => {

@@ -258,7 +258,7 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
          along the walls, a `Bounds` wall at the far end. `buildBounds` leaves a gap in the ring where the pass crosses it.
        - The valley's scenery is filtered with `inPass` after the seeded placement (nothing reshuffles); `PASS` has its
          own seed `pass`. The area name "The Northpass" shows past the gate.
-       - The region loads at 260 m and drops at 300 m (fog is full at 290 m), so the canyon never pops into view.
+       - The region loads at 260 m and drops at 300 m (fog is full at 215 m), so the canyon never pops into view.
        - Cutscene rules: a vision hides Wren (`api.hidePlayer`) and sets its first shot in `travel`'s `arrive` callback,
          before the fade-in; Gravelheart's intro shot sits on the doorway's own axis (look scene `wardenIntro`).
        - Look scene `northpass`. Not done here (D3): the camp's props, bell, NPC, the Cragstalker.

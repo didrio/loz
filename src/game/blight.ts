@@ -34,7 +34,7 @@ export function fieldPopulation(area: AreaLike, valleyOpen: boolean) {
   return { thornlings: restored ? STRAY_THORNLINGS : area.enemyCount, wisps: !restored };
 }
 
-const BLIGHT_MOODS: Partial<Record<MusicMood, MusicMood>> = { day: 'blight', night: 'blightNight', village: 'blightVillage' };
+const BLIGHT_MOODS: Partial<Record<MusicMood, MusicMood>> = { day: 'blight', night: 'blightNight', village: 'blightVillage', villageNight: 'blightVillage' };
 
 /** The field's song while the blight lies on it (other moods, like a dungeon's, are left alone). */
 export function blightMood(mood: MusicMood, isBlighted: boolean): MusicMood {

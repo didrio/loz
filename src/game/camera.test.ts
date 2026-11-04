@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { initPhysics, Physics } from '../core/physics';
+import { initPhysics, Layer, Physics, SOLID } from '../core/physics';
 import { CameraRig } from './camera';
 
 beforeAll(async () => {
@@ -26,6 +26,20 @@ function setup(wallZ: number | null) {
 }
 
 describe('CameraRig collision', () => {
+  it('stops at a doorway\'s camera pane (stays in the room with Wren), which Wren walks through', () => {
+    const open = setup(null);
+    expect(open.cam.z).toBeLessThan(-4); // no pane: full distance behind her
+    const { physics, run, cam } = setup(null);
+    physics.box(0, 2, -2.05, 1, 2, 0.05, 0, Layer.CameraOnly);
+    physics.refreshQueries();
+    run(120);
+    expect(cam.z).toBeGreaterThan(-2.05); // kept on Wren's side of the pane
+    const feet = new THREE.Vector3(0, 0, -1);
+    const wren = physics.createCharacter(feet, 0.35, 0.5, Layer.Player, SOLID | Layer.Enemy);
+    for (let i = 0; i < 60; i++) wren.move(feet, new THREE.Vector3(0, -0.01, -0.05));
+    expect(feet.z).toBeLessThan(-3); // and she walked straight through it
+  });
+
   it('pulls in in front of a wall behind Wren, never inside it, and fades her when close', () => {
     const { cam, rig } = setup(-1);
     expect(cam.z).toBeGreaterThan(-1); // in front of the wall's face

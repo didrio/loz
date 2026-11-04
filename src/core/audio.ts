@@ -163,6 +163,10 @@ export class Sfx {
 
   // --- boss sounds ---
   /** A long wooden/iron creak (a huge thing moving). */
+  /** A house door swinging open on its hinge: a short wooden creak. */
+  doorOpen() { this.tone(210, 0.32, 'sawtooth', 0.03, 150); this.noise(0.3, 1100, 500, 0.07, 'bandpass'); }
+  /** ...and shutting: a soft wooden thump and the latch. */
+  doorShut() { this.tone(95, 0.16, 'sine', 0.28, 60, 0.12); this.noise(0.14, 700, 150, 0.22, 'lowpass', 0.12); this.tone(1700, 0.04, 'square', 0.03, 1200, 0.2); }
   creak() { this.tone(70, 0.9, 'sawtooth', 0.06, 52); this.noise(0.9, 700, 250, 0.12, 'bandpass'); }
   /** A thin, rising shriek. */
   shriek() {

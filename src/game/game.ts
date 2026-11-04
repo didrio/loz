@@ -101,7 +101,7 @@ export class Game implements ScriptApi {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
-    this.scene.fog = new THREE.Fog(0xbfe0f2, 70, 290);
+    this.scene.fog = new THREE.Fog(0xbfe0f2, 50, 215);
     window.addEventListener('resize', () => this.resize());
     this.resize();
 

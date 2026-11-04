@@ -183,8 +183,9 @@ in.
   before the blight, now gone) locked his blade in the grove chest, and she gives Wren the key.
 - **Tobin the Miller** (gone after the prism; the mill stays unlocked): dry humor, runs the windmill; saw the flame carried off south. Once
   Wren is armed he gives the **Mill Key** (`village.millKey`); the windmill's door (west side of
-  the square) opens onto his mill, where the bed sleeps to the next 06:00/18:00 and fully
-  heals.
+  the square) swings open onto his room, the windmill's ground floor (walked into, no loading), where
+  the bed sleeps to the next 06:00/18:00 and fully heals. The two standing cottages' doors are locked ("The
+  door is locked.", no hint of a key): they open in a later chapter.
 - **Lark**: a small kid by the well (breathless, conspiratorial). Points Wren at the shield in the ruined cottage. Secretly rides Tobin's flour tray down
   the bank behind the mill and talks Wren into riding her shield (`village.surfIdea`, then the how-to line;
   see shield surfing in [combat.md](combat.md)). After her first ride (`village.surfTried`) Lark brags about

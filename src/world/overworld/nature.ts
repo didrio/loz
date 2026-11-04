@@ -3,7 +3,7 @@ import { fbm } from '../../core/math';
 import { Layer } from '../../core/physics';
 import { mat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
-import { GROVE, inGate, inGorge, inRuin, inHollow, inPass, isOpen, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
+import { GROVE, inGate, inGorge, inRuin, inHollow, inPass, isOpen, onVillageStep, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
 
 function instanced(b: AreaBuilder, geo: THREE.BufferGeometry, material: THREE.Material, ms: THREE.Matrix4[], colors?: THREE.Color[], shadow = true) {
   const im = new THREE.InstancedMesh(geo, material, ms.length);
@@ -107,7 +107,7 @@ export function buildGrass(b: AreaBuilder) {
     const q = new THREE.Quaternion().setFromEuler(new THREE.Euler((rand() - 0.5) * 0.4, rand() * 6, (rand() - 0.5) * 0.4));
     const hue = rand(), light = rand(), flower = rand() < 0.18;
     const petal = flower ? palette[Math.floor(rand() * palette.length)] : 0;
-    if (inHollow(x, z, 3) || inGorge(x, z, 1) || inGate(x, z) || inPass(x, z, 1) || inRuin(x, z)) continue; // the hollow has its own dead grass
+    if (inHollow(x, z, 3) || inGorge(x, z, 1) || inGate(x, z) || inPass(x, z, 1) || inRuin(x, z) || onVillageStep(x, z)) continue; // the hollow has its own dead grass
     tufts.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 0.25 * s, z), q, new THREE.Vector3(s, s, s)));
     tuftC.push(new THREE.Color().setHSL(0.24 + hue * 0.07, 0.55, 0.32 + light * 0.12));
     if (flower) {

@@ -9,7 +9,7 @@ import { compile, type CompiledSong, type Instrument, type Layer, type Song } fr
 import { VALLEY_DAY_SONG } from './valleyTheme';
 
 /** Which theme plays: the field by day or night, the village, a boss fight, or a dungeon. */
-export type MusicMood = 'day' | 'night' | 'village' | 'boss' | 'shrine' | 'warden' | 'blight' | 'blightNight' | 'blightVillage';
+export type MusicMood = 'day' | 'night' | 'village' | 'villageNight' | 'boss' | 'shrine' | 'warden' | 'blight' | 'blightNight' | 'blightVillage';
 /** Boss fights' songs: they crossfade in fast, with the fight. */
 export const BOSS_MOODS: ReadonlySet<MusicMood> = new Set<MusicMood>(['boss', 'warden']);
 
@@ -81,6 +81,28 @@ export const VILLAGE_SONG: Song = {
     { name: 'A', chords: VILLAGE_A, melody: VILLAGE_MELODY_A, layers: [melody('piano'), ...stride, villageHat] },
     { name: "A'", chords: VILLAGE_A, melody: VILLAGE_MELODY_A, layers: [melody('piano'), melody('mallet', 1, 0.5), ...stride, villageHat] },
     { name: 'B', chords: VILLAGE_B, melody: VILLAGE_MELODY_B, layers: [melody('piano'), ...stride, villageHat, { type: 'tones', inst: 'bass', pattern: '0*2 2*2 3*2 2*2', octave: 2, vel: 0.6 }] },
+  ],
+};
+
+// --- Thistledown at night: "Lamps in the Windows" (D major, 88 bpm, a lazy swing) ------------
+// The two-step after closing time: the same chords and melody, slower and softer. The stride
+// becomes a rocking left hand (root, fifth, octave) with soft keys on 2 and 4, a brushed shaker,
+// a quiet piano lead with a bell an octave up the second time; a warm pad holds the lamps lit.
+
+const villageNightHand: Layer[] = [
+  { type: 'tones', inst: 'piano', pattern: '0*2 2*2 0*2 3*2', octave: 2, vel: 0.5 },
+  { type: 'chord', inst: 'keys', center: 64, vel: 0.28, pattern: '..X...X.' },
+];
+const villageNightPad: Layer = { type: 'chord', inst: 'pad', center: 62, vel: 0.45 };
+const villageNightBrush: Layer = { type: 'beat', inst: 'shaker', pattern: '..o...o.', vel: 0.3 };
+
+export const VILLAGE_NIGHT_SONG: Song = {
+  name: 'Lamps in the Windows', bpm: 88, stepsPerBeat: 2, beatsPerBar: 4, loopFrom: 1, swing: 0.18,
+  sections: [
+    { name: 'intro', chords: 'D6 | A7', layers: [...villageNightHand, villageNightPad] },
+    { name: 'A', chords: VILLAGE_A, melody: VILLAGE_MELODY_A, layers: [melody('piano', 0, 0.75), ...villageNightHand, villageNightPad] },
+    { name: "A'", chords: VILLAGE_A, melody: VILLAGE_MELODY_A, layers: [melody('piano', 0, 0.7), melody('bell', 1, 0.25), ...villageNightHand, villageNightPad, villageNightBrush] },
+    { name: 'B', chords: VILLAGE_B, melody: VILLAGE_MELODY_B, layers: [melody('piano', 0, 0.75), ...villageNightHand, villageNightPad, villageNightBrush, { type: 'tones', inst: 'bass', pattern: '0*4 2*4', octave: 2, vel: 0.4 }] },
   ],
 };
 
@@ -259,7 +281,7 @@ export const BLIGHT_VILLAGE_SONG: Song = {
 export const DAY_SONGS = { 'ember-hills': DAY_SONG, 'valley-wakes': VALLEY_DAY_SONG } as const;
 export const ACTIVE_DAY: keyof typeof DAY_SONGS = 'ember-hills';
 
-export const SONGS: Record<MusicMood, Song> = { day: DAY_SONGS[ACTIVE_DAY], night: NIGHT_SONG, village: VILLAGE_SONG, boss: BOSS_SONG, shrine: SHRINE_SONG, warden: WARDEN_SONG,
+export const SONGS: Record<MusicMood, Song> = { day: DAY_SONGS[ACTIVE_DAY], night: NIGHT_SONG, village: VILLAGE_SONG, villageNight: VILLAGE_NIGHT_SONG, boss: BOSS_SONG, shrine: SHRINE_SONG, warden: WARDEN_SONG,
   blight: BLIGHT_SONG, blightNight: BLIGHT_NIGHT_SONG, blightVillage: BLIGHT_VILLAGE_SONG };
 
 const compiled: Partial<Record<MusicMood, CompiledSong>> = {};

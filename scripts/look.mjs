@@ -172,6 +172,32 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('surf-lark');
   },
+  /** Thistledown's details: the well's shaft, both cottages' fronts, the mill doorstep; then lit up at night. */
+  async villageDetails(h) {
+    await h.newGame();
+    await h.teleport(-60, -36, 0); // Wren parked out of the shots
+    const ground = await h.game(() => window.embervale.physics.groundY(-62, -61) ?? 1.2);
+    const cam = async (name, from, to) => {
+      await h.game(([from, to]) => {
+        const g = window.embervale;
+        g.rig.frozen = true;
+        g.camera.position.set(...from);
+        g.camera.lookAt(...to);
+      }, [from, to]);
+      await h.wait(700);
+      await h.shot(name);
+    };
+    const y = ground;
+    await cam('well-shaft', [-62, y + 4.5, -55.5], [-62, y, -58]);
+    await cam('cottage-east', [-56.5, y + 1.8, -59], [-46, y + 1.8, -60.5]);
+    await cam('cottage-southwest', [-66, y + 1.8, -53.5], [-74, y + 1.8, -46]);
+    await cam('mill-doorstep', [-74.5, y + 1.6, -57], [-79.6, y + 0.6, -58]);
+    await h.game(() => (window.embervale.state.hours = 22));
+    await h.wait(1500);
+    await cam('night-square', [-50, y + 4, -46], [-62, y + 1, -58]);
+    await cam('night-mill', [-72, y + 2.5, -55], [-79.6, y + 2, -58]);
+    await h.game(() => (window.embervale.rig.frozen = false));
+  },
   /** Pip, the smallest villager, east of the well by the standing cottage, by day and by night. */
   async pip(h) {
     await h.newGame();
@@ -183,7 +209,7 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('pip-night');
   },
-  /** The bigger cottages from the square, Odo's stall, Wren in the Stoneward Tunic, and the mill inside. */
+  /** The bigger cottages from the square, Odo's stall, Wren in the Stoneward Tunic, the mill's door and its room (the ground floor). */
   async mill(h) {
     await h.newGame();
     await h.teleport(-52, -52, Math.atan2(-10, -6));
@@ -211,10 +237,10 @@ const SCENES = {
       await h.wait(700);
       await h.shot(name);
     };
-    const ground = await h.game(() => window.embervale.physics.groundY(-81, -58) ?? 1);
+    const ground = await h.game(() => window.embervale.physics.groundY(-74, -58) ?? 1); // the square by the mill (not its roof)
     await h.teleport(-60, -40, 0);
-    await cam('mill-door-close', [-77.2, ground + 1.7, -56.6], [-81, ground + 1.3, -58]);
-    await cam('mill-sails', [-76, ground + 4, -50], [-81, ground + 6, -58]);
+    await cam('mill-door-close', [-75.4, ground + 1.7, -56.6], [-79.6, ground + 1.3, -58]);
+    await cam('mill-sails', [-72, ground + 5, -47], [-80, ground + 8, -58]);
     const sign = await h.game(() => {
       const g = window.embervale;
       const s = g.area.interactables.find((i) => i.id === 'sign.crossroads');
@@ -222,13 +248,19 @@ const SCENES = {
     });
     const d = Math.hypot(sign.sx - sign.x, sign.sz - sign.z);
     await cam('sign', [sign.x + ((sign.sx - sign.x) / d) * 3, sign.y + 1.7, sign.z + ((sign.sz - sign.z) / d) * 3], [sign.x, sign.y + 1.4, sign.z]);
+    // Tobin's room, the windmill's ground floor: the door swung open, looking in; inside; the bed.
+    await h.game(() => window.embervale.area.millDoor.setOpen(true));
+    await h.wait(800);
+    await cam('mill-door-open', [-73.5, ground + 1.7, -58.4], [-84, ground + 1.1, -58]);
+    await cam('mill-bed', [-82, ground + 2.6, -60.2], [-86.5, ground + 0.5, -57.1]);
     await h.game(() => (window.embervale.rig.frozen = false));
-    await h.game(() => window.embervale.loadArea('mill'));
+    await h.teleport(-82.5, -58, -Math.PI / 2, ground + 1.5);
     await h.wait(1500);
+    console.log('mill-inside: Wren, camera', await h.game(() => {
+      const g = window.embervale;
+      return [g.player.pos, g.camera.position].map((v) => [v.x, v.y, v.z].map((n) => n.toFixed(1)).join(', '));
+    }));
     await h.shot('mill-inside');
-    await h.teleport(4, 3, Math.PI * 0.9);
-    await h.wait(900);
-    await h.shot('mill-bed');
   },
   async grove(h) {
     await h.newGame();

@@ -22,7 +22,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   task, only the scenarios that cover it (table below); the full suite at a milestone's
   end, before a commit, or after shared systems (player, physics, camera, saves, game.ts)
   changed, asking the owner first. CI runs everything on every push anyway.
-- `npm run look -- <scenes>` (`--list` for names: title, field, village, mill, grove, chest,
+- `npm run look -- <scenes>` (`--list` for names: title, field, village, villageDetails (well, cottage fronts, mill doorstep, night lighting), mill (incl. its room), grove, chest,
   door, dungeon, camera, glove, landmarks, buds, bells, bellShaft, gorge, shrine, enemies, hollow, night, guard, shield, surf, orbs, boss, boss-moves, gravelheart, gravelheart2, gate, northpass, camp, wardenIntro, seal, blight, emptyVillage): captures named scenes to
   `look-output/` for you to inspect. Boss scenes slow time, make Wren invulnerable, park
   the camera and force moves. Add a scene when you add a place, a boss or a visual system.
@@ -52,7 +52,7 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | `shrine-enemies` | `shrine-entry` | sentinels and shellbacks spawn from the data; a sentinel sleeps, wakes, swings (2 half-hearts), falls to hits in its recovery and from behind; a shellback's shell turns a frontal hit, it falls from behind |
 | `shrine-boss` | `shrine-boss` | walking into the Hearth wakes Gravelheart (its theme, the seal); a direct kill plays the defeat (the ember, the ring and door, the Heart Vessel, the causeway and the hidden door); the vessel adds a heart; the causeway leads to the Keepers' Seal; the prism (one hit only cracks it, four shatter it): its vision breaks the gate and returns to the room |
 | `dev-menu` | `field-sword` | the pause menu's Dev tab: opens and pauses, toggles stay open, Backspace closes, loading the boss-door state (with its hints and messages) by keyboard and the night state by mouse |
-| `village` | `field-sword` | Lark's surf idea and a ride (shield-held landing, speed, letting go; not indoors), Tobin's mill key, the mill door, sleeping (heals, clock to 18:00), the way out, buying Odo's Stoneward Tunic |
+| `village` | `field-sword` | Lark's surf idea and a ride (shield-held landing, speed, letting go; not indoors), Tobin's mill key, the mill door swinging open in place, walking in, sleeping (heals, clock to 18:00), a shut door keeping Wren in, walking out, buying Odo's Stoneward Tunic |
 | `trials` | `shrine-entry` | the Bell Shaft: a fall from a checkpoint ledge returns Wren there, half a heart lost; riding a rising ledge; taking the Lullbell from the top ledge |
 | `gorge` | `field-sword` | the Hushing Gorge: its five thornlings and sentinel, a fall off the climb returns Wren to the last pillar (half a heart), taking the Morrowbell |
 | `northpass` | `northpass` | the Cragstalker stands on the canyon's far side once the region is built; a fall in the crossing returns Wren to the last ledge (half a heart); it lunges at Wren; taking the Waybell, hanging it at the camp, the travel menu offers both other bells and Morrowbell → Wayfarers' Camp arrives at its post; back in Thistledown only Lark and Pip remain, Pip asks Wren to find the grown-ups, Odo's stall refills a flask unattended |

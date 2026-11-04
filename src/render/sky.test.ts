@@ -21,6 +21,6 @@ describe('Sky blight', () => {
   });
 
   it('does nothing at level 0', () => {
-    expect(skyAt(12, 0).fog.far).toBe(290);
+    expect(skyAt(12, 0).fog.far).toBe(215);
   });
 });

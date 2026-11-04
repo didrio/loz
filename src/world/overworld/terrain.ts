@@ -26,6 +26,7 @@ export function buildTerrain(b: AreaBuilder, rect: TerrainRect = VALLEY_RECT) {
 
   const geo = grid.toNonIndexed();
   grid.dispose();
+  wellHole(geo);
   geo.computeVertexNormals();
   const pos = geo.attributes.position, nor = geo.attributes.normal;
   const colors = new Float32Array(pos.count * 3);
@@ -80,5 +81,20 @@ export function buildBounds(b: AreaBuilder) {
     // The Northpass cuts through the ring; its own rock walls hold the player in (the region adds the far end).
     if (passFrame(Math.cos(a) * r, Math.sin(a) * r).d < PASS.halfWidth + 12) continue;
     b.box(Math.cos(a) * r, 40, Math.sin(a) * r, 0.5, 80, half, -a, Layer.Bounds);
+  }
+}
+
+/**
+ * Opens the ground under the village well, so its shaft can be seen going down: the faces around
+ * the grid point at the well's middle (within 2.9 m) collapse to nothing. Seen only; the collider
+ * stays whole (the well's lid), and the well's paved apron covers the hole's ragged edge.
+ */
+function wellHole(geo: THREE.BufferGeometry) {
+  const pos = geo.attributes.position;
+  for (let f = 0; f < pos.count; f += 3) {
+    let touches = false;
+    for (let k = 0; k < 3; k++) touches ||= Math.hypot(pos.getX(f + k) - VILLAGE.x, pos.getZ(f + k) - VILLAGE.z) < 0.5;
+    if (!touches) continue;
+    for (let k = 1; k < 3; k++) pos.setXYZ(f + k, pos.getX(f), pos.getY(f), pos.getZ(f));
   }
 }

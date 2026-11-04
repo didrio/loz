@@ -19,13 +19,14 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-03: Emberfield plays start to finish: a wordless start, the shield in a ruined cottage, the village, the Lamplighter,
-then **the Waking Shrine** through **Gravelheart** and the Keepers' **prism** (four sword hits), which opens the gate to the Northpass and **Wayfarers' Camp**.
-The valley lies under **the blight** until the prism breaks; then **Maren, Tobin and Odo vanish** and only Lark and Pip remain. Pip asks Wren to find
-the grown-ups (rescue quests come later), and Odo's stall runs on trust. **Sigils** (the pause menu's Messages tab) and a side errand
-(**Pip**'s doll, 20 gems) are in. Unplayed by the owner: the Settings tab, surfing, the sealed gate, D3, the prism, the empty village. Open: a Lamplighter-fight
-report (stuck at the arena edge, "inverted" controls) that didn't reproduce (roadmap, "Known quirks"). Villagers never name kin.
-**Next:** the pause menu's inventory tab (its tabs: Settings, Hints, Messages, Dev; Dev is for testing and drops from the Steam build). (Gamepad: attack X/RB/RT, guard LB/LT.)
+As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield in a ruined cottage, the village, the Lamplighter,
+then **the Waking Shrine** through **Gravelheart** and the Keepers' **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**.
+The valley lies under **the blight** until the prism breaks; then **Maren, Tobin and Odo vanish** and only Lark and Pip remain.
+Thistledown has its own day and night songs over a wide zone (the name shows on the same ground), lamplit nights, a well shaft, **Tobin's room as
+the windmill's ground floor** (a hinged door, no loading), two cottages with locked doors, and a safe zone: field enemies drop a chase at its edge.
+Unplayed by the owner: the village polish (fog 50-215 m, night song, mill room, camera in its doorway), the Settings tab, surfing, the sealed gate, D3, the prism.
+Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks"). Villagers never name kin.
+**Next:** the pause menu's inventory tab (its tabs: Settings, Hints, Messages, Dev; Dev drops from the Steam build). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -48,11 +49,8 @@ report (stuck at the arena edge, "inverted" controls) that didn't reproduce (roa
   names, characters, story, map layout, music, sound effects, logos or UI design, and never
   use another franchise's names in code, text or marketing. If a request would recreate a
   specific game's content, do the original version and say so.
-- **Art is primitives only**: boxes, cylinders, cones, spheres, icosahedra built in code with
-  flat colors. No imported models, textures or sprites.
-- **Audio is synthesized in code.** No samples, no recordings; all melodies original.
-- **AI disclosure**: the game contains AI-generated code and writing; the owner will
-  disclose it on Steam.
+- **Art is primitives only** (boxes, cylinders, cones, spheres, flat colors; no imported models, textures or sprites).
+  **Audio is synthesized in code** (no samples; all melodies original). The owner discloses the AI-generated code and writing on Steam.
 
 ## Working with the owner
 
@@ -99,15 +97,12 @@ door), so don't skip them because the change "looks small":
    milestone, before the owner commits, or after touching shared systems (player, physics,
    camera, saves, game.ts): **ask the owner first** (owner's call, 2026-11-02; CI also runs
    it on every push). See [docs/testing.md](docs/testing.md) for which scenario covers what.
-4. **Anything visible: look at it.** `npm run look -- <scenes>` (or a scratch Playwright
-   script built on `scripts/browser.mjs`), then open the screenshots and check them. For
-   refactors, capture before and after. Dungeon layouts: `npm run map -- <id>`.
+4. **Anything visible: look at it.** `npm run look -- <scenes>` (or a scratch Playwright script on
+   `scripts/browser.mjs`), then check the screenshots; refactors: before and after. Dungeons: `npm run map -- <id>`.
 5. **When a check fails, find out why before touching game code.** It may be the test
    (headless timing, knockback still settling) or a real bug.
-6. **Update the docs** in the same change: this file for layout/rules, the topic doc for
-   details, the roadmap checklist for scaling items.
-7. **Report plainly**: what you verified, what you couldn't (audio, feel, a real GPU or
-   gamepad), and where you deviated from the request.
+6. **Update the docs** in the same change (this file: layout/rules; topic doc: details; roadmap: scaling items).
+7. **Report plainly**: what you verified, what you couldn't (audio, feel, real GPU/gamepad), where you deviated.
 
 ## Architecture
 
@@ -127,8 +122,8 @@ src/
                            imported/ holds the generated notes (never edit)
   render/                  materials (shared/unique, static merging), shapes, characters, sky (incl. the blight look), particles, motes (ash)
   world/
-    area.ts, interior.ts   Area interface, Interactable, Trigger, AreaBuilder; MillInterior (Tobin's mill)
-    objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), BushField, BossArena, HeartVessel, GreatLantern
+    area.ts                Area interface, Interactable, Trigger, AreaBuilder
+    objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern
     jars.ts                JarField: clay jars in the ruins (a sword breaks one; blue gem / heart / empty; saved as `jar.<id>` flags)
     sigil.ts               SigilLook: a message in the air (the hollow's, the shrine's three)
     bell.ts, murmurbud.ts  BELL_IDS, BellPost, BellPickup; MurmurbudLook (hint bulb: swells, sulks, opens, floating note, wisp)
@@ -157,8 +152,8 @@ src/
   content/                 the game's story; what things DO
     areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death
     overworld.ts           scripts for every overworld interactable/trigger, save restore
-    village.ts             Thistledown: the villagers, the mill door, Odo's stall, the opening (the shield, the scream), Pip's doll
-    mill.ts, shop.ts       Tobin's mill (bed, exit); offerWares, the shared buy menu (wares + Not now)
+    village.ts             Thistledown: the villagers, the mill door and bed, the locked cottages, Odo's stall, the opening (the shield, the scream), Pip's doll
+    shop.ts                offerWares, the shared buy menu (wares + Not now)
     bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
     sigils.ts, villageNews.ts   the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)
     gorge.ts, northpass.ts the Hushing Gorge (monsters, fall rule); the canyon past the camp (Cragstalkers, fall rule)

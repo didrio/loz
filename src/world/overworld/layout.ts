@@ -12,9 +12,19 @@ export const SPAWN = { x: 0, z: 14, facing: Math.PI };
 export const VILLAGE = { x: -62, z: -58, r: 30 };
 /** Tobin's windmill on the village's west side; its door faces east, onto the square. */
 export const MILL = { x: VILLAGE.x - 22, z: VILLAGE.z };
+/**
+ * The windmill's tower (world/overworld/village.ts): radii at the ground (`outer`, walls 0.9 m thick
+ * down to `inner`, the room) and at the top, its height, the room's ceiling, its sides, and half the
+ * doorway's angle (one side, so the doorway's cut lines up with the tower's corners above it). Tobin's room is its ground floor; the door faces the square (+x).
+ */
+export const MILL_TOWER = { outer: 4.8, inner: 3.9, top: 3.0, height: 11, ceiling: 3.4, sides: 32, gap: (Math.PI * 2) / 32 };
+/** Tobin's bed, from the mill's middle: against the back wall, its head to the north (+z). */
+export const MILL_BED = { x: -2.5, z: 0.9 };
 /** The Morrowbell's post on the square, between the east and northeast cottages (clear of both doors), facing the well (docs/bells.md). */
 export const MORROW_POST = { x: VILLAGE.x + 9.4, z: VILLAGE.z - 5.7 };
 /** Odo the merchant's stall: his counter runs north-south, customers stand on its east side. */
+/** Thistledown's two standing homes: the angle (around the square, 17 m out) each stands at; each faces the well. */
+export const HOMES = [-0.15, 2.35].map((a) => ({ a, x: VILLAGE.x + Math.cos(a) * 17, z: VILLAGE.z + Math.sin(a) * 17 }));
 export const STALL = { x: VILLAGE.x - 5.4, z: VILLAGE.z - 4 };
 export const GROVE = { x: 82, z: -78 };
 export const SHRINE = { x: 108, z: 28 };
@@ -336,9 +346,33 @@ export function inGate(x: number, z: number, margin = 0) {
   return Math.abs(x - GATE.x) < GATE.halfOpening + 3 + margin && Math.abs(z - GATE.z) < 7 + margin;
 }
 
+/**
+ * Where Thistledown's own song plays (day and night) and its name shows: well past the fence, out to the mill's
+ * fields, and up the north path to the shield's cottage, so it carries Wren in and out of town.
+ */
+export function inVillageMusic(x: number, z: number) {
+  if (Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < VILLAGE.r + 16) return true;
+  const c = RUINS[0];
+  return Math.hypot(x - c.x, z - c.z) < 16;
+}
+
+/** The village is safe ground: field enemies never step in, and give up a chase once Wren is inside. */
+export function inVillageGuard(x: number, z: number) {
+  return Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < VILLAGE.r + 6;
+}
+
+/** On a village doorstep or the well's footing, where no grass may grow through. */
+export function onVillageStep(x: number, z: number) {
+  if (Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < 3.4) return true; // the well's paved apron
+  if (Math.hypot(x - MILL.x, z - MILL.z) < MILL_TOWER.outer + 0.3) return true; // the mill's room
+  if (Math.hypot(x - (MILL.x + MILL_TOWER.outer + 0.4), z - MILL.z) < 2.4) return true;
+  // Each home's door is 4.5 m in from its middle, toward the well.
+  return HOMES.some((h) => Math.hypot(x - (VILLAGE.x + Math.cos(h.a) * 12.5), z - (VILLAGE.z + Math.sin(h.a) * 12.5)) < 2.4);
+}
+
 /** Which named place a point is in (shown as a title when you walk in). */
 export function areaNameAt(x: number, z: number) {
-  if (Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < VILLAGE.r + 4) return 'Thistledown Village';
+  if (inVillageMusic(x, z)) return 'Thistledown Village'; // the same ground the village song covers
   if (Math.hypot(x - GROVE.x, z - GROVE.z) < 36) return 'The Whispering Grove';
   if (Math.hypot(x - SHRINE.x, z - SHRINE.z) < 28) return 'The Waking Shrine';
   if (Math.hypot(x - LAKE.x, z - LAKE.z) < 38) return 'Glimmer Lake';

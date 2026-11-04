@@ -23,6 +23,26 @@ export function uniqueMat(color: number, extra: THREE.MeshLambertMaterialParamet
   return new THREE.MeshLambertMaterial({ color, flatShading: true, ...extra });
 }
 
+/**
+ * A glowing (additive) material that fades to nothing in the fog. Left alone, three.js mixes a fogged
+ * pixel toward the fog's colour, and additive blending then adds that colour on top, so a far glow
+ * shows through the fog as a pale shape (the Northpass gate's veil did, from across the valley).
+ */
+export function fadeInFog<T extends THREE.Material>(m: T): T {
+  m.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', `#ifdef USE_FOG
+  #ifdef FOG_EXP2
+    float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );
+  #else
+    float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
+  #endif
+  gl_FragColor.rgb *= 1.0 - fogFactor;
+#endif`);
+  };
+  m.customProgramCacheKey = () => 'fadeInFog';
+  return m;
+}
+
 export function isSharedMaterial(m: THREE.Material) {
   for (const v of cache.values()) if (v === m) return true;
   return false;

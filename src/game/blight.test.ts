@@ -33,6 +33,7 @@ describe('the blight', () => {
     expect(blightMood('day', true)).toBe('blight');
     expect(blightMood('night', true)).toBe('blightNight');
     expect(blightMood('village', true)).toBe('blightVillage');
+    expect(blightMood('villageNight', true)).toBe('blightVillage');
     expect(blightMood('day', false)).toBe('day');
     expect(blightMood('boss', true)).toBe('boss');
   });

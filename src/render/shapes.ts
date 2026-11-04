@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { fadeInFog } from './materials';
 
 /** A chunky extruded heart, centered on the origin (about 0.7 m wide at scale 1). */
 export function heartGeometry(depth = 0.12) {
@@ -33,7 +34,7 @@ export function shieldModel(wood: THREE.Material, iron: THREE.Material) {
 export function glow(color: number, radius: number, opacity = 0.35) {
   return new THREE.Mesh(
     new THREE.SphereGeometry(radius, 12, 10),
-    new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false }),
+    fadeInFog(new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false })),
   );
 }
 

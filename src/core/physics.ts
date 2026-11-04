@@ -16,6 +16,11 @@ export const Layer = {
   Bounds: 1 << 2,
   Player: 1 << 3,
   Enemy: 1 << 4,
+  /**
+   * Stops only the camera: an invisible pane across a room's doorway, so while Wren is inside the
+   * camera stays inside with her instead of backing out through the open door.
+   */
+  CameraOnly: 1 << 5,
 } as const;
 
 /** Everything a character can stand on or bump into. */

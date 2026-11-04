@@ -60,7 +60,9 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   inside it, and its idle wandering stays inside its territory too. A chase is dropped after 2.5 s without seeing Wren, when Wren leaves the
   territory, or when the enemy strays 24 m from home (the leash); it walks home and won't
   Dungeon ground enemies also have a *walkable* check (`setWalkable`, `GroundEnemy`): the room minus its stairs. They never step onto stairs (a chaser stops at the foot) but still notice Wren standing on them.
-  notice Wren again for 3 s. Attacks only land at the same height. Before this, a
+  notice Wren again for 3 s. **Safe ground** (`Area.safeGround`, the village ring + 6 m: `inVillageGuard`, owner's call
+  2026-11-04): an enemy ignores Wren standing on it (no notice, a chase drops at once), and night wisps won't chase her
+  there either; field spawns already keep 10 m out. Attacks only land at the same height. Before this, a
   thornling one floor below the shrine's nave chased Wren from under the floor and hit
   through it (`game/thornling.test.ts` reproduces it).
 - **Ground enemies share a base**, `GroundEnemy` (`game/enemies.ts`): the notice rules above

@@ -198,6 +198,7 @@ export class Combat {
       spawn: (e) => this.g.enemies.add(e),
       drop: (kind, at) => this.g.pickups.spawn(kind, at),
       shake: (s) => this.g.rig.shake(s),
+      safeGround: area.safeGround ? (p) => area.safeGround!(p.x, p.z) : undefined,
     };
   }
 

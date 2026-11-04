@@ -1,4 +1,4 @@
-// The village: Lark and shield surfing, Tobin's mill key, the mill (bed, exit), Odo's Stoneward Tunic and flask refills.
+// The village: Lark and shield surfing, Tobin's mill key, the mill (its door, walking in, the bed), Odo's Stoneward Tunic and flask refills.
 export const fixture = 'field-sword';
 
 export default async function run(t) {
@@ -41,31 +41,49 @@ export default async function run(t) {
     check((await state()).flags.includes('village.millKey'), 'no mill key');
   });
 
-  await step('the mill door opens onto the inside; sleeping heals and moves the clock to 18:00', async () => {
-    const p = await at('door.mill');
-    await teleport(p.x + 0.4, p.z, Math.PI / 2);
+  await step('the mill door swings open in place; Wren walks in, sleeps (heals, clock to 18:00), and a shut door keeps her in', async () => {
+    const MILL = { x: -62 - 22, z: -58 };
+    const millDoor = () => window.embervale.area.millDoor.open;
+    const fromMill = async () => {
+      const s = await state();
+      return Math.hypot(s.pos.x - MILL.x, s.pos.z - MILL.z);
+    };
+    // On the doorstep, facing the door (west).
+    await teleport(MILL.x + 5.6, MILL.z, -Math.PI / 2);
     await game(() => (window.embervale.state.hp = 1));
     await press('KeyE');
-    await until(() => window.embervale.area.id === 'mill', 15000);
     await finishScript();
-    check(!(await game(() => window.embervale.combat.playerEnv.canSurf)), 'surfing allowed indoors');
-    const b = await at('bed');
-    await teleport(b.x, b.z, 0, 2);
+    check(await game(millDoor), 'the door did not open');
+    check((await game(() => window.embervale.area.id)) === 'overworld', 'opening the door changed area');
+    const { page } = t;
+    await page.keyboard.down('KeyW');
+    await wait(1600);
+    await page.keyboard.up('KeyW');
+    check((await fromMill()) < 3.6, `did not walk in (${(await fromMill()).toFixed(1)} m from the middle)`);
+    const b = await at('bed.mill');
+    await teleport(b.x, b.z, -Math.PI / 2, 3);
     await press('KeyE');
     await until(() => window.embervale.mode === 'cutscene', 5000);
     await finishScript(); // Enter picks "Sleep"
     const s = await game(() => ({ hp: window.embervale.state.hp, max: window.embervale.state.maxHp, h: window.embervale.state.hours }));
     check(s.hp === s.max, `hp ${s.hp}/${s.max}`);
     check(Math.abs(s.h - 18) < 0.1, `hour ${s.h}`);
-  });
-
-  await step('the doorway leads back out to the square', async () => {
-    const ex = await game(() => window.embervale.area.triggers.find((t) => t.id === 'exit'));
-    await teleport(ex.x, ex.z - 2.2, 0, 2);
-    await page_walk(t);
+    // Shut it from inside, then try to walk out through it.
+    await teleport(MILL.x + 3.1, MILL.z, Math.PI / 2, 3);
+    await press('KeyE');
     await finishScript();
-    const s = await state();
-    check(Math.hypot(s.pos.x - (-62 - 22 + 4.4), s.pos.z - -58) < 2.5, `came out at (${s.pos.x.toFixed(1)}, ${s.pos.z.toFixed(1)})`);
+    check(!(await game(millDoor)), 'the door did not shut');
+    await page.keyboard.down('KeyW');
+    await wait(1500);
+    await page.keyboard.up('KeyW');
+    check((await fromMill()) < 4, `walked through the shut door (${(await fromMill()).toFixed(1)} m out)`);
+    // And out again.
+    await press('KeyE');
+    await finishScript();
+    await page.keyboard.down('KeyW');
+    await wait(1800);
+    await page.keyboard.up('KeyW');
+    check((await fromMill()) > 5, `did not walk back out (${(await fromMill()).toFixed(1)} m)`);
   });
 
   await step('Odo sells the tunic for 50 gems', async () => {
@@ -89,10 +107,4 @@ export default async function run(t) {
     const r = await game(() => ({ gems: window.embervale.state.gems, slots: window.embervale.state.flasks.slots }));
     check(r.slots[0] === 'life' && r.gems === 60, `flask ${r.slots[0]}, gems ${r.gems}`);
   });
-}
-
-async function page_walk({ page, until }) {
-  await page.keyboard.down('KeyW');
-  await until(() => window.embervale.area.id === 'overworld', 15000);
-  await page.keyboard.up('KeyW');
 }

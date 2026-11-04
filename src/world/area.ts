@@ -39,6 +39,8 @@ export interface Area {
   readonly music?: MusicMood;
   /** A theme for a part of the area (the village by day), or undefined for the usual one. */
   musicAt?(x: number, z: number, night: boolean): MusicMood | undefined;
+  /** Safe ground (the village): enemies never step onto it and leave Wren alone there. */
+  safeGround?(x: number, z: number): boolean;
   /** Cuts grass/bushes in a sword arc; returns where things were cut. */
   cut(x: number, z: number, dirX: number, dirZ: number, reach: number): THREE.Vector3[];
   /** Breaks jars in a sword arc (same reach as `cut`); each says what it held. */

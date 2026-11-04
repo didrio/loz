@@ -132,6 +132,11 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 
 ## Known quirks and tech debt
 
+- **Village homes are shells**: the two standing cottages have locked doors (`door.home0/1`, "The door is locked.") and no
+  interior. When they become enterable, follow the mill: a `HingedDoor` (`world/objects.ts`), a room inside the walls
+  (the camera's doorway pane is `Layer.CameraOnly`), a bed or story beat. Outside the square the road-gate lanterns have glow but no real light
+  (four point lights in all: three lanterns and the mill's wall lamp); more would cost GPU in the browser demo.
+
 - **Lamplighter fight perf** (owner's play, 2026-11-03): the shrine's slowness was its 34 real lights (now pooled). `?debug` in the
   village and the fight reads 120 fps (365-1000+ draws, ~190-210k tris), so no sustained slowness. If it still hitches, suspect the
   shader rebuild when the fight's light is added (keep light counts constant), not draw counts.

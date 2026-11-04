@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
-import { disposeTree, uniqueMat } from '../render/materials';
+import { disposeTree, fadeInFog, uniqueMat } from '../render/materials';
 import { GroundShadow } from '../render/shapes';
 import type { Sfx } from '../core/audio';
 import type { Particles } from '../render/particles';
@@ -70,6 +70,8 @@ export interface EnemyEnv {
   spawn(e: Enemy): void;
   drop(kind: PickupKind, at: THREE.Vector3): void;
   shake(strength: number): void;
+  /** Safe ground (the village): enemies never step onto it, and ignore Wren while Wren stands on it. */
+  safeGround?(p: THREE.Vector3): boolean;
 }
 
 export abstract class Enemy {
@@ -213,6 +215,7 @@ export abstract class GroundEnemy extends Enemy {
   protected sees(env: EnemyEnv, eyeHeight = 0.8) {
     const p = env.playerPos;
     if (!env.playerAlive || Math.abs(p.y - this.pos.y) > 2.2) return false;
+    if (env.safeGround?.(p)) return false;
     if (this.territory && !this.territory(p)) return false;
     const eye = this.pos.clone().setY(this.pos.y + eyeHeight);
     const to = p.clone().setY(p.y + 1).sub(eye);
@@ -224,7 +227,7 @@ export abstract class GroundEnemy extends Enemy {
   protected lostTrack(env: EnemyEnv, dist: number, dt: number, eyeHeight?: number) {
     this.unseen = this.sees(env, eyeHeight) ? 0 : this.unseen + dt;
     const fromHome = Math.hypot(this.pos.x - this.home.x, this.pos.z - this.home.z);
-    const outOfBounds = !!this.territory && !this.territory(env.playerPos);
+    const outOfBounds = (!!this.territory && !this.territory(env.playerPos)) || !!env.safeGround?.(env.playerPos);
     return !env.playerAlive || dist > 22 || fromHome > LEASH || outOfBounds || this.unseen > FORGET;
   }
 
@@ -474,7 +477,7 @@ export class Gloomwisp extends Enemy {
     this.core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), this.coreMat);
     this.halo = new THREE.Mesh(
       new THREE.SphereGeometry(0.8, 10, 8),
-      new THREE.MeshBasicMaterial({ color: 0xb06aff, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false }),
+      fadeInFog(new THREE.MeshBasicMaterial({ color: 0xb06aff, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false })),
     );
     this.root.add(this.core, this.halo);
     this.root.scale.setScalar(0.01);
@@ -512,7 +515,7 @@ export class Gloomwisp extends Enemy {
       const a = this.t * 1.6 + this.root.id;
       const target = anchor.clone().add(new THREE.Vector3(Math.cos(a) * 2.2, Math.sin(this.t * 2.3) * 0.5, Math.sin(a) * 2.2));
       vel.copy(target.sub(this.pos)).multiplyScalar(2.5);
-    } else if (dist < 22 && env.playerAlive && !this.leaving) {
+    } else if (dist < 22 && env.playerAlive && !this.leaving && !env.safeGround?.(env.playerPos)) {
       vel.copy(to).normalize().multiplyScalar(this.cooldown > 0 ? -2.5 : anchor ? 6 : 3.6);
       if (dist < 1.1 && this.cooldown <= 0) {
         env.hitPlayer(this.pos, WISP_DIVE);

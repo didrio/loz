@@ -92,7 +92,7 @@ Adding an area = an `Area` class + a content file + a case (and id) in `content/
 valley are *regions* that exist only while Wren is near (owner's call, 2026-11-03). A `RegionDef` has an `id`,
 a terrain `rect` and `build(physics)`, which returns its `root`, its `interactables`/`triggers` (they join the
 overworld's lists while it is loaded), an `update` and a `dispose`. `RegionStreamer` builds one when Wren is
-within 70 m of its rect and drops it past 110 m (a `RegionDef` may override both: fog is full at 290 m, so a region
+within 70 m of its rect and drops it past 110 m (a `RegionDef` may override both: fog is full at 215 m, so a region
 that can be seen from afar, like the Northpass, loads at 260 m and drops at 300 m, where it never visibly pops). `Area.streamAt(x, z)` is called every frame in `updateWorld`
 and in `placeAtSpawn` *before* Wren is placed, so a teleport (a bell, a save) finds ground. A region builds in
 one frame (a small hitch; spread it over frames if regions get big). Regions use the same `terrainHeight`
@@ -111,16 +111,20 @@ floor and only count on that level (`sameLevel`). `Area.strike` lets the sword h
 that aren't enemies (crystal switches).
 Dungeons are described as data first (see [dungeons.md](dungeons.md)).
 
-**Interiors** (`world/interior.ts`): `MillInterior` is Tobin's mill (id `mill`), a one-room
-indoor `Area` with no ceiling mesh (walls stop the camera), one warm flickering light, a
-`bed` interactable and an `exit` trigger, bound by `content/mill.ts`. The overworld's
-`mill` entrance is the square outside its door. A future house/shop is another class like it.
+**Rooms in the world, not separate areas** (owner's call, 2026-11-04): Tobin's room is the windmill's
+ground floor (`world/overworld/village.ts`, sizes in `MILL_TOWER`), walked into straight off the square with
+no loading: a round room with a low ceiling (the tower above it is one solid collider, so the camera stops
+at the ceiling as it does in dungeons), its own short-reach warm light, and a `bed.mill` interactable. Its door
+is a `HingedDoor` (`world/objects.ts`): it swings inward, its collider is on only while it's shut, and the
+content decides when it may open (`door.mill`: locked until Tobin's key). Being in the room is being
+outdoors (the clock runs, the village song plays). Future homes (the cottages' `door.home0/1`, locked for
+now) follow this pattern. A save from the old separate mill area continues in the overworld.
 
 **Choices and sleeping**: `api.ask(pages, options)` is `say` whose last page ends in a
 choice list (menu up/down, confirm); it resolves with the index. `content/shop.ts`
 `offerWares(api, pages, wares)` wraps it as a list of priced wares plus Not now and takes
 the gems (or reports `short`): every shop uses it. The clock stands still indoors *except during a warp* (`warpTime`), which is how the
-bed jumps to the next 06:00 / 18:00 (`wakeHour` in `content/mill.ts`).
+bed jumps to the next 06:00 / 18:00 (`wakeHour` in `content/village.ts`).
 
 **Indoor areas** (`Area.indoor`, the dungeons): the sky, sun disc and stars are hidden and
 the sun casts no shadows (every ceiling would shade everything); a cool hemisphere fill, a
@@ -161,7 +165,9 @@ the mover is displaced, never whoever it ran into; `blockedBy` says who stopped 
 **The follow camera's collision** is one rule, indoors and out (the Souls/Zelda approach,
 chosen by the owner 2026-11-02 after a see-through-wall experiment fought with it): a
 0.35 m ball is swept from Wren's chest toward where the camera wants to be
-(`Physics.sphereDistance`, World layer only, so trees and fences don't count). On a hit the
+(`Physics.sphereDistance`, the World layer plus `Layer.CameraOnly`, so trees and fences don't count). `CameraOnly`
+is an invisible pane only the camera hits: one across the mill room's doorway keeps the camera in the room while
+Wren is inside, instead of backing out through the open door. On a hit the
 camera comes in to that point at once, then eases back out slowly (so walking along a wall
 doesn't pump it). Closer than 1.7 m Wren fades out, and closer than 1.1 m she's hidden (`rig.playerOpacity` →
 `Player.setOpacity`, dithered `alphaHash`, her own material copies) so she never blocks the

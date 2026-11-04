@@ -165,8 +165,9 @@ export class Sky {
     this.uniforms.top.value.lerp(this.gloomFog, g * 0.8);
     this.uniforms.horizon.value.lerp(this.gloomFog, g * 0.85);
     fog.color.copy(this.uniforms.horizon.value);
-    fog.near = 70 - 55 * g - 45 * bl * (1 - g);
-    fog.far = 290 - 220 * g - 150 * bl * (1 - g);
+    // A close valley haze (owner's call, 2026-11-04); a boss fight and the blight pull it in further.
+    fog.near = 50 - 35 * g - 32 * bl * (1 - g);
+    fog.far = 215 - 145 * g - 105 * bl * (1 - g);
 
     this.sun.color.copy(sample(hours, 'sun', new THREE.Color())).lerp(this.blightSun, bl * 0.85);
     this.sun.intensity = sampleNum(hours, 'sunI') * (1 - 0.8 * g) * (1 - 0.5 * bl);

@@ -3,7 +3,7 @@ import type { Physics } from '../../core/physics';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
 import { JarField } from '../jars';
-import { BossArena, BushField, Chest, GreatLantern, HeartVessel, Npc, ShieldPickup, StoneDoor } from '../objects';
+import { BossArena, BushField, Chest, GreatLantern, HeartVessel, HingedDoor, Npc, ShieldPickup, StoneDoor } from '../objects';
 import { buildCamp, CANYON_COURSE, WAYBELL_PICKUP } from './camp';
 import { Gate } from './gate';
 import { buildGorge, GORGE_BELL, GORGE_COURSE, gorgeAt } from './gorge';
@@ -11,7 +11,7 @@ import { buildHollow } from './hollow';
 import { MurmurbudLook } from '../murmurbud';
 import { SigilLook } from '../sigil';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
-import { areaNameAt, BUDS, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { areaNameAt, BUDS, HOMES, MILL_BED, MILL_TOWER, inVillageGuard, inVillageMusic, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { NORTHPASS } from './northpass';
 import { RegionStreamer } from './region';
 import { buildGrass, buildRocks, buildTrees, bushSpots } from './nature';
@@ -34,8 +34,6 @@ export class Overworld implements Area {
   /** Where Wren arrives from elsewhere: just outside the shrine door, facing away from it. */
   readonly entrances: Record<string, { x: number; z: number; facing: number }> = {
     shrineDoor: { x: SHRINE_DOOR.x - 3.5, z: SHRINE_DOOR.z, facing: -Math.PI / 2 },
-    /** On the square in front of the mill door, facing away from it. */
-    mill: { x: MILL.x + 4.4, z: MILL.z, facing: Math.PI / 2 },
     /** In front of the magic gate, facing it: where the seal-stone's vision cuts to. */
     gateView: { x: GATE.x, z: GATE.z + 15, facing: Math.PI },
   };
@@ -84,8 +82,12 @@ export class Overworld implements Area {
   onBudStrike: ((id: string) => void) | null = null;
   private readonly water: THREE.Mesh;
   private readonly blades: THREE.Group;
+  /** Tobin's mill door (its room is the windmill's ground floor). */
+  readonly millDoor: HingedDoor;
   private readonly windowMat: THREE.MeshLambertMaterial;
   private readonly lanternMat: THREE.MeshBasicMaterial;
+  private readonly lanternHalo: THREE.MeshBasicMaterial;
+  private readonly villageLights: THREE.PointLight[];
   private readonly disposer: () => void;
   /** The regions beyond the valley (the Northpass), built and dropped by distance. */
   private readonly regions: RegionStreamer;
@@ -100,7 +102,10 @@ export class Overworld implements Area {
     const village = buildVillage(b);
     this.windowMat = village.windowMat;
     this.lanternMat = village.lanternMat;
+    this.lanternHalo = village.haloMat;
+    this.villageLights = village.lights;
     this.blades = village.blades;
+    this.millDoor = village.millDoor;
     buildGrove(b);
     const shrine = buildShrine(b);
     this.lantern = shrine.lantern;
@@ -165,6 +170,7 @@ export class Overworld implements Area {
     const door = this.door;
     const way = this.wayPost;
     const odo = this.npcs.odo;
+    const mill = this.millDoor;
     this.interactables = [
       { id: 'npc.maren', x: this.npcs.maren.x, z: this.npcs.maren.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.maren.x, this.npcs.maren.z, 2.5), enabled: () => this.npcs.maren.present },
       { id: 'npc.tobin', x: this.npcs.tobin.x, z: this.npcs.tobin.z, r: 2.6, label: 'Talk', promptY: above(this.npcs.tobin.x, this.npcs.tobin.z, 2.6), enabled: () => this.npcs.tobin.present },
@@ -172,7 +178,14 @@ export class Overworld implements Area {
       { id: 'npc.pip', x: this.npcs.pip.x, z: this.npcs.pip.z, r: 2.1, label: 'Talk', promptY: above(this.npcs.pip.x, this.npcs.pip.z, 1.75), enabled: always },
       // The stall stays open without Odo (content/village.ts: Wren leaves the gems).
       { id: 'npc.odo', x: STALL.x + 1.2, z: STALL.z, r: 2.4, get label() { return odo.present ? 'Talk' : 'Browse'; }, promptY: above(STALL.x, STALL.z, 2.7), enabled: always },
-      { id: 'door.mill', x: MILL.x + 3.3, z: MILL.z, r: 1.7, label: 'Enter', promptY: above(MILL.x + 2.6, MILL.z, 2.2), enabled: always },
+      // Reached from either side of the door; the bed from inside the room.
+      { id: 'door.mill', x: MILL.x + MILL_TOWER.inner + 0.45, z: MILL.z, r: 1.9, get label() { return mill.open ? 'Close' : 'Open'; }, promptY: above(MILL.x, MILL.z, 2.8), enabled: always },
+      { id: 'bed.mill', x: MILL.x + MILL_BED.x + 1.2, z: MILL.z + MILL_BED.z, r: 1.6, label: 'Sleep', promptY: above(MILL.x, MILL.z, 1.5), enabled: always },
+      // The two standing homes' doors: locked for now (content/village.ts).
+      ...HOMES.map((h, i) => {
+        const x = VILLAGE.x + Math.cos(h.a) * 11.4, z = VILLAGE.z + Math.sin(h.a) * 11.4;
+        return { id: `door.home${i}`, x, z, r: 1.6, label: 'Open', promptY: above(x, z, 2.9), enabled: always };
+      }),
       { id: 'pickup.shield', x: this.shield.x, z: this.shield.z, r: 2.2, label: 'Take', promptY: this.shield.y + 1.6, enabled: () => this.shield.present },
       { id: 'chest.grove', x: GROVE.x, z: GROVE.z, r: 2.4, label: 'Open', promptY: above(GROVE.x, GROVE.z, 1.9), enabled: () => !this.chest.opened },
       {
@@ -220,9 +233,14 @@ export class Overworld implements Area {
     return areaNameAt(x, z);
   }
 
-  /** Thistledown has its own (simpler) theme by day; at night the valley shares one. */
+  safeGround(x: number, z: number) {
+    return inVillageGuard(x, z);
+  }
+
+  /** Thistledown and the land around it (out to the shield's cottage) have their own song, day and night. */
   musicAt(x: number, z: number, night: boolean) {
-    return !night && areaNameAt(x, z) === 'Thistledown Village' ? 'village' as const : undefined;
+    if (!inVillageMusic(x, z)) return undefined;
+    return night ? 'villageNight' as const : 'village' as const;
   }
 
   enemySpot(rand: () => number, near?: THREE.Vector3, minDist = 0, maxDist = Infinity) {
@@ -267,8 +285,12 @@ export class Overworld implements Area {
     this.blades.rotation.x += dt * 0.6;
     this.water.position.y = WATER_Y + Math.sin(this.t * 0.8) * 0.05;
     this.windowMat.emissive.setRGB(0.9 * night, 0.6 * night, 0.25 * night);
-    this.lanternMat.color.setRGB(0.4 + 0.6 * night, 0.27 + 0.5 * night, 0.13 + 0.2 * night);
+    this.lanternMat.color.setRGB(0.4 + 0.6 * night, 0.27 + 0.6 * night, 0.13 + 0.4 * night);
+    const flicker = 0.92 + Math.sin(this.t * 7.3) * 0.04 + Math.sin(this.t * 11.1) * 0.04;
+    this.lanternHalo.opacity = 0.32 * night * flicker;
+    for (const l of this.villageLights) l.intensity = l.userData.peak * night * flicker;
     this.chest.update(dt);
+    this.millDoor.update(dt);
     this.door.update(dt);
     this.lantern.update(dt);
     this.gate.update(dt);

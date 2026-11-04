@@ -84,6 +84,32 @@ describe('Thornling senses', () => {
     }
   });
 
+  it('leaves Wren alone on safe ground (the village): drops the chase at the edge and heads home', () => {
+    const physics = new Physics();
+    physics.box(0, -0.5, 0, 60, 0.5, 60);
+    physics.refreshQueries();
+    const t = new Thornling(new THREE.Group(), physics, 0, 0);
+    t.rng = mulberry32(7);
+    const wren = new THREE.Vector3(0, 0, 9);
+    const { env: e, hits } = env(physics, wren);
+    const safe = (p: THREE.Vector3) => p.z > 12;
+    const safeEnv: EnemyEnv = { ...e, safeGround: safe };
+    run(t, physics, safeEnv, REACTION + 0.8); // it spots Wren and comes for her
+    const chasedTo = t.pos.z;
+    expect(chasedTo).toBeGreaterThan(1);
+    wren.set(0, 0, 14); // Wren steps into the village
+    const before = hits.length;
+    let closest = Infinity;
+    for (let i = 0; i < 6 * 60; i++) {
+      run(t, physics, safeEnv, 1 / 60);
+      closest = Math.min(closest, wren.distanceTo(t.pos));
+    }
+    expect(hits.length).toBe(before);
+    expect(safe(t.pos)).toBe(false);
+    expect(t.pos.z).toBeLessThan(chasedTo); // walked back toward home
+    expect(closest).toBeGreaterThan(1.5);
+  });
+
   it('only notices Wren inside its territory (a dungeon room), and forgets once Wren leaves', () => {
     const physics = new Physics();
     physics.box(0, -0.5, 0, 40, 0.5, 40);

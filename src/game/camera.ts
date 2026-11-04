@@ -125,7 +125,7 @@ export class CameraRig {
       Math.sin(this.pitch),
       Math.cos(this.yaw) * Math.cos(this.pitch),
     );
-    const free = Math.max(MIN_DIST, this.physics.sphereDistance(this.focus, dir, this.dist, CAM_RADIUS, Layer.World));
+    const free = Math.max(MIN_DIST, this.physics.sphereDistance(this.focus, dir, this.dist, CAM_RADIUS, Layer.World | Layer.CameraOnly));
     this.currentDist = free < this.currentDist ? free : this.currentDist + (free - this.currentDist) * damp(2, dt);
 
     c.position.copy(this.focus).addScaledVector(dir, this.currentDist);

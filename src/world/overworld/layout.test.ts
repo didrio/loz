@@ -1,6 +1,6 @@
 import { mulberry32 } from '../../core/math';
 import { describe, expect, it } from 'vitest';
-import { areaNameAt, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
+import { areaNameAt, inVillageGuard, inVillageMusic, MILL, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
 
 describe('overworld layout', () => {
   it('starts the player on dry, fairly flat ground', () => {
@@ -182,6 +182,30 @@ describe('murmurbuds', () => {
       expect(terrainHeight(a.x, a.z), a.id).toBeGreaterThan(WATER_Y + 0.5);
       for (const c of BUDS.slice(i + 1)) expect(Math.hypot(a.x - c.x, a.z - c.z), `${a.id} / ${c.id}`).toBeGreaterThan(60);
       for (const r of RUINS) expect(Math.hypot(a.x - r.x, a.z - r.z), `${a.id} / ${r.id}`).toBeGreaterThan(r.r + 2);
+    }
+  });
+
+  it('plays the village song around town and up to the shield\'s cottage, not out in the field', () => {
+    const cottage = RUINS[0];
+    expect(inVillageMusic(VILLAGE.x, VILLAGE.z)).toBe(true);
+    expect(inVillageMusic(MILL.x - 8, MILL.z)).toBe(true);
+    expect(inVillageMusic(cottage.x, cottage.z)).toBe(true);
+    expect(inVillageMusic(cottage.x, cottage.z - 10)).toBe(true);
+    expect(inVillageMusic(SPAWN.x, SPAWN.z)).toBe(false);
+    expect(inVillageMusic(VILLAGE.x + 60, VILLAGE.z)).toBe(false);
+  });
+
+  it('names the village exactly where its song plays', () => {
+    for (let x = -130; x <= 10; x += 2) {
+      for (let z = -130; z <= 10; z += 2) expect(areaNameAt(x, z) === 'Thistledown Village').toBe(inVillageMusic(x, z));
+    }
+  });
+
+  it('keeps the village safe ground, and every enemy spawn outside it', () => {
+    expect(inVillageGuard(VILLAGE.x, VILLAGE.z)).toBe(true);
+    expect(inVillageGuard(MILL.x, MILL.z)).toBe(true);
+    for (let x = -170; x <= 170; x += 4) {
+      for (let z = -170; z <= 170; z += 4) if (isEnemyGround(x, z)) expect(inVillageGuard(x, z)).toBe(false);
     }
   });
 });

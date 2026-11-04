@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, type RAPIER } from '../core/physics';
 import { buildHumanoid, type Humanoid, type HumanoidColors } from '../render/characters';
-import { mat, uniqueMat } from '../render/materials';
+import { fadeInFog, mat, uniqueMat } from '../render/materials';
 import { glow, heartGeometry, shieldModel } from '../render/shapes';
 import type { AreaBuilder } from './area';
 
@@ -124,6 +124,53 @@ export class Chest {
  * A stone slab with a carved spiral that sinks into the ground when opened. The spiral is
  * dark while the door sleeps and glows once it's `awake` (ready to open).
  */
+/**
+ * A plank door on a hinge that swings inward (Tobin's mill; any home later). Its collider is on only
+ * while it's shut. It faces +z in its own frame, hinged on its -x edge: `yaw` turns it like a house.
+ * Whether it may open (a lock, a key) is the content's call.
+ */
+export class HingedDoor {
+  open = false;
+  private readonly pivot = new THREE.Group();
+  private readonly collider: RAPIER.Collider;
+  private angle = 0;
+
+  /** (x, y, z): the middle of the door's bottom edge. */
+  constructor(b: AreaBuilder, readonly x: number, readonly y: number, readonly z: number, yaw: number, width = 1.44, height = 2.3, color = 0x4a2e18) {
+    const root = new THREE.Group();
+    root.position.set(x, y, z);
+    root.rotation.y = yaw;
+    this.pivot.position.x = -width / 2;
+    root.add(this.pivot);
+    const strap = mat(0x33200f);
+    const part = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
+      const me = new THREE.Mesh(geo, m);
+      me.position.set(px + width / 2, py, pz);
+      me.castShadow = me.receiveShadow = true;
+      this.pivot.add(me);
+    };
+    part(new THREE.BoxGeometry(width, height, 0.14), mat(color), 0, height / 2, 0);
+    for (const side of [-1, 1]) {
+      for (const px of [-width / 4, 0, width / 4]) part(new THREE.BoxGeometry(0.04, height, 0.02), strap, px, height / 2, side * 0.08);
+      for (const py of [0.45, height - 0.35]) part(new THREE.BoxGeometry(width - 0.24, 0.08, 0.03), strap, 0, py, side * 0.085);
+      part(new THREE.SphereGeometry(0.07, 6, 5), mat(0xc9a227), width / 2 - 0.22, 1.1, side * 0.13);
+    }
+    b.dynamic(root);
+    this.collider = b.box(x, y + height / 2, z, width / 2, height / 2, 0.1, yaw);
+  }
+
+  /** Opens or shuts it: the collider at once, the swing over half a second (`update`). */
+  setOpen(open: boolean) {
+    this.open = open;
+    this.collider.setEnabled(!open);
+  }
+
+  update(dt: number) {
+    this.angle += ((this.open ? 1.75 : 0) - this.angle) * Math.min(1, dt * 7);
+    this.pivot.rotation.y = this.angle;
+  }
+}
+
 export class StoneDoor {
   readonly mesh: THREE.Mesh;
   private readonly glyphMat = new THREE.MeshBasicMaterial({ color: 0x5ff2d6 });
@@ -260,8 +307,8 @@ export class BossArena {
   private t = 0;
   private readonly flames: THREE.Mesh[] = [];
   private readonly walls: RAPIER.Collider[] = [];
-  private readonly flameMat = new THREE.MeshBasicMaterial({ color: 0x6fe8ff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
-  private readonly ringMat = new THREE.MeshBasicMaterial({ color: 0x3fb8e0, transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
+  private readonly flameMat = fadeInFog(new THREE.MeshBasicMaterial({ color: 0x6fe8ff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+  private readonly ringMat = fadeInFog(new THREE.MeshBasicMaterial({ color: 0x3fb8e0, transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
   private readonly lampMat = uniqueMat(0x1e2a30, { emissive: 0x000000 });
   private readonly group = new THREE.Group();
 

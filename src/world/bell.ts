@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { easeInOut } from '../core/math';
 import { Layer } from '../core/physics';
-import { mat, uniqueMat } from '../render/materials';
+import { fadeInFog, mat, uniqueMat } from '../render/materials';
 import { glow } from '../render/shapes';
 import type { AreaBuilder } from './area';
 
@@ -64,7 +64,7 @@ class RingPool {
   constructor(parent: THREE.Object3D, color: number, x: number, y: number) {
     const geo = ringGeometry(); // one per bell: an area's dispose frees it with the rest
     for (let i = 0; i < 4; i++) {
-      const mesh = new THREE.LineLoop(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const mesh = new THREE.LineLoop(geo, fadeInFog(new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })));
       mesh.position.set(x, y, 0);
       mesh.visible = false;
       parent.add(mesh);

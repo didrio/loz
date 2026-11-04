@@ -164,7 +164,7 @@ describe('overworld content', () => {
     st.set('hasShield');
     st.set('village.surfIdea');
     st.set('village.surfTried');
-    const { api, said, asked, answers, travels } = fakeApi(area, physics, st);
+    const { api, said, asked, answers } = fakeApi(area, physics, st);
     const { scripts, restore } = overworldContent(area);
     const talk = async (id: string) => {
       said.length = 0;
@@ -194,8 +194,9 @@ describe('overworld content', () => {
     expect(await talk('npc.lark')).toContain('What if they come back');
 
     // The mill opens without Tobin's key.
+    area.millDoor.setOpen(false);
     await talk('door.mill');
-    expect(travels.at(-1)!.area).toBe('mill');
+    expect(area.millDoor.open).toBe(true);
 
     // Odo's stall: same wares, nobody behind the counter.
     st.gems = 100;

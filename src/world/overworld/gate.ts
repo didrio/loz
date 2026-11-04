@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { easeInOut, mulberry32 } from '../../core/math';
 import { Layer, type RAPIER } from '../../core/physics';
-import { mat, uniqueMat } from '../../render/materials';
+import { fadeInFog, mat, uniqueMat } from '../../render/materials';
 import { glow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
 import { GATE, terrainHeight } from './layout';
@@ -81,7 +81,7 @@ export class Gate {
     const w = (h * 2 + 0.4) / STRIPS;
     const veilH = PILLAR_H + 2.2;
     for (let i = 0; i < STRIPS; i++) {
-      const material = new THREE.MeshBasicMaterial({ color: 0xffb35a, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      const material = fadeInFog(new THREE.MeshBasicMaterial({ color: 0xffb35a, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, veilH), material);
       mesh.position.set(x - h - 0.2 + (i + 0.5) * w, gy + veilH / 2 - 0.4, z);
       this.group.add(mesh);

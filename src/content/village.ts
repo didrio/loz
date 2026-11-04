@@ -6,6 +6,9 @@ import type { Overworld } from '../world/overworld';
 import { offerWares, type Ware } from './shop';
 import { adultsGone, VANISHED, withNews } from './villageNews';
 
+/** The hour Wren wakes at in Tobin's bed: the next 06:00 or 18:00 (so sleeping at 17:50 wakes at 18:00). */
+export const wakeHour = (hours: number) => (hours >= 6 && hours < 18 ? 18 : 6);
+
 /** The guard, taught when Wren picks up the shield. */
 export const GUARD_TUTORIAL = 'Hold [shield] to block. Each block wears down your *guard* (the green bars), which refills only while the shield is *lowered*. If it runs out, your guard breaks and you stagger.';
 
@@ -240,13 +243,40 @@ export function villageContent(ow: Overworld) {
         : 'You found a *stuffed doll*!\nPatched, one button eye, and dry. Someone in Thistledown must miss her.' }]);
     },
 
+    // The standing homes: shut, no hint of a key (they open in a later chapter).
+    async 'door.home0'(api) {
+      await api.say([{ text: 'The door is locked.' }]);
+    },
+    async 'door.home1'(api) {
+      await api.say([{ text: 'The door is locked.' }]);
+    },
+
+    // The mill's room is the windmill's ground floor: the door opens and shuts where it stands.
     async 'door.mill'(api) {
       // With Tobin gone, nobody locks it.
       if (!api.state.has('village.millKey') && !adultsGone(api.state)) {
         await api.say([{ text: 'The mill\'s door is locked. Tobin the Miller keeps the key.' }]);
         return;
       }
-      await api.travel('mill');
+      const door = ow.millDoor;
+      door.setOpen(!door.open);
+      if (door.open) api.sfx.doorOpen();
+      else api.sfx.doorShut();
+    },
+
+    async 'bed.mill'(api) {
+      const wake = wakeHour(api.state.hours);
+      const when = wake === 6 ? 'morning' : 'evening';
+      const pick = await api.ask([{ text: `Tobin's bed, under a patchwork blanket.\nSleep until ${when}? You'll wake rested.` }], ['Sleep', 'Not now']);
+      if (pick !== 0) return;
+      await api.fade(1, 0.8);
+      api.warpTime(wake);
+      await api.until(() => Math.abs(((api.state.hours - wake + 36) % 24) - 12) < 0.05);
+      api.state.hp = api.state.maxHp;
+      api.sfx.heart();
+      await api.wait(0.5);
+      await api.fade(0, 0.8);
+      api.toast(`You wake in the ${when}, fully rested.`);
     },
 
     async 'npc.odo'(api) {

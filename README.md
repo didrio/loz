@@ -5,7 +5,7 @@ entirely from code: every model is made of primitive shapes and every sound is s
 
 ```sh
 npm install
-npm run dev      # play at http://localhost:5173 (add ?debug for the dev overlay)
+npm run dev      # play at http://localhost:5273 (add ?debug for the dev overlay)
 npm run check    # lint + unit tests + typecheck/build
 npm run smoke    # headless playthrough of the current quest (needs Google Chrome)
 ```
