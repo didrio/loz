@@ -174,7 +174,7 @@ describe('overworld content', () => {
     const enabled = (id: string) => area.interactables.find((it) => it.id === id)!.enabled();
     restore(st);
     expect(['maren', 'tobin', 'odo'].every((v) => area.npcs[v as 'maren'].present)).toBe(true);
-    expect(await talk('door.mill')).toContain('locked');
+    expect(await talk('door.mill')).toContain('Locked');
 
     st.set('valleyOpen');
     restore(st);
@@ -203,14 +203,14 @@ describe('overworld content', () => {
     st.flasks.add('life');
     st.flasks.drink(0);
     answers.push(1); // the first potion, after the tunic
-    expect(await talk('npc.odo')).toContain('leave 20 gems in the cashbox');
-    expect(asked.at(-1)!.pages[0].text).toContain('You leave the gems in his cashbox');
+    expect(await talk('npc.odo')).toContain('leave 20 gems');
+    expect(asked.at(-1)!.pages[0].text).toContain('Leave the gems in his cashbox');
     expect(asked.at(-1)!.pages.some((p) => p.who)).toBe(false);
     expect(st.gems).toBe(80);
     answers.push(0);
     expect(await talk('npc.odo')).toContain('take the [gear]Stoneward Tunic[/]');
     expect(st.has('village.stonewardTunic')).toBe(true);
-    expect(await talk('npc.odo')).toContain('nothing here you need');
+    expect(await talk('npc.odo')).toContain('unminded');
     area.dispose();
   });
 
@@ -233,7 +233,7 @@ describe('overworld content', () => {
     };
     const armed = (st: GameState) => (st.set('gotGroveKey'), st.set('hasSword'));
     // Maren, armed: the night warning differs from the day advice.
-    expect(await line('npc.maren', (st) => (armed(st), (st.hours = 22)))).toContain('exactly when he walks');
+    expect(await line('npc.maren', (st) => (armed(st), (st.hours = 22)))).toContain('That is when he walks');
     expect(await line('npc.maren', (st) => (armed(st), (st.hours = 12)))).toContain('Go at night');
     // Odo notices the tunic, and the time of day.
     const tunic = (st: GameState) => st.set('village.stonewardTunic');
@@ -241,8 +241,8 @@ describe('overworld content', () => {
     expect(await line('npc.odo', (st) => (tunic(st), (st.hours = 12)))).toContain('suits you');
     // Tobin after the Lamplighter falls.
     const done = (st: GameState) => st.set('lamplighterDefeated');
-    expect(await line('npc.tobin', (st) => (done(st), (st.hours = 22)))).toContain('burning');
-    expect(await line('npc.tobin', (st) => (done(st), (st.hours = 12)))).toContain('lit again');
+    expect(await line('npc.tobin', (st) => (done(st), (st.hours = 22)))).toContain('burns');
+    expect(await line('npc.tobin', (st) => (done(st), (st.hours = 12)))).toContain('lantern\'s lit');
     area.dispose();
   });
 
@@ -270,15 +270,15 @@ describe('overworld content', () => {
     st.set('village.searchAsked');
     expect(await talk('npc.pip')).toMatch(/Everyone's away.*Glimmer Lake/);
     // Breaking the jar: she's named now Wren has met her.
-    expect(await talk('jar.doll')).toContain('You found [gear]Button[/]');
+    expect(await talk('jar.doll')).toContain('[gear]Button[/]. Patched');
     expect(st.has('village.dollFound')).toBe(true);
     // News waits: the doll goes back first, and only once.
     st.flags.delete('village.searchAsked');
     const gems = st.gems;
-    expect(await talk('npc.pip')).toContain('Pip gives you *20 gems*');
+    expect(await talk('npc.pip')).toContain('Pip gives you 20 gems');
     expect(st.gems).toBe(gems + 20);
     expect(await talk('npc.pip')).toContain('look for them'); // the news, now
-    expect(await talk('npc.pip')).toContain('listening for the mill');
+    expect(await talk('npc.pip')).toContain('listens for the mill');
     st.hours = 12;
     expect(await talk('npc.pip')).toContain('Odo\'s stall');
     expect(st.gems).toBe(gems + 20);
@@ -289,7 +289,7 @@ describe('overworld content', () => {
     const area = new Overworld(physics);
     const { api, said } = fakeApi(area, physics, new GameState());
     await overworldContent(area).scripts['jar.doll'](api);
-    expect(said[0].text).toContain('stuffed doll');
+    expect(said[0].text).toContain('Stuffed doll');
     area.dispose();
   });
 

@@ -27,8 +27,20 @@ Next, in order:
     (`Action` names in `core/input.ts`), so tag names must never equal an action name (a test should check). `ui/hud.ts` format +
     typewriter, `ui/style.css`. A content test: valid tags, ≤ 2 highlights a box, ≤ ~120 chars a box (tiny exceptions list).
     Rewrite "Writing for the player" in [world.md](world.md) (every word earns its place; before/after examples; the tag table).
-  - **C3, text pass sample**: the village (`village.ts`, `shop.ts`, `villageNews.ts`), about half the words, retagged. **The
-    owner approves the voice before C4.**
+  - ~~**C3, text pass sample**~~ done 2026-11-04, **awaiting the owner's OK on the voice before C4**: `village.ts` and `villageNews.ts` cut by about a third to a half, retagged (`[gear]` items, `[place]`, `[old]`), ratchet at 0 for both (`shop.ts` has no player text). Item messages now read `[gear]Name[/]. One short fact.`; the `*x*` leftovers are gone.
+  - **C7, after the boss: the village bell and the dungeon's silence** (owner's bug + request, 2026-11-04; **do first**: a bug,
+    small, and it doesn't wait on the voice approval C4 needs). (a) **Bug:** once Gravelheart is dead the village bell must be
+    off the post (the rule exists, see Where things stand), but fast travel to it from the dungeon's bell still works. Reproduce
+    in a failing test first (the travel menu's list, `game/menuDriver.ts` / `content/bells.ts`: a bell that isn't hung can't be
+    a destination), then fix. Rehanging the Morrowbell turns it back on. Add a smoke step (`bells`). (b) **No music in the
+    dungeon after the boss dies**: no dungeon theme in any room of the shrine once `gravelheart` is beaten (silence; the valley
+    outside keeps its songs). Test the mood pick in `core/audio.ts`/where the area's music is chosen.
+  - **C8, the choice window** (owner's request, 2026-11-04; independent of C2–C7, any time after C7): every `api.ask` / `api.choose`
+    (Odo's wares, Sleep/Not now, and so on) now lists its options side by side. Make it one reusable **centered modal window**:
+    options stacked vertically, small (just big enough), a highlighted row with a visible cue for Up/Down + Enter (and mouse
+    click), and the **back-out row (Not now, Cancel...) in red** to read as an exit. `ui/hud.ts` + `ui/style.css`, driven by
+    `ChoiceMenu` in `game/menuDriver.ts`; how a row is marked as an exit needs a convention (e.g. the last option, or a flag on
+    the option; check how `offerWares`' "Not now" is built). Unit-test the driver; `looker` for the window; the owner judges feel.
   - **C4, text pass, the rest**: every other content file, item/pickup messages and signs (scout for strings outside `content/`).
   - **C5, dungeon fog and lighting**: fog color/near/far per wing in `world/dungeon/decor.ts`, optional per-room override,
     `scene.fog` blends to Wren's room; sparing accents (ground haze over pits, motes in the window shafts, sconce flicker).

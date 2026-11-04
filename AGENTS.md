@@ -26,7 +26,7 @@ The HUD has a sky dial (sun and moon over the ground) and a compass strip; villa
 Beating Gravelheart takes the Morrowbell off the village post (it lies behind the windmill until rehung), so Wren walks home.
 Unplayed by the owner: the 10-minute day, Dawn/Nightfall cards and the Lamplighter's dawn burn and rise/gutter; that bell hunt, the thorns, dial, compass and lone oak; the village polish; day/night lighting; Settings; surfing; the gate, D3, the prism.
 Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks").
-**Next:** the owner's batch of 2026-11-04, chunks C3–C6 (roadmap: the text pass, dungeon fog, blight scars; C2, text styling, is done), then the pause menu's inventory tab. Dev server: port 5273.
+**Next:** the owner's batch (roadmap): C7 (bug: the village bell still travels after the boss; no dungeon music after it), C8 (centered choice window), C4 (text pass; waits on the owner's OK of C3's village voice), C5, C6, then the inventory tab. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 

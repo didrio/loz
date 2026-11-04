@@ -11,7 +11,7 @@ const MAX_CHARS = 120;
 const MAX_HIGHLIGHTS = 2;
 /** Boxes over MAX_CHARS that already existed when the rule began (2026-11-04). Only lower these. */
 const LONG_ALLOWED: Record<string, number> = {
-  'bells.ts': 2, 'gravelheart.ts': 2, 'hints.ts': 4, 'overworld.ts': 6, 'shrine.ts': 3, 'sigils.ts': 1, 'village.ts': 23, 'villageNews.ts': 2,
+  'bells.ts': 2, 'gravelheart.ts': 2, 'hints.ts': 4, 'overworld.ts': 6, 'shrine.ts': 3, 'sigils.ts': 1,
 };
 
 const sources = import.meta.glob('./*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;

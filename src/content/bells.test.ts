@@ -124,10 +124,10 @@ describe('the keepers\' bells', () => {
     };
     expect(await talk('npc.maren')).not.toContain('bell');
     state.bells.hung.add('morrow');
-    expect(await talk('npc.maren')).toContain('That bell on the square');
-    expect(await talk('npc.maren')).not.toContain('That bell on the square');
-    expect(await talk('npc.tobin')).toContain('Heard that bell');
-    expect(await talk('npc.tobin')).not.toContain('Heard that bell');
+    expect(await talk('npc.maren')).toContain('Old Hesper said');
+    expect(await talk('npc.maren')).not.toContain('Old Hesper said');
+    expect(await talk('npc.tobin')).toContain('That bell over');
+    expect(await talk('npc.tobin')).not.toContain('That bell over');
     area.dispose();
   });
 

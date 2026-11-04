@@ -20,24 +20,24 @@ const NAMES: Record<Villager, string> = { maren: 'Maren', tobin: 'Tobin the Mill
 
 const SIGIL: Record<Villager, string[]> = {
   maren: [
-    'Wren, you\'ve gone pale. You\'ve seen something out there, haven\'t you? Something written?',
-    'Don\'t tell me what it says. If I hear it, it\'s true. Just come back, whatever it asks.',
+    'You\'ve gone pale, Wren. You saw something written, didn\'t you?',
+    'Don\'t tell me what it says. If I hear it, it\'s true. Just come back.',
   ],
   tobin: [
-    'Words in the air. Sigils, old Hesper called them. I haven\'t seen one since I was a boy.',
-    'He was one of ours, you know. There. I\'ve said it. I\'ll not say his name, and neither will you, if you\'re wise.',
+    'Words in the air. [old]Sigils[/], old Hesper called them. Not seen one since I was a boy.',
+    'He was one of ours. There, I\'ve said it. I\'ll not say his name, and neither should you.',
   ],
   lark: [
     'Did it say my name? Don\'t tell me. Did it? ...Don\'t tell me.',
-    'You\'re not supposed to say who. If you say it, he hears. Everyone knows that.',
+    'If you say who, he hears. Everyone knows that.',
   ],
   odo: [
-    'A letter written on the air, and addressed to you. I have traveled a long way, friend, and I have never been this glad to be a stranger.',
-    'Whoever he is, he knows you. Everyone in this village has gone quiet since you told me. I won\'t ask.',
+    'A letter on the air, addressed to you. I\'ve never been so glad to be a stranger.',
+    'Whoever he is, he knows you. The village went quiet when you told me. I won\'t ask.',
   ],
   pip: [
-    'Everyone\'s whispering about writing in the air. Button doesn\'t want to know what it says.',
-    'If it says somebody\'s name, don\'t tell me whose. Button gets nightmares.',
+    'Everyone\'s whispering about writing in the air. Button doesn\'t want to know.',
+    'If it says a name, don\'t tell me whose. Button gets nightmares.',
   ],
 };
 
@@ -50,18 +50,18 @@ const RELIEF: Partial<Record<Villager, { flag: Flag; lines: string[] }>> = {
   lark: {
     flag: 'village.larkRelief',
     lines: [
-      'Wren! The purple\'s gone! I ran all the way round the fence and nobody even shouted!',
-      '...Nobody shouted because nobody\'s here. Maren, Tobin, Odo. When the sky went blue they just weren\'t anywhere. I looked in the mill. I looked under Odo\'s stall.',
-      'Pip wants to ask you something. She keeps asking me to ask you. Go on, she\'s by the cottage.',
+      'Wren! The purple\'s gone! I ran round the fence and nobody shouted!',
+      '...Nobody shouted because nobody\'s here. Maren, Tobin, Odo. I looked in the mill. Under Odo\'s stall.',
+      'Pip wants to ask you something. She\'s by the cottage.',
     ],
   },
   pip: {
     flag: 'village.searchAsked',
     lines: [
-      'The sky\'s the right color. I ran to tell Maren, and she wasn\'t at the well. Nobody was anywhere.',
-      'It was like the purple went away and took them with it.',
+      'The sky\'s the right color. I ran to tell Maren. Nobody was anywhere.',
+      'It was like the purple took them with it.',
       'Lark says they\'re hiding. Grown-ups don\'t hide. Not all at once.',
-      'You go out there. Past the fence, past everywhere. Could you... look for them? Please?',
+      'Please, could you look for them? Past the fence. Past everywhere.',
     ],
   },
 };

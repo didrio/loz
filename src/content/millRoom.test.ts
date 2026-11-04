@@ -98,7 +98,7 @@ describe('Tobin, the mill door and Odo', () => {
     };
     expect(reach()).toBeLessThan(2); // the shut door
     await scripts['door.mill'](api);
-    expect(said.at(-1)!.text).toContain('locked');
+    expect(said.at(-1)!.text).toContain('Locked');
     expect(ow.millDoor.open).toBe(false);
     state.set('village.millKey');
     await scripts['door.mill'](api);
@@ -147,7 +147,7 @@ describe('Tobin, the mill door and Odo', () => {
     answers.push(1);
     await scripts['npc.odo'](api);
     expect(asked.at(-1)!.options).toEqual(['Life Potion (20 gems)', 'Attack Potion (20 gems)', 'Not now']);
-    expect(said.at(-1)!.text).toContain('short');
+    expect(said.at(-1)!.text).toContain('and you have');
     expect(state.flasks.slots).toEqual([null, null]);
     state.gems = 45;
     answers.push(1, 1); // attack, then attack again: both flasks the same potion
