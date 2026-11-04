@@ -6,6 +6,10 @@ Sound effects are small functions in `core/audio.ts` (`Sfx`); background music i
 played by `core/synth.ts`. An agent can't hear any of it: render to WAV, measure levels,
 and ask the owner to listen.
 
+**NPC voices are synthesized speech too** (owner's call, 2026-11-04): every NPC will say their lines aloud through a
+formant voice built in code (text → speech sounds → voice), not a neural voice rendered from a model and not a babble.
+Designed and built from roadmap queue item 3; until then, NPCs are silent.
+
 **Murmurbuds** (`budTap(growth)`, `nuhUh`, `budOpen`): a soft triangle knock that climbs with
 the bud's growth; "nuh-uh", two falling square blips (G4 then D4); a rising A-major arpeggio
 with a breath of noise as it opens. Not yet heard by the owner.

@@ -22,16 +22,16 @@ import type { AreaContent } from './overworld';
  */
 
 const LOOT_TEXT: Record<string, string> = {
-  bossKey: 'You found the [gear]Boss Key[/]!\nIts great teeth fit the door to the shrine\'s keeper.',
-  tether: 'You got the [gear]Tether Glove[/]!\nA glowing cord coils around the old leather and tugs toward the shrine\'s stones, as if it knows them.',
+  bossKey: '[gear]Boss Key[/]. Its great teeth fit the keeper\'s door.',
+  tether: '[gear]Tether Glove[/]. Its glowing cord tugs toward the shrine\'s stones, as if it knows them.',
 };
 
 /** A flask chest's message; `slot` is the flask's button (flask1, flask2). */
 const flaskText = (potion: Potion, slot: number) => {
   const key = `[flask${slot + 1}]`;
   return potion === 'life'
-    ? `You found a flask of [gear]Life Potion[/]!\n${key} drinks it, and every heart comes back. Then the flask stays empty, until Odo in Thistledown fills it for a few gems.`
-    : `You found a flask of [gear]Attack Potion[/]!\n${key} drinks it, and your sword strikes twice as hard for 30 seconds. Odo in Thistledown refills empty flasks.`;
+    ? `[gear]Life Potion[/], in a flask. ${key} drinks it: every heart back. Odo in [place]Thistledown[/] refills it.`
+    : `[gear]Attack Potion[/], in a flask. ${key} drinks it: double sword damage for 30 seconds. Odo in [place]Thistledown[/] refills it.`;
 };
 
 export function shrineContent(area: DungeonArea): AreaContent {
@@ -93,10 +93,10 @@ export function shrineContent(area: DungeonArea): AreaContent {
 
   const lootMessage = (api: ScriptApi, loot: Loot) => {
     if (typeof loot === 'string') return LOOT_TEXT[loot];
-    if ('key' in loot) return `You found the [gear]${keyName(loot.key)}[/]!\nIt opens one locked door in this shrine: the ${loot.key} one.`;
-    if ('item' in loot) return LOOT_TEXT[loot.item] ?? `You got the [gear]${loot.item}[/]!`;
+    if ('key' in loot) return `[gear]${keyName(loot.key)}[/]. It opens the shrine's one ${loot.key} door.`;
+    if ('item' in loot) return LOOT_TEXT[loot.item] ?? `[gear]${loot.item}[/].`;
     if ('flask' in loot) return flaskText(loot.flask, api.state.flasks.slots.length - 1);
-    return `You found ${loot.gems} gems!`;
+    return `${loot.gems} gems.`;
   };
 
   const bells = bellContent(Object.fromEntries(area.bellPostsById), Object.fromEntries(area.bellPickups));
@@ -140,7 +140,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
       await api.say([{ text: lootMessage(api, loot) }]);
       if (typeof loot === 'object' && 'item' in loot && loot.item === 'tether') {
         api.releaseCamera();
-        api.toast('[item] Throw the Tether Glove at a stone to pull it toward you.');
+        api.toast('[item] throws the glove. A stone it catches comes to you.');
       }
     };
   }
@@ -155,9 +155,9 @@ export function shrineContent(area: DungeonArea): AreaContent {
         if (!p.keys.has(color)) return api.say([{ text: `Locked. It needs the [gear]${keyName(color)}[/].` }]);
         p.keys.delete(color);
       } else if (door.style === 'boss') {
-        if (!p.bossKey) return api.say([{ text: 'A heavy door with a great iron lock.\nIt needs the shrine\'s [gear]Boss Key[/].' }]);
+        if (!p.bossKey) return api.say([{ text: 'A great iron lock. It needs the [gear]Boss Key[/].' }]);
       } else {
-        return api.say([{ text: 'Iron bars. Something in this shrine must raise them.' }]);
+        return api.say([{ text: 'Iron bars. Something here must raise them.' }]);
       }
       p.doors.add(d.id);
       api.sfx.clank();

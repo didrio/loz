@@ -11,22 +11,22 @@ export const HINTS = [
   {
     id: 'tunic',
     title: 'The Stoneward tunic',
-    text: 'Stone beasts hit like the hills they were cut from, and the Waking Shrine is full of them. At Thistledown\'s well the peddler Odo sells the [gear]Stoneward[/], a cloth woven with stone: through it, stone creatures hit you half as hard. It costs 50 gems. Buy it before you go to the shrine, and do not haggle. You will lose.',
+    text: 'The shrine\'s stone beasts hit hard. The [gear]Stoneward Tunic[/], from Odo by the well, halves their blows. Do not haggle.',
   },
   {
     id: 'flasks',
     title: 'Refilling your flasks',
-    text: 'A flask is never empty for good, only waiting. Drinking one empties it, but Odo, at Thistledown\'s well, will fill it again for 20 gems: the red flask mends your hearts, the amber one sharpens your sword for a while. Refill before you set out, not after.',
+    text: 'A flask is never empty for good, only waiting. Odo, by [place]Thistledown[/]\'s well, fills it again for 20 gems.',
   },
   {
     id: 'bells',
     title: 'Bells, posts and travel',
-    text: 'Our bells were hidden at the ends of hard climbs. Carry one to the post that bears its name (the name is carved on the post\'s arm), hang it, and ring it. Hang a second one and they will answer each other: ring either, and you may travel to any other bell you have hung. Bells guide you; they never heal. Only a bed does.',
+    text: 'Hang each bell on the post carved with its name. Ring one to travel to any other hung bell. Bells never heal; beds do.',
   },
   {
     id: 'boss',
     title: 'Fighting the stone giant',
-    text: 'The giant in the shrine\'s depths slams the floor and sends a ring of shock across it: jump over the ring. After a slam his fists stick in the stone for a moment, and one plate on his chest glows loose. Pull the glowing plate off him. Pull all three plates and his chest lies open to your sword.',
+    text: 'Jump the giant\'s shock ring. After each slam a chest plate glows loose: pull it off. With all three gone, strike.',
   },
 ] as const;
 
@@ -55,7 +55,7 @@ export function hintContent(buds: ReadonlyMap<string, MurmurbudLook>) {
       bud?.take();
       api.sfx.select();
       await api.say([{ who: hint.title, text: hint.text }]);
-      if (first) api.toast('Notes you find are kept in the pause menu ([pause]).');
+      if (first) api.toast('Notes are kept in the pause menu ([pause]).');
     };
   }
   return {

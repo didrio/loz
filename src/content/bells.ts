@@ -34,18 +34,18 @@ export interface BellSite {
 export const BELLS: Record<BellId, BellSite> = {
   morrow: {
     id: 'morrow', name: 'Morrowbell', carving: 'MORROW', site: 'Thistledown', area: 'overworld', entrance: 'bell.morrow', note: 440,
-    found: 'The shrine\'s keepers rang the dawn with it, and Thistledown woke to its note. Its post must still stand somewhere in the village.',
-    carries: 'Its bright note rolls out over Thistledown\'s roofs and away across the valley',
+    found: 'The keepers rang the dawn with it. Its post stands in [place]Thistledown[/].',
+    carries: 'Its bright note rolls out over the roofs',
   },
   lull: {
     id: 'lull', name: 'Lullbell', carving: 'LULL', site: 'Hall of Sleepers', area: 'shrine', entrance: 'lullPost', note: 293.66,
-    found: 'The keepers rang it at dusk, to tell the shrine\'s stones it was time to sleep. Its post can\'t be far: somewhere in these halls.',
-    carries: 'Its low note rolls away through the sleeping halls',
+    found: 'The keepers rang it at dusk, to put the stones to sleep. Its post is somewhere in these halls.',
+    carries: 'Its low note rolls through the sleeping halls',
   },
   way: {
     id: 'way', name: 'Waybell', carving: 'WAY', site: 'Wayfarers\' Camp', area: 'overworld', entrance: 'bell.way', note: 329.63,
-    found: 'The keepers rang it at noon, to call travelers in off the pass. Its post must stand at the camp, back across the gap.',
-    carries: 'Its green note rolls down the pass and out over the valley',
+    found: 'The keepers rang it at noon, to call travelers off the pass. Its post is at the camp, across the gap.',
+    carries: 'Its green note rolls down the pass',
   },
 };
 
@@ -78,11 +78,11 @@ export function answering(state: GameState, bell: BellId) {
 
 /** What a post with an empty hook says, depending on what Wren knows and carries. */
 export function emptyPostText(state: GameState, post: BellId) {
-  const carving = `Carved into the arm: [old]${BELLS[post].carving}[/].`;
+  const carving = `Carved on the arm: [old]${BELLS[post].carving}[/].`;
   const carried = [...state.bells.carried].find((b) => b !== post);
-  if (carried) return `The hook is empty. ${carving}\nThe [gear]${BELLS[carried].name}[/] you carry doesn't belong here.`;
-  if (state.bells.hung.size) return `Another bell post, its hook empty. ${carving}`;
-  return `A crooked post with one arm and an empty hook. Does something go here?\n${carving}`;
+  if (carried) return `An empty hook. ${carving}\nThe [gear]${BELLS[carried].name}[/] doesn't belong here.`;
+  if (state.bells.hung.size) return `Another empty hook. ${carving}`;
+  return `A crooked post with an empty hook. Something hung here once.\n${carving}`;
 }
 
 /** Where the camera watches a post from: in front and off to the side, looking at the bell. */
@@ -105,7 +105,7 @@ async function hangBell(api: ScriptApi, post: BellPost) {
   await api.until(() => !post.hanging);
   api.sfx.bell(bell.note, 0.35);
   await api.wait(0.5);
-  await api.say([{ text: `You hung the [gear]${bell.name}[/] back on its post.` }]);
+  await api.say([{ text: `The [gear]${bell.name}[/] hangs again.` }]);
   // It rings once by itself, as if it had been waiting to.
   post.ring();
   api.sfx.bell(bell.note);
@@ -119,8 +119,8 @@ async function hangBell(api: ScriptApi, post: BellPost) {
   others.forEach((o, i) => api.sfx.bell(o.note, 0.3, i * 0.35));
   await api.wait(1.2);
   await api.say([
-    { text: `Far away, the [gear]${others[0].name}[/] answers. The two notes hang in the air together, like a road strung between them.` },
-    { text: 'Ring a bell with [interact], and you can follow its answer to any other bell that\'s hung.' },
+    { text: `Far off, the [gear]${others[0].name}[/] answers. The notes hang together, like a road between them.` },
+    { text: 'Ring a bell with [interact], then follow an answer to travel to that bell.' },
   ]);
   await travelMenu(api, post);
 }
@@ -176,7 +176,7 @@ export function bellPickupScript(pickup: BellPickup, posts: Iterable<BellPost>):
     for (const p of posts) if (p.bell === pickup.bell) p.canHang = true;
     api.sfx.fanfare();
     api.sfx.bell(bell.note, 0.4, 0.5);
-    await api.say([{ text: `You found the [gear]${bell.name}[/]!\n${bell.found}` }]);
+    await api.say([{ text: `[gear]${bell.name}[/]. ${bell.found}` }]);
   };
 }
 

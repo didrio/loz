@@ -26,7 +26,8 @@ recheck old text against them when you touch it.
   the player will notice and enjoy. Variants go in the script's `if` chain by state/flag, with
   the freshest story state first.
 - **Signs and flavor text carry the world's history**, one idea each, short enough to read at
-  a glance. Items say what they are in the first line.
+  a glance. A place's sign starts with its name in `[place]`, then the carved words in quotes. Items say what they are
+  first: `[gear]Name[/]. One short fact.` (and how to use it, if it's new), never "You found...!".
 - **Directions are true from where they're said** (owner's call, 2026-11-04). A villager in Thistledown says
   where a place lies *from Thistledown* ("east of here, across the field"), or names a landmark to start from
   ("from the crossroads, northeast, past the lone oak"). The HUD compass (`ui/compass.ts`) lets the player
@@ -39,8 +40,8 @@ recheck old text against them when you touch it.
 - **Every word earns its place** (owner's rule, 2026-11-04; reference: Dark Souls dialog and item text). Draft the line,
   then cut it by half without losing what it tells or asks of the player. A box is **at most ~120 visible characters**
   (a button counts as one) and **at most 2 highlights**. A content test (`content/textRules.test.ts`) enforces both and
-  that tags are valid; old over-long boxes are a ratchet in that file (`LONG_ALLOWED`) that the text pass (roadmap C3/C6)
-  brings to zero, so lower it when you cut.
+  that tags are valid, on every string in `content/` and every sign's `text` in the dungeon data (`world/dungeon/defs/`);
+  there are no exceptions (the text pass, roadmap C3/C6, cut the last ones). Something longer becomes two boxes.
   - Before: `You found a *Wooden Shield*!\nScorched at the rim, but the planks are sound.`
   - After: `[gear]Wooden Shield[/]. Scorched, but sound.`
 - **Highlights carry meaning, never decoration.** Tags close with `[/]` (`ui/richText.ts`, styled in `ui/style.css`):
@@ -157,7 +158,8 @@ their room is cleared; `sigil.seal` in the seal room appears once the seal-stone
 is a **challenge room** like one with a chest: once cleared it stays empty after death and reload. Rule: a message only appears after Wren has done something. The hollow's stands 4 m beside the Heart Vessel. The pause menu's **Messages** page lists the ones read. Villagers:
 `content/villageNews.ts` (`withNews`): each reacts once to the first sigil read (flag `village.<n>Sigil`) and, once the ward
 breaks, only the kids speak: Lark once (`village.larkRelief`), Pip's ask (`village.searchAsked`); the adults are gone (above), and that visit's usual talk waits until the next. Text pass: the gate sign, the ward toast, Gravelheart's
-epithet and defeat line. Texts of the sigils are the drafts above.
+epithet and defeat line. Texts of the sigils are the drafts above; a sigil's `text` is a list of boxes, and the seal's is two
+(split before "But if you are reading this", to keep the owner's words under the 120-character box limit).
 
 ### The blight (S2, built 2026-11-03)
 

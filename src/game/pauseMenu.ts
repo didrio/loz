@@ -138,6 +138,6 @@ export class PauseMenu {
 
   /** The sigils Wren has read, in the order they were written. */
   private messageRows(): MenuRow[] {
-    return foundSigils(this.game.state).map((g) => ({ kind: 'entry' as const, label: g.title, detail: g.text }));
+    return foundSigils(this.game.state).map((g) => ({ kind: 'entry' as const, label: g.title, detail: g.text.join('\n') }));
   }
 }

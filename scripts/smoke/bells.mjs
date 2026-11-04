@@ -21,14 +21,14 @@ export default async function run(t) {
   });
   const menuOpen = () => until(() => !document.querySelector('.gmenu').classList.contains('hidden'), 15000);
 
-  await step('the empty post on the square asks what goes there, and names its bell', async () => {
+  await step('the empty post on the square says something hung there, and names its bell', async () => {
     await toPost('bellPost.morrow');
     await press('KeyE');
     // The text types itself out: wait for the end of the page.
     await until(() => document.querySelector('.dialog-text').textContent.includes('MORROW'), 10000).catch(() => {});
     const text = await dialogText();
     await finishScript();
-    check(text.includes('Does something go here?') && text.includes('MORROW'), `said: ${text}`);
+    check(text.includes('Something hung here once.') && text.includes('MORROW'), `said: ${text}`);
   });
 
   await step('carrying the Morrowbell, Wren hangs it: it rings, and nothing answers', async () => {

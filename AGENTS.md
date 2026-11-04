@@ -21,12 +21,11 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine**
 through **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the
-valley, with thorn clumps and thickets that cost a heart a touch; after it, Maren, Tobin and Odo are gone and only Lark and Pip remain.
-The HUD has a sky dial (sun and moon over the ground) and a compass strip; villagers' directions are true from where they stand.
-Beating Gravelheart takes the Morrowbell off the village post (it lies behind the windmill until rehung), so Wren walks home.
-Unplayed by the owner: the choice window (`ask`/`choose`, red exit row); the 10-minute day, Dawn/Nightfall cards and the Lamplighter's dawn burn and rise/gutter; that bell hunt, the thorns, dial, compass and lone oak; the village polish; day/night lighting; Settings; surfing; the gate, D3, the prism.
-Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks").
-**Next:** the owner's batch (roadmap, in order): C6 (text pass, the rest), C7 (dungeon fog), C8 (blight scars), then the inventory tab. Dev server: port 5273.
+valley (thorns cost a heart a touch); after it, only Lark and Pip remain in the village, and the Morrowbell lies behind the windmill until rehung.
+All player text is terse and tagged (`[gear]`, `[place]`, `[old]`...), checked by `content/textRules.test.ts`. The HUD has a sky dial and a compass strip.
+Unplayed by the owner: the text pass, the choice window, the 10-minute day, Dawn/Nightfall cards, the Lamplighter's dawn burn and rise/gutter,
+the bell hunt, thorns, dial, compass, lone oak, village polish, day/night lighting, Settings, surfing, the gate, D3, the prism.
+**Next:** the queue in the roadmap, from 1 (boss hazards end with the boss); 3 is NPC voices as in-code speech (plan mode). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -118,14 +117,12 @@ src/
     director.ts, save.ts   game-time waits/tweens for scripts; save format, migrations, KeyValueStore, settings
     audio.ts, math.ts      sound effects + the song per mood; noise, easing, angles, seeded RNG
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
-    midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme arranged;
-                           imported/ holds the generated notes (never edit)
+    midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
   render/                  materials (shared/unique, static merging), shapes, characters, sky (incl. the blight look), particles, motes (ash)
   world/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern
-    jars.ts                JarField: clay jars in the ruins (a sword breaks one; blue gem / heart / empty; saved as `jar.<id>` flags)
-    sigil.ts, bell.ts, murmurbud.ts   SigilLook (a message in the air); BellPost, BellPickup; MurmurbudLook (the hint bulb)
+    jars.ts, sigil.ts, bell.ts, murmurbud.ts   JarField (ruins' jars: gem/heart/empty, `jar.<id>` flags); SigilLook; BellPost, BellPickup; MurmurbudLook
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
     overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp,
                            the crossing, the Waybell), ruins (ruined homes; the shield's cottage), blight (thorn clumps and thickets, thornTouch), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
@@ -133,25 +130,23 @@ src/
                            (data → 3D Area); grid.ts + puzzle.ts (2 m grids, wakestone checker); landmarks.ts (statues);
                            hearth.ts (Gravelheart's arena, causeway, Heart Vessel); prism.ts (the Keepers' Seal's prism); decor.ts (each wing's palette and light)
   game/
-    game.ts                Game: owns systems, frame loop, modes, implements ScriptApi
+    game.ts, script.ts     Game: owns systems, frame loop, modes, implements ScriptApi; ScriptApi + Script + Page (content's contract)
     combat.ts, title.ts    lock-on, glove throw, hit feedback both ways, hit-stop; the title menu
     menu.ts, menuDriver.ts MenuStack (rows, submenus, toggles, body text); MenuDriver (input → menu → HUD), ChoiceMenu (api.choose)
     pauseMenu.ts           the pause menu (P / Start): tabs Settings, Hints, Messages, Dev (sprint, invincible, save states)
     murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, sounds, the gauge)
-    script.ts              ScriptApi + Script + Page (the contract content uses)
     player.ts, guard.ts, surf.ts   Wren (movement, sword, shield, stagger); the shield's guard; surfing's rule
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
-    dungeonQuiet.ts        no music in a dungeon once its boss is beaten
     sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
     blight.ts              the blight's rules (where it lies, the lift, the strays, its songs, THORN_ATTACK)
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss)
+    dungeonQuiet.ts        no music in a dungeon once its boss is beaten
     lockon.ts, trialFalls.ts, flasks.ts   what lock-on picks; bell trials' fall rule; the two flasks (Odo refills them)
     camera.ts, dialog.ts (say + ask), pickups.ts, state.ts, debug.ts, enemyTestEnv.ts (enemy unit tests' stand-in game)
   content/                 the game's story; what things DO
     areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death
     overworld.ts           scripts for every overworld interactable/trigger, save restore
-    village.ts             Thistledown: the villagers, the mill door and bed, the locked cottages, Odo's stall, the opening (the shield, the scream), Pip's doll
-    shop.ts                offerWares, the shared buy menu (wares + Not now)
+    village.ts, shop.ts    Thistledown: villagers, mill door and bed, locked cottages, Odo's stall, the opening, Pip's doll; offerWares (the buy menu)
     bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
     sigils.ts, villageNews.ts   the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)
     gorge.ts, northpass.ts the Hushing Gorge (monsters, fall rule); the canyon past the camp (Cragstalkers, fall rule)
@@ -162,11 +157,9 @@ src/
        skyDial.ts, compass.ts   the clock's sky dial (sun and moon over the ground); the compass strip
 scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers
-  map.mjs                  text map + problems for a dungeon (npm run map -- <id>)
-  midi-import.mjs          assets/music-src/<folder>/*.mid → src/core/imported/<folder>.ts (npm run midi -- <folder>)
+  map.mjs, midi-import.mjs a dungeon's text map + problems (npm run map -- <id>); assets/music-src/<folder>/*.mid → src/core/imported/ (npm run midi)
 assets/music-src/          the owner's MIDI exports, one folder per song (see docs/audio.md "Importing the owner's music")
-docs/                      topic docs (table above)
-CLAUDE.md, .claude/        Claude Code only: model/cost routing, agents/, skills/ (/start, /wrap)
+docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, agents/, skills/ /start and /wrap)
 ```
 
 ## Commands

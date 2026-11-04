@@ -218,7 +218,7 @@ describe('overworld content', () => {
     const area = new Overworld(physics);
     const { api, said } = fakeApi(area, physics);
     await overworldContent(area).scripts['sign.crossroads'](api);
-    expect(said[0].text).toBe('← Thistledown Village');
+    expect(said[0].text).toBe('← [place]Thistledown Village[/]');
     area.dispose();
   });
 

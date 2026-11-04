@@ -12,39 +12,38 @@ asks: they're best designed against the real use case.
 
 ## Feature roadmap
 
-Next, in order:
+### The queue (renumbered 2026-11-04, owner's call: run in order, each with `/start <n>`, e.g. `/start 1`)
 
-- **The owner's batch of 2026-11-04** (before the inventory tab). Five chunks, one Sonnet session each, no plan mode; run
-  each with `/start batch C<n>`. Owner's calls already made: four highlight colors, a ~60 s dawn burn, "Dawn"/"Nightfall"
-  cards, the text pass sample-first.
-  - ~~**C1, quick wins**~~ done 2026-11-04 (unplayed: the burn's pacing, the rise/gutter effect up close, the cards' fade): no "Day N" on the clock; the clock 2× slower (`HOURS_PER_SECOND` 1/24, a day ≈ 10 min); a one-word
-    "Dawn"/"Nightfall" card at 6:00/18:00; Pip asks for Button only once Wren has the sword (before: just scared); the
-    Lamplighter's **dawn burn** (engaged past dawn, it loses HP to 0 in ~60 s, phase 2 as normal, normal death) and an
-    ember/smoke effect when it appears at dusk or leaves at dawn outside a fight.
-  - ~~**C2, text styling + the terse-text rule**~~ done 2026-11-04 (unplayed: the colors, the shake and the fade up close; the gold tag is `[gear]`, since `item` is an action name; old long boxes are a ratchet, `LONG_ALLOWED` in `content/textRules.test.ts`, C3/C6 lower it). Spec was: semantic tags `[item]` gold, `[place]` pale blue, `[danger]` ember red,
-    `[old]` violet (the blight, Keepers, sigils, names from the past), `[key]` bold (buttons), `[soft]` italics (whispers),
-    `[shake]` tremble and `[fade]` slow fade-in (both rare), closed by `[/]`; `*x*` migrated and dropped. **Mind the clash:** `[shield]`, `[interact]` etc. already show a button glyph
-    (`Action` names in `core/input.ts`), so tag names must never equal an action name (a test should check). `ui/hud.ts` format +
-    typewriter, `ui/style.css`. A content test: valid tags, ≤ 2 highlights a box, ≤ ~120 chars a box (tiny exceptions list).
-    Rewrite "Writing for the player" in [world.md](world.md) (every word earns its place; before/after examples; the tag table).
-  - ~~**C3, text pass sample**~~ done 2026-11-04, the owner approved the voice 2026-11-04: `village.ts` and `villageNews.ts` cut by about a third to a half, retagged (`[gear]` items, `[place]`, `[old]`), ratchet at 0 for both (`shop.ts` has no player text). Item messages now read `[gear]Name[/]. One short fact.`; the `*x*` leftovers are gone.
-  - ~~**C4, after the boss: the village bell and the dungeon's silence** (owner's bug + request, 2026-11-04; **do first**: a bug, small). (a) **Bug:** once Gravelheart is dead the village bell must be
-    off the post (the rule exists, see Where things stand), but fast travel to it from the dungeon's bell still works. Reproduce
-    in a failing test first (the travel menu's list, `game/menuDriver.ts` / `content/bells.ts`: a bell that isn't hung can't be
-    a destination), then fix. Rehanging the Morrowbell turns it back on. Add a smoke step (`bells`). (b) **No music in the
-    dungeon after the boss dies**: no dungeon theme in any room of the shrine once `gravelheart` is beaten (silence; the valley
-    outside keeps its songs). Test the mood pick in `core/audio.ts`/where the area's music is chosen.**~~ done 2026-11-04 (unplayed: the silence by ear). Cause of (a): saves with the boss beaten and the Morrowbell hung (older saves, the Dev tab's states) never lifted it; `settleVillageBell` now lifts it on restore, once (rehanging sets `village.bellMoved`). (b) `game/dungeonQuiet.ts`.
-  - ~~**C5, the choice window**~~ done 2026-11-04 (unplayed: feel of the window; `exit` index convention, see engine.md) (owner's request, 2026-11-04; independent of the others, after C4): every `api.ask` / `api.choose`
-    (Odo's wares, Sleep/Not now, and so on) now lists its options side by side. Make it one reusable **centered modal window**:
-    options stacked vertically, small (just big enough), a highlighted row with a visible cue for Up/Down + Enter (and mouse
-    click), and the **back-out row (Not now, Cancel...) in red** to read as an exit. `ui/hud.ts` + `ui/style.css`, driven by
-    `ChoiceMenu` in `game/menuDriver.ts`; how a row is marked as an exit needs a convention (e.g. the last option, or a flag on
-    the option; check how `offerWares`' "Not now" is built). Unit-test the driver; `looker` for the window; the owner judges feel.
-  - **C6, text pass, the rest**: every other content file, item/pickup messages and signs (scout for strings outside `content/`).
-  - **C7, dungeon fog and lighting**: fog color/near/far per wing in `world/dungeon/decor.ts`, optional per-room override,
-    `scene.fog` blends to Wren's room; sparing accents (ground haze over pits, motes in the window shafts, sconce flicker).
-    Independent of the others.
-  - **C8, blight scars and routing** (owner's ask, 2026-11-04; **plan mode**: it's level design across the valley). While the
+Done before it: the owner's batch of 2026-11-04 (C1–C6: the 10-minute day, Dawn/Nightfall cards, the Lamplighter's dawn
+burn, text tags and the terse-text rule, the text pass on all player text, the bell lift after the boss, the silent beaten
+dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things stand"); details in git.
+
+1. **Boss hazards end with the boss** (owner's bug, 2026-11-04). After the Lamplighter's death scene, back on Wren, its blue
+   shock waves were still on the ground. The moment any boss reaches 0 HP, every hazard it made (shock waves, orbs, rings)
+   goes, so none can show in a death scene or after: one rule in the `Boss` base and `game/hazards.ts`, for both bosses.
+   A failing unit test first. Sonnet, small.
+2. **The shrine respawn count** (Known quirks: `shrine-keys` expects 38 enemies after a death and gets 39). A failing unit
+   test first: is it the test, or a spawn in a beaten challenge room breaking the checkpoint rule? Then the full suite once
+   (ask the owner): it hasn't finished green since S5, and every CI run on 2026-11-04 was cancelled by the next push.
+   Sonnet; `architect` if the first fix fails.
+3. **NPC voices: the speech synth** (owner's dream feature, 2026-11-04; **plan mode**, the DSP to `architect`). Every NPC
+   says their lines aloud, as close as possible to really speaking the words, with natural timing, intonation and emotion;
+   sound gets the same care as visuals. **Owner's call (2026-11-04): speech synthesized in code** (text → speech sounds →
+   a formant voice), keeping the "audio synthesized in code" rule; rejected: a neural voice rendered at build time (breaks
+   the rule) and a word-shaped babble (not words). This session designs it (pronunciation, prosody: pitch, stress, pauses,
+   emotion; per-voice timbre) and builds a first voice on three lines (Maren worried, Tobin dry, Pip excited) on a page the
+   owner plays and judges by ear, then writes the plan for 5 and 6 here.
+4. **Dungeon fog and lighting** (was C7; independent: a good one to build while the owner listens to 3's voice). Fog color/near/far
+   per wing in `world/dungeon/decor.ts`, optional per-room override, `scene.fog` blends to Wren's room; sparing accents
+   (ground haze over pits, motes in the window shafts, sconce flicker). Sonnet.
+5. **The voice system** (after 3, from its plan). Text types at the voice's pace. The button shows the rest of the box at
+   once, but the voice runs on to its natural end, or is cut off when the player moves to the next box or the talk ends.
+   A voice profile per NPC, delivery per line where a line needs it (`[soft]` whispers, `[shake]` trembles), and the voice
+   goes through the mixer (a Voice volume setting, the room's reverb). Narration, signs and notes stay silent unless 3
+   decides otherwise.
+6. **Every NPC voiced**: profiles and line-by-line tuning for Maren, Tobin, Odo, Lark and Pip, with the owner listening;
+   a smoke step that a talk plays voice and the skip rule holds.
+7. **Blight scars and routing** (was C8; owner's ask, 2026-11-04; **plan mode**: it's level design across the valley). While the
     blight lies on the valley: jagged violet **scars** streak the ground (not in the village, not in water) and hurt exactly
     like a thorn clump (`THORN_ATTACK`: same damage, same shove), and they can't be destroyed. **Thorn clumps become
     breakable** (changes the "sword never cuts them" rule in [world.md](world.md), "The blight"): only with the sword, about
@@ -52,6 +51,13 @@ Next, in order:
     the Hushing Gorge on the way to the Morrowbell), never a maze: e.g. the way to the sword chest runs past enemies, so
     Wren turns round armed and fights them. It should look grown, not designed, and the valley's ground must still make
     sense once the blight lifts and it all shrinks away. Extend `layout.test.ts` (roads, POIs still reachable, gaps).
+8. **The inventory tab** in the pause menu (milestone 2 below).
+
+Later, not yet in the queue: an **SFX pass** (owner's ask, 2026-11-04), and the rescue quests for Maren, Tobin and Odo
+(milestone 0.7, "The empty village").
+
+### Milestones (after the queue)
+
 0. ~~The owner's playtest tweaks A–G (2026-11-02)~~ done. Untested by play: the gem economy
    (95 in the shrine plus bushes, against the 50-gem tunic (it was 100 until 2026-11-03) and 20 per flask refill).
 0.5. **Bells: bell posts, fast travel, bell trials** (owner's request, 2026-11-02, before the

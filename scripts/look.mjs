@@ -88,6 +88,20 @@ const SCENES = {
     await h.wait(300);
     await h.shot('choice-menu');
   },
+  /** Text boxes (docs/world.md, the text rules): the longest keepers' note, two place signs, a sigil and its toast. */
+  async text(h) {
+    await h.newGame();
+    await h.wait(1200);
+    for (const id of ['bud.bells', 'sign.gorge', 'sign.hollow', 'sigil.hollow']) {
+      await h.game((s) => window.embervale.runScript(s), id);
+      await h.wait(400);
+      await h.press('KeyE'); // the first press finishes the typing
+      await h.wait(400);
+      await h.shot(`text-${id.replace('.', '-')}`);
+      await h.press('KeyE'); // the second closes the box; the script ends
+      for (let i = 0; i < 30 && (await h.game(() => window.embervale.mode === 'cutscene')); i++) await h.wait(150);
+    }
+  },
   /** The HUD's sky dial (ui/skyDial.ts) through the day, and the compass strip (ui/compass.ts) at two headings. */
   async hud(h) {
     await h.newGame();

@@ -42,15 +42,15 @@ describe('the keepers\' bells', () => {
     }
   });
 
-  it('an empty post asks what goes there, names its bell, and knows a wrong bell', () => {
+  it('an empty post says something hung there, names its bell, and knows a wrong bell', () => {
     const s = new GameState();
-    expect(emptyPostText(s, 'morrow')).toContain('Does something go here?');
+    expect(emptyPostText(s, 'morrow')).toContain('Something hung here once.');
     expect(emptyPostText(s, 'morrow')).toContain('MORROW');
     s.bells.carried.add('lull');
-    expect(emptyPostText(s, 'morrow')).toContain('[gear]Lullbell[/] you carry doesn\'t belong here');
+    expect(emptyPostText(s, 'morrow')).toContain('[gear]Lullbell[/] doesn\'t belong here');
     s.bells.carried.clear();
     s.bells.hung.add('morrow');
-    expect(emptyPostText(s, 'lull')).toContain('Another bell post');
+    expect(emptyPostText(s, 'lull')).toContain('Another empty hook');
   });
 
   it('the first bell hung rings, and nothing answers: no menu, no travel', async () => {
@@ -109,7 +109,7 @@ describe('the keepers\' bells', () => {
     restore(state);
     await scripts['bellPost.morrow'](api);
     expect(chosen).toEqual([]);
-    expect(said.at(-1)!.text).toContain('Thistledown\'s roofs');
+    expect(said.at(-1)!.text).toContain('over the roofs... and nothing answers');
   });
 
   it('Maren and Tobin each say one line about the Morrowbell, once, after it\'s hung', async () => {
@@ -219,7 +219,7 @@ describe('the keepers\' bells', () => {
     expect(pickup.present).toBe(false);
     expect([...state.bells.carried]).toEqual(['morrow']);
     expect(ow.morrowPost.canHang).toBe(true);
-    expect(said[0].text).toContain('You found the [gear]Morrowbell[/]!');
+    expect(said[0].text).toContain('[gear]Morrowbell[/]. The keepers rang the dawn');
 
     const fresh = new BellPickup(b, 'morrow', 0, 0, 0);
     bellContent({}, { 'bell.morrow': fresh }).restore(state);

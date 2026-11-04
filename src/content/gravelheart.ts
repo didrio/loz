@@ -93,7 +93,7 @@ export function wardenContent(area: DungeonArea) {
     api.releaseCamera();
     hearth.clear();
     if (!api.state.has('gravelheartVessel')) hearth.vessel.show();
-    await api.say([{ text: 'Gravelheart kneels, and the stone goes quiet. Its ember rises through the roof, toward the lantern on the eastern hill.\nThe ring sinks and the great door opens.' }]);
+    await api.say([{ text: 'Gravelheart kneels, and the stone goes quiet. Its ember flies home to the lantern.' }]);
 
     // The north wall: stones climb out of the pit, and a door that was never there grinds open.
     const door = hearth.sealDoor;
@@ -111,7 +111,7 @@ export function wardenContent(area: DungeonArea) {
       }
       await api.wait(2.2);
       api.releaseCamera();
-      api.toast('Something has opened in the north wall.');
+      api.toast('The north wall has opened.');
     }
   };
 
@@ -123,7 +123,7 @@ export function wardenContent(area: DungeonArea) {
     const prog = api.state.dungeon(area.def.id);
     await api.wait(1.4); // the shards fall and the beams go dark
     api.sfx.solved();
-    await api.say([{ text: 'The prism is gone, and its light runs out through the walls. The room falls away, and you see a gate of floating stones, far to the northwest.' }]);
+    await api.say([{ text: 'Its light runs out through the walls, far to the northwest, to a gate of floating stone.' }]);
     // The shot is set as the valley loads, before the screen fades in: it is a vision, and Wren isn't standing there.
     await api.travel('overworld', 'gateView', true, () => {
       const gc = (api.area as unknown as Overworld).gate.center;
@@ -145,7 +145,7 @@ export function wardenContent(area: DungeonArea) {
     await api.travel('shrine', 'sealStone.beyond', true);
     api.hidePlayer(false);
     api.releaseCamera();
-    api.toast('The ward is broken. The gate has fallen, and the way north is open.');
+    api.toast('The ward is broken. [place]The Northpass[/] is open.');
   };
 
   /** The Heart Vessel the Warden leaves behind. */
@@ -155,7 +155,7 @@ export function wardenContent(area: DungeonArea) {
     api.state.maxHp += 2;
     api.state.hp = api.state.maxHp;
     api.sfx.fanfare();
-    await api.say([{ text: 'You got a [gear]Heart Vessel[/]!\nYour life grew by one heart, and you feel completely restored.' }]);
+    await api.say([{ text: '[gear]Heart Vessel[/]. One more heart, and all of them full.' }]);
   };
 
   return {
