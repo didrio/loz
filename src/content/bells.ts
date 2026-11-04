@@ -145,7 +145,7 @@ async function ringBell(api: ScriptApi, post: BellPost) {
 /** Follow the answer: pick a hung bell (or stay), travel there, and it rings as Wren arrives. */
 async function travelMenu(api: ScriptApi, post: BellPost) {
   const others = answering(api.state, post.bell);
-  const pick = await api.choose('Follow the answer', [...others.map((o) => o.site), 'Stay']);
+  const pick = await api.choose('Follow the answer', [...others.map((o) => o.site), 'Stay'], others.length);
   if (pick === null || pick >= others.length) return;
   const to = others[pick];
   api.releaseCamera();

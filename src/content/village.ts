@@ -272,7 +272,7 @@ export function villageContent(ow: Overworld) {
     async 'bed.mill'(api) {
       const wake = wakeHour(api.state.hours);
       const when = wake === 6 ? 'morning' : 'evening';
-      const pick = await api.ask([{ text: `Tobin's bed.\nSleep until ${when}?` }], ['Sleep', 'Not now']);
+      const pick = await api.ask([{ text: `Tobin's bed.\nSleep until ${when}?` }], ['Sleep', 'Not now'], 1);
       if (pick !== 0) return;
       await api.fade(1, 0.8);
       api.warpTime(wake);

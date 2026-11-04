@@ -129,11 +129,11 @@ export class ChoiceMenu {
     return this.driver.isOpen;
   }
 
-  ask(title: string, options: string[]): Promise<number | null> {
+  ask(title: string, options: string[], exit?: number): Promise<number | null> {
     this.finish(null); // never leave an earlier question hanging
     return new Promise((resolve) => {
       this.resolve = resolve;
-      this.driver.open({ title, rows: options.map((label, i) => ({ kind: 'action' as const, label, run: () => this.finish(i) })) });
+      this.driver.open({ title, rows: options.map((label, i) => ({ kind: 'action' as const, label, run: () => this.finish(i), exit: i === exit })), compact: true });
     });
   }
 

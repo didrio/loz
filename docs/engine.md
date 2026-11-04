@@ -48,7 +48,9 @@ should be built on it too. `MenuDriver` (`game/menuDriver.ts`) feeds one from in
 (up/down with a tick, confirm, cancel) and draws it; the game routes the HUD's mouse hover and
 click to whichever menu is open. `ChoiceMenu` is `ScriptApi.choose(title, options)`: a titled
 panel of options resolving with the index or null (backed out), shown during a cutscene instead
-of the dialog box (the bells' travel menu). The pause menu's **Dev tab** holds Dev sprint,
+of the dialog box (the bells' travel menu). `choose(title, options, exit?)` and `ask(pages, options, exit?)` share one look: a small centered
+window, rows stacked, ▸ and a bar on the selected one, mouse hover/click; `exit` is the index of the back-out row (Not now, Stay), drawn red,
+and Cancel picks it (`ask` has no cancel without one). Always pass it for a back-out option. The pause menu's **Dev tab** holds Dev sprint,
 Invincible (`GameState.invincible`, never saved), trial falls, and Save states (`content/devStates.ts`, in play order: a new game, the gorge, the
 Morrowbell, the night before the Lamplighter, the shrine's stages, the opened gate; loading one
 replaces the current save, via `Game.loadDevState`). Every state is run through `withNotes`: it gets all the keepers' notes once Wren has
@@ -128,7 +130,7 @@ outdoors (the clock runs, the village song plays). Future homes (the cottages' `
 now) follow this pattern. A save from the old separate mill area continues in the overworld.
 
 **Choices and sleeping**: `api.ask(pages, options)` is `say` whose last page ends in a
-choice list (menu up/down, confirm); it resolves with the index. `content/shop.ts`
+choice window (`.choice-window`, over the dialog box; menu up/down, confirm, click); it resolves with the index. `content/shop.ts`
 `offerWares(api, pages, wares)` wraps it as a list of priced wares plus Not now and takes
 the gems (or reports `short`): every shop uses it. The clock stands still indoors *except during a warp* (`warpTime`), which is how the
 bed jumps to the next 06:00 / 18:00 (`wakeHour` in `content/village.ts`).

@@ -45,6 +45,14 @@ describe('ChoiceMenu', () => {
     expect(menu.isOpen).toBe(false);
   });
 
+  it('marks the exit row and backs out with cancel', async () => {
+    const { fake, view } = io();
+    const menu = new ChoiceMenu(fake);
+    menu.ask('Where to?', ['A', 'Stay'], 1);
+    expect(view()!.rows.map((r) => !!r.exit)).toEqual([false, true]);
+    expect(view()!.compact).toBe(true);
+  });
+
   it('takes a mouse click', async () => {
     const { fake } = io();
     const menu = new ChoiceMenu(fake);

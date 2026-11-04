@@ -15,7 +15,7 @@ export type Purchase = { bought: number } | { short: Ware } | 'declined';
  * Every shop uses it (Odo's tunic and flask refills).
  */
 export async function offerWares(api: ScriptApi, pages: Page[], wares: Ware[]): Promise<Purchase> {
-  const pick = await api.ask(pages, [...wares.map((w) => `${w.label} (${w.price} gems)`), 'Not now']);
+  const pick = await api.ask(pages, [...wares.map((w) => `${w.label} (${w.price} gems)`), 'Not now'], wares.length);
   const ware = wares[pick];
   if (!ware) return 'declined';
   if (api.state.gems < ware.price) {

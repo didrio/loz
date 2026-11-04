@@ -78,6 +78,9 @@ export class Hud {
   /** Set by the game: the mouse hovered a row / clicked a row of the open menu. */
   onMenuHover: (i: number) => void = () => {};
   onMenuClick: (i: number) => void = () => {};
+  /** The mouse hovered / clicked a row of the choice window (a dialog question). */
+  onChoiceHover: (i: number) => void = () => {};
+  onChoiceClick: (i: number) => void = () => {};
   /** The mouse clicked a slider's arrow, dragged its track (0..1), or clicked a tab. */
   onMenuAdjust: (i: number, dir: -1 | 1) => void = () => {};
   onMenuSlide: (i: number, fraction: number) => void = () => {};
@@ -119,7 +122,8 @@ export class Hud {
       <div class="boss-title"><div class="boss-title-name"></div><div class="boss-title-sub"></div></div>
       <div class="boss-bar hidden"><div class="boss-name"></div><div class="boss-track"><div class="boss-lag"></div><div class="boss-fill"></div><div class="boss-mark"></div></div></div>
       <div class="toast"></div>
-      <div class="dialog hidden"><div class="dialog-who"></div><div class="dialog-text"></div><div class="dialog-choices"></div><div class="dialog-next">▼</div></div>
+      <div class="dialog hidden"><div class="dialog-who"></div><div class="dialog-text"></div><div class="dialog-next">▼</div></div>
+      <div class="choice-window hidden"></div>
       <div class="fade"></div>
       <div class="card hidden"></div>
       <div class="title">
@@ -156,7 +160,15 @@ export class Hud {
     this.dialog = q('.dialog');
     this.dialogWho = q('.dialog-who');
     this.dialogText = q('.dialog-text');
-    this.dialogChoices = q('.dialog-choices');
+    this.dialogChoices = q('.choice-window');
+    this.dialogChoices.addEventListener('mouseover', (e) => {
+      const r = (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
+      if (r) this.onChoiceHover(Number(r.dataset.row));
+    });
+    this.dialogChoices.addEventListener('click', (e) => {
+      const r = (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
+      if (r) this.onChoiceClick(Number(r.dataset.row));
+    });
     this.card = q('.card');
     this.title = q('.title');
     this.menu = q('.menu');
@@ -248,7 +260,7 @@ export class Hud {
     let html = '';
     if (view) {
       const row = (r: MenuView['rows'][number], i: number) => {
-        const cls = `gmenu-row${r.selected ? ' selected' : ''}${r.space ? ' space' : ''}`;
+        const cls = `gmenu-row${r.selected ? ' selected' : ''}${r.space ? ' space' : ''}${r.exit ? ' exit' : ''}`;
         if (r.kind === 'slider') {
           const pct = Math.round((r.fill ?? 0) * 100);
           return `<div class="${cls}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-slider"><i class="gmenu-arrow" data-dir="-1">◂</i><b class="gmenu-track" data-track><b class="gmenu-fill" style="width:${pct}%"></b><b class="gmenu-knob" style="left:${pct}%"></b></b><i class="gmenu-arrow" data-dir="1">▸</i></span><span class="gmenu-value">${escape(r.value ?? '')}</span></div>`;
@@ -272,7 +284,7 @@ export class Hud {
       const help = `${view.tabs && view.tabs.labels.length > 1 ? `${this.key('tabPrev')}${this.key('tabNext')} tabs · ` : ''}${this.key('menuUp')}${this.key('menuDown')} move · ${
         view.adjustable ? `${this.key('menuLeft')}${this.key('menuRight')} change · ` : ''
       }${view.tabs ? `${this.key('pause')} close` : `${this.key('confirm')} choose · ${this.key('cancel')} back`}`;
-      html = `<div class="gmenu-panel${view.tabs ? ' wide' : ''}">${tabs}${content}<div class="gmenu-help">${help}</div></div>`;
+      html = `<div class="gmenu-panel${view.tabs ? ' wide' : ''}${view.compact ? ' compact' : ''}">${tabs}${content}<div class="gmenu-help">${help}</div></div>`;
     }
     if (html === this.gmenuHtml) return;
     const oldScroll = this.gmenu.querySelector('.gmenu-list')?.scrollTop ?? 0;
@@ -486,10 +498,13 @@ export class Hud {
     this.setChoices(null);
   }
 
-  /** The choice list under the dialog text (a question), with one highlighted; null hides it. */
-  setChoices(options: string[] | null, selected = 0) {
+  /** The choice window over the dialog (a question): rows stacked, one highlighted, `exit` drawn red; null hides it. */
+  setChoices(options: string[] | null, selected = 0, exit = -1) {
+    this.dialogChoices.classList.toggle('hidden', !options);
     this.dialogChoices.innerHTML = options
-      ? options.map((o, i) => `<span class="dialog-choice${i === selected ? ' selected' : ''}">${escape(o)}</span>`).join('')
+      ? options
+          .map((o, i) => `<div class="choice-row${i === selected ? ' selected' : ''}${i === exit ? ' exit' : ''}" data-row="${i}">${escape(o)}</div>`)
+          .join('') + `<div class="choice-help">${this.key('menuUp')}${this.key('menuDown')} move · ${this.key('confirm')} choose</div>`
       : '';
   }
 

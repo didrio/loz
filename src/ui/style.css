@@ -186,10 +186,19 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 @keyframes text-shake { 25% { transform: translate(0.6px, -0.5px); } 50% { transform: translate(-0.5px, 0.6px); } 75% { transform: translate(0.5px, 0.5px); } }
 @keyframes text-rise { from { opacity: 0.2; } to { opacity: 1; } }
 .dialog .key, .card .key { height: 26px; min-width: 26px; font-size: 13px; vertical-align: middle; margin: 0 2px; }
-.dialog-choices { display: flex; gap: 28px; justify-content: center; margin-top: 8px; }
-.dialog-choice { padding: 2px 16px; color: rgba(255, 255, 255, 0.55); }
-.dialog-choice.selected { color: #fff; }
-.dialog-choice.selected::before { content: '▸ '; color: #ffd76a; }
+.choice-window {
+  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); min-width: 220px; padding: 12px 14px 8px;
+  background: rgba(10, 14, 30, 0.94); border: 2px solid #e8c770; border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  pointer-events: auto; color: #fff; font-size: 21px;
+}
+.choice-row { padding: 5px 16px; border-radius: 8px; color: rgba(255, 255, 255, 0.6); cursor: pointer; white-space: nowrap; }
+.choice-row.selected { color: #fff; background: rgba(232, 199, 112, 0.16); }
+.choice-row.selected::before { content: '▸ '; color: #ffd76a; }
+.choice-row:not(.selected) { padding-left: 34px; }
+.choice-row.exit, .gmenu-row.exit { color: rgba(255, 106, 74, 0.75); }
+.choice-row.exit.selected, .gmenu-row.exit.selected { color: #ff6a4a; background: rgba(255, 106, 74, 0.16); }
+.choice-help { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(232, 199, 112, 0.3); font-size: 13px; color: rgba(255, 255, 255, 0.5); text-align: center; }
+.gmenu-panel.compact { min-width: 220px; }
 .dialog-next { position: absolute; right: 18px; bottom: 6px; color: #e8c770; opacity: 0; }
 .dialog.done .dialog-next { opacity: 1; animation: bob 0.8s infinite; }
 @keyframes bob { 50% { transform: translateY(4px); } }

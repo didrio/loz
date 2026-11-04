@@ -71,6 +71,23 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('blight-lifted-field');
   },
+  /** The choice window (ui/hud.ts `setChoices`, game/dialog.ts) over a dialog question, and the script menu (`choose`) with a red exit row. */
+  async choice(h) {
+    await h.newGame();
+    await h.wait(1200);
+    await h.game(() => {
+      window.embervale.mode = 'cutscene'; // the dialog only runs in a cutscene
+      void window.embervale.ask([{ who: 'Odo', text: 'Stoneward Tunic, 50 gems.' }], ['Stoneward Tunic (50 gems)', 'Life Potion (20 gems)', 'Not now'], 2);
+    });
+    await h.wait(2500);
+    await h.shot('choice-ask');
+    await h.game(() => window.embervale.dialog.update(false, 1));
+    await h.wait(300);
+    await h.shot('choice-ask-selected');
+    await h.game(() => void window.embervale.choose('Follow the answer', ['Hall of Sleepers', 'Stay'], 1));
+    await h.wait(300);
+    await h.shot('choice-menu');
+  },
   /** The HUD's sky dial (ui/skyDial.ts) through the day, and the compass strip (ui/compass.ts) at two headings. */
   async hud(h) {
     await h.newGame();

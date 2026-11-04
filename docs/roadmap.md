@@ -34,7 +34,7 @@ Next, in order:
     a destination), then fix. Rehanging the Morrowbell turns it back on. Add a smoke step (`bells`). (b) **No music in the
     dungeon after the boss dies**: no dungeon theme in any room of the shrine once `gravelheart` is beaten (silence; the valley
     outside keeps its songs). Test the mood pick in `core/audio.ts`/where the area's music is chosen.**~~ done 2026-11-04 (unplayed: the silence by ear). Cause of (a): saves with the boss beaten and the Morrowbell hung (older saves, the Dev tab's states) never lifted it; `settleVillageBell` now lifts it on restore, once (rehanging sets `village.bellMoved`). (b) `game/dungeonQuiet.ts`.
-  - **C5, the choice window** (owner's request, 2026-11-04; independent of the others, after C4): every `api.ask` / `api.choose`
+  - ~~**C5, the choice window**~~ done 2026-11-04 (unplayed: feel of the window; `exit` index convention, see engine.md) (owner's request, 2026-11-04; independent of the others, after C4): every `api.ask` / `api.choose`
     (Odo's wares, Sleep/Not now, and so on) now lists its options side by side. Make it one reusable **centered modal window**:
     options stacked vertically, small (just big enough), a highlighted row with a visible cue for Up/Down + Enter (and mouse
     click), and the **back-out row (Not now, Cancel...) in red** to read as an exit. `ui/hud.ts` + `ui/style.css`, driven by

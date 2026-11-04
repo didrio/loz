@@ -135,6 +135,8 @@ export class Game implements ScriptApi {
     const openMenu = () => (this.pauseMenu.isOpen ? this.pauseMenu.menu : this.choice.isOpen ? this.choice.driver : null);
     this.hud.onMenuHover = (i) => openMenu()?.hover(i);
     this.hud.onMenuClick = (i) => openMenu()?.click(i);
+    this.hud.onChoiceClick = (i) => this.dialog.click(i);
+    this.hud.onChoiceHover = (i) => this.dialog.hover(i);
     this.hud.onMenuAdjust = (i, dir) => openMenu()?.adjust(i, dir);
     this.hud.onMenuSlide = (i, fraction) => openMenu()?.slide(i, fraction);
     this.hud.onMenuTab = (i) => this.pauseMenu.setTab(i);
@@ -222,7 +224,7 @@ export class Game implements ScriptApi {
         this.player.update(dt, NO_CONTROLS, this.combat.playerEnv);
         this.enemies.update(dt, this.combat.enemyEnv, true);
         if (this.choice.isOpen) this.choice.update();
-        else this.dialog.update(this.input.pressed('confirm'), this.menuStep());
+        else this.dialog.update(this.input.pressed('confirm'), this.menuStep(), this.input.pressed('cancel'));
         break;
     }
 
@@ -477,12 +479,12 @@ export class Game implements ScriptApi {
     await this.dialog.show(pages);
   }
 
-  ask(pages: Page[], options: string[]) {
-    return this.dialog.show(pages, options);
+  ask(pages: Page[], options: string[], exit?: number) {
+    return this.dialog.show(pages, options, exit);
   }
 
-  choose(title: string, options: string[]) {
-    return this.choice.ask(title, options);
+  choose(title: string, options: string[], exit?: number) {
+    return this.choice.ask(title, options, exit);
   }
 
   wait(seconds: number) {

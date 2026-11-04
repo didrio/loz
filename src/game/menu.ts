@@ -6,7 +6,7 @@
 
 export type MenuRow = (
   /** Runs `run` when chosen. */
-  | { kind: 'action'; label: string; run: () => void }
+  | { kind: 'action'; label: string; run: () => void; /** A way out (Not now, Stay): drawn red. */ exit?: boolean }
   /** On/off; choosing it flips it and the menu stays open. Left/right set it off/on. */
   | { kind: 'toggle'; label: string; get: () => boolean; set: (on: boolean) => void }
   /** Opens a deeper menu (built fresh each time it's opened). */
@@ -27,15 +27,18 @@ export interface Menu {
   /** Text shown under the title (a note to read, or what to do when there are no rows). */
   body?: string;
   rows: MenuRow[];
+  /** A small centered window (a script's question), not the full panel. */
+  compact?: boolean;
   /** A tab bar over the rows (the pause menu): the labels and which one this menu is. */
   tabs?: { labels: string[]; active: number };
 }
 
 /** What the HUD draws. */
 export interface MenuView {
+  compact?: boolean;
   title: string;
   body?: string;
-  rows: { label: string; value?: string; selected: boolean; kind: MenuRow['kind']; space?: boolean; /** 0..1 along a slider. */ fill?: number }[];
+  rows: { label: string; value?: string; selected: boolean; kind: MenuRow['kind']; space?: boolean; exit?: boolean; /** 0..1 along a slider. */ fill?: number }[];
   tabs?: { labels: string[]; active: number };
   /** The selected entry's text, for the pane beside the list. */
   detail?: { title: string; text: string };
@@ -152,12 +155,14 @@ export class MenuStack {
       title: top.menu.title,
       body: top.menu.body,
       tabs: top.menu.tabs,
+      compact: top.menu.compact,
       detail: sel?.kind === 'entry' ? { title: sel.label, text: sel.detail } : undefined,
       adjustable: sel?.kind === 'slider' || sel?.kind === 'choice' || sel?.kind === 'toggle',
       rows: top.menu.rows.map((r, i) => ({
         label: r.label,
         kind: r.kind,
         space: r.space,
+        exit: r.kind === 'action' ? r.exit : undefined,
         fill: r.kind === 'slider' ? (r.get() - r.min) / (r.max - r.min) : undefined,
         value:
           r.kind === 'toggle' ? (r.get() ? 'ON' : 'OFF')

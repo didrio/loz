@@ -24,9 +24,9 @@ through **Gravelheart** and the **prism**, which opens the gate to the Northpass
 valley, with thorn clumps and thickets that cost a heart a touch; after it, Maren, Tobin and Odo are gone and only Lark and Pip remain.
 The HUD has a sky dial (sun and moon over the ground) and a compass strip; villagers' directions are true from where they stand.
 Beating Gravelheart takes the Morrowbell off the village post (it lies behind the windmill until rehung), so Wren walks home.
-Unplayed by the owner: the 10-minute day, Dawn/Nightfall cards and the Lamplighter's dawn burn and rise/gutter; that bell hunt, the thorns, dial, compass and lone oak; the village polish; day/night lighting; Settings; surfing; the gate, D3, the prism.
+Unplayed by the owner: the choice window (`ask`/`choose`, red exit row); the 10-minute day, Dawn/Nightfall cards and the Lamplighter's dawn burn and rise/gutter; that bell hunt, the thorns, dial, compass and lone oak; the village polish; day/night lighting; Settings; surfing; the gate, D3, the prism.
 Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks").
-**Next:** the owner's batch (roadmap, in order): C5 (centered choice window), C6 (text pass, the rest), C7 (dungeon fog), C8 (blight scars), then the inventory tab. Dev server: port 5273.
+**Next:** the owner's batch (roadmap, in order): C6 (text pass, the rest), C7 (dungeon fog), C8 (blight scars), then the inventory tab. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
