@@ -39,7 +39,7 @@ recheck old text against them when you touch it.
 - **Every word earns its place** (owner's rule, 2026-11-04; reference: Dark Souls dialog and item text). Draft the line,
   then cut it by half without losing what it tells or asks of the player. A box is **at most ~120 visible characters**
   (a button counts as one) and **at most 2 highlights**. A content test (`content/textRules.test.ts`) enforces both and
-  that tags are valid; old over-long boxes are a ratchet in that file (`LONG_ALLOWED`) that the text pass (roadmap C3/C4)
+  that tags are valid; old over-long boxes are a ratchet in that file (`LONG_ALLOWED`) that the text pass (roadmap C3/C6)
   brings to zero, so lower it when you cut.
   - Before: `You found a *Wooden Shield*!\nScorched at the rim, but the planks are sound.`
   - After: `[gear]Wooden Shield[/]. Scorched, but sound.`

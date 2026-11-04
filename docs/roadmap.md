@@ -21,31 +21,30 @@ Next, in order:
     "Dawn"/"Nightfall" card at 6:00/18:00; Pip asks for Button only once Wren has the sword (before: just scared); the
     Lamplighter's **dawn burn** (engaged past dawn, it loses HP to 0 in ~60 s, phase 2 as normal, normal death) and an
     ember/smoke effect when it appears at dusk or leaves at dawn outside a fight.
-  - ~~**C2, text styling + the terse-text rule**~~ done 2026-11-04 (unplayed: the colors, the shake and the fade up close; the gold tag is `[gear]`, since `item` is an action name; old long boxes are a ratchet, `LONG_ALLOWED` in `content/textRules.test.ts`, C3/C4 lower it). Spec was: semantic tags `[item]` gold, `[place]` pale blue, `[danger]` ember red,
+  - ~~**C2, text styling + the terse-text rule**~~ done 2026-11-04 (unplayed: the colors, the shake and the fade up close; the gold tag is `[gear]`, since `item` is an action name; old long boxes are a ratchet, `LONG_ALLOWED` in `content/textRules.test.ts`, C3/C6 lower it). Spec was: semantic tags `[item]` gold, `[place]` pale blue, `[danger]` ember red,
     `[old]` violet (the blight, Keepers, sigils, names from the past), `[key]` bold (buttons), `[soft]` italics (whispers),
     `[shake]` tremble and `[fade]` slow fade-in (both rare), closed by `[/]`; `*x*` migrated and dropped. **Mind the clash:** `[shield]`, `[interact]` etc. already show a button glyph
     (`Action` names in `core/input.ts`), so tag names must never equal an action name (a test should check). `ui/hud.ts` format +
     typewriter, `ui/style.css`. A content test: valid tags, ≤ 2 highlights a box, ≤ ~120 chars a box (tiny exceptions list).
     Rewrite "Writing for the player" in [world.md](world.md) (every word earns its place; before/after examples; the tag table).
-  - ~~**C3, text pass sample**~~ done 2026-11-04, **awaiting the owner's OK on the voice before C4**: `village.ts` and `villageNews.ts` cut by about a third to a half, retagged (`[gear]` items, `[place]`, `[old]`), ratchet at 0 for both (`shop.ts` has no player text). Item messages now read `[gear]Name[/]. One short fact.`; the `*x*` leftovers are gone.
-  - **C7, after the boss: the village bell and the dungeon's silence** (owner's bug + request, 2026-11-04; **do first**: a bug,
-    small, and it doesn't wait on the voice approval C4 needs). (a) **Bug:** once Gravelheart is dead the village bell must be
+  - ~~**C3, text pass sample**~~ done 2026-11-04, the owner approved the voice 2026-11-04: `village.ts` and `villageNews.ts` cut by about a third to a half, retagged (`[gear]` items, `[place]`, `[old]`), ratchet at 0 for both (`shop.ts` has no player text). Item messages now read `[gear]Name[/]. One short fact.`; the `*x*` leftovers are gone.
+  - **C4, after the boss: the village bell and the dungeon's silence** (owner's bug + request, 2026-11-04; **do first**: a bug, small). (a) **Bug:** once Gravelheart is dead the village bell must be
     off the post (the rule exists, see Where things stand), but fast travel to it from the dungeon's bell still works. Reproduce
     in a failing test first (the travel menu's list, `game/menuDriver.ts` / `content/bells.ts`: a bell that isn't hung can't be
     a destination), then fix. Rehanging the Morrowbell turns it back on. Add a smoke step (`bells`). (b) **No music in the
     dungeon after the boss dies**: no dungeon theme in any room of the shrine once `gravelheart` is beaten (silence; the valley
     outside keeps its songs). Test the mood pick in `core/audio.ts`/where the area's music is chosen.
-  - **C8, the choice window** (owner's request, 2026-11-04; independent of C2–C7, any time after C7): every `api.ask` / `api.choose`
+  - **C5, the choice window** (owner's request, 2026-11-04; independent of the others, after C4): every `api.ask` / `api.choose`
     (Odo's wares, Sleep/Not now, and so on) now lists its options side by side. Make it one reusable **centered modal window**:
     options stacked vertically, small (just big enough), a highlighted row with a visible cue for Up/Down + Enter (and mouse
     click), and the **back-out row (Not now, Cancel...) in red** to read as an exit. `ui/hud.ts` + `ui/style.css`, driven by
     `ChoiceMenu` in `game/menuDriver.ts`; how a row is marked as an exit needs a convention (e.g. the last option, or a flag on
     the option; check how `offerWares`' "Not now" is built). Unit-test the driver; `looker` for the window; the owner judges feel.
-  - **C4, text pass, the rest**: every other content file, item/pickup messages and signs (scout for strings outside `content/`).
-  - **C5, dungeon fog and lighting**: fog color/near/far per wing in `world/dungeon/decor.ts`, optional per-room override,
+  - **C6, text pass, the rest**: every other content file, item/pickup messages and signs (scout for strings outside `content/`).
+  - **C7, dungeon fog and lighting**: fog color/near/far per wing in `world/dungeon/decor.ts`, optional per-room override,
     `scene.fog` blends to Wren's room; sparing accents (ground haze over pits, motes in the window shafts, sconce flicker).
-    Independent of C2–C4.
-  - **C6, blight scars and routing** (owner's ask, 2026-11-04; **plan mode**: it's level design across the valley). While the
+    Independent of the others.
+  - **C8, blight scars and routing** (owner's ask, 2026-11-04; **plan mode**: it's level design across the valley). While the
     blight lies on the valley: jagged violet **scars** streak the ground (not in the village, not in water) and hurt exactly
     like a thorn clump (`THORN_ATTACK`: same damage, same shove), and they can't be destroyed. **Thorn clumps become
     breakable** (changes the "sword never cuts them" rule in [world.md](world.md), "The blight"): only with the sword, about

@@ -5,7 +5,7 @@ import { highlightCount, tagProblems, visibleText } from '../ui/richText';
  * The text rules (docs/world.md, "Writing for the player"), checked on every string literal in content/:
  * valid tags, at most 2 highlights a box, at most MAX_CHARS visible characters a box.
  * Old text over the length limit is a ratchet: per file, the count of long boxes may only go down
- * (the text pass, chunks C3/C4, brings these to zero). New text must obey the limit.
+ * (the text pass, chunks C3/C6, brings these to zero). New text must obey the limit.
  */
 const MAX_CHARS = 120;
 const MAX_HIGHLIGHTS = 2;
