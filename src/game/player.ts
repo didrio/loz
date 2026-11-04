@@ -10,7 +10,7 @@ import type { BrokenJar } from '../world/jars';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
 import { ATTACK_BOOST } from './flasks';
 import { Guard } from './guard';
-import { SURF_SPEED, surfNext } from './surf';
+import { SURF_MIN_SPEED, SURF_SPEED, surfNext, surfSpeedNext } from './surf';
 
 /** What the player wants to do this frame, in world space. Built from input, or by scripts. */
 export interface Controls {
@@ -41,6 +41,8 @@ export interface PlayerEnv {
   canSurf?: boolean;
   /** Each grounded frame of a ride, for the dust: where her feet are, how fast, and whether she just got on. */
   onSurf?(at: THREE.Vector3, speed: number, mounted: boolean): void;
+  /** Every frame: the speed of the scrape under the shield (0 when not riding on the ground). */
+  onSurfSound?(speed: number): void;
 }
 
 /** Hearts live in the save state; the player just reads and writes them. */
@@ -132,7 +134,8 @@ export class Player {
   /** Riding the shield (surf.ts): fast, no guard, a hit knocks her off. */
   surfing = false;
   /** The ride's horizontal velocity: it eases toward the stick, so she carves and coasts. */
-  private readonly surfVel = new THREE.Vector3();
+  private readonly surfDir = new THREE.Vector3(0, 0, 1);
+  private surfSpeed = 0;
   private airT = 0;
   private wasGrounded = true;
   /** The shield's three guard slots (see guard.ts). */
@@ -401,7 +404,11 @@ export class Player {
       free: this.state === 'move' && this.throwT <= 0 && !staggered,
       locked: !!(lock && lock.alive), attack: c.attack && env.hasSword, wading,
     });
-    if (this.surfing && !wasSurfing) this.surfVel.copy(this.forward).multiplyScalar(this.speedXZ);
+    if (this.surfing && !wasSurfing) {
+      // The landing's push: full speed at once, along the stick if held, else the way she faces.
+      this.surfDir.copy(move.lengthSq() > 0.01 ? move : this.forward).setY(0).normalize();
+      this.surfSpeed = SURF_SPEED * this.devSpeed;
+    }
     // The shield stays up through jumps: hold it, hop, keep blocking. Not while it's under her feet.
     this.shielding = !this.surfing && canAct && this.state === 'move' && shield && this.guard.canBlock && this.throwT <= 0;
     if (canAct && env.hasSword && c.attack && this.throwT <= 0 && !staggered) {
@@ -426,11 +433,13 @@ export class Player {
     switch (this.state) {
       case 'move': {
         if (this.surfing) {
-          // Steering eases in (a carve); with the stick let go she coasts to a stop, still on the shield.
-          const target = move.clone().multiplyScalar(SURF_SPEED * this.devSpeed);
-          this.surfVel.lerp(target, damp(move.lengthSq() > 0.01 ? 5 : 1.2, dt));
-          vel.copy(this.surfVel);
-          if (this.surfVel.lengthSq() > 1) this.facing = Math.atan2(this.surfVel.x, this.surfVel.z);
+          // Steering carves the direction; the speed only glides down (surf.ts), and a stick let go brakes.
+          const steering = move.lengthSq() > 0.01;
+          if (steering) this.surfDir.lerp(move, damp(5, dt)).setY(0).normalize();
+          this.surfSpeed = surfSpeedNext(this.surfSpeed, dt, steering);
+          vel.copy(this.surfDir).multiplyScalar(this.surfSpeed);
+          this.facing = Math.atan2(this.surfDir.x, this.surfDir.z);
+          if (this.surfSpeed < SURF_MIN_SPEED * this.devSpeed) this.surfing = false;
           break;
         }
         // With surfing learned, raising the shield in the air doesn't slow the jump: she's getting on.
@@ -480,6 +489,7 @@ export class Player {
     this.speedXZ = Math.hypot(vel.x, vel.z);
     // The mounting frame always reports (it began grounded), even if the step just lifted her off a bump.
     if (this.surfing && (!wasSurfing || this.body.grounded)) env.onSurf?.(this.pos, this.speedXZ, !wasSurfing);
+    env.onSurfSound?.(this.surfing && this.body.grounded ? this.speedXZ : 0);
     this.shadow.place(this.pos.x, this.pos.y, this.pos.z, this.physics.groundY(this.pos.x, this.pos.z, this.pos.y + 0.5), this.opacity);
 
     this.animate(dt);

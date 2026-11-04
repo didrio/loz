@@ -157,6 +157,7 @@ export class Combat {
       onSwing: () => sfx.swing(),
       onJump: () => sfx.jump(),
       canSurf: this.g.state.has('village.surfIdea') && !this.g.area.indoor,
+      onSurfSound: (speed) => sfx.surfScrape(speed),
       onSurf: (at, speed, mounted) => {
         if (mounted) {
           sfx.surf();

@@ -499,10 +499,13 @@ describe('shield surfing', () => {
     mount(fwd);
     expect(p.surfing).toBe(true);
     expect(p.shielding).toBe(false);
-    for (let i = 0; i < 30; i++) tick({ move: fwd });
     const z = p.pos.z;
-    for (let i = 0; i < 60; i++) tick({ move: fwd });
-    expect(p.pos.z - z).toBeGreaterThan(12); // well past running speed (8.5 m/s)
+    for (let i = 0; i < 45; i++) tick({ move: fwd });
+    expect(p.pos.z - z).toBeGreaterThan(9); // 0.75 s: well past running speed (8.5 m/s)
+    const speed = () => (p as unknown as { speedXZ: number }).speedXZ;
+    const fast = speed();
+    for (let i = 0; i < 20; i++) tick({ move: fwd });
+    expect(speed()).toBeLessThan(fast); // holding the stick doesn't keep the speed up
     tick({ shield: false, move: fwd });
     expect(p.surfing).toBe(false);
   });

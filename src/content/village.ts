@@ -64,10 +64,10 @@ export function villageContent(ow: Overworld) {
       // Before the scare she won't hear of it (a save from before the new opening, which met her, skips this).
       if (!state.has('gotGroveKey') && !state.has('village.scare') && !state.has('metMaren')) {
         await api.say([
-          { who, text: 'Wren! What were you doing out past the fence? Nobody goes out there. Not since the night the lantern went dark. You know that better than anyone.' },
+          { who, text: 'Wren! Quietly, please! What were you doing out past the fence? Nobody goes out there. Not since the night the lantern went dark, and the sky turned that colour. You know that better than anyone.' },
           { who, text: state.isNight
-            ? 'It\'s dark now, too. Sit by the well with me. Whatever is out there, it isn\'t worth it.'
-            : 'If you need something to do, sit by the well where I can see you. Nobody is going anywhere.' },
+            ? 'And now it\'s dark. Sit by the well with me, away from the gaps. Whatever is out there, it can\'t hear us if we\'re quiet.'
+            : 'Sit by the well where I can see you. We keep the doors barred, even by day. The fence is all we have left, and I don\'t trust it.' },
         ]);
       } else if (!state.has('gotGroveKey')) {
         await api.say([
@@ -122,7 +122,7 @@ export function villageContent(ow: Overworld) {
       } else if (state.has('village.scare') && !state.has('gotGroveKey')) {
         lines = ['Something was in the square. I saw it from the mill door. Tall, or wide, or both. It didn\'t stay to be looked at.', 'Maren\'s by the well. Go and see she\'s all right.'];
       } else if (!state.has('gotGroveKey')) {
-        lines = ['Out for a stroll in the blight, were you? Bold. Daft, but bold.', 'If you\'re going to stand there, stand there quietly. Some of us are listening for things.'];
+        lines = ['Out for a stroll in the blight, were you? Bold. Daft, but bold.', 'Keep your voice down. Some of us haven\'t slept since the lantern went out; we sit up listening for things at the fence.'];
       } else {
         lines = state.isNight
           ? ['Can\'t sleep either? The wisps come out after dark. Little purple things. One good whack pops them.',
@@ -153,7 +153,7 @@ export function villageContent(ow: Overworld) {
       if (!state.has('hasShield')) {
         await api.say([
           { who, text: 'Psst. Wren. The old cottage past the *north fence*, the one with no roof? There\'s a *shield* in it. I saw it shine from the gap.' },
-          { who, text: 'I\'m not allowed out. You\'re not either, but you went anyway.' },
+          { who, text: 'Keep your voice down! I\'m not allowed out. Nobody is, ever since the sky went purple. You went anyway.' },
         ]);
         return;
       }
@@ -163,7 +163,7 @@ export function villageContent(ow: Overworld) {
           { who, text: 'You could ride that! Jump, get it under your feet before you land, and don\'t let go. That\'s the whole trick.' },
         ]);
         state.set('village.surfIdea');
-        await api.say([{ text: 'Hold [shield] while you jump and land to *ride your shield*, much faster than running. Keep holding [shield] to ride; let go to step off. It only works outdoors, and enemies can still knock you off.' }]);
+        await api.say([{ text: 'Hold [shield] while you jump and land to *ride your shield*, much faster than running. Keep holding [shield] to ride; let go to step off. The push fades, so jump and land again to keep your speed. It only works outdoors, and enemies can still knock you off.' }]);
         return;
       }
       if (!state.has('village.surfTried')) {
@@ -293,7 +293,7 @@ export function villageContent(ow: Overworld) {
       const wares: (Ware & { potion?: Potion })[] = [];
       const pages: Page[] = [{ who, text: state.has('hasSword') && tunic ? 'A blade, and no armor! Gems for goods, friend. I carry what the valley forgot it needs.' : 'Gems for goods, friend! I carry what the valley forgot it needs.' }];
       // Before the scare, Odo is meeting Wren for the first time (everyone else knows Wren).
-      if (!state.has('village.scare') && !state.has('metMaren')) pages.unshift({ who, text: 'So this is Wren. They\'ve talked about nothing else all morning, friend, and not one word of it kind.' });
+      if (!state.has('village.scare') && !state.has('metMaren')) pages.unshift({ who, text: 'So this is Wren. I only stopped here for the night, friend, and now the road behind me is thorns and nobody will open the gate. Shut in with the lot of you. Forgive me if I don\'t sleep.' });
       if (tunic) {
         wares.push({ label: 'Stoneward Tunic', price: 50 });
         pages.push({ who, text: 'This is a *Stoneward Tunic*, woven with grit from the old shrine quarry. Statues and stone shells hit you *half as hard*. A bargain at 50 gems.' });

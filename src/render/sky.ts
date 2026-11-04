@@ -12,14 +12,14 @@ interface Key {
 
 // The day's palette, hour by hour. Interpolated in between.
 const KEYS: Key[] = [
-  { h: 0, top: 0x070b24, horizon: 0x1a2350, sun: 0x8fa3ff, sunI: 0.6, hemiI: 0.75 },
-  { h: 4.8, top: 0x0b1030, horizon: 0x2a2f5c, sun: 0x8fa3ff, sunI: 0.55, hemiI: 0.75 },
-  { h: 6, top: 0x45619e, horizon: 0xf3a66f, sun: 0xffb27a, sunI: 1.2, hemiI: 0.7 },
-  { h: 8, top: 0x3f7fd2, horizon: 0xbfe0f2, sun: 0xfff0d8, sunI: 2.4, hemiI: 1.0 },
-  { h: 16, top: 0x3a7acc, horizon: 0xc8e2f0, sun: 0xfff0d8, sunI: 2.4, hemiI: 1.0 },
-  { h: 18, top: 0x3a4689, horizon: 0xf07c4e, sun: 0xff9a5c, sunI: 1.2, hemiI: 0.7 },
-  { h: 19.3, top: 0x0f1538, horizon: 0x3b2c5e, sun: 0x8fa3ff, sunI: 0.6, hemiI: 0.75 },
-  { h: 24, top: 0x070b24, horizon: 0x1a2350, sun: 0x8fa3ff, sunI: 0.6, hemiI: 0.75 },
+  { h: 0, top: 0x070b24, horizon: 0x1a2350, sun: 0x8fa3ff, sunI: 0.8, hemiI: 0.95 },
+  { h: 4.8, top: 0x0b1030, horizon: 0x2a2f5c, sun: 0x8fa3ff, sunI: 0.75, hemiI: 0.95 },
+  { h: 6, top: 0x45619e, horizon: 0xf3a66f, sun: 0xffb27a, sunI: 1.3, hemiI: 0.8 },
+  { h: 8, top: 0x3f7fd2, horizon: 0xbfe0f2, sun: 0xfff0d8, sunI: 2.6, hemiI: 1.12 },
+  { h: 16, top: 0x3a7acc, horizon: 0xc8e2f0, sun: 0xfff0d8, sunI: 2.6, hemiI: 1.12 },
+  { h: 18, top: 0x3a4689, horizon: 0xf07c4e, sun: 0xff9a5c, sunI: 1.3, hemiI: 0.8 },
+  { h: 19.3, top: 0x0f1538, horizon: 0x3b2c5e, sun: 0x8fa3ff, sunI: 0.8, hemiI: 0.95 },
+  { h: 24, top: 0x070b24, horizon: 0x1a2350, sun: 0x8fa3ff, sunI: 0.8, hemiI: 0.95 },
 ];
 
 const tmpA = new THREE.Color(), tmpB = new THREE.Color();

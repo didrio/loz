@@ -7,10 +7,20 @@
  * Ends at once on: letting go of the shield, lock-on, a swing (which then starts as normal),
  * wading-depth water, a hit (she's no longer free to move), the glove throw or a guard break.
  * A jump while surfing is a hop: the ride carries on through the air and on landing.
+ *
+ * The speed is a push, not an engine: the landing gives the full SURF_SPEED at once, then it only
+ * ever falls (steering turns Wren but never speeds her up), and below SURF_MIN_SPEED the ride is over.
+ * To cover a long way she has to jump and land on the shield again.
  */
 
 /** Surf speed: about 2.4× running speed (RUN_SPEED 8.5). Tune by play. */
 export const SURF_SPEED = 20;
+/** The ride ends when it slows to this (about running pace: the shield no longer helps). */
+export const SURF_MIN_SPEED = 5;
+/** Time constant (s) of the glide: speed falls by 1/e in this long. About 18 m of ride from SURF_SPEED. */
+export const SURF_GLIDE = 1.2;
+/** Same, with the stick let go: she's braking. */
+export const SURF_BRAKE = 0.6;
 /** A landing only starts a ride after at least this long in the air, so a grounded flicker on a bumpy slope doesn't. */
 export const SURF_MIN_AIR = 0.15;
 
@@ -33,4 +43,9 @@ export interface SurfInput {
 export function surfNext(s: SurfInput): boolean {
   if (!s.allowed || !s.shield || !s.free || s.locked || s.attack || s.wading) return false;
   return s.surfing || s.landedAfter >= SURF_MIN_AIR;
+}
+
+/** The ride's speed one frame later. It never rises: holding a direction doesn't keep it up, braking only lowers it. */
+export function surfSpeedNext(speed: number, dt: number, steering: boolean): number {
+  return speed * Math.exp(-dt / (steering ? SURF_GLIDE : SURF_BRAKE));
 }

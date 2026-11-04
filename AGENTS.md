@@ -24,7 +24,7 @@ then **the Waking Shrine** through **Gravelheart** and the Keepers' **prism**, w
 The valley lies under **the blight** until the prism breaks; then **Maren, Tobin and Odo vanish** and only Lark and Pip remain.
 Thistledown has its own day and night songs over a wide zone (the name shows on the same ground), lamplit nights, a well shaft, **Tobin's room as
 the windmill's ground floor** (a hinged door, no loading), two cottages with locked doors, and a safe zone: field enemies drop a chase at its edge.
-Unplayed by the owner: the village polish (fog 50-215 m, night song, mill room, camera in its doorway), the Settings tab, surfing, the sealed gate, D3, the prism.
+Unplayed by the owner: the village polish (fog 50-215 m, night song, mill room, gate lanterns' new lights, fearful pre-scare lines), brighter day/night, the Settings tab, surfing (now a push that glides down; scrape sound), the sealed gate, D3, the prism.
 Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks"). Villagers never name kin.
 **Next:** the pause menu's inventory tab (its tabs: Settings, Hints, Messages, Dev; Dev drops from the Steam build). Dev server: port 5273.
 

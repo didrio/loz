@@ -117,3 +117,5 @@ Code: `core/midiFile.ts` (reader), `core/midiImport.ts` (quantize, voices, lines
 
 Still to write: the title screen theme (and the Northpass's / camp's music, if they need one). Slash chords
 (`F#/C#`) are supported: tone 0 of a slash chord is its bass note (within a tritone below the root, else just above).
+
+- **Surf scrape** (`Sfx.surfScrape(speed)`): a looped filtered-noise hiss under the shield, called every frame by the player (0 = quiet) and fading by itself if calls stop. Unheard by the agent; tune volume (0.16) and filter (350-1250 Hz) by ear.

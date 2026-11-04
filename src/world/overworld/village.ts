@@ -257,7 +257,7 @@ export function buildVillage(b: AreaBuilder) {
   }
 
   // Lanterns that glow at night (a bright core and a soft halo each), plus barrels and crates for clutter.
-  // A few real lights do the lighting, each inside a lamp: the square's three lanterns and the mill door's.
+  // A few real lights do the lighting, each inside a lamp: the square's three lanterns, the four gate lanterns and the mill door's.
   const haloMat = fadeInFog(new THREE.MeshBasicMaterial({ color: 0xffb35a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
   const haloGeo = new THREE.SphereGeometry(0.85, 10, 8);
   const halo = (x: number, y: number, z: number) => {
@@ -292,7 +292,7 @@ export function buildVillage(b: AreaBuilder) {
     lantern.position.set(x, y + 2.75, z);
     b.dynamic(lantern);
     halo(x, y + 2.75, z);
-    if (inSquare) light(x, y + 2.75, z, 15);
+    light(x, y + 2.75, z, inSquare ? 15 : 11); // the gate lanterns too, a smaller reach
     b.mesh(new THREE.ConeGeometry(0.4, 0.3, 4), mat(0x3a2a1e), x, y + 3.15, z);
     b.cylinder(x, y + 1.3, z, 1.3, 0.2, Layer.Prop);
   }

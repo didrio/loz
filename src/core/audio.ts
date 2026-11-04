@@ -112,6 +112,34 @@ export class Sfx {
   jump() { this.tone(300, 0.12, 'sine', 0.08, 520); }
   /** Getting on the shield: a soft wooden scuff and a low scrape. */
   surf() { this.noise(0.28, 900, 250, 0.22, 'lowpass'); this.tone(150, 0.18, 'triangle', 0.06, 110); }
+  private scrape: { gain: GainNode; filter: BiquadFilterNode } | null = null;
+  /** The shield rubbing the ground while surfing: a looping hiss that follows the speed. Call every frame (0 = quiet);
+   *  it fades by itself if the calls stop (pause, area change). */
+  surfScrape(speed: number) {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    if (!this.scrape) {
+      if (speed <= 0) return;
+      const src = ctx.createBufferSource();
+      src.buffer = this.noiseBuf;
+      src.loop = true;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.Q.value = 0.9;
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      src.connect(filter).connect(gain).connect(this.sfxGain);
+      src.start();
+      this.scrape = { gain, filter };
+    }
+    const k = Math.min(1, speed / 20);
+    const now = ctx.currentTime;
+    const { gain, filter } = this.scrape;
+    filter.frequency.setTargetAtTime(350 + k * 900, now, 0.05);
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setTargetAtTime(k * 0.16, now, 0.04);
+    gain.gain.setTargetAtTime(0, now + 0.12, 0.05);
+  }
   enemyDie() { this.noise(0.4, 1200, 100, 0.3, 'lowpass'); this.tone(500, 0.35, 'square', 0.06, 60); }
   gem() { this.tone(1318.5, 0.08, 'sine', 0.15); this.tone(1975.5, 0.18, 'sine', 0.15, undefined, 0.07); }
   heart() { this.tone(880, 0.1, 'triangle', 0.15); this.tone(1174.7, 0.2, 'triangle', 0.15, undefined, 0.09); }
