@@ -63,7 +63,8 @@ leads back to the entry, and hanging it there wakes the network.
   fast traveling. The bell then lies on the ground behind the windmill (`MORROW_LOST`, `world/overworld/layout.ts`; `BellPickup`
   with `ground`), never on the gorge's plinth again. Taking it and hanging it on the post restores the old network. Nothing new in the
   fast-travel code: `answering()` only counts hung bells, so the Lullbell rings "...and nothing answers." exactly as with one bell,
-  and Waybell ↔ Lullbell still travel. Not moved if the bell wasn't hung (or Wren carries it).
+  and Waybell ↔ Lullbell still travel. Not moved if the bell wasn't hung (or Wren carries it). Restoring a save where the boss is beaten but the bell still hangs
+  (older saves, Dev states) lifts it too, once (`settleVillageBell`); rehanging it sets the flag. A beaten dungeon plays no music (`game/dungeonQuiet.ts`).
 - Maren and Tobin each say one line (once, flags `village.marenBell` / `village.tobinBell`)
   after the Morrowbell is hung.
 

@@ -93,8 +93,7 @@ export default async function run(t) {
       g.state.bells.hung.add('morrow');
       g.state.bells.hung.add('lull');
       g.state.bells.carried.clear();
-      g.state.set('village.bellMoved');
-      g.state.bells.hung.delete('morrow');
+      g.state.dungeon('shrine').done = true; // an older save: the boss is beaten, the village bell still hangs; loading settles it
       g.loadArea('shrine');
     });
     await until(() => window.embervale.area.id === 'shrine', 20000);
@@ -104,6 +103,7 @@ export default async function run(t) {
     await finishScript();
     const text = await dialogText();
     check(text.includes('nothing answers'), `lone Lullbell said: ${text}`);
+    check(await game(() => !window.embervale.state.bells.hung.has('morrow') && window.embervale.state.has('village.bellMoved')), 'loading did not lift the village bell');
     check(await game(() => document.querySelector('.gmenu').classList.contains('hidden')), 'a travel menu opened');
     await game(() => window.embervale.loadArea('overworld'));
     await until(() => window.embervale.area.id === 'overworld', 20000);

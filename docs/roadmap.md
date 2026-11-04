@@ -28,12 +28,12 @@ Next, in order:
     typewriter, `ui/style.css`. A content test: valid tags, ≤ 2 highlights a box, ≤ ~120 chars a box (tiny exceptions list).
     Rewrite "Writing for the player" in [world.md](world.md) (every word earns its place; before/after examples; the tag table).
   - ~~**C3, text pass sample**~~ done 2026-11-04, the owner approved the voice 2026-11-04: `village.ts` and `villageNews.ts` cut by about a third to a half, retagged (`[gear]` items, `[place]`, `[old]`), ratchet at 0 for both (`shop.ts` has no player text). Item messages now read `[gear]Name[/]. One short fact.`; the `*x*` leftovers are gone.
-  - **C4, after the boss: the village bell and the dungeon's silence** (owner's bug + request, 2026-11-04; **do first**: a bug, small). (a) **Bug:** once Gravelheart is dead the village bell must be
+  - ~~**C4, after the boss: the village bell and the dungeon's silence** (owner's bug + request, 2026-11-04; **do first**: a bug, small). (a) **Bug:** once Gravelheart is dead the village bell must be
     off the post (the rule exists, see Where things stand), but fast travel to it from the dungeon's bell still works. Reproduce
     in a failing test first (the travel menu's list, `game/menuDriver.ts` / `content/bells.ts`: a bell that isn't hung can't be
     a destination), then fix. Rehanging the Morrowbell turns it back on. Add a smoke step (`bells`). (b) **No music in the
     dungeon after the boss dies**: no dungeon theme in any room of the shrine once `gravelheart` is beaten (silence; the valley
-    outside keeps its songs). Test the mood pick in `core/audio.ts`/where the area's music is chosen.
+    outside keeps its songs). Test the mood pick in `core/audio.ts`/where the area's music is chosen.**~~ done 2026-11-04 (unplayed: the silence by ear). Cause of (a): saves with the boss beaten and the Morrowbell hung (older saves, the Dev tab's states) never lifted it; `settleVillageBell` now lifts it on restore, once (rehanging sets `village.bellMoved`). (b) `game/dungeonQuiet.ts`.
   - **C5, the choice window** (owner's request, 2026-11-04; independent of the others, after C4): every `api.ask` / `api.choose`
     (Odo's wares, Sleep/Not now, and so on) now lists its options side by side. Make it one reusable **centered modal window**:
     options stacked vertically, small (just big enough), a highlighted row with a visible cue for Up/Down + Enter (and mouse

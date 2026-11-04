@@ -26,7 +26,7 @@ The HUD has a sky dial (sun and moon over the ground) and a compass strip; villa
 Beating Gravelheart takes the Morrowbell off the village post (it lies behind the windmill until rehung), so Wren walks home.
 Unplayed by the owner: the 10-minute day, Dawn/Nightfall cards and the Lamplighter's dawn burn and rise/gutter; that bell hunt, the thorns, dial, compass and lone oak; the village polish; day/night lighting; Settings; surfing; the gate, D3, the prism.
 Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks").
-**Next:** the owner's batch (roadmap, in order): C4 (bug: the village bell still travels after the boss; no dungeon music after it), C5 (centered choice window), C6 (text pass, the rest), C7 (dungeon fog), C8 (blight scars), then the inventory tab. Dev server: port 5273.
+**Next:** the owner's batch (roadmap, in order): C5 (centered choice window), C6 (text pass, the rest), C7 (dungeon fog), C8 (blight scars), then the inventory tab. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -141,6 +141,7 @@ src/
     script.ts              ScriptApi + Script + Page (the contract content uses)
     player.ts, guard.ts, surf.ts   Wren (movement, sword, shield, stagger); the shield's guard; surfing's rule
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
+    dungeonQuiet.ts        no music in a dungeon once its boss is beaten
     sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
     blight.ts              the blight's rules (where it lies, the lift, the strays, its songs, THORN_ATTACK)
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss)

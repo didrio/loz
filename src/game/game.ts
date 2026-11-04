@@ -15,6 +15,7 @@ import { Hud } from '../ui/hud';
 import { nearestInteractable, sameLevel, type Area } from '../world/area';
 import { Boss } from './boss';
 import { CameraRig } from './camera';
+import { dungeonQuiet } from './dungeonQuiet';
 import { blighted, blightMood, fieldPopulation, stepBlight } from './blight';
 import { Combat } from './combat';
 import { Debug } from './debug';
@@ -402,7 +403,7 @@ export class Game implements ScriptApi {
     hud.setClock(state.hours);
     if (this.mode !== 'play') hud.setActions([]);
     const mood = boss ? boss.music : blightMood(this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day'), isBlighted);
-    this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced);
+    this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced && !dungeonQuiet(state.area, state));
 
     this.combat.updateMarker(dt);
 

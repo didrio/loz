@@ -65,6 +65,12 @@ export function liftVillageBell(state: GameState) {
   return true;
 }
 
+/** A save where the boss is beaten but the village bell still hangs (older saves, dev states): lift it once. Rehanging sets the flag. */
+export function settleVillageBell(state: GameState) {
+  if (!state.dungeon('shrine').done || state.has('village.bellMoved')) return false;
+  return liftVillageBell(state);
+}
+
 /** The other hung bells, the ones that answer `bell`. */
 export function answering(state: GameState, bell: BellId) {
   return BELL_IDS.filter((id) => id !== bell && state.bells.hung.has(id)).map((id) => BELLS[id]);
@@ -94,6 +100,7 @@ async function hangBell(api: ScriptApi, post: BellPost) {
   post.hang(api.player.pos.clone().setY(api.player.pos.y + 1.1));
   bells.carried.delete(post.bell);
   bells.hung.add(post.bell);
+  if (post.bell === 'morrow' && api.state.dungeon('shrine').done) api.state.set('village.bellMoved');
   post.canHang = false;
   await api.until(() => !post.hanging);
   api.sfx.bell(bell.note, 0.35);
@@ -184,6 +191,7 @@ export function bellContent(posts: Record<string, BellPost>, pickups: Record<str
   return {
     scripts,
     restore(state: GameState) {
+      settleVillageBell(state);
       for (const post of Object.values(posts)) {
         if (state.bells.hung.has(post.bell)) post.setHung();
         else if (post.hung) post.setEmpty();

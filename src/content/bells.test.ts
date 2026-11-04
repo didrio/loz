@@ -8,7 +8,7 @@ import { DungeonArea } from '../world/dungeon/build';
 import { DUNGEONS } from '../world/dungeon';
 import { SHRINE } from '../world/dungeon/defs/shrine';
 import { Overworld } from '../world/overworld';
-import { BELLS, bellContent, emptyPostText, liftVillageBell } from './bells';
+import { BELLS, bellContent, answering, emptyPostText, liftVillageBell, settleVillageBell } from './bells';
 import { fakeApi } from './fakeApi';
 import { overworldContent } from './overworld';
 import { shrineContent } from './shrine';
@@ -144,6 +144,22 @@ describe('the keepers\' bells', () => {
       expect(liftVillageBell(s)).toBe(true);
       expect([...s.bells.hung]).toEqual(['lull']);
       expect(s.has('village.bellMoved')).toBe(true);
+    });
+
+    it('a save with the boss beaten and the Morrowbell still hung (older saves, dev states) is settled on load, once', () => {
+      const s = new GameState();
+      s.bells.hung.add('morrow');
+      s.bells.hung.add('lull');
+      expect(settleVillageBell(s)).toBe(false); // the boss still lives
+      expect(s.bells.hung.has('morrow')).toBe(true);
+      s.dungeon('shrine').done = true;
+      expect(settleVillageBell(s)).toBe(true);
+      expect([...s.bells.hung]).toEqual(['lull']);
+      expect(answering(s, 'lull')).toEqual([]);
+      s.bells.hung.add('morrow'); // rehung by hand
+      s.set('village.bellMoved');
+      expect(settleVillageBell(s)).toBe(false);
+      expect(s.bells.hung.has('morrow')).toBe(true);
     });
 
     it('the dungeon bell then rings as if alone, the other bells still answer each other, and rehanging restores the menu', async () => {
