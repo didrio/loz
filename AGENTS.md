@@ -25,7 +25,7 @@ valley (thorns cost a heart a touch); after it, only Lark and Pip remain in the 
 All player text is terse and tagged (`[gear]`, `[place]`, `[old]`...), checked by `content/textRules.test.ts`. The HUD has a sky dial and a compass strip.
 Unplayed by the owner: the text pass, the choice window, the 10-minute day, Dawn/Nightfall cards, the Lamplighter's dawn burn and rise/gutter,
 the bell hunt, thorns, dial, compass, lone oak, village polish, day/night lighting, Settings, surfing, the gate, D3, the prism.
-**Next:** the queue in the roadmap, from 1 (boss hazards end with the boss); 3 is NPC voices as in-code speech (plan mode). Dev server: port 5273.
+**Next:** the queue in the roadmap, from 2 (the shrine respawn count); 3 is NPC voices as in-code speech (plan mode). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 

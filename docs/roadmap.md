@@ -18,10 +18,7 @@ Done before it: the owner's batch of 2026-11-04 (C1–C6: the 10-minute day, Daw
 burn, text tags and the terse-text rule, the text pass on all player text, the bell lift after the boss, the silent beaten
 dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things stand"); details in git.
 
-1. **Boss hazards end with the boss** (owner's bug, 2026-11-04). After the Lamplighter's death scene, back on Wren, its blue
-   shock waves were still on the ground. The moment any boss reaches 0 HP, every hazard it made (shock waves, orbs, rings)
-   goes, so none can show in a death scene or after: one rule in the `Boss` base and `game/hazards.ts`, for both bosses.
-   A failing unit test first. Sonnet, small.
+1. ~~Boss hazards end with the boss~~ done 2026-11-04 (`Boss.die` clears `Hazards`; unplayed).
 2. **The shrine respawn count** (Known quirks: `shrine-keys` expects 38 enemies after a death and gets 39). A failing unit
    test first: is it the test, or a spawn in a beaten challenge room breaking the checkpoint rule? Then the full suite once
    (ask the owner): it hasn't finished green since S5, and every CI run on 2026-11-04 was cancelled by the next push.

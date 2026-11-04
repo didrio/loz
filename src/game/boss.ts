@@ -474,6 +474,7 @@ export abstract class Boss extends Enemy {
     this.move = null;
     this.queued = null;
     this.timers = [];
+    this.env?.hazards.clear(); // what it made ends with it, so none shows in the death scene
     this.setState('dying');
     this.onDeath();
     this.onDefeated?.();

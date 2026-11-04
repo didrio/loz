@@ -124,6 +124,19 @@ describe('Boss framework (via the Hollow Lamplighter)', () => {
     expect(headY() - 0.55).toBeLessThan(2.5);
   });
 
+  it('its hazards end with it: no shock wave or orb survives its death', () => {
+    const { physics, scene, env, hazards } = setup();
+    const b = lamplighter(physics, scene);
+    b.engage();
+    run(b, env, physics, 0.1);
+    hazards.shockwave(b.pos.clone(), {});
+    hazards.orb(b.pos.clone().setY(1), new THREE.Vector3(0, 0, 1), {});
+    expect(hazards.active).toBeGreaterThan(0);
+    b.hurt(b.maxHp * 10, new THREE.Vector3(0, 0, -3), 'body');
+    expect(b.alive).toBe(false);
+    expect(hazards.active).toBe(0);
+  });
+
   it('howls at half health: invulnerable meanwhile, then frees three wisps and turns phase two', () => {
     const { physics, scene, env, spawned } = setup();
     const b = lamplighter(physics, scene);
