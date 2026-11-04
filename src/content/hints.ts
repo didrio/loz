@@ -11,7 +11,7 @@ export const HINTS = [
   {
     id: 'tunic',
     title: 'The Stoneward tunic',
-    text: 'Stone beasts hit like the hills they were cut from, and the Waking Shrine is full of them. At Thistledown\'s well the peddler Odo sells the *Stoneward*, a cloth woven with stone: through it, stone creatures hit you half as hard. It costs 50 gems. Buy it before you go to the shrine, and do not haggle. You will lose.',
+    text: 'Stone beasts hit like the hills they were cut from, and the Waking Shrine is full of them. At Thistledown\'s well the peddler Odo sells the [gear]Stoneward[/], a cloth woven with stone: through it, stone creatures hit you half as hard. It costs 50 gems. Buy it before you go to the shrine, and do not haggle. You will lose.',
   },
   {
     id: 'flasks',

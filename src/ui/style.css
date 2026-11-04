@@ -173,7 +173,18 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
   position: absolute; top: -16px; left: 22px; padding: 2px 14px; border-radius: 8px;
   background: #e8c770; color: #2a1d05; text-shadow: none; font-size: 15px; font-weight: bold;
 }
-.dialog em { color: #ffd76a; font-style: normal; }
+/* Text tags (ui/richText.ts): meaning, never decoration. Fade shows dim while typing, then rises when the page is done. */
+.t-gear { color: #ffd76a; }
+.t-place { color: #8fc8ff; }
+.t-danger { color: #ff6a4a; }
+.t-old { color: #b794f6; }
+.t-key { font-weight: bold; }
+.t-soft { font-style: italic; opacity: 0.8; }
+.t-shake { display: inline-block; animation: text-shake 0.12s infinite; }
+.t-fade { opacity: 0.2; }
+.dialog.done .t-fade { animation: text-rise 2.6s ease-out forwards; }
+@keyframes text-shake { 25% { transform: translate(0.6px, -0.5px); } 50% { transform: translate(-0.5px, 0.6px); } 75% { transform: translate(0.5px, 0.5px); } }
+@keyframes text-rise { from { opacity: 0.2; } to { opacity: 1; } }
 .dialog .key, .card .key { height: 26px; min-width: 26px; font-size: 13px; vertical-align: middle; margin: 0 2px; }
 .dialog-choices { display: flex; gap: 28px; justify-content: center; margin-top: 8px; }
 .dialog-choice { padding: 2px 16px; color: rgba(255, 255, 255, 0.55); }

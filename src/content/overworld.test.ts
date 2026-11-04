@@ -123,7 +123,7 @@ describe('overworld content', () => {
     const pickup = await talk('pickup.shield');
     expect(state.has('hasShield')).toBe(true);
     expect(area.shield.present).toBe(false);
-    expect(pickup).toContain('*guard*');
+    expect(pickup).toContain('guard');
     expect(pickup).toContain('Ahh!!!');
     expect(state.has('village.scare')).toBe(true);
     expect(screams).toHaveLength(1);
@@ -208,7 +208,7 @@ describe('overworld content', () => {
     expect(asked.at(-1)!.pages.some((p) => p.who)).toBe(false);
     expect(st.gems).toBe(80);
     answers.push(0);
-    expect(await talk('npc.odo')).toContain('take the *Stoneward Tunic*');
+    expect(await talk('npc.odo')).toContain('take the [gear]Stoneward Tunic[/]');
     expect(st.has('village.stonewardTunic')).toBe(true);
     expect(await talk('npc.odo')).toContain('nothing here you need');
     area.dispose();
@@ -270,7 +270,7 @@ describe('overworld content', () => {
     st.set('village.searchAsked');
     expect(await talk('npc.pip')).toMatch(/Everyone's away.*Glimmer Lake/);
     // Breaking the jar: she's named now Wren has met her.
-    expect(await talk('jar.doll')).toContain('You found *Button*');
+    expect(await talk('jar.doll')).toContain('You found [gear]Button[/]');
     expect(st.has('village.dollFound')).toBe(true);
     // News waits: the doll goes back first, and only once.
     st.flags.delete('village.searchAsked');

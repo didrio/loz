@@ -35,7 +35,7 @@ export function readSigil(id: string): Script {
     const first = foundSigils(api.state).length === 0;
     api.state.set(flag);
     api.sfx.select();
-    await api.say([{ who: '', text: `*${sigil.text}*` }]);
+    await api.say([{ who: '', text: `[old]${sigil.text}[/]` }]);
     if (first) api.toast('Messages you read are kept in the pause menu ([pause]).');
   };
 }

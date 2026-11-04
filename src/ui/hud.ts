@@ -1,9 +1,10 @@
-import { ACTIONS, glyph, type Action, type Device } from '../core/input';
+import { glyph, type Action, type Device } from '../core/input';
 import { POTIONS } from '../game/flasks';
 import type { BudGaugeView } from '../game/buds';
 import type { MenuView } from '../game/menu';
 import { KEY_HEX, type KeyColor, type Potion } from '../world/dungeon/format';
 import { Compass } from './compass';
+import { richHtml } from './richText';
 import { SkyDial } from './skyDial';
 
 /** A little corked bottle in a potion's color (a pale glass one when empty). */
@@ -205,12 +206,9 @@ export class Hud {
     return `<span class="key">${escape(glyph(a, this.device))}</span>`;
   }
 
-  /** `*em*`, `[action]` buttons, newlines. */
+  /** `[tag]…[/]` spans (ui/richText.ts), `[action]` buttons, newlines. */
   private format(text: string) {
-    return escape(text)
-      .replace(/\[(\w+)\]/g, (m, a) => ((ACTIONS as string[]).includes(a) ? this.key(a as Action) : m))
-      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-      .replace(/\n/g, '<br>');
+    return richHtml(text, (a) => this.key(a as Action));
   }
 
   /** Re-renders everything that shows button glyphs when the player switches device. */
@@ -510,8 +508,7 @@ export class Hud {
     let cut = Math.floor(this.typing.shown);
     const open = this.typing.full.slice(0, cut).search(/[{[][^}\]]*$/);
     if (open !== -1) cut = open;
-    let shown = this.typing.full.slice(0, cut);
-    if ((shown.match(/\*/g)?.length ?? 0) % 2 === 1) shown += '*'; // highlight while it types
+    const shown = this.typing.full.slice(0, cut);
     this.dialogText.innerHTML = this.format(shown);
     this.dialog.classList.toggle('done', this.dialogDone);
   }

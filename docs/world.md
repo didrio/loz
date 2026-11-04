@@ -36,6 +36,29 @@ recheck old text against them when you touch it.
 - **No kin** (owner's rule, 2026-11-03): villagers are neighbors, never family. No one says mum, father, grandmother,
   sister and so on; they can remember people who are gone by name (old Bram, old Hesper, Corwin). A unit test in
   `content/overworld.test.ts` scans every content string for kin words.
+- **Every word earns its place** (owner's rule, 2026-11-04; reference: Dark Souls dialog and item text). Draft the line,
+  then cut it by half without losing what it tells or asks of the player. A box is **at most ~120 visible characters**
+  (a button counts as one) and **at most 2 highlights**. A content test (`content/textRules.test.ts`) enforces both and
+  that tags are valid; old over-long boxes are a ratchet in that file (`LONG_ALLOWED`) that the text pass (roadmap C3/C4)
+  brings to zero, so lower it when you cut.
+  - Before: `You found a *Wooden Shield*!\nScorched at the rim, but the planks are sound.`
+  - After: `[gear]Wooden Shield[/]. Scorched, but sound.`
+- **Highlights carry meaning, never decoration.** Tags close with `[/]` (`ui/richText.ts`, styled in `ui/style.css`):
+
+  | Tag | Look | For |
+  |---|---|---|
+  | `[gear]` | gold | items, keys, gear, potions |
+  | `[place]` | pale blue | named places |
+  | `[danger]` | ember red | threats and warnings |
+  | `[old]` | violet | the blight, the Keepers, sigils, names from the past |
+  | `[key]` | bold | button and control words |
+  | `[soft]` | italic, dim | whispers, things said low or written small |
+  | `[shake]` | trembles | very rare: fear, a failing thing |
+  | `[fade]` | slow fade-in | very rare: a line that arrives late |
+
+  `[shield]`, `[interact]` and the other action names draw a button glyph, so **a tag may never be named like an action**
+  (a unit test checks; that is why gold is `[gear]`, not `[item]`). An unknown or unclosed tag fails the content test.
+  The old `*x*` emphasis is gone.
 - Text lives in content scripts today; when dialog moves to data (roadmap), these rules still
   apply.
 

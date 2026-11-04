@@ -72,9 +72,9 @@ export function answering(state: GameState, bell: BellId) {
 
 /** What a post with an empty hook says, depending on what Wren knows and carries. */
 export function emptyPostText(state: GameState, post: BellId) {
-  const carving = `Carved into the arm: *${BELLS[post].carving}*.`;
+  const carving = `Carved into the arm: [old]${BELLS[post].carving}[/].`;
   const carried = [...state.bells.carried].find((b) => b !== post);
-  if (carried) return `The hook is empty. ${carving}\nThe *${BELLS[carried].name}* you carry doesn't belong here.`;
+  if (carried) return `The hook is empty. ${carving}\nThe [gear]${BELLS[carried].name}[/] you carry doesn't belong here.`;
   if (state.bells.hung.size) return `Another bell post, its hook empty. ${carving}`;
   return `A crooked post with one arm and an empty hook. Does something go here?\n${carving}`;
 }
@@ -98,7 +98,7 @@ async function hangBell(api: ScriptApi, post: BellPost) {
   await api.until(() => !post.hanging);
   api.sfx.bell(bell.note, 0.35);
   await api.wait(0.5);
-  await api.say([{ text: `You hung the *${bell.name}* back on its post.` }]);
+  await api.say([{ text: `You hung the [gear]${bell.name}[/] back on its post.` }]);
   // It rings once by itself, as if it had been waiting to.
   post.ring();
   api.sfx.bell(bell.note);
@@ -112,7 +112,7 @@ async function hangBell(api: ScriptApi, post: BellPost) {
   others.forEach((o, i) => api.sfx.bell(o.note, 0.3, i * 0.35));
   await api.wait(1.2);
   await api.say([
-    { text: `Far away, the *${others[0].name}* answers. The two notes hang in the air together, like a road strung between them.` },
+    { text: `Far away, the [gear]${others[0].name}[/] answers. The two notes hang in the air together, like a road strung between them.` },
     { text: 'Ring a bell with [interact], and you can follow its answer to any other bell that\'s hung.' },
   ]);
   await travelMenu(api, post);
@@ -169,7 +169,7 @@ export function bellPickupScript(pickup: BellPickup, posts: Iterable<BellPost>):
     for (const p of posts) if (p.bell === pickup.bell) p.canHang = true;
     api.sfx.fanfare();
     api.sfx.bell(bell.note, 0.4, 0.5);
-    await api.say([{ text: `You found the *${bell.name}*!\n${bell.found}` }]);
+    await api.say([{ text: `You found the [gear]${bell.name}[/]!\n${bell.found}` }]);
   };
 }
 

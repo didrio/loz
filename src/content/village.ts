@@ -10,7 +10,7 @@ import { adultsGone, VANISHED, withNews } from './villageNews';
 export const wakeHour = (hours: number) => (hours >= 6 && hours < 18 ? 18 : 6);
 
 /** The guard, taught when Wren picks up the shield. */
-export const GUARD_TUTORIAL = 'Hold [shield] to block. Each block wears down your *guard* (the green bars), which refills only while the shield is *lowered*. If it runs out, your guard breaks and you stagger.';
+export const GUARD_TUTORIAL = 'Hold [shield] to block. Each block wears down your guard (the green bars), which refills only while the shield is lowered. If it runs out, your guard breaks and you stagger.';
 
 /**
  * Thistledown: the villagers, Tobin's mill door, the opening (the shield in the ruined cottage and
@@ -37,7 +37,7 @@ export function villageContent(ow: Overworld) {
       api.sfx.fanfare();
       api.particles.burst(new THREE.Vector3(ow.shield.x, ow.shield.y + 0.6, ow.shield.z), 0xfff1a8, 24, 3, 1, false);
       await api.say([
-        { text: 'You found a *Wooden Shield*!\nScorched at the rim, but the planks are sound.' },
+        { text: 'You found a [gear]Wooden Shield[/]!\nScorched at the rim, but the planks are sound.' },
         { text: GUARD_TUTORIAL },
       ]);
       // The scare: a scream from the village, then straight back to play. What it was, the villagers tell.
@@ -73,7 +73,7 @@ export function villageContent(ow: Overworld) {
         await api.say([
           { who, text: 'Wren! It was here, right by the well. I threw the bucket at it, and it just... went over the fence.' },
           { who, text: 'Is that a shield? Where did you... No. Don\'t tell me.' },
-          { who, text: 'Old Bram, who kept the fence before all this, locked his blade in a chest in the *Whispering Grove*, east of here, across the field. So no fool child would lose a finger.' },
+          { who, text: 'Old Bram, who kept the fence before all this, locked his blade in a chest in the [place]Whispering Grove[/], east of here, across the field. So no fool child would lose a finger.' },
           { who, text: 'I\'d rather you stayed inside. But that thing came over our fence, and I\'d rather you had a blade. Here.' },
         ]);
         state.set('metMaren');
@@ -81,7 +81,7 @@ export function villageContent(ow: Overworld) {
         state.keys++;
         api.sfx.fanfare();
         await api.say([
-          { text: 'You got a *Small Key*!\nIt opens the old chest in the Whispering Grove.' },
+          { text: 'You got a [gear]Small Key[/]!\nIt opens the old chest in the Whispering Grove.' },
           { who, text: 'Go back to the crossroads sign and take the road northeast, past the big lone oak. The chest sits in the clearing at the end.' },
         ]);
       } else if (!state.has('hasSword')) {
@@ -91,8 +91,8 @@ export function villageContent(ow: Overworld) {
       } else if (!state.has('lamplighterDefeated')) {
         await api.say([
           { who, text: 'Bram\'s blade! It suits you better than it ever suited him.' },
-          { who, text: 'I\'ve been asking around. The shrine door hasn\'t budged since the lantern went out. The pedestal says the stone wakes while the lantern burns, and Tobin swears the flame wasn\'t snuffed. It was *carried off*, south.' },
-          { who, text: 'South past the bridge is the *Gloaming Hollow*, where old Corwin lit the lamps for forty years. They say he still walks his rounds after dark... only taller than he was.' },
+          { who, text: 'I\'ve been asking around. The shrine door hasn\'t budged since the lantern went out. The pedestal says the stone wakes while the lantern burns, and Tobin swears the flame wasn\'t snuffed. It was carried off, south.' },
+          { who, text: 'South past the bridge is the [place]Gloaming Hollow[/], where old Corwin lit the lamps for forty years. They say he still walks his rounds after dark... only taller than he was.' },
           { who, text: state.isNight
             ? 'Be careful, Wren. It\'s night now, and that is exactly when he walks.'
             : 'If he has our flame, that is the only way the door ever opens. Go at night, when he walks. And be careful.' },
@@ -142,7 +142,7 @@ export function villageContent(ow: Overworld) {
         ]);
         state.set('village.millKey');
         api.sfx.fanfare();
-        await api.say([{ text: 'You got the *Mill Key*!\nIt opens Tobin\'s mill, where you can sleep until morning or evening and wake fully rested.' }]);
+        await api.say([{ text: 'You got the [gear]Mill Key[/]!\nIt opens Tobin\'s mill, where you can sleep until morning or evening and wake fully rested.' }]);
       }
     },
 
@@ -152,7 +152,7 @@ export function villageContent(ow: Overworld) {
       const who = 'Lark';
       if (!state.has('hasShield')) {
         await api.say([
-          { who, text: 'Psst. Wren. The old cottage past the *north fence*, the one with no roof? There\'s a *shield* in it. I saw it shine from the gap.' },
+          { who, text: 'Psst. Wren. The old cottage past the [place]north fence[/], the one with no roof? There\'s a shield in it. I saw it shine from the gap.' },
           { who, text: 'Keep your voice down! I\'m not allowed out. Nobody is, ever since the sky went purple. You went anyway.' },
         ]);
         return;
@@ -163,7 +163,7 @@ export function villageContent(ow: Overworld) {
           { who, text: 'You could ride that! Jump, get it under your feet before you land, and don\'t let go. That\'s the whole trick.' },
         ]);
         state.set('village.surfIdea');
-        await api.say([{ text: 'Hold [shield] while you jump and land to *ride your shield*, much faster than running. Keep holding [shield] to ride; let go to step off. The push fades, so jump and land again to keep your speed. It only works outdoors, and enemies can still knock you off.' }]);
+        await api.say([{ text: 'Hold [shield] while you jump and land to ride your shield, much faster than running. Keep holding [shield] to ride; let go to step off. The push fades, so jump and land again to keep your speed. It only works outdoors, and enemies can still knock you off.' }]);
         return;
       }
       if (!state.has('village.surfTried')) {
@@ -216,7 +216,7 @@ export function villageContent(ow: Overworld) {
           : 'The thorns came closer again. Maren says they can\'t get in. She says it very fast.' }]);
         return;
       }
-      const where = 'She\'s at my old house by *Glimmer Lake*, far south of here, over the bridge, on the lake\'s east shore. In one of the jars. I hid her there to keep dry.';
+      const where = 'She\'s at my old house by [place]Glimmer Lake[/], far south of here, over the bridge, on the lake\'s east shore. In one of the jars. I hid her there to keep dry.';
       if (adultsGone(state)) {
         await api.say([
           { who, text: 'Everyone\'s away, and Button\'s away too. I don\'t like anybody being away.' },
@@ -241,8 +241,8 @@ export function villageContent(ow: Overworld) {
       state.set('village.dollFound');
       api.sfx.fanfare();
       await api.say([{ text: state.has('village.metPip')
-        ? 'You found *Button*!\nPatched, one button eye, and dry. Pip is waiting in Thistledown.'
-        : 'You found a *stuffed doll*!\nPatched, one button eye, and dry. Someone in Thistledown must miss her.' }]);
+        ? 'You found [gear]Button[/]!\nPatched, one button eye, and dry. Pip is waiting in Thistledown.'
+        : 'You found a [gear]stuffed doll[/]!\nPatched, one button eye, and dry. Someone in Thistledown must miss her.' }]);
     },
 
     // The standing homes: shut, no hint of a key (they open in a later chapter).
@@ -298,11 +298,11 @@ export function villageContent(ow: Overworld) {
       if (!state.has('village.scare') && !state.has('metMaren')) pages.unshift({ who, text: 'So this is Wren. I only stopped here for the night, friend, and now the road behind me is thorns and nobody will open the gate. Shut in with the lot of you. Forgive me if I don\'t sleep.' });
       if (tunic) {
         wares.push({ label: 'Stoneward Tunic', price: 50 });
-        pages.push({ who, text: 'This is a *Stoneward Tunic*, woven with grit from the old shrine quarry. Statues and stone shells hit you *half as hard*. A bargain at 50 gems.' });
+        pages.push({ who, text: 'This is a [gear]Stoneward Tunic[/], woven with grit from the old shrine quarry. Statues and stone shells hit you half as hard. A bargain at 50 gems.' });
       }
       if (empty >= 0) {
         for (const potion of ['life', 'attack'] as const) wares.push({ label: POTIONS[potion].name, potion, price: REFILL_PRICE });
-        pages.push({ who, text: `That flask of yours is dry. I'll fill it for ${REFILL_PRICE} gems: *Life Potion* brings every heart back, *Attack Potion* doubles your sword's bite for half a minute. One flask at a time, mind.` });
+        pages.push({ who, text: `That flask of yours is dry. I'll fill it for ${REFILL_PRICE} gems: [gear]Life Potion[/] brings every heart back, [gear]Attack Potion[/] doubles your sword's bite for half a minute. One flask at a time, mind.` });
       }
       const result = await offerWares(api, pages, wares);
       if (result === 'declined') {
@@ -315,7 +315,7 @@ export function villageContent(ow: Overworld) {
           state.flasks.fill(empty, potion);
           api.sfx.heart();
           await api.say([
-            { text: `Odo fills your flask with *${POTIONS[potion].name}*.` },
+            { text: `Odo fills your flask with [gear]${POTIONS[potion].name}[/].` },
             { who, text: potion === 'life' ? 'Red as a sunset. Don\'t wait for your last heart.' : 'Careful, it fizzes. Save it for something with a lot of stone in it.' },
           ]);
         } else {
@@ -323,7 +323,7 @@ export function villageContent(ow: Overworld) {
           api.player.setStoneward(true);
           api.sfx.fanfare();
           await api.say([
-            { text: 'You got the *Stoneward Tunic*!\nStone hits (statues, shells) do half damage. Your tunic turns slate-blue.' },
+            { text: 'You got the [gear]Stoneward Tunic[/]!\nStone hits (statues, shells) do half damage. Your tunic turns slate-blue.' },
             { who, text: 'Wear it in good health!' },
           ]);
         }
@@ -366,11 +366,11 @@ async function honorStall(api: ScriptApi) {
   if (potion) {
     state.flasks.fill(empty, potion);
     api.sfx.heart();
-    await api.say([{ text: `You fill your flask from Odo's jug of *${POTIONS[potion].name}* and leave ${REFILL_PRICE} gems in the cashbox.` }]);
+    await api.say([{ text: `You fill your flask from Odo's jug of [gear]${POTIONS[potion].name}[/] and leave ${REFILL_PRICE} gems in the cashbox.` }]);
   } else {
     state.set('village.stonewardTunic');
     api.player.setStoneward(true);
     api.sfx.fanfare();
-    await api.say([{ text: 'You leave 50 gems in the cashbox and take the *Stoneward Tunic*!\nStone hits (statues, shells) do half damage. Your tunic turns slate-blue.' }]);
+    await api.say([{ text: 'You leave 50 gems in the cashbox and take the [gear]Stoneward Tunic[/]!\nStone hits (statues, shells) do half damage. Your tunic turns slate-blue.' }]);
   }
 }

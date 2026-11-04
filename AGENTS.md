@@ -26,7 +26,7 @@ The HUD has a sky dial (sun and moon over the ground) and a compass strip; villa
 Beating Gravelheart takes the Morrowbell off the village post (it lies behind the windmill until rehung), so Wren walks home.
 Unplayed by the owner: the 10-minute day, Dawn/Nightfall cards and the Lamplighter's dawn burn and rise/gutter; that bell hunt, the thorns, dial, compass and lone oak; the village polish; day/night lighting; Settings; surfing; the gate, D3, the prism.
 Open: a Lamplighter-fight report that didn't reproduce (roadmap, "Known quirks").
-**Next:** the owner's batch of 2026-11-04, chunks C2–C6 (roadmap: text styling, the text pass, dungeon fog, blight scars), then the pause menu's inventory tab. Dev server: port 5273.
+**Next:** the owner's batch of 2026-11-04, chunks C3–C6 (roadmap: the text pass, dungeon fog, blight scars; C2, text styling, is done), then the pause menu's inventory tab. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -157,6 +157,7 @@ src/
     shrine.ts, gravelheart.ts  the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
     devStates.ts, fakeApi.ts   the Dev tab's save states; the fake ScriptApi content tests run against
   ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title
+       richText.ts          text tags `[gear]…[/]` → spans, tag checks (the content text rules test uses it)
        skyDial.ts, compass.ts   the clock's sky dial (sun and moon over the ground); the compass strip
 scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers

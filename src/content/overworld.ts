@@ -205,11 +205,11 @@ export function overworldContent(ow: Overworld): AreaContent {
 
     async 'chest.grove'(api) {
       if (api.state.keys <= 0) {
-        await api.say([{ text: 'The chest is shut with an old iron padlock.\nSomeone in *Thistledown* might have the key.' }]);
+        await api.say([{ text: 'The chest is shut with an old iron padlock.\nSomeone in [place]Thistledown[/] might have the key.' }]);
         return;
       }
       api.state.keys--;
-      await api.say([{ text: 'You unlocked the padlock with the *Small Key*.' }]);
+      await api.say([{ text: 'You unlocked the padlock with the [gear]Small Key[/].' }]);
       ow.chest.open();
       api.state.set('groveChestOpened');
       await api.wait(0.9);
@@ -217,9 +217,9 @@ export function overworldContent(ow: Overworld): AreaContent {
       api.giveSword();
       api.particles.burst(new THREE.Vector3(ow.chest.x, api.player.pos.y + 1.2, ow.chest.z), 0xfff1a8, 30, 4, 1.2, false);
       await api.say([
-        { text: 'You found the *Wayfarer\'s Blade*!\nIts edge is nicked, but it still sings when you swing it.' },
+        { text: 'You found the [gear]Wayfarer\'s Blade[/]!\nIts edge is nicked, but it still sings when you swing it.' },
         { text: '[attack] swings; press it again in rhythm for a three-hit combo. [lock] locks on to an enemy.' },
-        { text: 'Maren will want to see this. Head back to *Thistledown*.' },
+        { text: 'Maren will want to see this. Head back to [place]Thistledown[/].' },
       ]);
     },
 
@@ -230,7 +230,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       }
       const hint = api.state.has('hasSword')
         ? 'The lantern above it is dark. Whatever took its flame went southwest, to the Gloaming Hollow.'
-        : 'Maybe someone in *Thistledown* knows how to open it.';
+        : 'Maybe someone in [place]Thistledown[/] knows how to open it.';
       await api.say([{ text: `A slab of cold stone with a spiral carved into it. It won't budge.\n${hint}` }]);
     },
 
@@ -242,8 +242,8 @@ export function overworldContent(ow: Overworld): AreaContent {
     ...hints.scripts,
     ...sigilContent(new Map([['sigil.hollow', ow.sigil]])),
     'sign.crossroads': say(crossroads()),
-    'sign.gorge': say('THE HUSHING GORGE\n"Walk soft. The stone keeps the old bell\'s hush, and what guards it does not like noise."\nBelow, in a child\'s hand: *the way up is over the gap*'),
-    'sign.hollow': say('GLOAMING HOLLOW\n"Here ends the lamplighter\'s road. Lamps lit at dusk, snuffed at dawn."\nUnderneath, scratched in fresh and shaky: *TURN BACK*'),
+    'sign.gorge': say('THE HUSHING GORGE\n"Walk soft. The stone keeps the old bell\'s hush, and what guards it does not like noise."\nBelow, in a child\'s hand: [soft]the way up is over the gap[/]'),
+    'sign.hollow': say('GLOAMING HOLLOW\n"Here ends the lamplighter\'s road. Lamps lit at dusk, snuffed at dawn."\nUnderneath, scratched in fresh and shaky: [danger]TURN BACK[/]'),
     async 'trigger.hollow'(api) {
       if (api.state.has('hasSword')) return lamplighterWakes(api);
       // Unarmed: it doesn't wake, and Wren thinks better of it.
@@ -259,7 +259,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       api.state.maxHp += 2;
       api.state.hp = api.state.maxHp;
       api.sfx.fanfare();
-      await api.say([{ text: 'You got a *Heart Vessel*!\nYour life grew by one heart, and you feel completely restored.' }]);
+      await api.say([{ text: 'You got a [gear]Heart Vessel[/]!\nYour life grew by one heart, and you feel completely restored.' }]);
     },
     'sign.village': say('Thistledown Village\n"Mind the windmill. Mind the thornlings more."'),
     'sign.canyon': say('WAYFARERS\' CAMP\n"Rest if you have a bed. Cross if you have the nerve. The Waybell went over the gap, and nobody has come back with it."'),

@@ -21,7 +21,7 @@ Next, in order:
     "Dawn"/"Nightfall" card at 6:00/18:00; Pip asks for Button only once Wren has the sword (before: just scared); the
     Lamplighter's **dawn burn** (engaged past dawn, it loses HP to 0 in ~60 s, phase 2 as normal, normal death) and an
     ember/smoke effect when it appears at dusk or leaves at dawn outside a fight.
-  - **C2, text styling + the terse-text rule**: semantic tags `[item]` gold, `[place]` pale blue, `[danger]` ember red,
+  - ~~**C2, text styling + the terse-text rule**~~ done 2026-11-04 (unplayed: the colors, the shake and the fade up close; the gold tag is `[gear]`, since `item` is an action name; old long boxes are a ratchet, `LONG_ALLOWED` in `content/textRules.test.ts`, C3/C4 lower it). Spec was: semantic tags `[item]` gold, `[place]` pale blue, `[danger]` ember red,
     `[old]` violet (the blight, Keepers, sigils, names from the past), `[key]` bold (buttons), `[soft]` italics (whispers),
     `[shake]` tremble and `[fade]` slow fade-in (both rare), closed by `[/]`; `*x*` migrated and dropped. **Mind the clash:** `[shield]`, `[interact]` etc. already show a button glyph
     (`Action` names in `core/input.ts`), so tag names must never equal an action name (a test should check). `ui/hud.ts` format +

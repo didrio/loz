@@ -155,7 +155,7 @@ export function wardenContent(area: DungeonArea) {
     api.state.maxHp += 2;
     api.state.hp = api.state.maxHp;
     api.sfx.fanfare();
-    await api.say([{ text: 'You got a *Heart Vessel*!\nYour life grew by one heart, and you feel completely restored.' }]);
+    await api.say([{ text: 'You got a [gear]Heart Vessel[/]!\nYour life grew by one heart, and you feel completely restored.' }]);
   };
 
   return {

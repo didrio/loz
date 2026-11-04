@@ -47,7 +47,7 @@ describe('the keepers\' bells', () => {
     expect(emptyPostText(s, 'morrow')).toContain('Does something go here?');
     expect(emptyPostText(s, 'morrow')).toContain('MORROW');
     s.bells.carried.add('lull');
-    expect(emptyPostText(s, 'morrow')).toContain('*Lullbell* you carry doesn\'t belong here');
+    expect(emptyPostText(s, 'morrow')).toContain('[gear]Lullbell[/] you carry doesn\'t belong here');
     s.bells.carried.clear();
     s.bells.hung.add('morrow');
     expect(emptyPostText(s, 'lull')).toContain('Another bell post');
@@ -80,7 +80,7 @@ describe('the keepers\' bells', () => {
     choices.push(0);
     await content.scripts.lullPost(api);
     const text = said.map((p) => p.text).join(' ');
-    expect(text).toContain('*Morrowbell* answers');
+    expect(text).toContain('[gear]Morrowbell[/] answers');
     expect(text).toContain('[interact]');
     expect(chosen).toEqual([{ title: 'Follow the answer', options: ['Thistledown', 'Stay'] }]);
     expect(travels).toEqual([{ area: 'overworld', entrance: 'bell.morrow' }]);
@@ -203,7 +203,7 @@ describe('the keepers\' bells', () => {
     expect(pickup.present).toBe(false);
     expect([...state.bells.carried]).toEqual(['morrow']);
     expect(ow.morrowPost.canHang).toBe(true);
-    expect(said[0].text).toContain('You found the *Morrowbell*!');
+    expect(said[0].text).toContain('You found the [gear]Morrowbell[/]!');
 
     const fresh = new BellPickup(b, 'morrow', 0, 0, 0);
     bellContent({}, { 'bell.morrow': fresh }).restore(state);
