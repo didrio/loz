@@ -20,7 +20,8 @@ always babbles the same; the last four letters of a sentence follow its end (`?`
 A spoken page breathes after punctuation (`PAUSES` in `hud.ts`). Skipping the typing shows the box and is silent. The next
 page, the end, a choice, the pause menu or a death ends the talk. A page wrapped whole in `[soft]` or `[shake]` takes that
 `MOODS` entry (quieter and rounder / wobbling); a tag around part of a page does nothing.
-`Sfx.talk` plays a blip through `BlipPlayer` on its own bus (Voice volume slider in Settings) and ducks the music 4 dB until
+`Sfx.talk` plays a blip through `BlipPlayer` on its own bus (Voice volume slider in Settings; `VOICE_TRIM` keeps it
+3/8 as loud as the slider alone would, so the default 80% sounds like the old 30%: owner's call, 2026-11-04) and ducks the music 4 dB until
 the talk has been quiet 0.7 s. `Area.voiceRoom` (outdoors, house, dungeon; `ROOMS` in `blips.ts`) sets the room behind it;
 no area is a "house" yet (the mill is in the overworld).
 

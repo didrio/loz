@@ -11,6 +11,13 @@ export type { MusicMood } from './tracks';
 
 /** The slider position that sounds as loud as the game did before there were sliders (matches DEFAULT_SETTINGS). */
 const DEFAULT_VOLUME = 0.8;
+/** The voices sit this far under the other buses (owner's call, 2026-11-04: the old 30% is the new default 80%). */
+export const VOICE_TRIM = 0.3 / DEFAULT_VOLUME;
+
+/** The voice bus's gain for a Voice slider position (0..1). */
+export function voiceGain(slider: number) {
+  return (slider / DEFAULT_VOLUME) * VOICE_TRIM;
+}
 /** The music's gain while someone speaks: -4 dB. */
 const DUCK_DB = 10 ** (-4 / 20);
 
@@ -69,7 +76,7 @@ export class Sfx {
     this.master.gain.value = (0.5 * master) / DEFAULT_VOLUME;
     this.musicGain.gain.setTargetAtTime((0.4 * music * this.duck) / DEFAULT_VOLUME, this.ctx.currentTime, 0.05);
     this.sfxGain.gain.value = sfx / DEFAULT_VOLUME;
-    this.voiceGain.gain.value = voice / DEFAULT_VOLUME;
+    this.voiceGain.gain.value = voiceGain(voice);
   }
 
   /** One talking blip (`blipAt`), ducking the music under the talk until it has been quiet a moment. */
