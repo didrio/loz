@@ -121,6 +121,7 @@ export function wardenContent(area: DungeonArea) {
    */
   const seal: Script = async (api) => {
     const prog = api.state.dungeon(area.def.id);
+    api.silenceMusic(true); // the dungeon is quiet since the boss; the vision of the valley must be too
     await api.wait(1.4); // the shards fall and the beams go dark
     api.sfx.solved();
     await api.say([{ text: 'Its light runs out through the walls, far to the northwest, to a gate of floating stone.' }]);
@@ -145,6 +146,7 @@ export function wardenContent(area: DungeonArea) {
     await api.travel('shrine', 'sealStone.beyond', true);
     api.hidePlayer(false);
     api.releaseCamera();
+    api.silenceMusic(false); // back in the quiet dungeon
     api.toast('The ward is broken. [place]The Northpass[/] is open.');
   };
 

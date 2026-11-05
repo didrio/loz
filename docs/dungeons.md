@@ -47,7 +47,7 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   way. Two flights can share a footprint in separate lanes (the shrine's stairwell). `oneWay: true` is passable only `from` → `to`
   (ledges). A bar that lifts from one side and then stays open is better modeled as a
   switch door with the switch on the far side (see `naveNorth` in the shrine).
-- **Locks**: `{ key: color }` (the small key of that color, `crimson`/`azure`/`jade`/`violet`/`amber`: `KEY_COLORS` in `format.ts`; spent on use, the door stays open), `'boss'` (needs the boss key),
+- **Locks**: `{ key: color }` (the small key of that color, `crimson`/`azure`/`jade`/`violet`/`amber`: `KEY_COLORS` in `format.ts`; spent on use, the door stays open), `'boss'` (needs the boss key; spent on use like a small key),
   `{ switch: id }` (opens when that switch is pressed), `{ switches: [ids] }` (opens when
   all of them are pressed), `{ item: id }` (needs a tool), `{ cleared: room }` (a hidden slab with no prompt that
   content opens when that room is cleared or its boss beaten: the Keepers' Seal door in the shrine). A

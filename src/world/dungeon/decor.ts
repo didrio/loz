@@ -39,7 +39,7 @@ export const THEMES: Record<RoomTheme, Palette> = {
  * per-room fog changes how a distant room looks as Wren crosses a doorway; one value never does.
  * Each wing's mood comes from its lights and decor instead.
  */
-export const DUNGEON_FOG: FogLook = { color: 0x0a0c10, near: 5, far: 36 };
+export const DUNGEON_FOG: FogLook = { color: 0x0a0c10, near: 12, far: 52 };
 
 export const themeOf = (r: RoomDef): RoomTheme => r.theme ?? 'sandstone';
 

@@ -22,10 +22,10 @@ built almost entirely by AI agents. Build everything as if it will ship.
 As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine**
 through **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the
 valley: violet **scars** seep from the gate (hurt underfoot, jumpable) and **thorn clumps** grow along them (hurt to touch, 5 sword hits fell one
-for good); 3 thornlings guard the grove road. After it, only Lark and Pip remain in the village, and the Morrowbell lies behind the windmill.
+for good); 3 thornlings guard the grove road. After it, only Lark and Pip remain in the village, and the Morrowbell lies by the windmill's north flank.
 Player text is terse and tagged (`textRules.test.ts`); the HUD has a sky dial and a compass strip. **NPCs talk in blips** (`core/blips.ts`,
 `content/voices.ts`, `/blips.html`); the speech synth is shelved in `labs/speech/`. Unplayed by the owner: most of the 2026-11-04 batch (day/night,
-the Lamplighter's dawn, the bell hunt, Settings, surfing, the gate, D3, the prism, dungeon fog) and the scars, cutting and guards.
+the Lamplighter's dawn, the bell hunt, Settings, surfing, the gate, D3, the prism, dungeon fog, the lost bell's new spot, the silent gate vision) and the scars, cutting and guards.
 **Next:** the queue in the roadmap, from 8 (the inventory tab; no plan mode). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching

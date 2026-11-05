@@ -156,6 +156,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
         p.keys.delete(color);
       } else if (door.style === 'boss') {
         if (!p.bossKey) return api.say([{ text: 'A great iron lock. It needs the [gear]Boss Key[/].' }]);
+        p.bossKey = false; // spent, like a small key
       } else {
         return api.say([{ text: 'Iron bars. Something here must raise them.' }]);
       }

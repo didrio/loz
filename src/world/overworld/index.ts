@@ -44,7 +44,7 @@ export class Overworld implements Area {
   readonly bellPosts: Map<BellId, BellPost>;
   /** The Morrowbell waiting at the end of the Hushing Gorge. */
   readonly morrowBell: BellPickup;
-  /** The Morrowbell on the ground behind the windmill, once Gravelheart's fall has taken it off its post (`village.bellMoved`). */
+  /** The Morrowbell on the ground by the windmill's north flank, once Gravelheart's fall has taken it off its post (`village.bellMoved`). */
   readonly morrowLost: BellPickup;
   /** The gorge's climb (tests and smoke read the pillars from here). */
   readonly gorgeCourse = GORGE_COURSE;

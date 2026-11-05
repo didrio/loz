@@ -85,6 +85,7 @@ describe('shrine content', () => {
     p.bossKey = true;
     await content.scripts.bossDoor(api);
     expect(area.doors.get('bossDoor')!.opening).toBe(true);
+    expect(p.bossKey).toBe(false); // spent on the door
     p.cleared.add('tetherRoom');
     content.restore(api.state);
     await content.scripts.tetherChest(api);

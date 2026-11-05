@@ -22,7 +22,7 @@ dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things 
 2. ~~The shrine respawn count~~ done 2026-11-04: `shrine-keys` passes (the 39-vs-38 no longer reproduces; cause unknown, likely a
    stale count in an older run). A unit test now pins it (`shrine.test.ts`). The full suite is still to run once (owner's OK).
 3. ~~NPC voices: the speech synth~~ done 2026-11-04, then shelved (too creepy; `labs/speech/`, [audio.md](audio.md)).
-4. ~~Dungeon fog and lighting~~ done 2026-11-04 (one fog for the whole dungeon, tight: near 5, far 36, so distant rooms never change; pit haze, shaft specks; [dungeons.md](dungeons.md)). Unplayed by the owner.
+4. ~~Dungeon fog and lighting~~ done 2026-11-04 (one fog for the whole dungeon (near 12, far 52), so distant rooms never change; the boss arena is big, so don't tighten it; pit haze, shaft specks; [dungeons.md](dungeons.md)). Unplayed by the owner.
 5. ~~The voice system~~ done 2026-11-04, rebuilt as talking blips (the box types, each NPC page blips; Voice volume, music ducking,
    `Area.voiceRoom`; [audio.md](audio.md) "Talking blips"). Unheard by the owner. Left: per-phrase moods, a house room.
 6. **Blip loose ends** (small; per character, never line by line, owner's call 2026-11-04): tweak a character's voice only if the owner

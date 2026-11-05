@@ -22,8 +22,8 @@ export const MILL_TOWER = { outer: 4.8, inner: 3.9, top: 3.0, height: 11, ceilin
 export const MILL_BED = { x: -2.5, z: 0.9 };
 /** The Morrowbell's post on the square, between the east and northeast cottages (clear of both doors), facing the well (docs/bells.md). */
 export const MORROW_POST = { x: VILLAGE.x + 9.4, z: VILLAGE.z - 5.7 };
-/** Where the Morrowbell lies after Gravelheart falls: on the ground behind the windmill (its door faces the other way), out of sight from the square. */
-export const MORROW_LOST = { x: MILL.x - MILL_TOWER.outer - 1.6, z: MILL.z + 1.5 };
+/** Where the Morrowbell lies after Gravelheart falls: on the ground by the windmill's north flank, a little round the tower from its door, so it's hidden from the square's middle but not far. */
+export const MORROW_LOST = { x: MILL.x + 1.5, z: MILL.z - MILL_TOWER.outer - 1.8 };
 /** Odo the merchant's stall: his counter runs north-south, customers stand on its east side. */
 /** Thistledown's two standing homes: the angle (around the square, 17 m out) each stands at; each faces the well. */
 export const HOMES = [-0.15, 2.35].map((a) => ({ a, x: VILLAGE.x + Math.cos(a) * 17, z: VILLAGE.z + Math.sin(a) * 17 }));

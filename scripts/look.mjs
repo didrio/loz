@@ -686,11 +686,11 @@ const SCENES = {
       const a = window.embervale.area;
       return { x: a.morrowLost.x, y: a.morrowLost.y, z: a.morrowLost.z };
     });
-    // From the square's side the mill hides it; from the far side, standing where a player looks around.
-    await h.teleport(at.x - 9, at.z - 2, Math.PI / 2 + 0.3);
+    // From the square it sits behind the mill's flank; the other shots are a walker coming round the tower, and up close.
+    await h.teleport(at.x + 12, at.z + 7, -Math.PI / 2 - 0.4);
     await h.wait(1200);
     await h.shot('lost-far');
-    await h.teleport(at.x - 3.5, at.z - 0.5, Math.PI / 2);
+    await h.teleport(at.x + 3, at.z + 4, Math.PI);
     await h.wait(800);
     await h.shot('lost-near');
     await h.game(([x, y, z]) => {
