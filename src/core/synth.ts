@@ -372,7 +372,7 @@ export class MusicPlayer {
 }
 
 /** A synthesized room: stereo noise that decays, darker toward the tail. */
-function impulse(ctx: BaseAudioContext, seconds: number) {
+export function impulse(ctx: BaseAudioContext, seconds: number) {
   const rate = ctx.sampleRate;
   const len = Math.floor(rate * seconds);
   const buf = ctx.createBuffer(2, len, rate);

@@ -8,7 +8,49 @@ and ask the owner to listen.
 
 **NPC voices are synthesized speech too** (owner's call, 2026-11-04): every NPC will say their lines aloud through a
 formant voice built in code (text → speech sounds → voice), not a neural voice rendered from a model and not a babble.
-Designed and built from roadmap queue item 3; until then, NPCs are silent.
+The engine is built (below, "Voices"); the game doesn't speak yet (roadmap queue 5).
+
+## Voices (`core/speech/`)
+
+Owner's calls (2026-11-04): **real words** from a formant synth (the ceiling is the classic speech synths: clear, with
+real melody, but recognizably a machine); a **softened** sound (warm, a little breathy, a little back in a room, like a
+storybook voice); pronunciation from **CMUdict plus rules**; **only NPCs speak** (signs, items, toasts, keeper notes stay silent).
+
+The pipeline, one pure function per stage (all run in Node tests; only `play.ts` touches Web Audio):
+
+1. **Words → sounds** (`phonemize.ts`): strips tags, expands numbers, looks each word up (`names.ts` hand entries →
+   `lexicon.ts` → `letters.ts` spelling rules), splits it into syllables with stress, marks function words, and splits
+   the text into phrases at punctuation (each with its end tune and pause). Phonemes are ARPAbet (`types.ts`).
+2. **Timing and melody** (`prosody.ts`): Klatt's duration rules (stress, phrase-final lengthening, function words
+   shorter...), then the pitch: a slow fall across each phrase, a rise-fall accent on content words, and a phrase-end
+   tune (statement falls, yes/no question rises, comma lifts a little). Out comes a `Timeline`: segments, a pitch and
+   loudness track, and each word's start/end (what the dialog box will type along to).
+3. **The voice** (`frames.ts`, `klatt.ts`, `phonemes.ts`): every 5 ms the formant targets glide between sounds; a
+   glottal pulse plus breath and hiss noise runs through a Klatt cascade/parallel filter bank, sample by sample.
+   Each line is leveled to the same speech loudness (a child's voice would otherwise be ~6 dB hotter), then the
+   delivery's gain. Deterministic (seeded).
+4. **Playback** (`play.ts`, `VoicePlayer` on `Sfx.voice`, its own bus): a gentle low-pass (warmth) and a short dark
+   room (`SOFT_CHAIN`). One line at a time; `stop(fadeMs)` cuts a line off.
+
+`speak(text, voice, delivery)` in `voice.ts` runs 1–3. A 3–8 s line renders in 6–35 ms.
+
+**A voice** is a `VoiceProfile` (pitch, range, tract size, breathiness, tilt, open quotient, rate, tremor, jitter,
+shimmer; presets `PRESET_VOICES`: woman, oldWoman, man, child) and a line's **delivery** is a `Delivery`, offsets that
+suit any voice (`DELIVERIES`: neutral, worried, dry, excited, soft, shake). NPC profiles will live in content (queue 6).
+The knobs that matter most by ear: `tilt` (darkness), `breathiness`, `baseF0`/`rangeSemis`, `rate`, `tractScale`; in
+code, the accent heights in `prosody.ts` `melody()` and the per-phoneme dB levels in `phonemes.ts`.
+
+**Tuning by ear**: `npm run dev`, then <http://localhost:5273/voices.html> (dev only; the build ships only `index.html`).
+The three trial lines (Maren `oldWoman`·`worried`, Tobin `man`·`dry`, Pip `child`·`excited`, all preset values; the owner
+heard them and approved them as they are, 2026-11-04) and a free line, sliders for every parameter, the pitch
+curve with word labels, each word's phonemes (red = guessed by rules, so it needs an entry in `names.ts`), and "Copy
+values" to paste a tuned voice back into code.
+
+**New words**: after adding player text, run `npm run lexicon` (downloads CMUdict once into `node_modules/.cache/`,
+rewrites `lexicon.ts`; never edit that file). The coverage test in `phonemize.test.ts` lists any word that only the rules
+know: add invented names to `names.ts`. CMUdict's credit is in `CREDITS.md`.
+
+Not built yet: per-place nasal zeros, linking and glottal stops between words, emphasis on a chosen word.
 
 **Murmurbuds** (`budTap(growth)`, `nuhUh`, `budOpen`): a soft triangle knock that climbs with
 the bud's growth; "nuh-uh", two falling square blips (G4 then D4); a rising A-major arpeggio

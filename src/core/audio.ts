@@ -3,6 +3,7 @@
  * The context is created on the first key press (browsers require a user gesture).
  */
 
+import { VoicePlayer } from './speech/play';
 import { MusicPlayer } from './synth';
 import { BOSS_MOODS, compiledSong, type MusicMood } from './tracks';
 
@@ -23,6 +24,8 @@ export class Sfx {
   /** The mood whose song is playing, or null for silence. */
   private musicMood: MusicMood | null = null;
   musicOn = true;
+  /** Plays NPC speech (`core/speech/`); null until the first key press creates the audio context. */
+  voice: VoicePlayer | null = null;
 
   init() {
     if (this.ctx) {
@@ -38,6 +41,10 @@ export class Sfx {
     this.sfxGain.connect(this.master);
     this.applyVolumes();
     this.music = new MusicPlayer(this.ctx, this.musicGain);
+    // NPC speech gets its own bus (a Voice volume setting joins it with the voice system, roadmap queue 5).
+    const voiceGain = this.ctx.createGain();
+    voiceGain.connect(this.master);
+    this.voice = new VoicePlayer(this.ctx, voiceGain);
     this.noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;

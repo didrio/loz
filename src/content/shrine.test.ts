@@ -261,6 +261,19 @@ describe('shrine content', () => {
     expect(enemies.filter((e) => e.alive).length).toBeGreaterThan(0);
   });
 
+  it('after a death, exactly the spawns outside beaten challenge rooms are alive', async () => {
+    const { area, content, api, enemies, runQueued, p } = setup();
+    content.start!(api);
+    await runQueued();
+    const challenge = new Set(
+      SHRINE.things.flatMap((t) => ((t.kind === 'chest' || t.kind === 'sigil') && t.appears && 'cleared' in t.appears ? [t.appears.cleared] : [])),
+    );
+    for (const id of challenge) p.cleared.add(id);
+    content.onRespawn!(api);
+    const expected = area.spawns.filter((s) => s.type !== 'gravelheart' && !challenge.has(s.room)).length;
+    expect(enemies.filter((e) => e.alive && !(e instanceof Gravelheart)).length).toBe(expected);
+  });
+
   it('dying brings every enemy back (keys, chests and doors stay)', async () => {
     const { content, api, runQueued, enemies, p } = setup();
     content.start!(api);

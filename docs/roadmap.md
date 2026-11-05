@@ -19,27 +19,31 @@ burn, text tags and the terse-text rule, the text pass on all player text, the b
 dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things stand"); details in git.
 
 1. ~~Boss hazards end with the boss~~ done 2026-11-04 (`Boss.die` clears `Hazards`; unplayed).
-2. **The shrine respawn count** (Known quirks: `shrine-keys` expects 38 enemies after a death and gets 39). A failing unit
-   test first: is it the test, or a spawn in a beaten challenge room breaking the checkpoint rule? Then the full suite once
-   (ask the owner): it hasn't finished green since S5, and every CI run on 2026-11-04 was cancelled by the next push.
-   Sonnet; `architect` if the first fix fails.
-3. **NPC voices: the speech synth** (owner's dream feature, 2026-11-04; **plan mode**, the DSP to `architect`). Every NPC
-   says their lines aloud, as close as possible to really speaking the words, with natural timing, intonation and emotion;
-   sound gets the same care as visuals. **Owner's call (2026-11-04): speech synthesized in code** (text → speech sounds →
-   a formant voice), keeping the "audio synthesized in code" rule; rejected: a neural voice rendered at build time (breaks
-   the rule) and a word-shaped babble (not words). This session designs it (pronunciation, prosody: pitch, stress, pauses,
-   emotion; per-voice timbre) and builds a first voice on three lines (Maren worried, Tobin dry, Pip excited) on a page the
-   owner plays and judges by ear, then writes the plan for 5 and 6 here.
-4. **Dungeon fog and lighting** (was C7; independent: a good one to build while the owner listens to 3's voice). Fog color/near/far
+2. ~~The shrine respawn count~~ done 2026-11-04: `shrine-keys` passes (the 39-vs-38 no longer reproduces; cause unknown, likely a
+   stale count in an older run). A unit test now pins it (`shrine.test.ts`). The full suite is still to run once (owner's OK).
+3. ~~NPC voices: the speech synth~~ done 2026-11-04; the owner heard the trial voices and approved them ([audio.md](audio.md), "Voices").
+4. **Dungeon fog and lighting** (was C7; independent). Fog color/near/far
    per wing in `world/dungeon/decor.ts`, optional per-room override, `scene.fog` blends to Wren's room; sparing accents
    (ground haze over pits, motes in the window shafts, sconce flicker). Sonnet.
-5. **The voice system** (after 3, from its plan). Text types at the voice's pace. The button shows the rest of the box at
-   once, but the voice runs on to its natural end, or is cut off when the player moves to the next box or the talk ends.
-   A voice profile per NPC, delivery per line where a line needs it (`[soft]` whispers, `[shake]` trembles), and the voice
-   goes through the mixer (a Voice volume setting, the room's reverb). Narration, signs and notes stay silent unless 3
-   decides otherwise.
-6. **Every NPC voiced**: profiles and line-by-line tuning for Maren, Tobin, Odo, Lark and Pip, with the owner listening;
-   a smoke step that a talk plays voice and the skip rule holds.
+5. **The voice system** (after 3; Sonnet, no plan mode: the engine and its API exist). In order:
+   - **Voices in content**: `content/voices.ts` maps a speaker (`who`) to a `VoiceProfile` and a default `Delivery`;
+     pages without a `who` (narration, signs, items, toasts) stay silent. Start from the trial values in `src/dev/voices.ts`
+     (owner-approved).
+   - **Speak a box**: when `dialog.ts` opens an NPC page, `speak()` it (6–35 ms; the world is frozen in dialog, so a hitch
+     can't hurt; pre-render the next page while this one plays if it shows) and play it on `Sfx.voice`.
+   - **Type along**: the box reveals each word at its `timeline.words[i].start` (letters spread across the word), so
+     text and voice match. Silent pages keep today's pace.
+   - **The skip rule**: the button shows the rest of the box at once, and the voice runs on to its end. The next box,
+     the end of the talk, a choice window, a pause or a death cuts it (`VoiceHandle.stop`, ~80 ms fade).
+   - **Delivery tags**: `[soft]`/`[shake]` around a whole page set its delivery; a tag around part of a page needs a
+     per-phrase delivery in `prosody` (a `Phrase.delivery?` field) — do it only when a line wants it.
+   - **The mixer**: a Voice volume in Settings (a fourth slider; save migration in `core/save.ts`, `Sfx.setVolumes`),
+     the music ducks ~4 dB under speech, and the room: `Area.voiceRoom` (outdoors dry, houses close, dungeons bigger)
+     sets `VoiceChain.room` and the impulse length.
+   - Tests: the typing pace and skip/cut-off rule on a fake timeline (`dialog` unit test), settings migration.
+6. **Every NPC voiced**: profiles and line-by-line tuning for Maren, Tobin, Odo, Lark and Pip, with the owner listening
+   (give `/voices.html` a speaker menu that loads all of an NPC's lines, read from content like `textRules.test.ts`
+   does); per-line deliveries where a line needs them; a smoke step that a talk plays voice and the skip rule holds.
 7. **Blight scars and routing** (was C8; owner's ask, 2026-11-04; **plan mode**: it's level design across the valley). While the
     blight lies on the valley: jagged violet **scars** streak the ground (not in the village, not in water) and hurt exactly
     like a thorn clump (`THORN_ATTACK`: same damage, same shove), and they can't be destroyed. **Thorn clumps become
@@ -83,7 +87,8 @@ Later, not yet in the queue: an **SFX pass** (owner's ask, 2026-11-04), and the 
    unplayed: volumes, sensitivities, invert Y, sharpness, fullscreen), Hints, Messages. Still to come: inventory / equipment / character tabs
    (a tab appears when there is something to show). Settings for the Steam build (key rebinding, resolution, quit) are deferred. (No dungeon map or compass items by design; the HUD's compass strip only shows heading.)
 2.5. ~~Shield surfing~~ built, unplayed (rules in [combat.md](combat.md), Lark in [world.md](world.md)). Tune `SURF_SPEED`, the carve and the dust by play.
-3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later.
+3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later. Ship `CREDITS.md` with CMUdict's
+   full license text (its BSD license requires it in binary distributions) and the libraries' notices.
 4. **Load/perf pass**: Rapier WASM as a file, code splitting, character mesh merging.
 5. **Depth**: more enemy types, target switching, jump attack, original items/tools,
    heart pieces, swimming, ledges/climbing, NPC day/night schedules, music per area,
@@ -187,11 +192,6 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   "inverted" meant, whether a hit pinned Wren against the fire wall. Wren starts ~2 m inside the seal (the trigger is
   `HOLLOW.r - 2`), by design so far.
 
-- **`npm run smoke -- shrine-keys` fails** at "dying in the shrine respawns at its entrance": 39 enemies alive after
-  respawning, 38 expected (45 spawns minus 7 in beaten challenge rooms). Fails the same on the commit before surfing,
-  every run. Not diagnosed: either the test's count or a real respawn bug (one spawn in a cleared room not obeying the
-  checkpoint rule in AGENTS.md). Reproduce in a failing unit test first. Not urgent, but fix before the full suite is
-  trusted as a green gate.
 - A streamed region builds in one frame: a hitch at the streaming point (the Northpass is 150×60 cells of
   terrain plus a trimesh; unmeasured on a real GPU). Spread the build over frames when regions get big.
 

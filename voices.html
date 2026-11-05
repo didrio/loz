@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Embervale voices (dev)</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { font: 15px/1.4 system-ui, sans-serif; background: #1d1a24; color: #e8e2d6; margin: 0; padding: 24px; }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      p.note { color: #a99f90; margin: 0 0 20px; max-width: 70ch; }
+      .layout { display: grid; grid-template-columns: minmax(380px, 1fr) 320px; gap: 24px; align-items: start; }
+      .card { background: #2a2533; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+      .card.sel { outline: 2px solid #e0a84f; }
+      .card h2 { font-size: 15px; margin: 0 0 6px; display: flex; gap: 10px; align-items: center; }
+      .card h2 small { color: #a99f90; font-weight: normal; }
+      .card .line { margin: 0 0 10px; }
+      textarea { width: 100%; box-sizing: border-box; background: #1d1a24; color: inherit; border: 1px solid #4a4256; border-radius: 4px; padding: 6px; font: inherit; }
+      button { background: #e0a84f; color: #1d1a24; border: 0; border-radius: 4px; padding: 6px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+      button.ghost { background: transparent; color: #e0a84f; border: 1px solid #e0a84f; }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+      select { background: #1d1a24; color: inherit; border: 1px solid #4a4256; border-radius: 4px; padding: 4px; }
+      .phones { font: 13px/1.6 ui-monospace, monospace; margin-top: 10px; }
+      .phones span { display: inline-block; margin: 0 10px 4px 0; }
+      .phones b { font-weight: 600; color: #f1e7d0; }
+      .phones .rules { color: #ff7a6b; }
+      canvas { width: 100%; height: 120px; display: block; margin-top: 8px; background: #1d1a24; border-radius: 4px; }
+      .panel h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: #a99f90; margin: 14px 0 6px; }
+      .panel label { display: grid; grid-template-columns: 110px 1fr 52px; gap: 8px; align-items: center; font-size: 13px; margin-bottom: 4px; }
+      .panel output { text-align: right; font: 12px ui-monospace, monospace; color: #a99f90; }
+      .panel .row { margin-top: 10px; }
+      #copied { color: #9fd48a; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>Embervale voices</h1>
+    <p class="note">
+      The speech synth's test bench (dev server only). Pick a line, press Play. The sliders on the right tune the selected
+      line's voice and delivery; "Copy" puts the values on the clipboard to paste back into code. Red words in the readout
+      were guessed by spelling rules, not the dictionary.
+    </p>
+    <div class="layout">
+      <div id="lines"></div>
+      <div class="panel card" id="panel"></div>
+    </div>
+    <script type="module" src="/src/dev/voices.ts"></script>
+  </body>
+</html>
