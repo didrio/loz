@@ -3,7 +3,7 @@
  * a performance tweak on top, like a macro knob). `voice.ts` re-exports all of this with the
  * `speakPhrases` glue; it lives here so `prosody.ts` can use it without an import cycle.
  */
-import { clamp } from '../math';
+import { clamp } from '../../core/math';
 
 export interface VoiceProfile {
   /** The speaking pitch in Hz: roughly where an unaccented syllable sits mid-sentence. */

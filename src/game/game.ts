@@ -390,7 +390,7 @@ export class Game implements ScriptApi {
     this.area.streamAt?.(player.pos.x, player.pos.z);
     this.area.update(dt, { night: this.sky.night, playerPos: player.pos });
     this.particles.update(dt);
-    hud.update(rawDt, () => this.sfx.blip());
+    hud.update(rawDt, (from, to) => this.dialog.typed(from, to));
     const boss = this.activeBoss;
     hud.setBoss(boss && this.mode !== 'title' ? { name: boss.title, hp: boss.hp, maxHp: boss.maxHp, marks: [0.5] } : null);
     const gloomTarget = Math.max(0, ...this.enemies.list.map((e) => (e instanceof Boss ? e.gloom : 0)));

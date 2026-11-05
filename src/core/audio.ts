@@ -3,8 +3,7 @@
  * The context is created on the first key press (browsers require a user gesture).
  */
 
-import { ROOMS, SOFT_CHAIN, VoicePlayer, type RoomName, type VoiceHandle } from './speech/play';
-import type { Speech } from './speech/voice';
+import { BlipPlayer, type Blip, type RoomName } from './blips';
 import { MusicPlayer } from './synth';
 import { BOSS_MOODS, compiledSong, type MusicMood } from './tracks';
 
@@ -30,8 +29,9 @@ export class Sfx {
   /** The mood whose song is playing, or null for silence. */
   private musicMood: MusicMood | null = null;
   musicOn = true;
-  /** Plays NPC speech (`core/speech/`); null until the first key press creates the audio context. */
-  voice: VoicePlayer | null = null;
+  /** Plays NPC talking blips (`core/blips.ts`); null until the first key press creates the audio context. */
+  voice: BlipPlayer | null = null;
+  private duckTimer: ReturnType<typeof setTimeout> | null = null;
 
   init() {
     if (this.ctx) {
@@ -48,7 +48,7 @@ export class Sfx {
     // NPC speech gets its own bus and its own volume setting.
     this.voiceGain = this.ctx.createGain();
     this.voiceGain.connect(this.master);
-    this.voice = new VoicePlayer(this.ctx, this.voiceGain);
+    this.voice = new BlipPlayer(this.ctx, this.voiceGain);
     this.applyVolumes();
     this.music = new MusicPlayer(this.ctx, this.musicGain);
     this.noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
@@ -72,24 +72,20 @@ export class Sfx {
     this.voiceGain.gain.value = voice / DEFAULT_VOLUME;
   }
 
-  /**
-   * Speaks a rendered line (`core/speech/`) in a room, ducking the music under it until it ends or is cut.
-   * Null before the audio context exists (the first key press creates it): the box then types at its usual pace.
-   */
-  speak(speech: Speech, room: RoomName = 'outdoors'): VoiceHandle | null {
-    if (!this.ctx || !this.voice || this.volumes.voice <= 0) return null;
-    this.voice.setRoomLength(ROOMS[room].seconds);
-    const handle = this.voice.play(speech.samples, speech.sampleRate, { ...SOFT_CHAIN, room: ROOMS[room].room });
+  /** One talking blip (`blipAt`), ducking the music under the talk until it has been quiet a moment. */
+  talk(blip: Blip, room: RoomName = 'outdoors') {
+    if (!this.ctx || !this.voice || this.volumes.voice <= 0) return;
+    this.voice.play(blip, room);
     this.setDuck(DUCK_DB);
-    void handle.done.then(() => {
-      if (!this.voice?.speaking) this.setDuck(1);
-    });
-    return handle;
+    if (this.duckTimer) clearTimeout(this.duckTimer);
+    this.duckTimer = setTimeout(() => this.endTalk(), 700);
   }
 
-  /** Seconds the line has been playing (0 until it starts). */
-  voiceTime(handle: VoiceHandle) {
-    return this.ctx ? Math.max(0, this.ctx.currentTime - handle.startedAt) : 0;
+  /** The talk is over (the page changed, the box closed): the music comes back up. */
+  endTalk() {
+    if (this.duckTimer) clearTimeout(this.duckTimer);
+    this.duckTimer = null;
+    if (this.duck !== 1) this.setDuck(1);
   }
 
   private setDuck(v: number) {

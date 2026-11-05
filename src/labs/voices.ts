@@ -4,9 +4,9 @@
  * how each word was pronounced, and the pitch curve. See docs/audio.md, "Voices".
  */
 
-import { lookup, phonemize } from '../core/speech/phonemize';
-import { SOFT_CHAIN, VoicePlayer, type VoiceChain, type VoiceHandle } from '../core/speech/play';
-import { DELIVERIES, PRESET_VOICES, speakPhrases, type Delivery, type DeliveryName, type Speech, type VoiceProfile } from '../core/speech/voice';
+import { lookup, phonemize } from './speech/phonemize';
+import { SOFT_CHAIN, VoicePlayer, type VoiceChain, type VoiceHandle } from './speech/play';
+import { DELIVERIES, PRESET_VOICES, speakPhrases, type Delivery, type DeliveryName, type Speech, type VoiceProfile } from './speech/voice';
 
 type PresetName = keyof typeof PRESET_VOICES;
 

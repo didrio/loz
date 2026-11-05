@@ -10,7 +10,7 @@
  * Pure functions on arrays: no Web Audio, so it runs in tests and Node. Seeded, so the same
  * timeline always renders the same samples.
  */
-import { clamp, mulberry32, smoothstep } from '../math';
+import { clamp, mulberry32, smoothstep } from '../../core/math';
 import { buildFrames, type Frames } from './frames';
 import type { ResolvedVoice } from './profile';
 import type { Timeline } from './prosody';

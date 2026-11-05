@@ -8,6 +8,9 @@ import { richHtml } from './richText';
 import { SkyDial } from './skyDial';
 
 /** A little corked bottle in a potion's color (a pale glass one when empty). */
+/** How long a spoken page waits after a mark, in seconds. */
+const PAUSES: Record<string, number> = { ',': 0.12, ';': 0.16, ':': 0.16, '.': 0.28, '!': 0.28, '?': 0.28, '—': 0.16 };
+
 const bottle = (color: string) => `<svg class="bottle" viewBox="0 0 16 22" width="16" height="22" aria-hidden="true">
   <rect x="5.5" y="1" width="5" height="3" rx="1" fill="#8a5a2b" stroke="#2a1a0a" stroke-width="1"/>
   <path d="M6 4 V8 Q2 10 2 14 V18 Q2 21 5 21 H11 Q14 21 14 18 V14 Q14 10 10 8 V4 Z" fill="${color}" stroke="#2a1a0a" stroke-width="1.2"/>
@@ -94,8 +97,8 @@ export class Hud {
   private bossTitleTimer = 0;
   private bossLagValue = 1;
   private device: Device = 'keyboard';
-  /** The page being typed; `reveal` (a spoken page) says how many characters the voice has reached, in place of the usual pace. */
-  private typing: { full: string; shown: number; reveal?: () => number } = { full: '', shown: 0 };
+  /** The page being typed. A `paced` (spoken) page breathes after punctuation, like speech. */
+  private typing: { full: string; shown: number; paced: boolean; pause: number } = { full: '', shown: 0, paced: false, pause: 0 };
   private areaTimer = 0;
   private toastTimer = 0;
   private lastActions: [Action, string][] = [];
@@ -485,11 +488,11 @@ export class Hud {
 
   // --- dialog ---------------------------------------------------------------------
 
-  openDialog(who: string, text: string, reveal?: () => number) {
+  openDialog(who: string, text: string, paced = false) {
     this.dialog.classList.remove('hidden');
     this.dialogWho.textContent = who;
     this.dialogWho.style.display = who ? '' : 'none';
-    this.typing = { full: text, shown: 0, reveal };
+    this.typing = { full: text, shown: 0, paced, pause: 0 };
     this.dialogText.innerHTML = '';
     this.dialog.classList.remove('done');
   }
@@ -544,14 +547,29 @@ export class Hud {
     this.fade.style.opacity = String(v);
   }
 
-  update(dt: number, typeBlip: () => void) {
+  update(dt: number, typed: (from: number, to: number) => void) {
     if (!this.dialog.classList.contains('hidden') && !this.dialogDone) {
-      const before = Math.floor(this.typing.shown);
-      const { reveal, full } = this.typing;
-      this.typing.shown = reveal ? Math.min(full.length, Math.max(this.typing.shown, reveal())) : Math.min(full.length, this.typing.shown + dt * 55);
-      if (Math.floor(this.typing.shown) !== before) {
-        if (!reveal && before % 3 === 0) typeBlip();
-        this.renderTyping();
+      const t = this.typing;
+      if (t.pause > 0) t.pause -= dt;
+      else {
+        const before = Math.floor(t.shown);
+        let next = Math.min(t.full.length, t.shown + dt * 55);
+        if (t.paced) {
+          // Stop just after a comma or full stop (at a word's end) to breathe.
+          for (let i = before; i < Math.floor(next); i++) {
+            const pause = PAUSES[t.full[i]];
+            if (pause && (i + 1 >= t.full.length || /\s/.test(t.full[i + 1]))) {
+              next = i + 1;
+              t.pause = pause;
+              break;
+            }
+          }
+        }
+        t.shown = next;
+        if (Math.floor(next) !== before) {
+          typed(before, Math.floor(next));
+          this.renderTyping();
+        }
       }
     }
     if (this.areaTimer > 0) {

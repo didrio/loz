@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Embervale blips (dev)</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { font: 15px/1.4 system-ui, sans-serif; background: #1d1a24; color: #e8e2d6; margin: 0; padding: 24px; }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      p.note { color: #a99f90; margin: 0 0 20px; max-width: 70ch; }
+      .layout { display: grid; grid-template-columns: minmax(380px, 1fr) 320px; gap: 24px; align-items: start; }
+      .card { background: #2a2533; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+      .card.sel { outline: 2px solid #f1c24a; }
+      .who { font-weight: 600; }
+      .text { margin: 6px 0 10px; min-height: 3em; }
+      button, select { font: inherit; background: #3a3347; color: inherit; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+      textarea { width: 100%; box-sizing: border-box; font: inherit; background: #1d1a24; color: inherit; border: 1px solid #4a4157; border-radius: 6px; padding: 6px; }
+      label.row { display: grid; grid-template-columns: 100px 1fr 54px; gap: 8px; align-items: center; font-size: 13px; margin: 4px 0; }
+      pre { background: #1d1a24; padding: 8px; border-radius: 6px; font-size: 12px; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Embervale talking blips</h1>
+    <p class="note">The NPCs' voices (dev server only). Press Play on a line to hear it type out; click a card to tune it with the sliders. "Copy values" gives the numbers to paste into content/voices.ts.</p>
+    <div class="layout">
+      <div id="cards"></div>
+      <div id="tune"></div>
+    </div>
+    <script type="module" src="/src/dev/blips.ts"></script>
+  </body>
+</html>

@@ -16,7 +16,7 @@
  * tune at the phrase's end from its punctuation, and micro-prosody (pitch dips on voiced
  * consonants, rises after voiceless ones, high vowels a touch higher).
  */
-import { clamp, smoothstep } from '../math';
+import { clamp, smoothstep } from '../../core/math';
 import { INTRINSIC_F0, PHONEMES, SCHWA, isObstruent, isStopLike, isSyllabic, postVocalicClass, type Formants, type PhonemeSpec } from './phonemes';
 import { DELIVERIES, resolveVoice, type Delivery, type ResolvedVoice, type VoiceProfile } from './profile';
 import type { Phoneme, Phrase, PhraseEnd, Stress } from './types';

@@ -1,36 +1,14 @@
+import { blipAt, MOODS, type BlipMood, type BlipState, type BlipVoice, type MoodName, type RoomName } from '../core/blips';
 import type { Sfx } from '../core/audio';
-import { DELIVERIES, speak, type DeliveryName } from '../core/speech/voice';
-import type { VoiceHandle } from '../core/speech/play';
-import type { Timeline } from '../core/speech/prosody';
 import { speakerFor } from '../content/voices';
 import type { Hud } from '../ui/hud';
 import { visibleEnds, visibleText } from '../ui/richText';
 import type { Page } from './script';
 
-/**
- * How many raw characters of `text` are shown `t` seconds into a spoken line: each word's letters spread across
- * the word, so the text and the voice match. After the last word the box is complete.
- */
-export function revealAt(text: string, timeline: Timeline, t: number): number {
-  const ends = visibleEnds(text);
-  const plain = visibleText(text);
-  const words = timeline.words;
-  const last = words[words.length - 1];
-  if (!last || t >= last.end) return text.length;
-  let i = -1;
-  for (let k = 0; k < words.length && words[k].start <= t; k++) i = k;
-  if (i < 0) return 0;
-  const w = words[i];
-  const frac = Math.min(1, Math.max(0, (t - w.start) / Math.max(1e-3, w.end - w.start)));
-  let v = Math.floor(w.span[0] + frac * (w.span[1] - w.span[0]));
-  if (frac >= 1) while (v < plain.length && plain[v] !== ' ' && plain[v] !== '\n') v++; // its punctuation
-  return ends[Math.min(v, ends.length - 1)];
-}
-
-/** A page wrapped whole in `[soft]` or `[shake]` is said that way instead of in the speaker's usual delivery. */
-function wholePageDelivery(text: string): DeliveryName | null {
+/** A page wrapped whole in `[soft]` or `[shake]` is said that way. */
+function wholePageMood(text: string): BlipMood {
   const m = /^\[(soft|shake)\]([\s\S]*)\[\/\]$/.exec(text);
-  return m && !m[2].includes('[/]') ? (m[1] as DeliveryName) : null;
+  return m && !m[2].includes('[/]') ? MOODS[m[1] as MoodName] : {};
 }
 
 /** Pages of dialog shown one at a time; `show` resolves once the last page is dismissed. */
@@ -43,31 +21,38 @@ export class Dialog {
   private selected = 0;
   /** Index of the back-out option (shown red; Cancel picks it), or -1. */
   private exit = -1;
-  /** The line being spoken for the current page. It runs on if the player skips the typing; the next page or the end cuts it. */
-  private line: VoiceHandle | null = null;
+  /** The current page's talk: who (null = silent page), what they say, how far it has typed. */
+  private talk: { voice: BlipVoice; plain: string; ends: number[]; mood: BlipMood; state: BlipState; seen: number } | null = null;
 
-  constructor(private hud: Hud, private sfx: Sfx, private room: () => 'outdoors' | 'house' | 'dungeon' = () => 'outdoors') {}
+  constructor(private hud: Hud, private sfx: Sfx, private room: () => RoomName = () => 'outdoors') {}
 
-  /** Cuts off the line being spoken (a pause, a death, a choice window). */
-  cutVoice(fadeMs = 80) {
-    this.line?.stop(fadeMs);
-    this.line = null;
+  /** Ends the talk (the next page, a choice, a pause, a death): the music comes back up. */
+  cutVoice() {
+    this.talk = null;
+    this.sfx.endTalk?.();
   }
 
-  /** Opens a page in the box: an NPC's page is spoken and typed along to its voice, any other is typed at the usual pace. */
+  /** Opens a page in the box. An NPC's page blips as it types (`typed`); any other gets the key-tap. */
   private openPage(page: Page) {
     this.cutVoice();
-    const speaker = speakerFor(page.who);
-    const line = speaker ? this.render(page, speaker) : null;
-    this.line = line?.handle ?? null;
-    this.hud.openDialog(page.who ?? '', page.text, line ? () => revealAt(page.text, line.timeline, this.sfx.voiceTime(line.handle)) : undefined);
+    const voice = speakerFor(page.who);
+    if (voice) {
+      this.talk = { voice, plain: visibleText(page.text), ends: visibleEnds(page.text), mood: wholePageMood(page.text), state: { letters: 0 }, seen: 0 };
+    }
+    this.hud.openDialog(page.who ?? '', page.text, !!voice);
   }
 
-  private render(page: Page, speaker: NonNullable<ReturnType<typeof speakerFor>>) {
-    const tagged = wholePageDelivery(page.text);
-    const speech = speak(page.text, speaker.voice, tagged ? DELIVERIES[tagged] : speaker.delivery);
-    const handle = this.sfx.speak(speech, this.room());
-    return handle ? { handle, timeline: speech.timeline } : null;
+  /** The box has just typed raw characters [from, to) of the page: blip for the new visible ones. Skipping the typing is silent. */
+  typed(from: number, to: number) {
+    const t = this.talk;
+    if (!t) {
+      for (let i = from; i < to; i++) if (i % 3 === 0) this.sfx.blip();
+      return;
+    }
+    while (t.seen < t.plain.length && t.ends[t.seen + 1] <= to) {
+      const blip = blipAt(t.voice, t.plain, t.seen++, t.state, t.mood);
+      if (blip) this.sfx.talk(blip, this.room());
+    }
   }
 
   get open() {

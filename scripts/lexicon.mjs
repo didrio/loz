@@ -1,4 +1,4 @@
-// Builds src/core/speech/lexicon.ts: CMUdict pronunciations for just the words in the game's text.
+// Builds src/labs/speech/lexicon.ts: CMUdict pronunciations for just the words in the game's text.
 // Usage: npm run lexicon. Downloads CMUdict once into node_modules/.cache/cmudict/ (never committed).
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -82,6 +82,6 @@ export const LEXICON: Record<string, string> = {
 ${body}
 };
 `;
-writeFileSync(join(root, 'src/core/speech/lexicon.ts'), out);
+writeFileSync(join(root, 'src/labs/speech/lexicon.ts'), out);
 console.log(`lexicon: ${found.length} entries, ${(out.length / 1024).toFixed(1)} KB`);
 console.log(`missing from CMUdict (${missing.length}): ${missing.join(' ')}`);

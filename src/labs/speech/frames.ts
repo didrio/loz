@@ -10,7 +10,7 @@
  * - source levels: sums of trapezoid "pulses" (a sound's level with ramps at its edges), so
  *   neighbors crossfade and a burst can sit on top of whatever else is playing.
  */
-import { clamp } from '../math';
+import { clamp } from '../../core/math';
 import { HIGH_FORMANTS, LOCI, NASAL_MURMUR, NASAL_REST, isSyllabic, type Formants, type Manner, type Parallel, type PhonemeSpec } from './phonemes';
 import { trackAt, type Segment, type Timeline } from './prosody';
 

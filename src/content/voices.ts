@@ -1,25 +1,23 @@
 /**
- * Who sounds like what (docs/audio.md "Voices"). A page's `who` picks a voice and a default delivery;
- * pages without a known speaker (narration, signs, items, keeper notes, sigils) stay silent.
- * Maren, Tobin and Pip are the owner-approved trial voices; Lark and Odo start from presets (queue 6 tunes them).
+ * Who sounds like what (docs/audio.md "Talking blips"). A page's `who` picks a blip voice; pages without a
+ * known speaker (narration, signs, items, keeper notes, sigils) type in silence, with the old key-tap.
+ * Starting points: the owner tunes each one by ear on `/blips.html` (queue 6).
  */
-import { DELIVERIES, PRESET_VOICES, type Delivery, type VoiceProfile } from '../core/speech/voice';
+import { BLIP_PRESETS, type BlipVoice } from '../core/blips';
 
-export interface Speaker {
-  voice: VoiceProfile;
-  delivery: Delivery;
-}
-
-export const SPEAKERS: Record<string, Speaker> = {
-  Maren: { voice: PRESET_VOICES.oldWoman, delivery: DELIVERIES.worried },
-  Tobin: { voice: PRESET_VOICES.man, delivery: DELIVERIES.dry },
-  Pip: { voice: PRESET_VOICES.child, delivery: DELIVERIES.excited },
-  Lark: { voice: PRESET_VOICES.woman, delivery: DELIVERIES.neutral },
-  Odo: { voice: { ...PRESET_VOICES.man, baseF0: 124, rate: 1.02 }, delivery: DELIVERIES.neutral },
+export const SPEAKERS: Record<string, BlipVoice> = {
+  // Old and worried: wavery, a little high.
+  Maren: { ...BLIP_PRESETS.oldWoman, pitch: 275, wobble: 0.4 },
+  // Dry and plain: low, flat, unhurried.
+  Tobin: { ...BLIP_PRESETS.man, range: 0.35 },
+  Pip: BLIP_PRESETS.boy,
+  Lark: BLIP_PRESETS.girl,
+  // Jovial: a bright mid voice that wanders.
+  Odo: { ...BLIP_PRESETS.man, pitch: 175, range: 0.9, wave: 'triangle', cutoff: 1500, every: 2 },
 };
 
-/** The speaker for a page's `who` ("Tobin the Miller" is Tobin: the first word counts), or null for silence. */
-export function speakerFor(who: string | undefined): Speaker | null {
+/** The voice for a page's `who` ("Tobin the Miller" is Tobin: the first word counts), or null for silence. */
+export function speakerFor(who: string | undefined): BlipVoice | null {
   if (!who) return null;
   return SPEAKERS[who] ?? SPEAKERS[who.split(' ')[0]] ?? null;
 }

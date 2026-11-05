@@ -6,60 +6,35 @@ Sound effects are small functions in `core/audio.ts` (`Sfx`); background music i
 played by `core/synth.ts`. An agent can't hear any of it: render to WAV, measure levels,
 and ask the owner to listen.
 
-**NPC voices are synthesized speech too** (owner's call, 2026-11-04): every NPC will say their lines aloud through a
-formant voice built in code (text → speech sounds → voice), not a neural voice rendered from a model and not a babble.
-The engine is built (below, "Voices") and the game speaks (queue 5, 2026-11-04; unheard in play by the owner).
+**NPCs talk in blips** (owner's call, 2026-11-04, after hearing the speech synth: too creepy): each NPC page plays short soft notes as it
+types, a voice-like babble that is not words (the way Celeste and many JRPGs do it). The speech synth is shelved in `labs/speech/`.
 
-## Voices (`core/speech/`)
+## Talking blips (`core/blips.ts`)
 
-Owner's calls (2026-11-04): **real words** from a formant synth (the ceiling is the classic speech synths: clear, with
-real melody, but recognizably a machine); a **softened** sound (warm, a little breathy, a little back in a room, like a
-storybook voice); pronunciation from **CMUdict plus rules**; **only NPCs speak** (signs, items, toasts, keeper notes stay silent).
+`content/voices.ts` maps a page's `who` ("Tobin the Miller" counts as Tobin) to a `BlipVoice` (pitch, range, wave, cutoff,
+length, `every` n letters, glide, wobble, gain; presets `BLIP_PRESETS`: woman, girl, boy, man, oldMan, oldWoman). Pages
+without a known speaker (narration, signs, items, keeper notes, sigils) stay silent apart from the key-tap.
+`Hud.update` tells `Dialog.typed` which raw characters just typed; `blipAt` (pure) turns each new visible letter into a blip
+or nothing: pitch from a pentatonic scale picked by the letter and its place, so the babble is musical and the same text
+always babbles the same; the last four letters of a sentence follow its end (`?` rises, `.` settles, `!` jumps and is louder).
+A spoken page breathes after punctuation (`PAUSES` in `hud.ts`). Skipping the typing shows the box and is silent. The next
+page, the end, a choice, the pause menu or a death ends the talk. A page wrapped whole in `[soft]` or `[shake]` takes that
+`MOODS` entry (quieter and rounder / wobbling); a tag around part of a page does nothing.
+`Sfx.talk` plays a blip through `BlipPlayer` on its own bus (Voice volume slider in Settings) and ducks the music 4 dB until
+the talk has been quiet 0.7 s. `Area.voiceRoom` (outdoors, house, dungeon; `ROOMS` in `blips.ts`) sets the room behind it;
+no area is a "house" yet (the mill is in the overworld).
 
-The pipeline, one pure function per stage (all run in Node tests; only `play.ts` touches Web Audio):
+**Tuning by ear**: `npm run dev`, then <http://localhost:5273/blips.html> (dev only): every NPC's trial line types out with its
+blips, sliders for each parameter, and "Copy values" to paste into `content/voices.ts`. Not heard by the owner yet.
 
-1. **Words → sounds** (`phonemize.ts`): strips tags, expands numbers, looks each word up (`names.ts` hand entries →
-   `lexicon.ts` → `letters.ts` spelling rules), splits it into syllables with stress, marks function words, and splits
-   the text into phrases at punctuation (each with its end tune and pause). Phonemes are ARPAbet (`types.ts`).
-2. **Timing and melody** (`prosody.ts`): Klatt's duration rules (stress, phrase-final lengthening, function words
-   shorter...), then the pitch: a slow fall across each phrase, a rise-fall accent on content words, and a phrase-end
-   tune (statement falls, yes/no question rises, comma lifts a little). Out comes a `Timeline`: segments, a pitch and
-   loudness track, and each word's start/end (what the dialog box will type along to).
-3. **The voice** (`frames.ts`, `klatt.ts`, `phonemes.ts`): every 5 ms the formant targets glide between sounds; a
-   glottal pulse plus breath and hiss noise runs through a Klatt cascade/parallel filter bank, sample by sample.
-   Each line is leveled to the same speech loudness (a child's voice would otherwise be ~6 dB hotter), then the
-   delivery's gain. Deterministic (seeded).
-4. **Playback** (`play.ts`, `VoicePlayer` on `Sfx.voice`, its own bus): a gentle low-pass (warmth) and a short dark
-   room (`SOFT_CHAIN`). One line at a time; `stop(fadeMs)` cuts a line off.
+## The shelved speech synth (`labs/speech/`, `labs/voices.ts`)
 
-`speak(text, voice, delivery)` in `voice.ts` runs 1–3. A 3–8 s line renders in 6–35 ms.
-
-**A voice** is a `VoiceProfile` (pitch, range, tract size, breathiness, tilt, open quotient, rate, tremor, jitter,
-shimmer; presets `PRESET_VOICES`: woman, oldWoman, man, child) and a line's **delivery** is a `Delivery`, offsets that
-suit any voice (`DELIVERIES`: neutral, worried, dry, excited, soft, shake). NPC profiles will live in content (queue 6).
-The knobs that matter most by ear: `tilt` (darkness), `breathiness`, `baseF0`/`rangeSemis`, `rate`, `tractScale`; in
-code, the accent heights in `prosody.ts` `melody()` and the per-phoneme dB levels in `phonemes.ts`.
-
-**Tuning by ear**: `npm run dev`, then <http://localhost:5273/voices.html> (dev only; the build ships only `index.html`).
-The three trial lines (Maren `oldWoman`·`worried`, Tobin `man`·`dry`, Pip `child`·`excited`, all preset values; the owner
-heard them and approved them as they are, 2026-11-04) and a free line, sliders for every parameter, the pitch
-curve with word labels, each word's phonemes (red = guessed by rules, so it needs an entry in `names.ts`), and "Copy
-values" to paste a tuned voice back into code.
-
-**New words**: after adding player text, run `npm run lexicon` (downloads CMUdict once into `node_modules/.cache/`,
-rewrites `lexicon.ts`; never edit that file). The coverage test in `phonemize.test.ts` lists any word that only the rules
-know: add invented names to `names.ts`. CMUdict's credit is in `CREDITS.md`.
-
-**In the game** (queue 5): `content/voices.ts` maps a page's `who` ("Tobin the Miller" counts as Tobin) to a profile and default
-delivery; pages without a known speaker stay silent. `Dialog.openPage` renders the line (`speak`), plays it with `Sfx.speak`
-(a Voice volume slider; the music ducks 4 dB while it plays) and gives the HUD a `reveal` function, so the box types each
-word's letters across its `timeline.words` span (`revealAt`; the old 55 chars/s pace stays for silent pages). The skip button
-shows the whole page at once and the voice runs on; the next page, the end of the talk, a choice (`api.choose`, picking from an
-`ask` list), the pause menu or a death cuts it (80 ms fade). A page wrapped whole in `[soft]`/`[shake]` uses that delivery
-instead of the speaker's; a tag around part of a page does nothing to the voice yet. `Area.voiceRoom` (outdoors dry, house,
-dungeon bigger; `ROOMS` in `play.ts`) sets the room send and the impulse length; no area is a "house" yet (the mill is in the overworld).
-
-Not built yet: per-place nasal zeros, linking and glottal stops between words, emphasis on a chosen word.
+Formant speech from text, built 2026-11-04 and shelved the same day because its sound was creepy. Nothing in the game imports it
+(so the build leaves it out); its tests still run. It stays intact in case a character ever needs a real, odd voice (a ghost, a
+machine). Pipeline: `phonemize` (CMUdict via `lexicon.ts`, `names.ts`, `letters.ts`) → `prosody` (timing, melody, a `Timeline` with
+word times) → `frames` + `klatt` (formant synth) → `play.ts` (`VoicePlayer`, the softened chain). `speak(text, voice, delivery)` in
+`voice.ts` runs it; profiles and deliveries in `profile.ts`. Its bench: <http://localhost:5273/src/labs/voices.html>. New words:
+`npm run lexicon` rewrites `labs/speech/lexicon.ts` (never edit it); CMUdict's credit is in `CREDITS.md`.
 
 **Murmurbuds** (`budTap(growth)`, `nuhUh`, `budOpen`): a soft triangle knock that climbs with
 the bud's growth; "nuh-uh", two falling square blips (G4 then D4); a rising A-major arpeggio

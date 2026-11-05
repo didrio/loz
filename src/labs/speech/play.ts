@@ -5,7 +5,7 @@
  * scratch script can render a line through it offline to a WAV.
  */
 
-import { impulse } from '../synth';
+import { impulse } from '../../core/synth';
 
 export interface VoiceChain {
   /** Low-pass cutoff in Hz: lower is warmer and duller. */

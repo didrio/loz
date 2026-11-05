@@ -21,14 +21,13 @@ dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things 
 1. ~~Boss hazards end with the boss~~ done 2026-11-04 (`Boss.die` clears `Hazards`; unplayed).
 2. ~~The shrine respawn count~~ done 2026-11-04: `shrine-keys` passes (the 39-vs-38 no longer reproduces; cause unknown, likely a
    stale count in an older run). A unit test now pins it (`shrine.test.ts`). The full suite is still to run once (owner's OK).
-3. ~~NPC voices: the speech synth~~ done 2026-11-04; the owner heard the trial voices and approved them ([audio.md](audio.md), "Voices").
+3. ~~NPC voices: the speech synth~~ done 2026-11-04, then shelved (too creepy; `labs/speech/`, [audio.md](audio.md)).
 4. ~~Dungeon fog and lighting~~ done 2026-11-04 (per-wing fog, per-room override, eased; pit haze, shaft specks; [dungeons.md](dungeons.md)). Unplayed by the owner.
-5. ~~The voice system~~ done 2026-11-04 (voices in content, speak a box, type along, skip rule, `[soft]`/`[shake]` whole-page tags, Voice volume,
-   music ducking, `Area.voiceRoom`; [audio.md](audio.md) "In the game"). Unheard in play: ask the owner about volume, ducking, room.
-   Left: per-phrase delivery tags, a house room, pre-rendering the next page (not needed so far).
-6. **Every NPC voiced**: profiles and line-by-line tuning for Maren, Tobin, Odo, Lark and Pip, with the owner listening
-   (give `/voices.html` a speaker menu that loads all of an NPC's lines, read from content like `textRules.test.ts`
-   does); per-line deliveries where a line needs them; a smoke step that a talk plays voice and the skip rule holds.
+5. ~~The voice system~~ done 2026-11-04, rebuilt as talking blips (the box types, each NPC page blips; Voice volume, music ducking,
+   `Area.voiceRoom`; [audio.md](audio.md) "Talking blips"). Unheard by the owner. Left: per-phrase moods, a house room.
+6. **Blip loose ends** (small; per character, never line by line, owner's call 2026-11-04): tweak a character's voice only if the owner
+   asks (`/blips.html`, values in `content/voices.ts`); a smoke step that a talk blips and the skip rule holds; a whole-page
+   `[soft]`/`[shake]` only where a line clearly needs it. Fold into the next session that touches dialog.
 7. **Blight scars and routing** (was C8; owner's ask, 2026-11-04; **plan mode**: it's level design across the valley). While the
     blight lies on the valley: jagged violet **scars** streak the ground (not in the village, not in water) and hurt exactly
     like a thorn clump (`THORN_ATTACK`: same damage, same shove), and they can't be destroyed. **Thorn clumps become
