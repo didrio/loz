@@ -3,12 +3,14 @@
  * gamepad all drive the same code and on-screen prompts can show the right button.
  */
 
+import type { TouchPad } from './touch';
+
 export type Action =
   | 'attack' | 'shield' | 'jump' | 'lock' | 'interact'
   | 'confirm' | 'cancel' | 'pause' | 'menuUp' | 'menuDown' | 'menuLeft' | 'menuRight' | 'tabPrev' | 'tabNext'
   | 'flask1' | 'flask2' | 'item';
 
-export type Device = 'keyboard' | 'gamepad';
+export type Device = 'keyboard' | 'gamepad' | 'touch';
 
 /** `KeyboardEvent.code`s, plus `Mouse0` (left) / `Mouse2` (right). */
 const KEYS: Record<Action, string[]> = {
@@ -68,10 +70,19 @@ const PAD_GLYPH: Record<Action, string> = {
   confirm: 'A', cancel: 'B', pause: 'Start', menuUp: '↑', menuDown: '↓', menuLeft: '←', menuRight: '→', tabPrev: 'LB', tabNext: 'RB', flask1: '←', flask2: '→', item: 'Y',
 };
 
+/** Touch: the on-screen buttons' names (ui/touch.ts). Menus are tapped, so their keys never show. */
+const TOUCH_GLYPH: Record<Action, string> = {
+  attack: 'Sword', shield: 'Shield', jump: 'Jump', lock: 'Lock', interact: 'Talk',
+  confirm: 'Tap', cancel: '✕', pause: '☰', menuUp: '↑', menuDown: '↓', menuLeft: '←', menuRight: '→', tabPrev: '‹', tabNext: '›', flask1: 'Flask', flask2: 'Flask', item: 'Glove',
+};
+
 /** The button label to show for an action on a device. */
 export function glyph(action: Action, device: Device) {
-  return (device === 'gamepad' ? PAD_GLYPH : KEY_GLYPH)[action];
+  return (device === 'gamepad' ? PAD_GLYPH : device === 'touch' ? TOUCH_GLYPH : KEY_GLYPH)[action];
 }
+
+/** Radians of camera turn per pixel of touch drag (before the stick sensitivity setting). */
+const TOUCH_LOOK = 0.006;
 
 export const ACTIONS = Object.keys(KEYS) as Action[];
 
@@ -102,9 +113,14 @@ export class Input {
   mouseSensitivity = 1;
   stickSensitivity = 1;
   invertY = false;
+  /** The on-screen controls (core/touch.ts), when this is a touch device. */
+  touch: TouchPad | null = null;
+  /** When a finger last landed: browsers follow a tap with a pretend mouse click, which isn't the mouse. */
+  private lastTouchAt = -Infinity;
 
   constructor(private canvas: HTMLCanvasElement) {
     window.addEventListener('keydown', (e) => {
+      if (e.code === 'MetaLeft' || e.code === 'MetaRight') return; // an iPad's keyboard shortcuts shouldn't hide the touch controls
       if (['Space', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
       if (!e.repeat) this.keysPressed.add(e.code);
       this.keysHeld.add(e.code);
@@ -112,7 +128,11 @@ export class Input {
     });
     window.addEventListener('keyup', (e) => this.keysHeld.delete(e.code));
     window.addEventListener('blur', () => this.keysHeld.clear());
+    window.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch') this.lastTouchAt = performance.now();
+    }, { capture: true });
     canvas.addEventListener('mousedown', (e) => {
+      if (performance.now() - this.lastTouchAt < 1000) return;
       this.keysHeld.add('Mouse' + e.button);
       this.keysPressed.add('Mouse' + e.button);
       this.device = 'keyboard';
@@ -168,14 +188,14 @@ export class Input {
     if (a === 'menuDown' && this.stickNavPressed === 1) return true;
     if (a === 'menuLeft' && this.stickNavXPressed === -1) return true;
     if (a === 'menuRight' && this.stickNavXPressed === 1) return true;
-    return KEYS[a].some((k) => this.keysPressed.has(k)) || PAD[a].some((b) => this.padPressed.has(b));
+    return KEYS[a].some((k) => this.keysPressed.has(k)) || PAD[a].some((b) => this.padPressed.has(b)) || !!this.touch?.pressed(a);
   }
 
   /** True while the action is held. */
   held(a: Action) {
     if (a === 'menuLeft' && this.stickNavX === -1) return true;
     if (a === 'menuRight' && this.stickNavX === 1) return true;
-    return KEYS[a].some((k) => this.keysHeld.has(k)) || PAD[a].some((b) => this.padHeld.has(b));
+    return KEYS[a].some((k) => this.keysHeld.has(k)) || PAD[a].some((b) => this.padHeld.has(b)) || !!this.touch?.held(a);
   }
 
   /** True on the frame the left mouse button was clicked on the canvas. */
@@ -186,8 +206,9 @@ export class Input {
   /** Movement intent: x = right, y = forward, length at most 1. */
   move() {
     const k = (code: string) => (this.keysHeld.has(code) ? 1 : 0);
-    let x = k('KeyD') - k('KeyA') + this.leftStick.x;
-    let y = k('KeyW') - k('KeyS') - this.leftStick.y;
+    const t = this.touch?.stick ?? { x: 0, y: 0 };
+    let x = k('KeyD') - k('KeyA') + this.leftStick.x + t.x;
+    let y = k('KeyW') - k('KeyS') - this.leftStick.y - t.y;
     const len = Math.hypot(x, y);
     if (len > 1) {
       x /= len;
@@ -202,6 +223,11 @@ export class Input {
     const stick = this.stickSensitivity;
     let yaw = (k('ArrowLeft') - k('ArrowRight')) * 2.2 * dt - this.rightStick.x * 2.8 * dt * stick;
     let pitch = (k('ArrowDown') - k('ArrowUp')) * 1.2 * dt + this.rightStick.y * 1.6 * dt * stick;
+    if (this.touch) {
+      const d = this.touch.look;
+      yaw -= d.x * TOUCH_LOOK * stick;
+      pitch += d.y * TOUCH_LOOK * 0.7 * stick;
+    }
     if (this.locked) {
       yaw -= this.mouseDX * 0.0028 * this.mouseSensitivity;
       pitch += this.mouseDY * 0.002 * this.mouseSensitivity;
@@ -220,6 +246,7 @@ export class Input {
     this.padPressed.clear();
     this.stickNavPressed = 0;
     this.stickNavXPressed = 0;
+    this.touch?.endFrame();
     this.mouseDX = 0;
     this.mouseDY = 0;
   }

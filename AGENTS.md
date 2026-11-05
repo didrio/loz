@@ -19,13 +19,12 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine**
-through **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the
-valley: violet **scars** seep from the gate (hurt underfoot, jumpable) and **thorn clumps** grow along them (hurt to touch, 5 sword hits fell one
-for good); 3 thornlings guard the grove road. After it, only Lark and Pip remain in the village, and the Morrowbell lies by the windmill's north flank.
-Player text is terse and tagged (`textRules.test.ts`); the HUD has a sky dial and a compass strip. **NPCs talk in blips** (`core/blips.ts`,
-`content/voices.ts`, `/blips.html`); the speech synth is shelved in `labs/speech/`. Unplayed by the owner: most of the 2026-11-04 batch (day/night,
-the Lamplighter's dawn, the bell hunt, Settings, surfing, the gate, D3, the prism, dungeon fog, the lost bell's new spot, the silent gate vision) and the scars, cutting and guards.
+As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
+**Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the valley (violet
+**scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
+tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`); the speech synth is shelved (`labs/speech/`). **Touch controls** (phones and
+tablets, landscape; [engine.md](docs/engine.md)) are untried on a real device: a friend is playtesting them on GitHub Pages. Unplayed by the owner:
+most of the 2026-11-04 batch (day/night, the bell hunt, Settings, surfing, the gate, D3, the prism, dungeon fog, the scars, cutting and guards).
 **Next:** the queue in the roadmap, from 8 (the inventory tab; no plan mode). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
@@ -115,6 +114,7 @@ src/
   main.ts                  boot: init Rapier, create Game, expose window.embervale (dev/?debug)
   core/                    engine-level, no game knowledge
     physics.ts, input.ts   Rapier wrapper (layers, colliders, Character, queries); actions, bindings, glyphs
+    touch.ts               touch controls' logic: fingers → stick, camera drag, buttons, the shield's flick (pure)
     director.ts, save.ts   game-time waits/tweens for scripts; save format, migrations, KeyValueStore, settings
     audio.ts, math.ts      sound effects + the song per mood; noise, easing, angles, seeded RNG
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
@@ -158,6 +158,7 @@ src/
     devStates.ts, fakeApi.ts   the Dev tab's save states; the fake ScriptApi content tests run against
   ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title
        richText.ts          text tags `[gear]…[/]` → spans, tag checks (the content text rules test uses it)
+       touch.ts             the on-screen controls (phones/tablets, landscape; detection, layout, rotate card)
        skyDial.ts, compass.ts   the clock's sky dial (sun and moon over the ground); the compass strip
 scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers

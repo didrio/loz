@@ -206,6 +206,27 @@ Gamepad A both talks and jumps: the game checks `interact` first (the classic co
 action button). The HUD shows glyphs for the last-used device. In dialog text, `[attack]`
 renders the right button and `*word*` highlights.
 
+### Touch controls (`core/touch.ts`, `ui/touch.ts`)
+
+Phones and tablets, **landscape only** (portrait shows a "Turn your device sideways" card and the game waits).
+They appear only when the device's main pointer is a finger (`matchMedia('(pointer: coarse) and (hover: none)')`),
+so desktops and touchscreen laptops never see them; `?touch=1` / `?touch=0` force them on or off. The overlay
+shows while the device is `touch`: a key press or a gamepad hides it, the next touch brings it back.
+
+- **Left 45% of the screen: a floating stick** where the thumb lands (its centre follows a thumb that slides past
+  the rim). **Elsewhere: drag to turn the camera** (`TOUCH_LOOK` rad/px × the stick sensitivity).
+- **Buttons, bottom right:** Sword; Jump, which reads the interactable's label ("Talk", "Open") in reach and
+  presses both `jump` and `interact` like gamepad A; Shield (hold), where a **flick up** (≥ 26 px within 0.25 s)
+  presses `jump` with the shield still held: the surf, one thumb (owner's pick, 2026-11-04); Lock; Glove (once owned).
+  Sword and Shield only show once Wren has them.
+- **HUD taps:** title rows, the ☰ hint (`pause`), the flask and glove icons, a ✕ on every menu (closes the pause
+  menu, or `cancel`), dialog choices. In dialog, a tap anywhere reads on (`confirm`).
+- A finger keeps its job (stick, look, a button) until it lifts, wherever it slides. `core/touch.ts` is pure
+  (unit-tested); `ui/touch.ts` draws and hit-tests and gets a `TouchContext` from the game each frame.
+- Browsers follow a tap with a pretend mouse click: `Input` ignores mouse presses within 1 s of a touch.
+- iOS: no fullscreen API on iPhone; "Add to Home Screen" plays fullscreen (meta tags in `index.html`). Audio
+  starts on the first lifted finger (`sfx.init()` inside the touch event, which iOS requires).
+
 **Interact prompt**: the nearest enabled interactable in reach gets a floating prompt over
 it (button glyph + its `label`, e.g. "E Talk"), positioned every frame by projecting the
 interactable's `promptY` (a world height set by the area; default just above Wren's head)

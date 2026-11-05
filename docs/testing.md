@@ -22,7 +22,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   task, only the scenarios that cover it (table below); the full suite at a milestone's
   end, before a commit, or after shared systems (player, physics, camera, saves, game.ts)
   changed, asking the owner first. CI runs everything on every push anyway.
-- `npm run look -- <scenes>` (`--list` for names: title, field, village, villageDetails (well, cottage fronts, mill doorstep, night lighting), mill (incl. its room), grove, chest,
+- `npm run look -- <scenes>` (`--list` for names: title, touch (desktop without controls; phone title, play, stick, dialog, pause; tablet; portrait card), field, village, villageDetails (well, cottage fronts, mill doorstep, night lighting), mill (incl. its room), grove, chest,
   door, dungeon, camera, glove, landmarks, buds, bells, bellShaft, gorge, shrine, enemies, hollow, night, guard, shield, surf, orbs, boss, boss-moves, gravelheart, gravelheart2, gate, northpass, camp, wardenIntro, seal, blight, emptyVillage, hud (the sky dial through the day, the compass), choice (the choice window over a dialog question, and the script menu), text (text boxes: the longest note, two place signs, a sigil and its toast), lostBell (the Morrowbell by the windmill), thorns (a thicket and its gap, a lone clump, the lone oak, the scars: the spine, the gate's pool, the west vein, the grove's guard post)): captures named scenes to
   `look-output/` for you to inspect. Boss scenes slow time, make Wren invulnerable, park
   the camera and force moves. Add a scene when you add a place, a boss or a visual system.
@@ -58,10 +58,11 @@ has the `openGame` helpers from `scripts/browser.mjs` plus `step(title, fn)` and
 | `northpass` | `northpass` | the Cragstalker stands on the canyon's far side once the region is built; a fall in the crossing returns Wren to the last ledge (half a heart); it lunges at Wren; taking the Waybell, hanging it at the camp, the travel menu offers both other bells and Morrowbell → Wayfarers' Camp arrives at its post; back in Thistledown only Lark and Pip remain, Pip asks Wren to find the grown-ups, Odo's stall refills a flask unattended |
 | `bells` | `field-sword` | the empty Thistledown post, hanging the Morrowbell (nothing answers), the travel menu to the shrine's post and back, Stay, hearts unchanged; the village bell taken off after the boss (Lullbell rings alone), found behind the mill and rehung (menu returns) |
 | `hints` | `field-sword` | P pauses on a lone Settings tab, a slider changes and saves, lock-on holds a Murmurbud, mashing overloads it, a strike-and-rest rhythm opens it (not read yet), E reads the floating note (gone, kept), the Hints tab lists and shows it, a read sigil adds a Messages tab |
+| `touch` | `field-sword` | on a landscape phone (`?touch=1`, CDP multi-touch): the title takes a tap, the stick walks, Sword swings, Shield + flick up surfs (the flick window is widened: headless frames are slow), Jump reads Talk near Lark and opens her talk, taps read on, ☰ and ✕ open and close the pause menu, a key hides the controls and the next touch brings them back |
 | `jars` | `field-sword` | a sword swing breaks an empty jar in a ruin (flag `jar.<id>` saved, no pickup) and the blue gem jar (a gem is collected); the doll jar, then Pip takes the doll back for 20 gems |
 
 **Fixtures** are real saves in `scripts/fixtures/<name>.json` (current `SAVE_VERSION`).
-`openGame(env, dir, { fixture })` plants the file in the page's localStorage before the game
+`openGame(env, dir, { fixture, touch })` (`touch`: an 844×390 phone page with touch, at `?touch=1`; a scenario opts in with `export const touch = true`) plants the file in the page's localStorage before the game
 boots (only if the slot is empty, so a reload keeps what the game saved), so the title shows
 Continue; `continueGame()` boots and presses it. No game code is involved. A unit test
 (`src/core/fixtures.test.ts`) requires every fixture to decode unchanged through `decodeSave`

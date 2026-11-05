@@ -15,6 +15,8 @@ export class TitleMenu {
   private t = 0;
   private items: MenuItem[];
   private selected = 0;
+  /** A row tapped or clicked since the last frame: it's chosen, as if selected and confirmed. */
+  private tapped: number | null = null;
 
   constructor(private readonly hud: Hud, private readonly sfx: Sfx, hasSave: boolean) {
     this.items = hasSave ? ['continue', 'new'] : ['new'];
@@ -36,7 +38,13 @@ export class TitleMenu {
       this.sfx.select();
       this.render();
     }
-    if (!input.pressed('confirm')) return null;
+    const tapped = this.tapped;
+    this.tapped = null;
+    if (tapped !== null && tapped !== this.selected) {
+      this.selected = tapped;
+      if (this.items.includes('confirmNew')) this.items = this.items.map((i) => (i === 'confirmNew' ? 'new' : i));
+    }
+    if (tapped === null && !input.pressed('confirm')) return null;
     this.sfx.init();
     const choice = this.items[this.selected];
     if (choice === 'new' && this.items.includes('continue')) {
@@ -46,6 +54,11 @@ export class TitleMenu {
       return null;
     }
     return choice === 'continue' ? 'continue' : 'new';
+  }
+
+  /** A tap or click on row `i`. */
+  click(i: number) {
+    if (i >= 0 && i < this.items.length) this.tapped = i;
   }
 
   private render() {

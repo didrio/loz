@@ -88,6 +88,9 @@ export class Hud {
   onMenuAdjust: (i: number, dir: -1 | 1) => void = () => {};
   onMenuSlide: (i: number, fraction: number) => void = () => {};
   onMenuTab: (i: number) => void = () => {};
+  /** A tap on a title row; a tap on a HUD icon that stands for a button (☰, a flask, the glove, a menu's ✕). */
+  onTitleClick: (i: number) => void = () => {};
+  onTap: (a: Action) => void = () => {};
   /** The slider being dragged: its row and the track's box when the drag began. */
   private drag: { row: number; left: number; width: number } | null = null;
   private bossTitle: HTMLElement;
@@ -141,6 +144,11 @@ export class Hud {
           <div><b>E</b> talk · open · read</div><div><b>P</b> pause · <b>M</b> music on/off</div>
           <div class="pad-note">Gamepads work too.</div>
         </div>
+        <div class="controls-touch">
+          <div><b>Left thumb</b> move</div><div><b>Right thumb</b> drag the camera</div>
+          <div><b>Hold Shield</b> guard</div><div><b>Shield, flick ↑</b> jump with it</div>
+          <div><b>☰</b> pause</div><div><b>Tap</b> read on</div>
+        </div>
       </div>
       <div class="gmenu hidden"></div>
       <div class="debug hidden"></div>`;
@@ -153,11 +161,21 @@ export class Hud {
     this.gems = q('.gem-count');
     this.keys = q('.keys');
     this.drinks = q('.drinks');
+    this.drinks.addEventListener('click', (e) => {
+      const d = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
+      if (d) this.onTap(d.dataset.action as Action);
+    });
     this.prompt = q('.prompt');
     this.clock = q('.clock-text');
     this.dial = new SkyDial(q('.clock'));
     this.compass = new Compass(q('.compass'));
     this.menuHint = q('.menu-hint');
+    this.menuHint.addEventListener('click', () => this.onTap('pause'));
+    this.menu = q('.menu');
+    this.menu.addEventListener('click', (e) => {
+      const r = (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
+      if (r) this.onTitleClick(Number(r.dataset.row));
+    });
     this.renderMenuHint();
     this.actions = q('.actions');
     this.area = q('.area');
@@ -175,7 +193,6 @@ export class Hud {
     });
     this.card = q('.card');
     this.title = q('.title');
-    this.menu = q('.menu');
     this.fade = q('.fade');
     this.toast = q('.toast');
     this.debug = q('.debug');
@@ -187,6 +204,8 @@ export class Hud {
     });
     this.gmenu.addEventListener('click', (e) => {
       const el = e.target as HTMLElement;
+      const close = el.closest<HTMLElement>('[data-close]');
+      if (close) return this.onTap(close.dataset.close as Action);
       const tab = el.closest<HTMLElement>('[data-tab]');
       if (tab) return this.onMenuTab(Number(tab.dataset.tab));
       const arrow = el.closest<HTMLElement>('[data-dir]');
@@ -232,6 +251,7 @@ export class Hud {
     if (d === this.device) return;
     this.device = d;
     this.el.classList.toggle('gamepad', d === 'gamepad');
+    this.el.classList.toggle('touch', d === 'touch');
     this.renderTyping();
     this.renderMenuHint();
     this.lastActionsHtml = '';
@@ -254,7 +274,7 @@ export class Hud {
 
   setTitleMenu(items: string[], selected: number) {
     this.menu.innerHTML = items
-      .map((it, i) => `<div class="menu-item${i === selected ? ' selected' : ''}">${escape(it)}</div>`)
+      .map((it, i) => `<div class="menu-item${i === selected ? ' selected' : ''}" data-row="${i}">${escape(it)}</div>`)
       .join('');
   }
 
@@ -288,7 +308,9 @@ export class Hud {
       const help = `${view.tabs && view.tabs.labels.length > 1 ? `${this.key('tabPrev')}${this.key('tabNext')} tabs · ` : ''}${this.key('menuUp')}${this.key('menuDown')} move · ${
         view.adjustable ? `${this.key('menuLeft')}${this.key('menuRight')} change · ` : ''
       }${view.tabs ? `${this.key('pause')} close` : `${this.key('confirm')} choose · ${this.key('cancel')} back`}`;
-      html = `<div class="gmenu-panel${view.tabs ? ' wide' : ''}${view.compact ? ' compact' : ''}">${tabs}${content}<div class="gmenu-help">${help}</div></div>`;
+      // Touch has no back key: a ✕ in the corner (closes the pause menu, or backs out of anything else).
+      const close = `<div class="gmenu-close" data-close="${view.tabs ? 'pause' : 'cancel'}">✕</div>`;
+      html = `<div class="gmenu-panel${view.tabs ? ' wide' : ''}${view.compact ? ' compact' : ''}">${close}${tabs}${content}<div class="gmenu-help">${help}</div></div>`;
     }
     if (html === this.gmenuHtml) return;
     const oldScroll = this.gmenu.querySelector('.gmenu-list')?.scrollTop ?? 0;
@@ -391,12 +413,12 @@ export class Hud {
    * shown under the item row while it lasts.
    */
   setFlasks(slots: readonly (Potion | null)[], boost: number, glove = false) {
-    const item = glove ? `<div class="drink" title="Tether Glove">${gloveIcon}${this.key('item')}</div>` : '';
+    const item = glove ? `<div class="drink" data-action="item" title="Tether Glove">${gloveIcon}${this.key('item')}</div>` : '';
     const bar = boost > 0 ? `<span class="boost"><span style="width:${Math.round(boost * 100)}%"></span></span>` : '';
     const html = item + slots.map((p, i) => {
       const action: Action = i === 0 ? 'flask1' : 'flask2';
       const title = p ? POTIONS[p].name : 'Empty flask';
-      return `<div class="drink${p ? '' : ' empty'}" title="${escape(title)}">${bottle(p ? POTIONS[p].color : 'rgba(205, 230, 238, 0.35)')}${this.key(action)}</div>`;
+      return `<div class="drink${p ? '' : ' empty'}" data-action="${action}" title="${escape(title)}">${bottle(p ? POTIONS[p].color : 'rgba(205, 230, 238, 0.35)')}${this.key(action)}</div>`;
     }).join('') + bar;
     if (html === this.drinksHtml) return;
     this.drinksHtml = html;

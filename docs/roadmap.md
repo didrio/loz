@@ -29,6 +29,8 @@ dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things 
    asks (`/blips.html`, values in `content/voices.ts`); a smoke step that a talk blips and the skip rule holds; a whole-page
    `[soft]`/`[shake]` only where a line clearly needs it. Fold into the next session that touches dialog.
 7. ~~Blight scars and routing~~ done 2026-11-04 ([world.md](world.md), "The blight"; unplayed).
+7.5. ~~Touch controls~~ done 2026-11-04 (owner's ask, for a friend's playtest; [engine.md](engine.md) "Touch controls"). Tune by
+   their report: the flick (`FLICK_DISTANCE/TIME`), camera drag (`TOUCH_LOOK`), button sizes; lower default sharpness on touch if phones run slow.
 8. **The inventory tab** in the pause menu (milestone 2 below).
 
 Later, not yet in the queue: an **SFX pass** (owner's ask, 2026-11-04), and the rescue quests for Maren, Tobin and Odo
@@ -127,7 +129,7 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
   (`loadArea`, `travel`, respawn) and the HUD feed in `updateWorld`. *Trigger: it passes
   ~700 lines, or the inventory/settings pages land.* (2026-11-03: the pause menu's notes page
   landed in its own modules, `pauseMenu.ts` and `buds.ts`, and game.ts only went 594 → 604, so the
-  split waited.)
+  split waited. 2026-11-04: 696 lines after the touch wiring; the inventory tab will fire it.)
 - [ ] **Split content per area and topic**: `content/overworld.ts` → `content/overworld/`
   (village NPCs, the hollow, the shrine...). *Trigger: a content file passes ~500 lines.* (2026-11-03, S1: the
   village's NPCs and opening moved out to `content/village.ts`, overworld.ts 447 → 305 lines; the hollow is next out.)

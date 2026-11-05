@@ -13,7 +13,7 @@
 // Exits non-zero if a step fails or a page logs an error. See docs/testing.md.
 import { launch, openGame } from './browser.mjs';
 
-const SCENARIOS = ['full', 'combat', 'shrine-puzzle', 'shrine-keys', 'shrine-exit', 'shrine-enemies', 'shrine-glove', 'shrine-boss', 'village', 'dev-menu', 'bells', 'trials', 'gorge', 'northpass', 'hints', 'jars'];
+const SCENARIOS = ['full', 'combat', 'shrine-puzzle', 'shrine-keys', 'shrine-exit', 'shrine-enemies', 'shrine-glove', 'shrine-boss', 'village', 'dev-menu', 'bells', 'trials', 'gorge', 'northpass', 'hints', 'jars', 'touch'];
 const CONCURRENCY = 3;
 
 const wanted = process.argv.slice(2);
@@ -32,7 +32,7 @@ async function runScenario(env, name) {
   let failed = false;
   const mod = await import(`./smoke/${name}.mjs`);
   const outDir = new URL(`../smoke-output/${name}/`, import.meta.url).pathname;
-  const g = await openGame(env, outDir, { fixture: mod.fixture ?? undefined });
+  const g = await openGame(env, outDir, { fixture: mod.fixture ?? undefined, touch: !!mod.touch });
   const step = async (title, fn) => {
     try {
       await fn();

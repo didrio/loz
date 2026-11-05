@@ -47,6 +47,78 @@ const SCENES = {
     await h.boot();
     await h.shot('title');
   },
+  /**
+   * The touch controls (ui/touch.ts): none on desktop; on a landscape phone the title, play near Lark (Jump reads
+   * Talk), the stick under a thumb, dialog, the pause menu; then a tablet, and the "turn sideways" card in portrait.
+   */
+  async touch(h) {
+    const kit = () => h.game(() => {
+      const g = window.embervale;
+      for (const f of ['hasSword', 'village.surfIdea']) g.state.set(f);
+      g.player.setSword(true);
+      g.state.items.add('tether');
+      g.state.flasks.slots.splice(0, 2, 'life', 'attack');
+    });
+    const nearLark = async () => {
+      const p = await h.game(() => {
+        const it = window.embervale.area.interactables.find((i) => i.id === 'npc.lark');
+        return { x: it.x, z: it.z };
+      });
+      await h.teleport(p.x + 1.6, p.z + 1.2, -Math.PI / 2);
+    };
+    await h.newGame();
+    await kit();
+    await nearLark();
+    await h.wait(1200);
+    await h.shot('desktop');
+    await h.game(() => window.embervale.save());
+
+    const url = h.page.url().split('?')[0];
+    await h.page.setViewportSize({ width: 844, height: 390 });
+    await h.page.goto(`${url}?touch=1`);
+    await h.until(() => window.embervale?.mode === 'title', 60000);
+    await h.wait(800);
+    await h.shot('phone-title');
+    await h.game(() => window.embervale.input.touch.tap('confirm'));
+    await h.until(() => window.embervale.mode === 'play', 60000);
+    await kit();
+    await nearLark();
+    await h.wait(1500);
+    await h.shot('phone');
+    // A thumb on the stick, the shield held.
+    await h.game(() => {
+      const t = window.embervale.input.touch;
+      t.down(90, 170, 290, 0, { kind: 'stick' });
+      t.move(90, 200, 255, 0.1);
+      t.down(91, 700, 340, 0, { kind: 'button', actions: ['shield'] });
+    });
+    await h.wait(400);
+    await h.shot('phone-stick');
+    await h.game(() => window.embervale.input.touch.clear());
+    await nearLark();
+    await h.wait(500);
+    await h.game(() => window.embervale.input.touch.tap('interact'));
+    await h.until(() => window.embervale.mode === 'cutscene', 10000);
+    await h.wait(2500);
+    await h.shot('phone-dialog');
+    for (let i = 0; i < 40 && (await h.game(() => window.embervale.mode)) === 'cutscene'; i++) {
+      await h.game(() => window.embervale.input.touch.tap('confirm'));
+      await h.wait(300);
+    }
+    await h.game(() => window.embervale.input.touch.tap('pause'));
+    await h.until(() => window.embervale.pauseMenu.isOpen, 5000);
+    await h.wait(400);
+    await h.shot('phone-pause');
+    await h.game(() => window.embervale.input.touch.tap('pause'));
+    await h.until(() => !window.embervale.pauseMenu.isOpen, 5000);
+
+    await h.page.setViewportSize({ width: 1180, height: 820 });
+    await h.wait(1200);
+    await h.shot('tablet');
+    await h.page.setViewportSize({ width: 390, height: 844 });
+    await h.wait(800);
+    await h.shot('portrait');
+  },
   /** The blight (game/blight.ts): sick field by day and night, the village, mid-lift, and the restored valley. */
   async blight(h) {
     await h.newGame();

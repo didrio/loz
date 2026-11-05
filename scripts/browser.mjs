@@ -31,9 +31,12 @@ export async function launch() {
  * A page plus helpers for driving the game. Headless rendering is slow and game time runs
  * slower than real time there, so helpers wait on game state, never on fixed delays.
  */
-export async function openGame(env, outDir, { fixture } = {}) {
+export async function openGame(env, outDir, { fixture, touch = false } = {}) {
   await mkdir(outDir, { recursive: true });
-  const page = await env.browser.newPage({ viewport: { width: 1280, height: 720 } }); // its own storage
+  // `touch`: a landscape phone with the on-screen controls (ui/touch.ts, forced on with ?touch=1).
+  const page = await env.browser.newPage(
+    touch ? { viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true } : { viewport: { width: 1280, height: 720 } },
+  ); // its own storage
   if (fixture) {
     // Plant the save (scripts/fixtures/<name>.json) before the game boots, so the title menu
     // offers Continue. Only if the slot is empty: later reloads keep what the game saved.
@@ -91,7 +94,7 @@ export async function openGame(env, outDir, { fixture } = {}) {
     }, [x, z, facing, fromY]);
   /** Loads the page and waits for the title menu. */
   const boot = async () => {
-    await page.goto(env.url);
+    await page.goto(touch ? `${env.url}?touch=1` : env.url);
     await until(() => window.embervale?.mode === 'title', 60000);
     await wait(800);
   };

@@ -31,6 +31,7 @@ import { NO_CONTROLS, Player, type Controls } from './player';
 import type { Page, Script, ScriptApi } from './script';
 import { GameState, dayTurn } from './state';
 import { TitleMenu } from './title';
+import { TouchControls, type TouchContext } from '../ui/touch';
 
 /**
  * - title: the menu over a slow camera orbit
@@ -85,6 +86,8 @@ export class Game implements ScriptApi {
   private fadeValue = 0;
   private autosaveT = AUTOSAVE_SECONDS;
   private readonly title: TitleMenu;
+  /** The on-screen controls (phones and tablets only; ui/touch.ts). */
+  private readonly touch: TouchControls;
   readonly pauseMenu: PauseMenu;
   readonly buds: BudSystem;
   /** Script menus (`choose`): the bells' travel menu. */
@@ -108,6 +111,7 @@ export class Game implements ScriptApi {
     this.resize();
 
     this.input = new Input(canvas);
+    this.touch = new TouchControls(this.input, document.getElementById('hud')!, () => this.sfx.init());
     this.dialog = new Dialog(this.hud, this.sfx, () => this.area.voiceRoom ?? 'outdoors');
     this.sky = new Sky(this.scene);
     this.motes = new Motes(this.scene);
@@ -140,6 +144,8 @@ export class Game implements ScriptApi {
     this.hud.onMenuAdjust = (i, dir) => openMenu()?.adjust(i, dir);
     this.hud.onMenuSlide = (i, fraction) => openMenu()?.slide(i, fraction);
     this.hud.onMenuTab = (i) => this.pauseMenu.setTab(i);
+    this.hud.onTitleClick = (i) => this.title.click(i);
+    this.hud.onTap = (a) => this.input.touch?.tap(a);
   }
 
   start() {
@@ -204,7 +210,7 @@ export class Game implements ScriptApi {
     this.combat.hitStop -= rawDt;
     this.input.poll();
     this.hud.setDevice(this.input.device);
-    const paused = this.pauseMenu.update();
+    const paused = this.touch.blocked || this.pauseMenu.update();
     const dt = frozen || paused ? 0 : rawDt * this.timeScale;
     this.director.update(dt);
     // Platforms move before the player updates, so a rider takes the step along (core/physics.ts carryDelta).
@@ -335,6 +341,17 @@ export class Game implements ScriptApi {
     return at && { ...at, label: near.label };
   }
 
+  /** What the touch controls show: which buttons, and whether a tap reads on or the stick moves Wren. */
+  private touchContext(): TouchContext {
+    const { mode, state } = this;
+    const menu = this.pauseMenu.isOpen || this.choice.isOpen || this.dialog.asking;
+    const near = mode === 'play' ? nearestInteractable(this.area.interactables, this.player.pos) : null;
+    return {
+      mode: mode === 'title' ? 'title' : menu ? 'menu' : mode === 'cutscene' ? 'dialog' : 'play',
+      use: near?.label ?? null, sword: state.has('hasSword'), shield: state.has('hasShield'), tether: state.items.has('tether'), locked: !!this.combat.lock,
+    };
+  }
+
   /** A world point in screen pixels, or null if it's behind the camera. */
   toScreen(p: THREE.Vector3) {
     this.camera.updateMatrixWorld();
@@ -409,6 +426,7 @@ export class Game implements ScriptApi {
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced && !dungeonQuiet(state.area, state));
 
     this.combat.updateMarker(dt);
+    this.touch.setContext(this.touchContext());
 
     if (this.mode !== 'title') {
       const canLook = this.mode === 'play';

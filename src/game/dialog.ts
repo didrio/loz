@@ -89,7 +89,8 @@ export class Dialog {
     this.update(true);
   }
 
-  private get asking() {
+  /** A question's choices are showing. */
+  get asking() {
     return !!this.options && this.pages.length === 1 && this.hud.dialogDone && !this.fresh;
   }
 
