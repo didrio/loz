@@ -16,7 +16,8 @@ import { bellRect, CELL, cellAt, cellCenter, roomGrid, type Cell, type RoomGrid 
 import { buildLandmark } from './landmarks';
 import { FallenColumn } from './bridge';
 import { PULL_RANGE } from './puzzle';
-import { decorateRoom, THEMES, themeOf, type WallSpot } from './decor';
+import { DEFAULT_INDOOR_FOG, type FogLook } from '../../render/sky';
+import { decorateRoom, fogOf, THEMES, themeOf, type WallSpot } from './decor';
 import { WardenHearth } from './hearth';
 import { buildSconce, buildTablet, doorStyle, DungeonDoor, DungeonSwitch, Wakestone } from './pieces';
 
@@ -613,6 +614,14 @@ export class DungeonArea implements Area {
   floorAt(y: number) {
     return Math.round(y / floorHeightOf(this.def));
   }
+
+  /** The fog for where Wren stands: her room's (kept while crossing a doorway, so the fog doesn't flick back). */
+  fogAt(p: THREE.Vector3): FogLook {
+    const room = this.roomAt(p);
+    if (room) this.lastFogRoom = room;
+    return this.lastFogRoom ? fogOf(this.lastFogRoom) : DEFAULT_INDOOR_FOG;
+  }
+  private lastFogRoom: RoomDef | null = null;
 
   /**
    * The room containing a point, or null (doorways and walls belong to no room). `margin`

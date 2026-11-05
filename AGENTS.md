@@ -25,8 +25,8 @@ valley (thorns cost a heart a touch); after it, only Lark and Pip remain in the 
 Player text is terse and tagged (`[gear]`, `[place]`...; `textRules.test.ts`); the HUD has a sky dial and a compass strip. **NPC speech**
 is synthesized in code (`core/speech/`): the owner approved the trial voices on `/voices.html`, but the game doesn't speak yet.
 Unplayed by the owner: the text pass, the choice window, the 10-minute day, Dawn/Nightfall cards, the Lamplighter's dawn burn and rise/gutter,
-the bell hunt, thorns, dial, compass, lone oak, village polish, day/night lighting, Settings, surfing, the gate, D3, the prism.
-**Next:** the queue in the roadmap, from 4 (dungeon fog), then 5 (the voice system: NPCs speak in-game). Dev server: port 5273.
+the bell hunt, thorns, dial, compass, lone oak, village polish, day/night lighting, Settings, surfing, the gate, D3, the prism, dungeon fog.
+**Next:** the queue in the roadmap, from 5 (the voice system: NPCs speak in-game). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 

@@ -43,6 +43,29 @@ function sampleNum(hours: number, field: 'sunI' | 'hemiI') {
   return KEYS[0][field];
 }
 
+/** Fog as data: a colour (hex) and where it starts and ends (meters). */
+export interface FogLook {
+  color: number;
+  near: number;
+  far: number;
+}
+
+/** The fog indoors when an area names none. */
+export const DEFAULT_INDOOR_FOG: FogLook = { color: 0x0a0c10, near: 14, far: 60 };
+
+/** How fast indoor fog eases toward a new room's look (1/s): a crossing takes about a second and a half. */
+export const FOG_EASE = 2.5;
+
+const tmpFog = new THREE.Color();
+
+/** Eases `fog` toward `target` over `dt` seconds; returns nothing, changes `fog`. */
+export function easeFog(fog: THREE.Fog, target: FogLook, dt: number) {
+  const k = 1 - Math.exp(-FOG_EASE * dt);
+  fog.color.lerp(tmpFog.setHex(target.color), k);
+  fog.near += (target.near - fog.near) * k;
+  fog.far += (target.far - fog.far) * k;
+}
+
 /** Sky dome, sun, moon, stars and the lights that follow the time of day. */
 export class Sky {
   readonly sun: THREE.DirectionalLight;
@@ -63,7 +86,10 @@ export class Sky {
   blight = 0;
   /** Indoors: no sky, no sun shadows, a dim warm fill and close dark fog (see `setIndoor`). */
   private indoor = false;
-  private readonly indoorFog = new THREE.Color(0x0a0c10);
+  /** The fog the area asks for indoors (a dungeon room's); the scene's fog eases toward it. */
+  indoorFogTarget: FogLook = DEFAULT_INDOOR_FOG;
+  /** Set by `setIndoor`: the next indoor update snaps to the target instead of easing from the outdoor fog. */
+  private snapFog = false;
   private readonly gloomFog = new THREE.Color(0x120e1c);
   private readonly blightTop = new THREE.Color(0x2a1a3c);
   private readonly blightHorizon = new THREE.Color(0x56345f);
@@ -124,18 +150,25 @@ export class Sky {
 
   setIndoor(on: boolean) {
     this.indoor = on;
+    this.snapFog = on;
     for (const o of [this.dome, this.stars, this.sunDisc, this.moonDisc]) o.visible = !on;
     this.sun.castShadow = !on;
     this.night = 0;
   }
 
-  update(hours: number, focus: THREE.Vector3, camPos: THREE.Vector3) {
+  update(hours: number, focus: THREE.Vector3, camPos: THREE.Vector3, dt = 1 / 60) {
     if (this.indoor) {
       const fog = this.scene.fog as THREE.Fog;
       const g = this.gloom;
-      fog.color.copy(this.indoorFog);
-      fog.near = 14 - 8 * g;
-      fog.far = 60 - 30 * g;
+      const t = this.indoorFogTarget;
+      // Boss gloom pulls the room's fog in, as it does outdoors.
+      const want = { color: t.color, near: t.near - (t.near * 0.57) * g, far: t.far - (t.far * 0.5) * g };
+      if (this.snapFog) {
+        fog.color.setHex(want.color);
+        fog.near = want.near;
+        fog.far = want.far;
+        this.snapFog = false;
+      } else easeFog(fog, want, dt);
       // A soft overhead fill (no shadows: every ceiling would shade everything) plus a
       // warm/dark hemisphere; the rooms' own lights do the rest.
       this.sun.color.set(0xc8d4e0);

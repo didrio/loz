@@ -6,6 +6,7 @@ import type { BellId, BellPost } from './bell';
 import type { BrokenJar } from './jars';
 import type { MurmurbudLook } from './murmurbud';
 import { disposeTree, mergeStatic } from '../render/materials';
+import type { FogLook } from '../render/sky';
 
 /**
  * An Area is one loadable place: the overworld, a dungeon, a house interior. It owns its
@@ -35,6 +36,8 @@ export interface Area {
    * stands still, no night wisps or respawning field enemies, and a closer camera.
    */
   readonly indoor?: boolean;
+  /** Indoors: the fog where `p` stands (a dungeon wing's, per room); the sky eases toward it. Default dark fog if omitted. */
+  fogAt?(p: THREE.Vector3): FogLook;
   /** This area's own theme (a dungeon's); the field's day/night themes if omitted. */
   readonly music?: MusicMood;
   /** A theme for a part of the area (the village by day), or undefined for the usual one. */

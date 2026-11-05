@@ -420,7 +420,8 @@ export class Game implements ScriptApi {
     hud.setBudGauge(this.buds.gauge());
     hud.setPrompt(this.interactPrompt());
     this.physics.step(dt);
-    this.sky.update(state.hours, this.mode === 'title' ? new THREE.Vector3() : player.pos, this.camera.position);
+    if (this.area.fogAt) this.sky.indoorFogTarget = this.area.fogAt(player.pos);
+    this.sky.update(state.hours, this.mode === 'title' ? new THREE.Vector3() : player.pos, this.camera.position, dt);
     this.debug?.update(dt);
   }
 

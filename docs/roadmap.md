@@ -22,9 +22,7 @@ dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things 
 2. ~~The shrine respawn count~~ done 2026-11-04: `shrine-keys` passes (the 39-vs-38 no longer reproduces; cause unknown, likely a
    stale count in an older run). A unit test now pins it (`shrine.test.ts`). The full suite is still to run once (owner's OK).
 3. ~~NPC voices: the speech synth~~ done 2026-11-04; the owner heard the trial voices and approved them ([audio.md](audio.md), "Voices").
-4. **Dungeon fog and lighting** (was C7; independent). Fog color/near/far
-   per wing in `world/dungeon/decor.ts`, optional per-room override, `scene.fog` blends to Wren's room; sparing accents
-   (ground haze over pits, motes in the window shafts, sconce flicker). Sonnet.
+4. ~~Dungeon fog and lighting~~ done 2026-11-04 (per-wing fog, per-room override, eased; pit haze, shaft specks; [dungeons.md](dungeons.md)). Unplayed by the owner.
 5. **The voice system** (after 3; Sonnet, no plan mode: the engine and its API exist). In order:
    - **Voices in content**: `content/voices.ts` maps a speaker (`who`) to a `VoiceProfile` and a default `Delivery`;
      pages without a `who` (narration, signs, items, toasts) stay silent. Start from the trial values in `src/dev/voices.ts`

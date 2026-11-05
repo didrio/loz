@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
+import type { FogLook } from '../../render/sky';
 import { mat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
 import type { RoomDef, RoomTheme } from './format';
@@ -24,14 +25,22 @@ export interface Palette {
   light: number;
   /** Multiplies the room light's brightness. */
   lightLevel: number;
+  /** The fog while Wren is in a room of this wing. */
+  fog: FogLook;
 }
 
 export const THEMES: Record<RoomTheme, Palette> = {
-  sandstone: { floor: 0x8a7a62, floorAlt: null, wall: 0xab9577, trim: 0x6a5c48, ceiling: 0x3b3329, pillar: 0xbca683, stair: 0x9a876a, pitFloor: 0x14100c, light: 0xffc890, lightLevel: 1 },
-  marble: { floor: 0xb4b8c0, floorAlt: 0x8a8f99, wall: 0xcfd2d8, trim: 0x787d86, ceiling: 0x484c54, pillar: 0xe2e4e8, stair: 0xbfc3c9, pitFloor: 0x101216, light: 0xe2ecff, lightLevel: 1.15 },
-  moss: { floor: 0x48523f, floorAlt: null, wall: 0x5b6656, trim: 0x363e32, ceiling: 0x21271d, pillar: 0x67735f, stair: 0x55604c, pitFloor: 0x0c1a1c, light: 0xb8e0a8, lightLevel: 0.8 },
-  basalt: { floor: 0x2c2a29, floorAlt: null, wall: 0x3a3634, trim: 0x1d1b1a, ceiling: 0x131211, pillar: 0x46413d, stair: 0x34302e, pitFloor: 0x1a0804, light: 0xff8a4a, lightLevel: 0.95 },
+  sandstone: { floor: 0x8a7a62, floorAlt: null, wall: 0xab9577, trim: 0x6a5c48, ceiling: 0x3b3329, pillar: 0xbca683, stair: 0x9a876a, pitFloor: 0x14100c, light: 0xffc890, lightLevel: 1, fog: { color: 0x0a0c10, near: 14, far: 60 } },
+  marble: { floor: 0xb4b8c0, floorAlt: 0x8a8f99, wall: 0xcfd2d8, trim: 0x787d86, ceiling: 0x484c54, pillar: 0xe2e4e8, stair: 0xbfc3c9, pitFloor: 0x101216, light: 0xe2ecff, lightLevel: 1.15, fog: { color: 0x1c2230, near: 22, far: 80 } },
+  moss: { floor: 0x48523f, floorAlt: null, wall: 0x5b6656, trim: 0x363e32, ceiling: 0x21271d, pillar: 0x67735f, stair: 0x55604c, pitFloor: 0x0c1a1c, light: 0xb8e0a8, lightLevel: 0.8, fog: { color: 0x0c1a12, near: 8, far: 38 } },
+  basalt: { floor: 0x2c2a29, floorAlt: null, wall: 0x3a3634, trim: 0x1d1b1a, ceiling: 0x131211, pillar: 0x46413d, stair: 0x34302e, pitFloor: 0x1a0804, light: 0xff8a4a, lightLevel: 0.95, fog: { color: 0x2a1208, near: 12, far: 54 } },
 };
+
+/** The fog for a room: its wing's, with the room's own overrides on top. */
+export function fogOf(r: RoomDef): FogLook {
+  const base = THEMES[themeOf(r)].fog;
+  return { color: r.fog?.color ?? base.color, near: r.fog?.near ?? base.near, far: r.fog?.far ?? base.far };
+}
 
 export const themeOf = (r: RoomDef): RoomTheme => r.theme ?? 'sandstone';
 
@@ -67,6 +76,15 @@ export function decorateRoom(
   spots: (spacing: number) => WallSpot[], hasStones: boolean, rand: () => number,
 ) {
   const p = THEMES[themeOf(room)];
+  // Ground haze: a faint pale sheet just under the lip of each pit, so the drop reads as deep.
+  for (const f of room.features ?? []) {
+    if (f.kind !== 'pit') continue;
+    for (let k = 0; k < 2; k++) {
+      const haze = new THREE.Mesh(new THREE.BoxGeometry(f.w, 0.02, f.d), new THREE.MeshBasicMaterial({ color: p.light, transparent: true, opacity: 0.05, depthWrite: false, blending: THREE.AdditiveBlending }));
+      haze.position.set(room.x + f.x + f.w / 2, fy - 0.35 - k * 0.7, room.z + f.z + f.d / 2);
+      glowing.add(haze);
+    }
+  }
   switch (themeOf(room)) {
     case 'sandstone': {
       for (const s of spots(4)) {
@@ -106,6 +124,13 @@ export function decorateRoom(
         beam.rotation.y = s.yaw;
         beam.rotateX(-0.42);
         glowing.add(beam);
+        // Dust caught in the shaft: a few bright specks along its length.
+        for (let k = 0; k < 4; k++) {
+          const t = rand(), spot = onWall(s, (rand() - 0.5) * 0.6, 0.9 + t * 2.2);
+          const speck = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({ color: 0xeaf2ff, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending }));
+          speck.position.set(spot.x, fy + height * (0.85 - t * 0.75), spot.z);
+          glowing.add(speck);
+        }
       }
       break;
     }
