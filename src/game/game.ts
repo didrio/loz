@@ -426,6 +426,7 @@ export class Game implements ScriptApi {
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced && !dungeonQuiet(state.area, state));
 
     this.combat.updateMarker(dt);
+    if (this.input.touch) this.input.touch.buttonLooks = player.surfing;
     this.touch.setContext(this.touchContext());
 
     if (this.mode !== 'title') {

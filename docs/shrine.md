@@ -176,6 +176,8 @@ up through the shrine to the lantern (two embers now). A **Heart Vessel** appear
 This replaces the first plan (a heavy wakestone in the Northpass that the glove pulls aside); none
 of that was built. The boss, not the glove, opens the way out of the valley.
 
+**First way out (owner's call, 2026-11-05):** the first exit after the ward breaks sets the clock to noon (flag `valleyRevealed`, `shrine.ts` `exit`), so the lifted blight is plain to see, not hidden by night.
+
 - **The magic gate**: at the valley's north edge, at the mouth of the Northpass (a new road north
   from the field, between Thistledown and the grove), a rune arch of floating ember-lit stones holds
   a glowing veil across the cut. It's visible from the start of the game and can't be passed, **nor

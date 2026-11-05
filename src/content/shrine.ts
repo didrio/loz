@@ -21,6 +21,9 @@ import type { AreaContent } from './overworld';
  * See docs/shrine.md for the design and milestones.
  */
 
+/** The hour the valley is shown at, the first time Wren walks out after the ward breaks. */
+const REVEAL_HOUR = 12;
+
 const LOOT_TEXT: Record<string, string> = {
   bossKey: '[gear]Boss Key[/]. Its great teeth fit the keeper\'s door.',
   tether: '[gear]Tether Glove[/]. Its glowing cord tugs toward the shrine\'s stones, as if it knows them.',
@@ -104,6 +107,11 @@ export function shrineContent(area: DungeonArea): AreaContent {
   const scripts: Record<string, Script> = {
     // Leaving: the entrance is always open.
     async exit(api) {
+      // The first way out after the ward broke is always noon: the valley's change is plain in daylight, not at night.
+      if (api.state.has('valleyOpen') && !api.state.has('valleyRevealed')) {
+        api.state.set('valleyRevealed');
+        api.state.hours = REVEAL_HOUR;
+      }
       await api.travel('overworld', 'shrineDoor');
     },
     ...bells.scripts,

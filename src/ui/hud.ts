@@ -44,6 +44,14 @@ const BOSS_KEY_SVG = `<svg class="boss-key hidden" viewBox="0 0 36 20" width="36
 const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
 /** All on-screen UI, as plain DOM over the canvas. Holds no game rules. */
+/**
+ * A drawn heart, not the ♥ character: phones swap that glyph for a fixed-colour emoji, so empty and
+ * half hearts looked full. The half heart is a hard-stop gradient (`.half` sets the fills in CSS).
+ */
+const HEART_SVG =
+  '<svg viewBox="0 0 24 22" aria-hidden="true"><defs><linearGradient id="hh"><stop offset="50%" stop-color="#ff3b5c"/><stop offset="50%" stop-color="#28141a" stop-opacity="0.55"/></linearGradient></defs>' +
+  '<path d="M12 21C5 15 1 11.5 1 7a5.5 5.5 0 0 1 11-1.5A5.5 5.5 0 0 1 23 7c0 4.500-4 8-11 14z"/></svg>';
+
 export class Hud {
   private el = document.getElementById('hud')!;
   private hearts: HTMLElement;
@@ -326,7 +334,7 @@ export class Hud {
     let html = '';
     for (let i = 0; i < max / 2; i++) {
       const v = hp - i * 2;
-      html += `<span class="heart ${v >= 2 ? 'full' : v === 1 ? 'half' : 'empty'}">♥</span>`;
+      html += `<span class="heart ${v >= 2 ? 'full' : v === 1 ? 'half' : 'empty'}">${HEART_SVG}</span>`;
     }
     if (this.hearts.innerHTML !== html) this.hearts.innerHTML = html;
     this.hearts.classList.toggle('low', hp <= 2);

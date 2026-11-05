@@ -19,11 +19,11 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
+As of 2026-11-05: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
 **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the valley (violet
 **scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
 tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`); the speech synth is shelved (`labs/speech/`). **Touch controls** (phones and
-tablets, landscape; [engine.md](docs/engine.md)) are untried on a real device: a friend is playtesting them on GitHub Pages. Unplayed by the owner:
+tablets, landscape; [engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages (their first notes are fixed: hearts drawn as SVG, camera from the Shield finger while surfing, button labels; the first exit after the boss is noon). Unplayed by the owner:
 most of the 2026-11-04 batch (day/night, the bell hunt, Settings, surfing, the gate, D3, the prism, dungeon fog, the scars, cutting and guards).
 **Next:** the queue in the roadmap, from 8 (the inventory tab; no plan mode). Dev server: port 5273.
 

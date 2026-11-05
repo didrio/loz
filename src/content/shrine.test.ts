@@ -47,6 +47,21 @@ describe('shrine content', () => {
     expect(travels).toEqual([{ area: 'overworld', entrance: 'shrineDoor' }]);
   });
 
+  it('the first exit after the ward breaks is at noon, once', async () => {
+    const state = new GameState();
+    state.hours = 22;
+    let s = setup(state);
+    await s.content.scripts.exit(s.api);
+    expect(state.hours).toBe(22); // ward intact: the clock is untouched
+    state.set('valleyOpen');
+    s = setup(state);
+    await s.content.scripts.exit(s.api);
+    expect(state.hours).toBe(12);
+    state.hours = 22;
+    await s.content.scripts.exit(s.api);
+    expect(state.hours).toBe(22); // only the first time
+  });
+
   it('each colored key opens only its own door, and is spent', async () => {
     const { area, content, api, p, said } = setup();
     await content.scripts.cryptPit(api);

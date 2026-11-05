@@ -219,6 +219,10 @@ shows while the device is `touch`: a key press or a gamepad hides it, the next t
   presses both `jump` and `interact` like gamepad A; Shield (hold; jump, then hold it to surf, as on a pad: a plain
   button, owner's call 2026-11-04, no gestures); Lock; Glove (once owned).
   Sword and Shield only show once Wren has them.
+- **While Wren surfs**, a finger holding Shield also turns the camera when it slides (`TouchPad.buttonLooks`, set
+  by the game each frame from `player.surfing`), so one thumb holds the surf and steers. Jump labels longer than
+  6 characters get smaller type (`.tb-jump.long`). HUD hearts are inline SVG, not the ♥ glyph (phones draw that as
+  a fixed-colour emoji).
 - **HUD taps:** title rows, the ☰ hint (`pause`), the flask and glove icons, a ✕ on every menu (closes the pause
   menu, or `cancel`), dialog choices. In dialog, a tap anywhere reads on (`confirm`).
 - A finger keeps its job (stick, look, a button) until it lifts, wherever it slides. `core/touch.ts` is pure

@@ -63,6 +63,20 @@ describe('TouchPad', () => {
     expect(pad.look).toEqual({ x: 0, y: 0 });
   });
 
+  it('a held Shield finger turns the camera only while buttonLooks is on', () => {
+    const pad = new TouchPad();
+    pad.down(1, 500, 300, { kind: 'button', actions: ['shield'] });
+    pad.move(1, 510, 300);
+    expect(pad.look).toEqual({ x: 0, y: 0 });
+    pad.buttonLooks = true;
+    pad.move(1, 530, 290);
+    expect(pad.look).toEqual({ x: 20, y: -10 });
+    expect(pad.held('shield')).toBe(true);
+    pad.down(2, 600, 300, { kind: 'button', actions: ['attack'] });
+    pad.move(2, 640, 300);
+    expect(pad.look).toEqual({ x: 20, y: -10 });
+  });
+
   it('clear lifts everything', () => {
     const pad = new TouchPad();
     pad.down(1, 0, 0, { kind: 'button', actions: ['shield'] });

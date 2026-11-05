@@ -132,6 +132,7 @@ export class TouchControls {
       this.buttons.lock.classList.toggle('on', c.locked);
       this.buttons.jump.textContent = c.use ?? 'Jump';
       this.buttons.jump.classList.toggle('use', !!c.use);
+      this.buttons.jump.classList.toggle('long', (c.use ?? '').length > 6); // two words or a long one: smaller type
     }
     for (const [id, b] of Object.entries(this.buttons) as [ButtonId, HTMLElement][]) b.classList.toggle('down', this.pad.held(ROLES[id].actions[0]));
     const v = this.pad.stickView;

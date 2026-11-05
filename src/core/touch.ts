@@ -34,6 +34,11 @@ export class TouchPad {
   private pressedSet = new Set<Action>();
   private lookX = 0;
   private lookY = 0;
+  /**
+   * While true (the game sets it each frame: Wren is surfing), a finger holding the Shield button
+   * also turns the camera when it slides, so one thumb can hold the surf and steer the view.
+   */
+  buttonLooks = false;
 
   down(id: number, x: number, y: number, role: FingerRole) {
     this.up(id);
@@ -50,7 +55,7 @@ export class TouchPad {
     const f = this.fingers.get(id);
     if (!f) return;
     const { role } = f;
-    if (role.kind === 'look') {
+    if (role.kind === 'look' || (role.kind === 'button' && this.buttonLooks && role.actions.includes('shield'))) {
       this.lookX += x - f.x;
       this.lookY += y - f.y;
     } else if (role.kind === 'stick') {
