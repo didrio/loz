@@ -91,7 +91,7 @@ export class Dialog {
 
   /** A question's choices are showing. */
   get asking() {
-    return !!this.options && this.pages.length === 1 && this.hud.dialogDone && !this.fresh;
+    return this.open && !!this.options && this.pages.length === 1 && this.hud.dialogDone && !this.fresh;
   }
 
   /** Call every frame with whether "confirm" was pressed, and a menu step (-1 up, 1 down, 0 none). */

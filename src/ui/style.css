@@ -317,6 +317,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 }
 #hud.touch .controls-touch b { color: #ffd76a; }
 #hud.touch .menu-item { pointer-events: auto; padding: 8px 26px; }
+#hud.touch .prompt { padding: 3px 11px; } /* its key is hidden: even padding keeps the label over the arrow */
 #hud.touch .actions, #hud.touch .prompt .key, #hud.touch .gmenu-help, #hud.touch .gmenu-tabkey { display: none; }
 #hud.touch .menu-hint, #hud.touch .drink { pointer-events: auto; }
 #hud.touch .drink .key { display: none; } /* the icons themselves are the buttons */

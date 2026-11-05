@@ -34,6 +34,15 @@ describe('Dialog choice window', () => {
     expect(choices()).toBeNull();
   });
 
+  it('is no longer asking once the question is answered (the touch controls read it: they hid after the bed)', async () => {
+    const { dialog, ask } = setup();
+    const answer = ask(['Sleep', 'Not now'], 1);
+    expect(dialog.asking).toBe(true);
+    dialog.update(true);
+    await answer;
+    expect(dialog.asking).toBe(false);
+  });
+
   it('wraps up and down', async () => {
     const { dialog, ask, choices } = setup();
     const answer = ask(['A', 'B', 'C']);

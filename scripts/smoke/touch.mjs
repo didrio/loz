@@ -98,6 +98,38 @@ export default async function run(t) {
     }
   });
 
+  await step('the bed: Jump reads Sleep, its label is centred, a tapped "Sleep" ends with the controls back and the stick working', async () => {
+    const b = await game(() => {
+      const it = window.embervale.area.interactables.find((i) => i.id === 'bed.mill');
+      return { x: it.x, z: it.z };
+    });
+    await teleport(b.x, b.z, -Math.PI / 2, 3);
+    await until(() => document.querySelector('.tb-jump')?.textContent !== 'Jump' && document.querySelector('.prompt.show'), 5000);
+    const off = await game(() => {
+      const p = document.querySelector('.prompt').getBoundingClientRect();
+      const l = document.querySelector('.prompt span:not(.key)').getBoundingClientRect();
+      return (l.left + l.width / 2) - (p.left + p.width / 2);
+    });
+    check(Math.abs(off) < 2, `the prompt's label is ${off.toFixed(1)} px off centre`);
+    await tap('.tb-jump');
+    await until(() => window.embervale.mode === 'cutscene', 5000);
+    const end = Date.now() + 60000;
+    while ((await g()).mode === 'cutscene') {
+      if (Date.now() > end) throw new Error('the sleep never ended');
+      if (await shown('.choice-row')) await tap('.choice-row'); // the first row is "Sleep"
+      else await page.touchscreen.tap(420, 120);
+      await wait(250);
+    }
+    check(Math.abs((await game(() => window.embervale.state.hours)) - 18) < 0.1, 'she did not sleep');
+    await wait(400);
+    check(await shown('.tb-attack'), 'the buttons did not come back after sleeping');
+    const a = await g();
+    await down(1, 150, 280);
+    await move(1, 150, 210);
+    await until(([x, z]) => Math.hypot(window.embervale.player.pos.x - x, window.embervale.player.pos.z - z) > 1, 10000, [a.x, a.z]);
+    await up(1);
+  });
+
   await step('☰ opens the pause menu, ✕ closes it', async () => {
     await tap('.menu-hint');
     await until(() => window.embervale.pauseMenu.isOpen, 5000);
