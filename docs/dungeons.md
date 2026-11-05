@@ -57,10 +57,10 @@ of them. Units are meters, +x east, −z north (same as the overworld).
   floor, walls, light and decoration (`decor.ts`). Walls take the theme of the floor's
   rooms, so keep one theme per floor (a wing). Decoration in rooms with stones is
   wall-mounted or flat; free-standing statues only go where no stone can slide.
-- **`fog`** (per room, optional): `{ color?, near?, far? }` overriding the wing's fog (`THEMES[..].fog` in `decor.ts`) while Wren is in that room.
-  `DungeonArea.fogAt` gives the target (the last room she was in, so doorways don't flick it); `Sky` snaps to it on entering an area and eases
-  (~1.5 s, `easeFog`) between rooms; boss gloom pulls it in. Accents in `decorateRoom`: a faint additive haze under each pit, dust specks in
-  the marble window shafts (static; sconce flicker already lives in `updateLights`).
+- **Fog** is one value for the whole dungeon (`DUNGEON_FOG` in `decor.ts`, via `DungeonArea.fogAt`). Fog is a single scene-wide setting measured
+  from the camera, so a per-wing or per-room fog made a distant room change as Wren crossed a doorway (owner's call, 2026-11-04: one fog). A wing's
+  mood comes from its lights and decor. `Sky` snaps to it on entering; boss gloom pulls it in. Accents in `decorateRoom`: a faint additive haze
+  under each pit, dust specks in the marble window shafts (static; sconce flicker already lives in `updateLights`).
 - **Things** sit in a room at `at` (relative to the room's corner): `chest` (with `loot`:
   `{ key: color }`, `bossKey`, `{ item }`, `{ gems }`, `{ flask: 'life' | 'attack' }` (a full flask), optionally
   `appears` after a switch, after several (`switches`), or once a room is cleared), `switch` (`style: 'prism'` is the Keepers' Seal's floating prism, four sword hits, one per beam, `prism.ts`; `style: 'crystal'` struck

@@ -57,8 +57,6 @@ export interface RoomDef {
   height?: number;
   /** The room's look: stone colors, light and decoration (see `build.ts`). Default `sandstone`. */
   theme?: RoomTheme;
-  /** Overrides the wing's fog while Wren is in this room (any part; e.g. a heavier haze before a boss). */
-  fog?: { color?: number; near?: number; far?: number };
   /** Shapes inside the room; they don't affect the key/door logic. */
   features?: FeatureDef[];
   /**
