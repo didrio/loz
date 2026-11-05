@@ -1,32 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { FLICK_DISTANCE, STICK_RADIUS, TouchPad } from './touch';
-
-const SHIELD = { kind: 'button', actions: ['shield'], flick: ['jump'] } as const;
+import { STICK_RADIUS, TouchPad } from './touch';
 
 describe('TouchPad', () => {
   it('the stick reads full tilt at its radius, zero at rest, in pad convention', () => {
     const pad = new TouchPad();
-    pad.down(1, 100, 300, 0, { kind: 'stick' });
+    pad.down(1, 100, 300, { kind: 'stick' });
     expect(pad.stick).toEqual({ x: 0, y: 0 });
-    pad.move(1, 100, 300 - STICK_RADIUS, 0.1); // thumb up = forward = y negative, like a gamepad
+    pad.move(1, 100, 300 - STICK_RADIUS); // thumb up = forward = y negative, like a gamepad
     expect(pad.stick.x).toBeCloseTo(0);
     expect(pad.stick.y).toBeCloseTo(-1);
-    pad.move(1, 103, 300, 0.2); // a resting thumb's drift
+    pad.move(1, 103, 300); // a resting thumb's drift
     expect(pad.stick).toEqual({ x: 0, y: 0 });
   });
 
   it('the stick centre follows a thumb that slides past the rim', () => {
     const pad = new TouchPad();
-    pad.down(1, 100, 300, 0, { kind: 'stick' });
-    pad.move(1, 100 + STICK_RADIUS * 3, 300, 0.1);
+    pad.down(1, 100, 300, { kind: 'stick' });
+    pad.move(1, 100 + STICK_RADIUS * 3, 300);
     expect(pad.stick.x).toBeCloseTo(1);
-    pad.move(1, 100 + STICK_RADIUS * 2, 300, 0.2); // back by one radius: now centred, not still full right
+    pad.move(1, 100 + STICK_RADIUS * 2, 300); // back by one radius: now centred, not still full right
     expect(pad.stick).toEqual({ x: 0, y: 0 });
   });
 
   it('a button holds while down and presses only on the frame it lands', () => {
     const pad = new TouchPad();
-    pad.down(2, 700, 300, 0, { kind: 'button', actions: ['attack'] });
+    pad.down(2, 700, 300, { kind: 'button', actions: ['attack'] });
     expect(pad.pressed('attack')).toBe(true);
     expect(pad.held('attack')).toBe(true);
     pad.endFrame();
@@ -38,39 +36,16 @@ describe('TouchPad', () => {
 
   it('a finger keeps its job when it slides off its button', () => {
     const pad = new TouchPad();
-    pad.down(2, 700, 300, 0, { kind: 'button', actions: ['shield'] });
-    pad.move(2, 200, 100, 0.5);
+    pad.down(2, 700, 300, { kind: 'button', actions: ['shield'] });
+    pad.move(2, 200, 100);
     expect(pad.held('shield')).toBe(true);
     expect(pad.stick).toEqual({ x: 0, y: 0 });
   });
 
-  it('flicking up from the shield jumps and keeps the shield held (the surf)', () => {
-    const pad = new TouchPad();
-    pad.down(3, 700, 300, 0, SHIELD);
-    pad.endFrame();
-    pad.move(3, 700, 300 - FLICK_DISTANCE - 1, 0.1);
-    expect(pad.pressed('jump')).toBe(true);
-    expect(pad.held('shield')).toBe(true);
-    pad.endFrame();
-    // Still up there: no second jump until the thumb comes down and flicks again.
-    pad.move(3, 700, 300 - FLICK_DISTANCE - 4, 0.2);
-    expect(pad.pressed('jump')).toBe(false);
-    pad.move(3, 700, 300, 0.5);
-    pad.move(3, 700, 300 - FLICK_DISTANCE - 1, 0.6);
-    expect(pad.pressed('jump')).toBe(true);
-  });
-
-  it('a slow upward slide is not a flick', () => {
-    const pad = new TouchPad();
-    pad.down(3, 700, 300, 0, SHIELD);
-    for (let i = 1; i <= 20; i++) pad.move(3, 700, 300 - i * 3, i * 0.1);
-    expect(pad.pressed('jump')).toBe(false);
-  });
-
   it('two fingers on one action: it stays held until both lift', () => {
     const pad = new TouchPad();
-    pad.down(1, 0, 0, 0, { kind: 'button', actions: ['jump', 'interact'] });
-    pad.down(2, 0, 0, 0, { kind: 'button', actions: ['jump'] });
+    pad.down(1, 0, 0, { kind: 'button', actions: ['jump', 'interact'] });
+    pad.down(2, 0, 0, { kind: 'button', actions: ['jump'] });
     pad.up(1);
     expect(pad.held('jump')).toBe(true);
     expect(pad.held('interact')).toBe(false);
@@ -80,9 +55,9 @@ describe('TouchPad', () => {
 
   it('look drags add up until the frame ends', () => {
     const pad = new TouchPad();
-    pad.down(4, 600, 200, 0, { kind: 'look' });
-    pad.move(4, 610, 205, 0.01);
-    pad.move(4, 630, 195, 0.02);
+    pad.down(4, 600, 200, { kind: 'look' });
+    pad.move(4, 610, 205);
+    pad.move(4, 630, 195);
     expect(pad.look).toEqual({ x: 30, y: -5 });
     pad.endFrame();
     expect(pad.look).toEqual({ x: 0, y: 0 });
@@ -90,9 +65,9 @@ describe('TouchPad', () => {
 
   it('clear lifts everything', () => {
     const pad = new TouchPad();
-    pad.down(1, 0, 0, 0, { kind: 'button', actions: ['shield'] });
-    pad.down(2, 0, 0, 0, { kind: 'stick' });
-    pad.move(2, 50, 0, 0.1);
+    pad.down(1, 0, 0, { kind: 'button', actions: ['shield'] });
+    pad.down(2, 0, 0, { kind: 'stick' });
+    pad.move(2, 50, 0);
     pad.clear();
     expect(pad.held('shield')).toBe(false);
     expect(pad.stick).toEqual({ x: 0, y: 0 });

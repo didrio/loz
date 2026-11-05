@@ -1,5 +1,5 @@
 // Touch controls on a landscape phone (ui/touch.ts): the title takes a tap, the stick walks, the sword swings,
-// Shield + flick up surfs, Jump reads Talk near Lark and opens her talk, taps read on, ☰ and ✕ open and close the
+// Jump then holding Shield surfs, Jump reads Talk near Lark and opens her talk, taps read on, ☰ and ✕ open and close the
 // pause menu, and a key press hides the controls until the next touch.
 export const fixture = 'field-sword';
 export const touch = true;
@@ -58,24 +58,23 @@ export default async function run(t) {
     await until(() => window.embervale.player.state === 'attack', 5000);
   });
 
-  await step('Shield + flick up lands on the shield and rides; letting go steps off', async () => {
-    await game(() => {
-      const e = window.embervale;
-      e.state.set('village.surfIdea');
-      e.input.touch.flickTime = 5; // headless frames are slow: the flick's move arrives ~0.5 s after the press
-    });
+  await step('Jump, then holding Shield, lands on the shield and rides; letting go steps off', async () => {
+    await game(() => window.embervale.state.set('village.surfIdea'));
     await until(() => window.embervale.player.state === 'move', 5000);
     await teleport(-40, -38, 0);
     await wait(300);
     await down(1, 150, 280);
     await move(1, 150, 210);
+    // Run on until nothing is in reach: Jump reads Talk near something, and then it talks instead.
+    await until(() => document.querySelector('.tb-jump')?.textContent === 'Jump', 10000);
+    const j = await center('.tb-jump');
+    await down(3, j.x, j.y);
+    await up(3);
     const s = await center('.tb-shield');
-    await down(2, s.x, s.y);
-    await wait(80);
-    await move(2, s.x, s.y - 40);
+    await down(4, s.x, s.y);
     await until(() => window.embervale.player.surfing, 10000);
     await until(() => window.embervale.player.speedXZ > 12, 10000);
-    await up(2);
+    await up(4);
     await until(() => !window.embervale.player.surfing, 5000);
     await up(1);
   });

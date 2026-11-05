@@ -30,7 +30,7 @@ dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things 
    `[soft]`/`[shake]` only where a line clearly needs it. Fold into the next session that touches dialog.
 7. ~~Blight scars and routing~~ done 2026-11-04 ([world.md](world.md), "The blight"; unplayed).
 7.5. ~~Touch controls~~ done 2026-11-04 (owner's ask, for a friend's playtest; [engine.md](engine.md) "Touch controls"). Tune by
-   their report: the flick (`FLICK_DISTANCE/TIME`), camera drag (`TOUCH_LOOK`), button sizes; lower default sharpness on touch if phones run slow.
+   their report: camera drag (`TOUCH_LOOK`), button sizes; lower default sharpness on touch if phones run slow.
 8. **The inventory tab** in the pause menu (milestone 2 below).
 
 Later, not yet in the queue: an **SFX pass** (owner's ask, 2026-11-04), and the rescue quests for Maren, Tobin and Odo

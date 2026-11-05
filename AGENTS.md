@@ -114,7 +114,7 @@ src/
   main.ts                  boot: init Rapier, create Game, expose window.embervale (dev/?debug)
   core/                    engine-level, no game knowledge
     physics.ts, input.ts   Rapier wrapper (layers, colliders, Character, queries); actions, bindings, glyphs
-    touch.ts               touch controls' logic: fingers → stick, camera drag, buttons, the shield's flick (pure)
+    touch.ts               touch controls' logic: fingers → stick, camera drag, buttons (pure)
     director.ts, save.ts   game-time waits/tweens for scripts; save format, migrations, KeyValueStore, settings
     audio.ts, math.ts      sound effects + the song per mood; noise, easing, angles, seeded RNG
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)

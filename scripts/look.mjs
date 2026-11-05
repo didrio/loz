@@ -88,9 +88,9 @@ const SCENES = {
     // A thumb on the stick, the shield held.
     await h.game(() => {
       const t = window.embervale.input.touch;
-      t.down(90, 170, 290, 0, { kind: 'stick' });
-      t.move(90, 200, 255, 0.1);
-      t.down(91, 700, 340, 0, { kind: 'button', actions: ['shield'] });
+      t.down(90, 170, 290, { kind: 'stick' });
+      t.move(90, 200, 255);
+      t.down(91, 700, 340, { kind: 'button', actions: ['shield'] });
     });
     await h.wait(400);
     await h.shot('phone-stick');

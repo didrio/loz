@@ -216,8 +216,8 @@ shows while the device is `touch`: a key press or a gamepad hides it, the next t
 - **Left 45% of the screen: a floating stick** where the thumb lands (its centre follows a thumb that slides past
   the rim). **Elsewhere: drag to turn the camera** (`TOUCH_LOOK` rad/px × the stick sensitivity).
 - **Buttons, bottom right:** Sword; Jump, which reads the interactable's label ("Talk", "Open") in reach and
-  presses both `jump` and `interact` like gamepad A; Shield (hold), where a **flick up** (≥ 26 px within 0.25 s)
-  presses `jump` with the shield still held: the surf, one thumb (owner's pick, 2026-11-04); Lock; Glove (once owned).
+  presses both `jump` and `interact` like gamepad A; Shield (hold; jump, then hold it to surf, as on a pad: a plain
+  button, owner's call 2026-11-04, no gestures); Lock; Glove (once owned).
   Sword and Shield only show once Wren has them.
 - **HUD taps:** title rows, the ☰ hint (`pause`), the flask and glove icons, a ✕ on every menu (closes the pause
   menu, or `cancel`), dialog choices. In dialog, a tap anywhere reads on (`confirm`).

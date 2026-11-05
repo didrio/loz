@@ -6,9 +6,7 @@
  * - **stick**: a floating stick centred where the thumb landed (analog, pad convention: y down).
  *   If the thumb slides past the rim, the centre follows it, so turning around never needs a re-grab.
  * - **look**: drags turn the camera (pixels, read once per frame like mouse movement).
- * - **button**: holds its actions while down, presses them on the frame it lands. A button with a
- *   `flick` also presses those actions when the finger flicks upward (shield + flick up = a jump with
- *   the shield still held: the surf, one thumb).
+ * - **button**: holds its actions while down, presses them on the frame it lands.
  */
 import type { Action } from './input';
 
@@ -16,24 +14,18 @@ import type { Action } from './input';
 export const STICK_RADIUS = 56;
 /** Below this fraction of full tilt the stick reads zero (a resting thumb drifts). */
 export const STICK_DEADZONE = 0.12;
-/** An upward flick: at least this many pixels up... */
-export const FLICK_DISTANCE = 26;
-/** ...within this many seconds. */
-export const FLICK_TIME = 0.25;
-
 export type FingerRole =
   | { kind: 'stick' }
   | { kind: 'look' }
-  | { kind: 'button'; actions: readonly Action[]; flick?: readonly Action[] };
+  | { kind: 'button'; actions: readonly Action[] };
 
 interface Finger {
   role: FingerRole;
   x: number;
   y: number;
-  /** stick: the centre. button with flick: the lowest point since the last flick, and when. */
+  /** The stick's centre. */
   ox: number;
   oy: number;
-  ot: number;
 }
 
 export class TouchPad {
@@ -42,12 +34,10 @@ export class TouchPad {
   private pressedSet = new Set<Action>();
   private lookX = 0;
   private lookY = 0;
-  /** How fast an upward flick must be (FLICK_TIME; smoke tests widen it, as headless frames are slow). */
-  flickTime = FLICK_TIME;
 
-  down(id: number, x: number, y: number, t: number, role: FingerRole) {
+  down(id: number, x: number, y: number, role: FingerRole) {
     this.up(id);
-    this.fingers.set(id, { role, x, y, ox: x, oy: y, ot: t });
+    this.fingers.set(id, { role, x, y, ox: x, oy: y });
     if (role.kind === 'button') {
       for (const a of role.actions) {
         this.heldCount.set(a, (this.heldCount.get(a) ?? 0) + 1);
@@ -56,7 +46,7 @@ export class TouchPad {
     }
   }
 
-  move(id: number, x: number, y: number, t: number) {
+  move(id: number, x: number, y: number) {
     const f = this.fingers.get(id);
     if (!f) return;
     const { role } = f;
@@ -69,16 +59,6 @@ export class TouchPad {
       if (len > STICK_RADIUS) {
         f.ox = x - (dx / len) * STICK_RADIUS;
         f.oy = y - (dy / len) * STICK_RADIUS;
-      }
-    } else if (role.flick) {
-      // The anchor is the lowest point lately: moving down (or waiting too long) re-anchors.
-      if (y >= f.oy || t - f.ot > this.flickTime) {
-        f.oy = y;
-        f.ot = t;
-      } else if (f.oy - y >= FLICK_DISTANCE) {
-        for (const a of role.flick) this.pressedSet.add(a);
-        f.oy = y;
-        f.ot = t;
       }
     }
     f.x = x;

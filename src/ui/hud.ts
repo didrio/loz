@@ -146,7 +146,7 @@ export class Hud {
         </div>
         <div class="controls-touch">
           <div><b>Left thumb</b> move</div><div><b>Right thumb</b> drag the camera</div>
-          <div><b>Hold Shield</b> guard</div><div><b>Shield, flick ↑</b> jump with it</div>
+          <div><b>Hold Shield</b> guard</div><div><b>Jump</b> jump · talk</div>
           <div><b>☰</b> pause</div><div><b>Tap</b> read on</div>
         </div>
       </div>

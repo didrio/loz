@@ -32,8 +32,8 @@ const ROLES: Record<ButtonId, ButtonRole> = {
   attack: { kind: 'button', actions: ['attack'] },
   // Jump doubles as interact, like the gamepad's A: the game checks interact first.
   jump: { kind: 'button', actions: ['jump', 'interact'] },
-  // Hold to guard; flick the thumb up to jump with the shield still held (the surf).
-  shield: { kind: 'button', actions: ['shield'], flick: ['jump'] },
+  // Hold to guard (jump, then hold it to land on it: the surf).
+  shield: { kind: 'button', actions: ['shield'] },
   lock: { kind: 'button', actions: ['lock'] },
   item: { kind: 'button', actions: ['item'] },
 };
@@ -64,7 +64,7 @@ export class TouchControls {
       <div class="touch-stick hidden"><div class="touch-knob"></div></div>
       <div class="touch-btn tb-attack" data-btn="attack">Sword</div>
       <div class="touch-btn tb-jump" data-btn="jump">Jump</div>
-      <div class="touch-btn tb-shield" data-btn="shield">Shield<small>flick ↑ jump</small></div>
+      <div class="touch-btn tb-shield" data-btn="shield">Shield</div>
       <div class="touch-btn tb-lock" data-btn="lock">Lock</div>
       <div class="touch-btn tb-item" data-btn="item">Glove</div>`;
     this.rotate.className = 'touch-rotate';
@@ -86,15 +86,14 @@ export class TouchControls {
       else this.disable();
     });
 
-    const now = () => performance.now() / 1000;
     this.el.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       this.input.device = 'touch';
       this.el.setPointerCapture(e.pointerId);
       const role = this.roleAt(e);
-      if (role) this.pad.down(e.pointerId, e.clientX, e.clientY, now(), role);
+      if (role) this.pad.down(e.pointerId, e.clientX, e.clientY, role);
     });
-    this.el.addEventListener('pointermove', (e) => this.pad.move(e.pointerId, e.clientX, e.clientY, now()));
+    this.el.addEventListener('pointermove', (e) => this.pad.move(e.pointerId, e.clientX, e.clientY));
     const lift = (e: PointerEvent) => {
       this.pad.up(e.pointerId);
       this.onGesture();
