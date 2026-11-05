@@ -94,7 +94,8 @@ export class Hud {
   private bossTitleTimer = 0;
   private bossLagValue = 1;
   private device: Device = 'keyboard';
-  private typing = { full: '', shown: 0 };
+  /** The page being typed; `reveal` (a spoken page) says how many characters the voice has reached, in place of the usual pace. */
+  private typing: { full: string; shown: number; reveal?: () => number } = { full: '', shown: 0 };
   private areaTimer = 0;
   private toastTimer = 0;
   private lastActions: [Action, string][] = [];
@@ -484,11 +485,11 @@ export class Hud {
 
   // --- dialog ---------------------------------------------------------------------
 
-  openDialog(who: string, text: string) {
+  openDialog(who: string, text: string, reveal?: () => number) {
     this.dialog.classList.remove('hidden');
     this.dialogWho.textContent = who;
     this.dialogWho.style.display = who ? '' : 'none';
-    this.typing = { full: text, shown: 0 };
+    this.typing = { full: text, shown: 0, reveal };
     this.dialogText.innerHTML = '';
     this.dialog.classList.remove('done');
   }
@@ -546,9 +547,10 @@ export class Hud {
   update(dt: number, typeBlip: () => void) {
     if (!this.dialog.classList.contains('hidden') && !this.dialogDone) {
       const before = Math.floor(this.typing.shown);
-      this.typing.shown = Math.min(this.typing.full.length, this.typing.shown + dt * 55);
+      const { reveal, full } = this.typing;
+      this.typing.shown = reveal ? Math.min(full.length, Math.max(this.typing.shown, reveal())) : Math.min(full.length, this.typing.shown + dt * 55);
       if (Math.floor(this.typing.shown) !== before) {
-        if (before % 3 === 0) typeBlip();
+        if (!reveal && before % 3 === 0) typeBlip();
         this.renderTyping();
       }
     }

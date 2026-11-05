@@ -154,6 +154,11 @@ describe('save files', () => {
     expect(decodeSettings('{"music":true}').musicVolume).toBe(DEFAULT_SETTINGS.musicVolume);
   });
 
+  it('gives a save from before the voice slider the default voice volume', () => {
+    expect(decodeSettings('{"masterVolume":0.3}').voiceVolume).toBe(DEFAULT_SETTINGS.voiceVolume);
+    expect(decodeSettings('{"voiceVolume":0.25}').voiceVolume).toBe(0.25);
+  });
+
   it('keeps saved settings and clamps or drops nonsense', () => {
     const s = decodeSettings('{"masterVolume":0.3,"mouseSensitivity":9,"stickSensitivity":"fast","invertY":true,"quality":2,"sfxVolume":-1}');
     expect(s).toMatchObject({ masterVolume: 0.3, mouseSensitivity: 2, stickSensitivity: 1, invertY: true, quality: 2, sfxVolume: 0 });

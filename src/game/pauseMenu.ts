@@ -52,6 +52,7 @@ export class PauseMenu {
     if (!this.menu.isOpen) {
       if (this.game.mode !== 'play' || !input.pressed('pause')) return false;
       if (!this.tabs().includes(this.tab)) this.tab = 'settings';
+      this.game.cutVoice();
       this.menu.open(this.page(this.tab));
     } else if (input.pressed('pause')) {
       this.menu.close();
@@ -85,7 +86,7 @@ export class PauseMenu {
     const s = game.settings;
     const percent = (v: number) => `${Math.round(v * 100)}%`;
     const times = (v: number) => `${v.toFixed(1)}×`;
-    const volume = (label: string, key: 'masterVolume' | 'musicVolume' | 'sfxVolume', space = false): MenuRow => ({
+    const volume = (label: string, key: 'masterVolume' | 'musicVolume' | 'sfxVolume' | 'voiceVolume', space = false): MenuRow => ({
       kind: 'slider', label, space, min: 0, max: 1, step: 0.05, get: () => s[key], set: (v) => this.change({ [key]: v }), format: percent,
     });
     const sensitivity = (label: string, key: 'mouseSensitivity' | 'stickSensitivity', space = false): MenuRow => ({
@@ -95,6 +96,7 @@ export class PauseMenu {
       volume('Master volume', 'masterVolume'),
       volume('Music volume', 'musicVolume'),
       volume('Effects volume', 'sfxVolume'),
+      volume('Voice volume', 'voiceVolume'),
       sensitivity('Mouse sensitivity', 'mouseSensitivity', true),
       sensitivity('Stick sensitivity', 'stickSensitivity'),
       { kind: 'toggle', label: 'Invert camera up/down', get: () => s.invertY, set: (on) => this.change({ invertY: on }) },

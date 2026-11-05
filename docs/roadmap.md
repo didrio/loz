@@ -23,22 +23,9 @@ dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things 
    stale count in an older run). A unit test now pins it (`shrine.test.ts`). The full suite is still to run once (owner's OK).
 3. ~~NPC voices: the speech synth~~ done 2026-11-04; the owner heard the trial voices and approved them ([audio.md](audio.md), "Voices").
 4. ~~Dungeon fog and lighting~~ done 2026-11-04 (per-wing fog, per-room override, eased; pit haze, shaft specks; [dungeons.md](dungeons.md)). Unplayed by the owner.
-5. **The voice system** (after 3; Sonnet, no plan mode: the engine and its API exist). In order:
-   - **Voices in content**: `content/voices.ts` maps a speaker (`who`) to a `VoiceProfile` and a default `Delivery`;
-     pages without a `who` (narration, signs, items, toasts) stay silent. Start from the trial values in `src/dev/voices.ts`
-     (owner-approved).
-   - **Speak a box**: when `dialog.ts` opens an NPC page, `speak()` it (6–35 ms; the world is frozen in dialog, so a hitch
-     can't hurt; pre-render the next page while this one plays if it shows) and play it on `Sfx.voice`.
-   - **Type along**: the box reveals each word at its `timeline.words[i].start` (letters spread across the word), so
-     text and voice match. Silent pages keep today's pace.
-   - **The skip rule**: the button shows the rest of the box at once, and the voice runs on to its end. The next box,
-     the end of the talk, a choice window, a pause or a death cuts it (`VoiceHandle.stop`, ~80 ms fade).
-   - **Delivery tags**: `[soft]`/`[shake]` around a whole page set its delivery; a tag around part of a page needs a
-     per-phrase delivery in `prosody` (a `Phrase.delivery?` field) — do it only when a line wants it.
-   - **The mixer**: a Voice volume in Settings (a fourth slider; save migration in `core/save.ts`, `Sfx.setVolumes`),
-     the music ducks ~4 dB under speech, and the room: `Area.voiceRoom` (outdoors dry, houses close, dungeons bigger)
-     sets `VoiceChain.room` and the impulse length.
-   - Tests: the typing pace and skip/cut-off rule on a fake timeline (`dialog` unit test), settings migration.
+5. ~~The voice system~~ done 2026-11-04 (voices in content, speak a box, type along, skip rule, `[soft]`/`[shake]` whole-page tags, Voice volume,
+   music ducking, `Area.voiceRoom`; [audio.md](audio.md) "In the game"). Unheard in play: ask the owner about volume, ducking, room.
+   Left: per-phrase delivery tags, a house room, pre-rendering the next page (not needed so far).
 6. **Every NPC voiced**: profiles and line-by-line tuning for Maren, Tobin, Odo, Lark and Pip, with the owner listening
    (give `/voices.html` a speaker menu that loads all of an NPC's lines, read from content like `textRules.test.ts`
    does); per-line deliveries where a line needs them; a smoke step that a talk plays voice and the skip rule holds.

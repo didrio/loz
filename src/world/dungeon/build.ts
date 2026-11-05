@@ -106,6 +106,7 @@ export class DungeonArea implements Area {
   readonly root: THREE.Group;
   readonly spawn: { x: number; y: number; z: number; facing: number };
   readonly waterLevel = null;
+  readonly voiceRoom = 'dungeon';
   readonly enemyCount = 0;
   readonly indoor = true;
   readonly music: DungeonDef['music'];

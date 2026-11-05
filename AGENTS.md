@@ -23,10 +23,10 @@ As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield
 through **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the
 valley (thorns cost a heart a touch); after it, only Lark and Pip remain in the village, and the Morrowbell lies behind the windmill until rehung.
 Player text is terse and tagged (`[gear]`, `[place]`...; `textRules.test.ts`); the HUD has a sky dial and a compass strip. **NPC speech**
-is synthesized in code (`core/speech/`): the owner approved the trial voices on `/voices.html`, but the game doesn't speak yet.
+is synthesized in code (`core/speech/`) and now spoken in dialog (`content/voices.ts`; text types along the voice; Voice volume in Settings), unheard in play by the owner.
 Unplayed by the owner: the text pass, the choice window, the 10-minute day, Dawn/Nightfall cards, the Lamplighter's dawn burn and rise/gutter,
 the bell hunt, thorns, dial, compass, lone oak, village polish, day/night lighting, Settings, surfing, the gate, D3, the prism, dungeon fog.
-**Next:** the queue in the roadmap, from 5 (the voice system: NPCs speak in-game). Dev server: port 5273.
+**Next:** the queue in the roadmap, from 6 (every NPC voiced). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -149,6 +149,7 @@ src/
   content/                 the game's story; what things DO
     areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death
     overworld.ts           scripts for every overworld interactable/trigger, save restore
+    voices.ts              who sounds like what (speaker → VoiceProfile + Delivery)
     village.ts, shop.ts    Thistledown: villagers, mill door and bed, locked cottages, Odo's stall, the opening, Pip's doll; offerWares (the buy menu)
     bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
     sigils.ts, villageNews.ts   the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)

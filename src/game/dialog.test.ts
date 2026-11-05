@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Hud } from '../ui/hud';
-import { Dialog } from './dialog';
+import type { Timeline } from '../core/speech/prosody';
+import { Dialog, revealAt } from './dialog';
 
 /** A fake HUD: the dialog is "typed out" at once, and the last choice window is recorded. */
 function setup() {
@@ -62,5 +63,53 @@ describe('Dialog choice window', () => {
     expect(choices()!.selected).toBe(1);
     dialog.click(2);
     expect(await answer).toBe(2);
+  });
+});
+
+describe('revealAt (text typed along a voice)', () => {
+  const word = (index: number, text: string, span: [number, number], start: number, end: number) => ({ index, phrase: 0, text, span, start, end });
+  const timeline = { words: [word(0, 'Hello', [0, 5], 0.1, 0.5), word(1, 'there', [7, 12], 0.6, 1.0)], duration: 1.2 } as unknown as Timeline;
+  const text = 'Hello, there.';
+
+  it('shows nothing before the first word and everything after the last', () => {
+    expect(revealAt(text, timeline, 0)).toBe(0);
+    expect(revealAt(text, timeline, 1.0)).toBe(text.length);
+  });
+
+  it('spreads a word\'s letters across it and adds its punctuation when it ends', () => {
+    expect(revealAt(text, timeline, 0.3)).toBe(2);
+    expect(revealAt(text, timeline, 0.55)).toBe(6); // "Hello,"
+    expect(revealAt(text, timeline, 0.8)).toBeGreaterThan(7);
+  });
+
+  it('never cuts a tag or button name in half', () => {
+    const t = '[gear]Hello[/], [attack] now';
+    const tl = { words: [word(0, 'Hello', [0, 5], 0, 1), word(1, 'now', [9, 12], 1.2, 1.6)], duration: 2 } as unknown as Timeline;
+    expect(t.slice(0, revealAt(t, tl, 1.1))).toBe('[gear]Hello[/],');
+    expect(t.slice(0, revealAt(t, tl, 1.3))).toBe('[gear]Hello[/], [attack] ');
+  });
+});
+
+describe('Dialog voice', () => {
+  function voiced() {
+    const stops: string[] = [];
+    const handle = { startedAt: 0, done: new Promise<void>(() => {}), stop: () => stops.push('stop') };
+    const spoken: string[] = [];
+    const hud = { openDialog: (_w: string, text: string) => spoken.push(text), closeDialog: () => {}, finishTyping: () => {}, dialogDone: true, setChoices: () => {} } as unknown as Hud;
+    const sfx = { select: () => {}, speak: () => handle, voiceTime: () => 0 } as never;
+    return { dialog: new Dialog(hud, sfx), stops, spoken };
+  }
+
+  it('speaks an NPC page, and the next page, the end and a cut stop it; silent pages do not start one', async () => {
+    const { dialog, stops } = voiced();
+    const done = dialog.show([{ who: 'Maren', text: 'Wren! Quietly!' }, { who: 'Maren', text: 'Come back.' }, { text: 'Narration.' }]);
+    dialog.update(false);
+    dialog.update(true); // next page: cuts the first line (and opening the second cuts nothing new)
+    expect(stops.length).toBeGreaterThanOrEqual(1);
+    const before = stops.length;
+    dialog.update(true); // narration: cuts the second line, starts none
+    expect(stops.length).toBe(before + 1);
+    dialog.update(true);
+    expect(await done).toBe(0);
   });
 });

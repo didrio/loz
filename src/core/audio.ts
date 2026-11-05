@@ -3,7 +3,8 @@
  * The context is created on the first key press (browsers require a user gesture).
  */
 
-import { VoicePlayer } from './speech/play';
+import { ROOMS, SOFT_CHAIN, VoicePlayer, type RoomName, type VoiceHandle } from './speech/play';
+import type { Speech } from './speech/voice';
 import { MusicPlayer } from './synth';
 import { BOSS_MOODS, compiledSong, type MusicMood } from './tracks';
 
@@ -11,14 +12,19 @@ export type { MusicMood } from './tracks';
 
 /** The slider position that sounds as loud as the game did before there were sliders (matches DEFAULT_SETTINGS). */
 const DEFAULT_VOLUME = 0.8;
+/** The music's gain while someone speaks: -4 dB. */
+const DUCK_DB = 10 ** (-4 / 20);
 
 export class Sfx {
   private ctx: AudioContext | null = null;
   private master!: GainNode;
   private musicGain!: GainNode;
   private sfxGain!: GainNode;
+  private voiceGain!: GainNode;
+  /** The music's level while a voice speaks (about -4 dB). */
+  private duck = 1;
   /** The volumes (0..1) chosen in settings, kept so they apply once the audio context exists. */
-  private volumes = { master: DEFAULT_VOLUME, music: DEFAULT_VOLUME, sfx: DEFAULT_VOLUME };
+  private volumes = { master: DEFAULT_VOLUME, music: DEFAULT_VOLUME, sfx: DEFAULT_VOLUME, voice: DEFAULT_VOLUME };
   private noiseBuf!: AudioBuffer;
   private music!: MusicPlayer;
   /** The mood whose song is playing, or null for silence. */
@@ -39,30 +45,56 @@ export class Sfx {
     this.musicGain.connect(this.master);
     this.sfxGain = this.ctx.createGain();
     this.sfxGain.connect(this.master);
+    // NPC speech gets its own bus and its own volume setting.
+    this.voiceGain = this.ctx.createGain();
+    this.voiceGain.connect(this.master);
+    this.voice = new VoicePlayer(this.ctx, this.voiceGain);
     this.applyVolumes();
     this.music = new MusicPlayer(this.ctx, this.musicGain);
-    // NPC speech gets its own bus (a Voice volume setting joins it with the voice system, roadmap queue 5).
-    const voiceGain = this.ctx.createGain();
-    voiceGain.connect(this.master);
-    this.voice = new VoicePlayer(this.ctx, voiceGain);
     this.noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   }
 
-  /** Sets the three volumes (0..1, from settings). At DEFAULT_VOLUME everything is as loud as it was before the sliders. */
-  setVolumes(master: number, music: number, sfx: number) {
-    this.volumes = { master, music, sfx };
+  /** Sets the volumes (0..1, from settings). At DEFAULT_VOLUME everything is as loud as it was before the sliders. */
+  setVolumes(master: number, music: number, sfx: number, voice = DEFAULT_VOLUME) {
+    this.volumes = { master, music, sfx, voice };
     this.musicOn = music > 0;
     this.applyVolumes();
   }
 
   private applyVolumes() {
     if (!this.ctx) return;
-    const { master, music, sfx } = this.volumes;
+    const { master, music, sfx, voice } = this.volumes;
     this.master.gain.value = (0.5 * master) / DEFAULT_VOLUME;
-    this.musicGain.gain.value = (0.4 * music) / DEFAULT_VOLUME;
+    this.musicGain.gain.setTargetAtTime((0.4 * music * this.duck) / DEFAULT_VOLUME, this.ctx.currentTime, 0.05);
     this.sfxGain.gain.value = sfx / DEFAULT_VOLUME;
+    this.voiceGain.gain.value = voice / DEFAULT_VOLUME;
+  }
+
+  /**
+   * Speaks a rendered line (`core/speech/`) in a room, ducking the music under it until it ends or is cut.
+   * Null before the audio context exists (the first key press creates it): the box then types at its usual pace.
+   */
+  speak(speech: Speech, room: RoomName = 'outdoors'): VoiceHandle | null {
+    if (!this.ctx || !this.voice || this.volumes.voice <= 0) return null;
+    this.voice.setRoomLength(ROOMS[room].seconds);
+    const handle = this.voice.play(speech.samples, speech.sampleRate, { ...SOFT_CHAIN, room: ROOMS[room].room });
+    this.setDuck(DUCK_DB);
+    void handle.done.then(() => {
+      if (!this.voice?.speaking) this.setDuck(1);
+    });
+    return handle;
+  }
+
+  /** Seconds the line has been playing (0 until it starts). */
+  voiceTime(handle: VoiceHandle) {
+    return this.ctx ? Math.max(0, this.ctx.currentTime - handle.startedAt) : 0;
+  }
+
+  private setDuck(v: number) {
+    this.duck = v;
+    this.applyVolumes();
   }
 
   private tone(freq: number, dur: number, type: OscillatorType = 'sine', vol = 0.25, slideTo?: number, delay = 0, out?: AudioNode) {

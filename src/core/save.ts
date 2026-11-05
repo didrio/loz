@@ -46,6 +46,8 @@ export interface Settings {
   masterVolume: number;
   musicVolume: number;
   sfxVolume: number;
+  /** NPC speech (added with the voice system; older saves get the default). */
+  voiceVolume: number;
   mouseSensitivity: number;
   stickSensitivity: number;
   invertY: boolean;
@@ -57,6 +59,7 @@ export const DEFAULT_SETTINGS: Settings = {
   masterVolume: 0.8,
   musicVolume: 0.8,
   sfxVolume: 0.8,
+  voiceVolume: 0.8,
   mouseSensitivity: 1,
   stickSensitivity: 1,
   invertY: false,
@@ -208,6 +211,7 @@ export function decodeSettings(raw: string | null): Settings {
       // The first settings were just `music: boolean`; an old "off" stays silent.
       musicVolume: num(o.musicVolume, o.music === false ? 0 : d.musicVolume, 0, 1),
       sfxVolume: num(o.sfxVolume, d.sfxVolume, 0, 1),
+      voiceVolume: num(o.voiceVolume, d.voiceVolume, 0, 1),
       mouseSensitivity: num(o.mouseSensitivity, d.mouseSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
       stickSensitivity: num(o.stickSensitivity, d.stickSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
       invertY: typeof o.invertY === 'boolean' ? o.invertY : d.invertY,

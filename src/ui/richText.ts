@@ -57,6 +57,32 @@ export function visibleText(text: string): string {
   return text.replace(/\[(\/|\w+)\]/g, (m, n) => (isAction(n) ? '#' : n === '/' || isTag(n) ? '' : m));
 }
 
+/**
+ * For typing text along a voice: `ends[v]` is where the raw text ends once `v` visible characters are shown
+ * (a button name is one character, so it is never cut in half; tags in front of the next character stay hidden).
+ */
+export function visibleEnds(text: string): number[] {
+  const ends = [0];
+  const re = /\[(\/|\w+)\]/g;
+  let last = 0;
+  const chars = (to: number) => {
+    for (let i = last; i < to; i++) ends.push(i + 1);
+  };
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    chars(m.index);
+    last = m.index + m[0].length;
+    if (isAction(m[1])) ends.push(last);
+    else if (m[1] !== '/' && !isTag(m[1])) {
+      // An unknown bracket stays as typed, one character at a time.
+      last = m.index;
+      chars(m.index + m[0].length);
+      last = m.index + m[0].length;
+    }
+  }
+  chars(text.length);
+  return ends;
+}
+
 /** Number of highlight spans in a box. */
 export function highlightCount(text: string): number {
   return [...text.matchAll(/\[(\w+)\]/g)].filter((m) => (HIGHLIGHT_TAGS as readonly string[]).includes(m[1])).length;

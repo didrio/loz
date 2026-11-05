@@ -108,7 +108,7 @@ export class Game implements ScriptApi {
     this.resize();
 
     this.input = new Input(canvas);
-    this.dialog = new Dialog(this.hud, this.sfx);
+    this.dialog = new Dialog(this.hud, this.sfx, () => this.area.voiceRoom ?? 'outdoors');
     this.sky = new Sky(this.scene);
     this.motes = new Motes(this.scene);
     this.particles = new Particles(this.scene);
@@ -298,6 +298,7 @@ export class Game implements ScriptApi {
     this.content.update?.(this, dt);
 
     if (!this.player.alive) {
+      this.dialog.cutVoice();
       this.run(death);
       return;
     }
@@ -476,6 +477,11 @@ export class Game implements ScriptApi {
     this.combat.forget(e);
   }
 
+  /** Cuts off an NPC's voice (the pause menu opening). */
+  cutVoice() {
+    this.dialog.cutVoice();
+  }
+
   async say(pages: Page[]) {
     await this.dialog.show(pages);
   }
@@ -485,6 +491,7 @@ export class Game implements ScriptApi {
   }
 
   choose(title: string, options: string[], exit?: number) {
+    this.dialog.cutVoice();
     return this.choice.ask(title, options, exit);
   }
 
@@ -637,7 +644,7 @@ export class Game implements ScriptApi {
 
   private applySettings() {
     const s = this.settings;
-    this.sfx.setVolumes(s.masterVolume, s.musicVolume, s.sfxVolume);
+    this.sfx.setVolumes(s.masterVolume, s.musicVolume, s.sfxVolume, s.voiceVolume);
     this.input.mouseSensitivity = s.mouseSensitivity;
     this.input.stickSensitivity = s.stickSensitivity;
     this.input.invertY = s.invertY;

@@ -30,6 +30,7 @@ export class Overworld implements Area {
   readonly root: THREE.Group;
   readonly spawn = SPAWN;
   readonly waterLevel = WATER_Y;
+  readonly voiceRoom = 'outdoors';
   readonly enemyCount = 14;
   /** Where Wren arrives from elsewhere: just outside the shrine door, facing away from it. */
   readonly entrances: Record<string, { x: number; z: number; facing: number }> = {

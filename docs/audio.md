@@ -8,7 +8,7 @@ and ask the owner to listen.
 
 **NPC voices are synthesized speech too** (owner's call, 2026-11-04): every NPC will say their lines aloud through a
 formant voice built in code (text → speech sounds → voice), not a neural voice rendered from a model and not a babble.
-The engine is built (below, "Voices"); the game doesn't speak yet (roadmap queue 5).
+The engine is built (below, "Voices") and the game speaks (queue 5, 2026-11-04; unheard in play by the owner).
 
 ## Voices (`core/speech/`)
 
@@ -49,6 +49,15 @@ values" to paste a tuned voice back into code.
 **New words**: after adding player text, run `npm run lexicon` (downloads CMUdict once into `node_modules/.cache/`,
 rewrites `lexicon.ts`; never edit that file). The coverage test in `phonemize.test.ts` lists any word that only the rules
 know: add invented names to `names.ts`. CMUdict's credit is in `CREDITS.md`.
+
+**In the game** (queue 5): `content/voices.ts` maps a page's `who` ("Tobin the Miller" counts as Tobin) to a profile and default
+delivery; pages without a known speaker stay silent. `Dialog.openPage` renders the line (`speak`), plays it with `Sfx.speak`
+(a Voice volume slider; the music ducks 4 dB while it plays) and gives the HUD a `reveal` function, so the box types each
+word's letters across its `timeline.words` span (`revealAt`; the old 55 chars/s pace stays for silent pages). The skip button
+shows the whole page at once and the voice runs on; the next page, the end of the talk, a choice (`api.choose`, picking from an
+`ask` list), the pause menu or a death cuts it (80 ms fade). A page wrapped whole in `[soft]`/`[shake]` uses that delivery
+instead of the speaker's; a tag around part of a page does nothing to the voice yet. `Area.voiceRoom` (outdoors dry, house,
+dungeon bigger; `ROOMS` in `play.ts`) sets the room send and the impulse length; no area is a "house" yet (the mill is in the overworld).
 
 Not built yet: per-place nasal zeros, linking and glottal stops between words, emphasis on a chosen word.
 

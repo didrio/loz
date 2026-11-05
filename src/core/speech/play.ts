@@ -19,6 +19,14 @@ export interface VoiceChain {
 // level: speech peaks ~0.2–0.5 after the game's master gain, at or a little above the music (which peaks 0.1–0.2).
 export const SOFT_CHAIN: VoiceChain = { warmth: 5200, room: 0.22, level: 1.2 };
 
+/** Where the voice is heard (`Area.voiceRoom`): how much goes to the room, and how long it rings. */
+export const ROOMS = {
+  outdoors: { room: 0.1, seconds: 0.7 },
+  house: { room: 0.22, seconds: 1.4 },
+  dungeon: { room: 0.34, seconds: 2.6 },
+} as const;
+export type RoomName = keyof typeof ROOMS;
+
 export interface VoiceHandle {
   /** Fades the line out over `fadeMs` and stops it (cut off by the next box or the end of a talk). */
   stop(fadeMs?: number): void;
@@ -31,11 +39,19 @@ export interface VoiceHandle {
 export class VoicePlayer {
   private room: ConvolverNode;
   private current: VoiceHandle | null = null;
+  private roomSeconds = 1.4;
 
   constructor(private ctx: BaseAudioContext, private out: AudioNode) {
     this.room = ctx.createConvolver();
-    this.room.buffer = impulse(ctx, 1.4);
+    this.room.buffer = impulse(ctx, this.roomSeconds);
     this.room.connect(out);
+  }
+
+  /** Sets how long the room rings (the impulse is rebuilt only when it changes). */
+  setRoomLength(seconds: number) {
+    if (seconds === this.roomSeconds) return;
+    this.roomSeconds = seconds;
+    this.room.buffer = impulse(this.ctx, seconds);
   }
 
   /** Plays one line; a line already playing is cut off first (one voice at a time). */
@@ -84,6 +100,11 @@ export class VoicePlayer {
     src.start(startedAt);
     this.current = handle;
     return handle;
+  }
+
+  /** True while a line is playing. */
+  get speaking() {
+    return this.current !== null;
   }
 
   /** Cuts off whatever line is playing. */
