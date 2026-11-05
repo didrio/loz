@@ -20,13 +20,19 @@ describe('the blight', () => {
   });
 
   it('leaves the restored field with three stray thornlings and no wisps', () => {
-    expect(fieldPopulation(field, false)).toEqual({ thornlings: 14, wisps: true });
-    expect(fieldPopulation(field, true)).toEqual({ thornlings: STRAY_THORNLINGS, wisps: false });
+    expect(fieldPopulation(field, false)).toEqual({ thornlings: 14, wisps: true, posts: [] });
+    expect(fieldPopulation(field, true)).toEqual({ thornlings: STRAY_THORNLINGS, wisps: false, posts: [] });
     expect(STRAY_THORNLINGS).toBe(3);
   });
 
+  it('mans the blighted field\'s posts out of its thornlings, and leaves them empty once restored', () => {
+    const posts = [{ x: 1, z: 2, count: 3 }];
+    expect(fieldPopulation({ ...field, enemyPosts: posts }, false)).toEqual({ thornlings: 11, wisps: true, posts });
+    expect(fieldPopulation({ ...field, enemyPosts: posts }, true).posts).toEqual([]);
+  });
+
   it('keeps other areas as they are, valleyOpen or not', () => {
-    expect(fieldPopulation({ id: 'shrine', indoor: true, enemyCount: 0 }, true)).toEqual({ thornlings: 0, wisps: true });
+    expect(fieldPopulation({ id: 'shrine', indoor: true, enemyCount: 0 }, true)).toEqual({ thornlings: 0, wisps: true, posts: [] });
   });
 
   it('swaps only the field songs', () => {

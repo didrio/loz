@@ -168,13 +168,28 @@ The valley is sick from the first frame until the Keepers' seal breaks (`valleyO
 - **Sky** (`Sky.blight`, 0–1): a violet-black sky and fog, weaker sun, dim stars; the same weight by day and night
   (the night sinks as far as the night sky does). Boss gloom stacks on top.
 - **Ash motes** (`render/motes.ts`) drift around the player.
-- **Thorns** (`world/overworld/blight.ts`, own RNG `blight`; 2026-11-04, owner's design): clumps of 3–8 m violet
-  spikes (`THORN_SPREAD` 3 m), ~30 lone ones in the open field plus **thickets** (`THICKETS` in `layout.ts`): rings
-  round the flasks bud, the roadside ruin and Pip's lake home, each with one opening (`gap`, a compass bearing) so the
-  way in is a short walk round. Touching one costs a heart (`THORN_ATTACK` in `game/blight.ts`, unblockable) and shoves
-  Wren back out (no colliders, so the camera never snags). The sword never cuts them. They shrink away as the blight
-  lifts and are harmless below half grown. Roads, the village's safe zone, the start, signs, buds, the lone oak, the
-  gate and the passes stay clear (`layout.test.ts` checks every thicket: roads, its gap, what it guards).
+- **Scars** (`SCARS` in `layout.ts`, queue 7, 2026-11-04, owner's design): jagged violet veins in the ground seeping
+  south from the sealed gate: the **spine** down the north field (splitting it between the village and the grove), a
+  **west fork** toward the shield's cottage, an **east fork** past the gate home toward the grove's marsh, and a **west
+  vein** across the way from Thistledown to the Hushing Gorge. Each point carries a width; `scarLine` jags the line
+  (pure, so the look and the hurt rule agree). Standing on one hurts like a thorn (`scarTouch`): only underfoot, so a
+  jump clears the thin ones (1–3 m; a jump covers ~5.5 m); the pool in front of the gate (~7 m) can't be jumped. Scars
+  can't be hurt. Grass and trees aren't filtered out of them: they poke through, and the ground is whole once it lifts.
+- **Thorns** (`world/overworld/blight.ts`, shapes from RNG `blight`): clumps of 3–8 m violet spikes (`THORN_SPREAD`
+  3 m), all hand-placed (`thornClusters` in `layout.ts`): **stretches of the veins** where thorns burst out (`thorns`,
+  meters along a scar; there a vein is a wall), 15 **lone** ones (`LONE_THORNS`, never closer than 12 m to another), and
+  the **thickets** (`THICKETS`): rings round the flasks bud, the roadside ruin and Pip's lake home, each with one
+  opening (`gap`, a compass bearing). Touching one costs a heart (`THORN_ATTACK` in `game/blight.ts`, unblockable) and
+  shoves Wren back out (no colliders, so the camera never snags). **The sword fells a clump in 5 hits** (`THORN_HP`;
+  each hit shrinks it a little, chips fly), for good: saved as `thorn.<scar|thicket|lone>.<n>`. The glove and shield
+  never cut them. They shrink away as the blight lifts and are harmless (and uncuttable) below half grown.
+- **Routing** (owner's call: a light touch): roads always stay clear; off-road shortcuts bend round two or three thorn
+  stretches. `layout.test.ts` walks a 2 m grid from the start (clumps and wide scars are walls, thin scars jumped) and
+  checks every POI is still reached **without cutting anything**, the detour adding under 40 m. Veins and clumps stay
+  off roads, water, the village's song, the start, signs, buds, the lone oak, ruins, the gate and the gorge's walls.
+- **Guard posts** (`FIELD_POSTS` in `layout.ts`): while blighted, 3 of the field's 14 thornlings wait where the grove
+  road wades into the marsh, so the way to the sword runs past them: Wren slips by unarmed and comes back to fight.
+  Posted ones only come back with the area (a death, a reload), never on the 45 s timer; the restored field has none.
 - **Music**: placeholder `blight`, `blightNight`, `blightVillage` ([audio.md](audio.md)); the owner listens.
 - **The lift**: when `valleyOpen` is set in the gate vision, the level eases to 0 over ~4 s (`BLIGHT_RATE`) and the
   music crossfades. A loaded area starts at its level (no easing). Not a new cutscene: it happens inside the existing vision.

@@ -13,10 +13,11 @@ describe('GameState', () => {
     const s = new GameState();
     s.set('sigil.cell');
     s.set('jar.ruins.1');
+    s.set('thorn.spine.2');
     s.set('hint.tunic');
     const back = new GameState();
     back.load(s.toSave());
-    expect([...back.flags].sort()).toEqual(['hint.tunic', 'jar.ruins.1', 'sigil.cell']);
+    expect([...back.flags].sort()).toEqual(['hint.tunic', 'jar.ruins.1', 'sigil.cell', 'thorn.spine.2']);
   });
 
   it('keeps hearts and gems in range', () => {

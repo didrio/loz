@@ -1,6 +1,7 @@
 import { mulberry32 } from '../../core/math';
 import { describe, expect, it } from 'vitest';
-import { areaNameAt, inVillageGuard, inVillageMusic, MILL, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS, THICKETS, thicketClusters, THORN_SPREAD, atBearing, inGate, inHollow } from './layout';
+import { areaNameAt, inVillageGuard, inVillageMusic, MILL, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS, THICKETS, thicketClusters, THORN_SPREAD, atBearing, inGate, inHollow, SCARS, scarLine, scarClusters, scarAt, thornClusters, LONE_THORNS, FIELD_POSTS, gorgeFrame, HOLLOW_ENTRANCE, LONE_OAK, SHRINE_DOOR, inRuin } from './layout';
+import { SIGNS } from './landmarks';
 
 describe('overworld layout', () => {
   it('starts the player on dry, fairly flat ground', () => {
@@ -244,4 +245,148 @@ describe('blight thickets', () => {
       for (const c of clusters) expect(Math.hypot(c.x - t.x, c.z - t.z) - THORN_SPREAD).toBeGreaterThan((ruin?.r ?? 1) + 1.5);
     });
   }
+});
+
+describe('blight scars and routing', () => {
+  const clear = (x: number, z: number, m: number) => {
+    expect(pathDist(x, z), `road near ${x.toFixed(0)},${z.toFixed(0)}`).toBeGreaterThan(m + 1.5);
+    expect(inVillageMusic(x, z), `village at ${x.toFixed(0)},${z.toFixed(0)}`).toBe(false);
+    expect(Math.hypot(x - SPAWN.x, z - SPAWN.z)).toBeGreaterThan(m + 12);
+    const where = `${x.toFixed(0)},${z.toFixed(0)}`;
+    expect(inGate(x, z, m + 2), `gate at ${where}`).toBe(false);
+    expect(inHollow(x, z, m + 3), `hollow at ${where}`).toBe(false);
+    expect(inRuin(x, z, m + 1), `ruin at ${where}`).toBe(false);
+    expect(gorgeFrame(x, z).d, `gorge walls near ${x.toFixed(0)},${z.toFixed(0)}`).toBeGreaterThan(GORGE.wallTop + m + 2);
+    expect(z > GATE.z + 8, `south of the gate at ${where}`).toBe(true); // the pass's corridor stays clear
+    for (const b of BUDS) expect(Math.hypot(b.x - x, b.z - z)).toBeGreaterThan(m + 5);
+    for (const g of SIGNS) expect(Math.hypot(g.x - x, g.z - z)).toBeGreaterThan(m + 4);
+    expect(Math.hypot(LONE_OAK.x - x, LONE_OAK.z - z)).toBeGreaterThan(m + 6);
+  };
+
+  it('keeps the veins off roads, the village, the start, landmarks and water', () => {
+    for (const s of SCARS) {
+      for (const p of scarLine(s)) {
+        clear(p.x, p.z, p.w / 2);
+        expect(terrainHeight(p.x, p.z), `${s.id} in water at ${p.x.toFixed(0)},${p.z.toFixed(0)}`).toBeGreaterThan(WATER_Y + 0.3);
+      }
+    }
+  });
+
+  it('keeps every clump of the veins and the lone ones clear in the same way, on dry land', () => {
+    for (const c of [...SCARS.flatMap((s) => scarClusters(s)), ...LONE_THORNS.map(([x, z]) => ({ x, z }))]) {
+      clear(c.x, c.z, THORN_SPREAD);
+      expect(terrainHeight(c.x, c.z), `clump in water at ${c.x.toFixed(0)},${c.z.toFixed(0)}`).toBeGreaterThan(WATER_Y + 0.3);
+    }
+  });
+
+  it('gives every clump its own id, and the veins\' clumps overlap so a stretch is a wall', () => {
+    const all = thornClusters();
+    expect(new Set(all.map((c) => c.id)).size).toBe(all.length);
+    for (const s of SCARS) {
+      const cs = scarClusters(s);
+      expect(cs.length).toBeGreaterThan(0);
+      for (let i = 1; i < cs.length; i++) {
+        const d = Math.hypot(cs[i].x - cs[i - 1].x, cs[i].z - cs[i - 1].z);
+        if (d < 10) expect(d).toBeLessThan(THORN_SPREAD * 2);
+      }
+    }
+  });
+
+  it('keeps lone clumps apart: they never wall a way on their own', () => {
+    const others = thornClusters().filter((c) => !c.id.startsWith('thorn.lone.'));
+    for (const [x, z] of LONE_THORNS) {
+      for (const o of others) expect(Math.hypot(o.x - x, o.z - z), `lone ${x},${z} by ${o.id}`).toBeGreaterThan(THORN_SPREAD * 4);
+      for (const [x2, z2] of LONE_THORNS) if (x2 !== x || z2 !== z) expect(Math.hypot(x2 - x, z2 - z)).toBeGreaterThan(THORN_SPREAD * 4);
+    }
+  });
+
+  it('finds a scar only under its line, and points the way out to the side Wren is on', () => {
+    const s = SCARS[0], line = scarLine(s), p = line[Math.floor(line.length / 2)];
+    const hit = scarAt(p.x, p.z);
+    expect(hit?.id).toBe(s.id);
+    expect(scarAt(p.x + 40, p.z)).toBeNull();
+    const q = line[Math.floor(line.length / 2) + 1];
+    const nx = -(q.z - p.z), nz = q.x - p.x, n = Math.hypot(nx, nz);
+    const side = scarAt(p.x + (nx / n) * 0.3, p.z + (nz / n) * 0.3);
+    expect(side!.out.x * nx + side!.out.z * nz).toBeGreaterThan(0);
+    expect(scarAt(p.x, p.z, 0)).toBeNull(); // shrunk to nothing, it's gone
+  });
+
+  it('has thin veins Wren can jump (a jump clears ~5.5 m) and a wide pool at the gate she can\'t', () => {
+    const widths = SCARS.flatMap((s) => scarLine(s).map((p) => p.w));
+    expect(Math.max(...widths)).toBeGreaterThan(6);
+    const wide = widths.filter((w) => w > 4.5).length;
+    expect(wide / widths.length).toBeLessThan(0.15);
+  });
+
+  it('puts the guard posts on dry, open land, on the way to what they guard', () => {
+    for (const p of FIELD_POSTS) {
+      expect(terrainHeight(p.x, p.z)).toBeGreaterThan(WATER_Y + 0.3);
+      expect(inVillageGuard(p.x, p.z)).toBe(false);
+      expect(pathDist(p.x, p.z)).toBeLessThan(14); // in sight of the road
+    }
+    expect(Math.hypot(FIELD_POSTS[0].x - GROVE.x, FIELD_POSTS[0].z - GROVE.z)).toBeLessThan(35);
+  });
+
+  // Reachability on a 2 m grid: Wren walks where it's dry or wading-deep and not cliff-steep. Clumps are walls; thin
+  // scars are jumped, so only the wide stretches block. Nothing reachable before the blight may be cut off by it,
+  // and the detour stays short: the routes "take a little thought", never a maze.
+  describe('routing', () => {
+    const STEP = 2, N = 172;
+    const W = Math.floor((2 * N) / STEP) + 1;
+    const idx = (x: number, z: number) => Math.round((z + N) / STEP) * W + Math.round((x + N) / STEP);
+    const at = (i: number) => ({ x: (i % W) * STEP - N, z: Math.floor(i / W) * STEP - N });
+    const thorns = thornClusters();
+    const free = (blight: boolean) => {
+      const ok = new Uint8Array(W * W);
+      for (let i = 0; i < ok.length; i++) {
+        const { x, z } = at(i);
+        const onRoad = pathDist(x, z) < 2;
+        if (!onRoad && (terrainHeight(x, z) < WATER_Y - 1.1 || Math.hypot(x, z) > 170)) continue;
+        if (blight && thorns.some((c) => Math.hypot(c.x - x, c.z - z) < THORN_SPREAD + 0.4)) continue;
+        if (blight && (scarAt(x, z)?.hw ?? 0) > 2.8) continue;
+        ok[i] = 1;
+      }
+      return ok;
+    };
+    const walk = (ok: Uint8Array, from: { x: number; z: number }) => {
+      const dist = new Float32Array(W * W).fill(Infinity);
+      const start = idx(from.x, from.z);
+      dist[start] = 0;
+      const queue = [start];
+      for (let q = 0; q < queue.length; q++) {
+        const i = queue[q], { x, z } = at(i), h = terrainHeight(x, z);
+        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx * STEP, nz = z + dz * STEP;
+          if (Math.abs(nx) > N || Math.abs(nz) > N) continue;
+          const j = idx(nx, nz);
+          if (!ok[j] || dist[j] !== Infinity) continue;
+          if (Math.abs(terrainHeight(nx, nz) - h) > 2.2 && pathDist(nx, nz) > 2) continue; // too steep
+          dist[j] = dist[i] + STEP;
+          queue.push(j);
+        }
+      }
+      return dist;
+    };
+    const before = walk(free(false), SPAWN), after = walk(free(true), SPAWN);
+    const near = (p: { x: number; z: number }, dist: Float32Array) => {
+      let best = Infinity;
+      for (let dz = -6; dz <= 6; dz += STEP) for (let dx = -6; dx <= 6; dx += STEP) best = Math.min(best, dist[idx(p.x + dx, p.z + dz)] ?? Infinity);
+      return best;
+    };
+    const places: [string, { x: number; z: number }][] = [
+      ['the village', VILLAGE], ['the grove chest', GROVE], ['the gorge mouth', { x: GORGE.path[0][0], z: GORGE.path[0][1] }],
+      ['the shrine door', SHRINE_DOOR], ['the hollow', HOLLOW_ENTRANCE], ['the gate', { x: GATE.x, z: GATE.z + 6 }],
+      ['the bridge', BRIDGE], ['the lone oak', LONE_OAK], ...RUINS.map((r) => [`ruin ${r.id}`, r] as [string, { x: number; z: number }]),
+      ...BUDS.map((b) => [b.id, b] as [string, { x: number; z: number }]),
+    ];
+    for (const [name, p] of places) {
+      it(`still reaches ${name} without cutting a thorn, by a short detour`, () => {
+        const b = near(p, before), a = near(p, after);
+        expect(b, `${name} reachable at all`).toBeLessThan(Infinity);
+        expect(a, `${name} cut off by the blight`).toBeLessThan(Infinity);
+        expect(a - b, `${name}: ${b} m becomes ${a} m`).toBeLessThan(40);
+      });
+    }
+  });
 });

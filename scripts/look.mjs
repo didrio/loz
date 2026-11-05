@@ -62,10 +62,12 @@ const SCENES = {
     await h.wait(1500);
     await h.shot('blight-village');
     // The seal breaks: the blight eases out over ~4 s.
+    // Headless game time runs slow: wait on the level, not the clock.
     await h.game(() => window.embervale.state.set('valleyOpen'));
-    await h.wait(2000);
+    await h.until(() => window.embervale.sky.blight < 0.6, 30000);
     await h.shot('blight-lifting');
-    await h.wait(4000);
+    await h.until(() => window.embervale.sky.blight === 0, 60000);
+    await h.wait(500);
     await h.shot('blight-lifted-village');
     await h.teleport(0, 14, Math.PI);
     await h.wait(1200);
@@ -121,7 +123,7 @@ const SCENES = {
     }
     await h.shot('hud-full');
   },
-  /** The blight's thorns (world/overworld/blight.ts): a thicket's ring and its gap, a lone clump, and the lone oak. */
+  /** The blight's thorns and scars (world/overworld/blight.ts): a thicket's ring and its gap, a lone clump, the lone oak, the veins, the grove's guards. */
   async thorns(h) {
     await h.newGame();
     await h.game(() => (window.embervale.state.hours = 11));
@@ -142,6 +144,11 @@ const SCENES = {
     });
     await look('thorns-clump', c.x, c.z + 10, Math.PI);
     await look('thorns-oak', 50, -38, Math.atan2(16, -9));
+    // The scars (SCARS in layout.ts): up the spine vein toward the gate, its wide pool, the west vein, the grove's guards.
+    await look('scars-spine', -2, -28, Math.PI);
+    await look('scars-pool', 9, -80, Math.atan2(-6, -24));
+    await look('scars-west', -84, -26, Math.atan2(-16, 12));
+    await look('scars-post', 40, -48, Math.atan2(15, -12));
   },
   async field(h) {
     await h.newGame();

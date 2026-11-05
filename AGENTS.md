@@ -21,12 +21,12 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 As of 2026-11-04: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine**
 through **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the
-valley (thorns cost a heart a touch); after it, only Lark and Pip remain in the village, and the Morrowbell lies behind the windmill until rehung.
-Player text is terse and tagged (`[gear]`, `[place]`...; `textRules.test.ts`); the HUD has a sky dial and a compass strip. **NPCs talk in blips**
-(`core/blips.ts`, `content/voices.ts`, tune on `/blips.html`; Voice volume in Settings); the speech synth is shelved in `labs/speech/`. Heard and approved by the owner.
-Unplayed by the owner: the text pass, the choice window, the 10-minute day, Dawn/Nightfall cards, the Lamplighter's dawn burn and rise/gutter,
-the bell hunt, thorns, dial, compass, lone oak, village polish, day/night lighting, Settings, surfing, the gate, D3, the prism, dungeon fog.
-**Next:** the queue in the roadmap, from 7 (blight scars and routing; plan mode). Dev server: port 5273.
+valley: violet **scars** seep from the gate (hurt underfoot, jumpable) and **thorn clumps** grow along them (hurt to touch, 5 sword hits fell one
+for good); 3 thornlings guard the grove road. After it, only Lark and Pip remain in the village, and the Morrowbell lies behind the windmill.
+Player text is terse and tagged (`textRules.test.ts`); the HUD has a sky dial and a compass strip. **NPCs talk in blips** (`core/blips.ts`,
+`content/voices.ts`, `/blips.html`); the speech synth is shelved in `labs/speech/`. Unplayed by the owner: most of the 2026-11-04 batch (day/night,
+the Lamplighter's dawn, the bell hunt, Settings, surfing, the gate, D3, the prism, dungeon fog) and the scars, cutting and guards.
+**Next:** the queue in the roadmap, from 8 (the inventory tab; no plan mode). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 

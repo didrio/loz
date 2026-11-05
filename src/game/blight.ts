@@ -16,6 +16,14 @@ interface AreaLike {
   id: string;
   indoor?: boolean;
   enemyCount: number;
+  enemyPosts?: readonly EnemyPost[];
+}
+
+/** Where some of an area's thornlings always wait (the blighted valley's guards; `FIELD_POSTS` in layout.ts). */
+export interface EnemyPost {
+  x: number;
+  z: number;
+  count: number;
 }
 
 /** Is the blight meant to lie on this area right now? */
@@ -29,10 +37,16 @@ export function stepBlight(level: number, target: number, dt: number) {
   return level < target ? Math.min(target, level + d) : Math.max(target, level - d);
 }
 
-/** What lives in the field: the restored valley keeps a few stray thornlings and no wisps. */
+/**
+ * What lives in the field: the restored valley keeps a few stray thornlings and no wisps. While blighted, the
+ * area's posts are manned first (out of its `enemyCount`) and the rest roam at random.
+ */
 export function fieldPopulation(area: AreaLike, valleyOpen: boolean) {
   const restored = area.id === 'overworld' && valleyOpen;
-  return { thornlings: restored ? STRAY_THORNLINGS : area.enemyCount, wisps: !restored };
+  if (restored) return { thornlings: STRAY_THORNLINGS, wisps: false, posts: [] };
+  const posts = area.enemyPosts ?? [];
+  const posted = posts.reduce((n, p) => n + p.count, 0);
+  return { thornlings: Math.max(0, area.enemyCount - posted), wisps: true, posts };
 }
 
 const BLIGHT_MOODS: Partial<Record<MusicMood, MusicMood>> = { day: 'blight', night: 'blightNight', village: 'blightVillage', villageNight: 'blightVillage' };
@@ -44,6 +58,7 @@ export function blightMood(mood: MusicMood, isBlighted: boolean): MusicMood {
 
 /**
  * The blight's thorns (world/overworld/blight.ts) on Wren: a full heart, no shield can stop it, and a hard
- * shove back out of the clump (the overworld's `thornAt` finds it). The sword never cuts them; they only go when the blight lifts.
+ * shove back out of the clump (the overworld's `thornAt` finds it). Scars hurt the same, underfoot. The sword fells a clump
+ * in `THORN_HP` hits (world/overworld/blight.ts), for good; scars only go when the blight lifts.
  */
 export const THORN_ATTACK: Attack = { damage: 2, guard: 0, unblockable: true, knockback: 10 };

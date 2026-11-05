@@ -81,4 +81,42 @@ export default async function run(t) {
     check(d > c.r + 0.4, `Wren is still in the thorns (${d.toFixed(2)} m from the clump's middle)`);
     await shot('06-thorns');
   });
+
+  await step('the sword fells a thorn clump in five hits, and it stays down (thorn.<id> saved)', async () => {
+    const c = await game(() => {
+      const g = window.embervale, p = g.player.pos;
+      const all = g.area.growths.clusters.filter((k) => k.hp > 0);
+      const near = all.reduce((a, b) => (Math.hypot(b.x - p.x, b.z - p.z) < Math.hypot(a.x - p.x, a.z - p.z) ? b : a));
+      return { id: near.id, x: near.x, z: near.z, r: near.r };
+    });
+    await until(() => window.embervale.player.invuln <= 0, 5000);
+    await teleport(c.x + c.r + 1, c.z, -Math.PI / 2); // just clear of the thorns, facing them
+    await wait(300);
+    const hpOf = () => game((id) => window.embervale.area.growths.clusters.find((k) => k.id === id).hp, c.id);
+    const end = Date.now() + 20000;
+    while ((await hpOf()) > 0 && Date.now() < end) await press('KeyJ', 1, 500);
+    check((await hpOf()) === 0, `the clump still stands (${await hpOf()} hits left)`);
+    check(await game((id) => window.embervale.state.has(id), c.id), `${c.id} was not saved`);
+    await shot('07-thorns-felled');
+    // It no longer hurts (its neighbours on a vein or ring may still overlap its middle, so ask for it by name).
+    const touching = await game((c) => {
+      const g = window.embervale, y = g.physics.groundY(c.x, c.z, 50) ?? 0;
+      return g.area.growths.clusters.some((k) => k.id === c.id && k.hp > 0) || g.area.thornAt(c.x, y, c.z)?.id === c.id;
+    }, c);
+    check(!touching, 'a felled clump still hurts');
+  });
+
+  await step('a scar underfoot costs a heart and shoves Wren out of its middle', async () => {
+    await until(() => window.embervale.player.invuln <= 0, 5000);
+    const at = { x: -11, z: -73 }; // a knot of the spine vein (SCARS in layout.ts), where the west fork leaves it
+    const hp = (await state()).hp;
+    await teleport(at.x, at.z, 0);
+    await until(() => window.embervale.player.invuln > 0, 5000).catch(() => {});
+    check((await state()).hp === hp - 2, `the scar took ${hp - (await state()).hp} half-hearts, not 2`);
+    await wait(800);
+    const p = (await state()).pos;
+    // The same shove as a thorn clump (~0.85 m): out of the vein's middle, to the side she stood on.
+    check(Math.hypot(p.x - at.x, p.z - at.z) > 0.6, `Wren was not shoved (${Math.hypot(p.x - at.x, p.z - at.z).toFixed(2)} m)`);
+    await shot('08-scar');
+  });
 }

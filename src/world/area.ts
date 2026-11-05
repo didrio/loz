@@ -4,6 +4,7 @@ import { Layer, Physics } from '../core/physics';
 import type { MusicMood } from '../core/tracks';
 import type { BellId, BellPost } from './bell';
 import type { BrokenJar } from './jars';
+import type { ThornHit } from './overworld/blight';
 import type { MurmurbudLook } from './murmurbud';
 import { disposeTree, mergeStatic } from '../render/materials';
 import type { FogLook } from '../render/sky';
@@ -33,6 +34,8 @@ export interface Area {
   enemySpot(rand: () => number, near?: THREE.Vector3, minDist?: number, maxDist?: number): { x: number; z: number } | null;
   /** How many thornlings roam here. */
   readonly enemyCount: number;
+  /** Where some of them always wait instead (out of `enemyCount`; the blighted valley's guards). */
+  readonly enemyPosts?: readonly { x: number; z: number; count: number }[];
   /**
    * Indoors (dungeons, interiors): no sky or sun, its own dim light and dark fog, the clock
    * stands still, no night wisps or respawning field enemies, and a closer camera.
@@ -67,8 +70,13 @@ export interface Area {
   streamAt?(x: number, z: number): void;
   /** The sky's blight level (0–1) each frame, for scenery that grows or shrinks with it (the overworld's thorns). */
   setBlight?(level: number): void;
-  /** The blight's thorn clump a body at (x, y, z) is touching, if any (the overworld's; see game/blight.ts). */
+  /**
+   * The blight's thorn clump or scar a body at (x, y, z) is touching, if any (the overworld's; see game/blight.ts):
+   * the point a shove should come from.
+   */
   thornAt?(x: number, y: number, z: number): { x: number; z: number } | null;
+  /** A sword swing at the blight's thorn clumps (same reach as `cut`): each one reached takes a hit. */
+  hitThorns?(x: number, z: number, dirX: number, dirZ: number, reach: number): ThornHit[];
   update(dt: number, env: AreaEnv): void;
   /**
    * Moves the area's moving platforms. The game calls it *before* the player updates, so a

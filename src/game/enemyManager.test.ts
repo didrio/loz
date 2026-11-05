@@ -45,6 +45,19 @@ describe('EnemyManager population', () => {
     expect(m.list.length).toBe(3);
   });
 
+  it('mans the posts first, and a posted thornling waits for the area to come back, not a timer', () => {
+    const physics = flatGround();
+    const m = new EnemyManager(new THREE.Group(), physics, field(14), { thornlings: 2, wisps: false, posts: [{ x: -10, z: -10, count: 3 }] });
+    expect(m.list.length).toBe(5);
+    const posted = m.list.slice(0, 3);
+    for (const e of posted) expect(Math.hypot(e.pos.x + 10, e.pos.z + 10)).toBeLessThan(3);
+    const { env } = enemyEnv(physics, new THREE.Vector3(30, 0, 30));
+    posted[0].gone = true;
+    m.update(0.1, env);
+    m.update(60, env);
+    expect(m.list.length).toBe(4);
+  });
+
   it('spawns no night wisps when the population has none', () => {
     const physics = flatGround();
     const env = { ...enemyEnv(physics, new THREE.Vector3(0, 0, 0)).env, night: true };

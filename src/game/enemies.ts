@@ -547,8 +547,17 @@ export class EnemyManager {
   /** The thornlings this manager spawned itself: only these come back as random field spawns. */
   private readonly fieldBorn = new WeakSet<Enemy>();
 
-  /** `population` overrides the area's usual one (the restored valley: a few strays, no wisps; see game/blight.ts). */
-  constructor(private parent: THREE.Object3D, private physics: Physics, private area: Area, private population?: { thornlings: number; wisps: boolean }) {
+  /**
+   * `population` overrides the area's usual one (the restored valley: a few strays, no wisps; see game/blight.ts).
+   * Posted thornlings wait at their post and only come back when the area does (a death or a reload), never on a timer.
+   */
+  constructor(private parent: THREE.Object3D, private physics: Physics, private area: Area, private population?: { thornlings: number; wisps: boolean; posts?: readonly { x: number; z: number; count: number }[] }) {
+    for (const p of population?.posts ?? []) {
+      for (let i = 0; i < p.count; i++) {
+        const a = (i / p.count) * Math.PI * 2;
+        this.list.push(new Thornling(this.parent, this.physics, p.x + Math.cos(a) * 2.5, p.z + Math.sin(a) * 2.5));
+      }
+    }
     for (let i = 0; i < (population?.thornlings ?? area.enemyCount); i++) this.spawnThornling(null);
   }
 

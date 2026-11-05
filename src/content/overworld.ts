@@ -275,6 +275,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       bells.restore(state);
       hints.restore(state);
       ow.jars.restore((id) => state.has(`jar.${id}`));
+      ow.growths.restore((id) => state.has(id));
       if (state.has('groveChestOpened')) ow.chest.open(true);
       if (state.has('shrineOpen')) ow.door.setOpen();
       if (state.has('lamplighterDefeated')) {

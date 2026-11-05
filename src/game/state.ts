@@ -8,8 +8,8 @@ import { Flasks } from './flasks';
  * shipped: renaming one would silently drop it from existing saves.
  */
 export const FLAGS = ['metMaren', 'hasSword', 'hasShield', 'groveChestOpened', 'shrineOpen', 'lamplighterDefeated', 'hollowVessel', 'gravelheartVessel', 'valleyOpen', 'gotGroveKey', 'village.millKey', 'village.stonewardTunic', 'village.marenBell', 'village.tobinBell', 'village.surfIdea', 'village.surfTried', 'village.scare', 'village.marenSigil', 'village.tobinSigil', 'village.larkSigil', 'village.odoSigil', 'village.larkRelief', 'village.pipSigil', 'village.searchAsked', 'village.metPip', 'village.dollFound', 'village.dollReturned', 'village.bellMoved', 'hint.tunic', 'hint.flasks', 'hint.bells', 'hint.boss'] as const;
-/** A broken jar (`jar.<ruin id>.<n>`; world/jars.ts) is saved as a flag by its own id. */
-export type Flag = (typeof FLAGS)[number] | `jar.${string}` | `sigil.${string}`;
+/** Besides the named flags: a broken jar (`jar.<ruin id>.<n>`; world/jars.ts), a read sigil (`sigil.<id>`), a felled thorn clump (`thorn.<id>`; world/overworld/blight.ts). */
+export type Flag = (typeof FLAGS)[number] | `jar.${string}` | `sigil.${string}` | `thorn.${string}`;
 
 /** Items Wren can carry (the dungeon tools). Saved by id; unknown ids are dropped on load. */
 export const ITEMS = ['tether'] as const;
@@ -173,7 +173,7 @@ export class GameState {
   /** Restores from a (validated) save. Unknown flags, items and bells are dropped. */
   load(d: SaveData) {
     this.reset();
-    for (const f of d.flags) if ((FLAGS as readonly string[]).includes(f) || f.startsWith('jar.') || f.startsWith('sigil.')) this.flags.add(f as Flag);
+    for (const f of d.flags) if ((FLAGS as readonly string[]).includes(f) || f.startsWith('jar.') || f.startsWith('sigil.') || f.startsWith('thorn.')) this.flags.add(f as Flag);
     this.keys = d.keys;
     this.area = d.area;
     for (const i of d.items) if ((ITEMS as readonly string[]).includes(i)) this.items.add(i as Item);

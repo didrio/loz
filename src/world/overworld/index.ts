@@ -11,12 +11,12 @@ import { buildHollow } from './hollow';
 import { MurmurbudLook } from '../murmurbud';
 import { SigilLook } from '../sigil';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
-import { areaNameAt, BUDS, HOMES, MILL_BED, MILL_TOWER, inVillageGuard, inVillageMusic, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_LOST, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { areaNameAt, BUDS, FIELD_POSTS, HOMES, MILL_BED, MILL_TOWER, inVillageGuard, inVillageMusic, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_LOST, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { NORTHPASS } from './northpass';
 import { RegionStreamer } from './region';
 import { buildGrass, buildLoneOak, buildRocks, buildTrees, bushSpots } from './nature';
 import { buildRuins } from './ruins';
-import { buildBlightGrowths, thornTouch } from './blight';
+import { buildBlightGrowths, scarTouch, thornTouch } from './blight';
 import { buildBounds, buildTerrain, buildWater } from './terrain';
 import { buildVillage } from './village';
 
@@ -32,6 +32,7 @@ export class Overworld implements Area {
   readonly waterLevel = WATER_Y;
   readonly voiceRoom = 'outdoors';
   readonly enemyCount = 14;
+  readonly enemyPosts = FIELD_POSTS;
   /** Where Wren arrives from elsewhere: just outside the shrine door, facing away from it. */
   readonly entrances: Record<string, { x: number; z: number; facing: number }> = {
     shrineDoor: { x: SHRINE_DOOR.x - 3.5, z: SHRINE_DOOR.z, facing: -Math.PI / 2 },
@@ -75,8 +76,8 @@ export class Overworld implements Area {
   private readonly bushes: BushField;
   /** The jars in the ruins (breaking one is saved as `jar.<id>`). */
   readonly jars: JarField;
-  /** The blight's thorns in the field; they shrink away as the blight lifts. */
-  private readonly growths: ReturnType<typeof buildBlightGrowths>;
+  /** The blight's thorns and scars in the field; they shrink away as the blight lifts (a felled clump is `thorn.<id>`). */
+  readonly growths: ReturnType<typeof buildBlightGrowths>;
   private blightLevel = 0;
   /** The sigil in the hollow, once the Lamplighter falls (`sigil.hollow`). */
   readonly sigil: SigilLook;
@@ -230,7 +231,11 @@ export class Overworld implements Area {
   }
 
   thornAt(x: number, y: number, z: number) {
-    return thornTouch(this.growths.clusters, x, y, z, this.blightLevel);
+    return thornTouch(this.growths.clusters, x, y, z, this.blightLevel) ?? scarTouch(x, y, z, this.blightLevel);
+  }
+
+  hitThorns(x: number, z: number, dirX: number, dirZ: number, reach: number) {
+    return this.growths.hit(x, z, dirX, dirZ, reach);
   }
 
   streamAt(x: number, z: number) {
@@ -295,6 +300,7 @@ export class Overworld implements Area {
   update(dt: number, env: AreaEnv) {
     const { night } = env;
     this.t += dt;
+    this.growths.update(dt);
     this.blades.rotation.x += dt * 0.6;
     this.water.position.y = WATER_Y + Math.sin(this.t * 0.8) * 0.05;
     this.windowMat.emissive.setRGB(0.9 * night, 0.6 * night, 0.25 * night);

@@ -93,7 +93,7 @@ export class Combat {
     this.cord.update(dt, player.handPos());
     this.g.enemies.update(dt, this.enemyEnv);
     this.g.hazards.update(dt, this.hazardEnv);
-    // The blight's thorns: brushing a clump costs a heart and shoves Wren back out of it.
+    // The blight's thorns and scars: brushing a clump or treading a scar costs a heart and shoves Wren back out.
     const thorn = this.g.area.thornAt?.(player.pos.x, player.pos.y, player.pos.z);
     if (thorn) this.hitPlayer(new THREE.Vector3(thorn.x, player.pos.y, thorn.z), THORN_ATTACK);
     this.g.pickups.update(dt, player.pos, (x, z, fromY) => this.g.physics.groundY(x, z, fromY) ?? fromY - 1, (k) => {
@@ -177,6 +177,14 @@ export class Combat {
         sfx.cut();
         particles.burst(at, 0x4f9a35, 14, 5, 0.6);
         pickups.drop(at, 0.3, 0.1);
+      },
+      onHitThorn: (hit) => {
+        // Violet chips on every hit; a felled clump bursts and stays down for good.
+        particles.burst(hit.at, 0x5a2a78, hit.felled ? 26 : 8, hit.felled ? 6 : 4, hit.felled ? 0.8 : 0.45);
+        if (hit.felled) {
+          this.g.state.set(hit.id);
+          sfx.jar();
+        } else sfx.cut();
       },
       onBreakJar: (jar) => {
         this.g.state.set(`jar.${jar.id}`);

@@ -7,6 +7,7 @@ import { GroundShadow, shieldModel } from '../render/shapes';
 import type { LockTarget } from './lockon';
 import type { Area } from '../world/area';
 import type { BrokenJar } from '../world/jars';
+import type { ThornHit } from '../world/overworld/blight';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
 import { ATTACK_BOOST } from './flasks';
 import { Guard } from './guard';
@@ -36,6 +37,8 @@ export interface PlayerEnv {
   onCutBush(at: THREE.Vector3): void;
   /** A jar broke (the area's `breakJars`). */
   onBreakJar?(jar: BrokenJar): void;
+  /** The sword struck a thorn clump (the area's `hitThorns`). */
+  onHitThorn?(hit: ThornHit): void;
   onJump(): void;
   /** Shield surfing is learned and the area is outdoors (see surf.ts). Off when absent. */
   canSurf?: boolean;
@@ -537,9 +540,11 @@ export class Player {
       const f = this.forward;
       const cut = env.area.cut(this.pos.x, this.pos.z, f.x, f.z, 2.2);
       const jars = env.area.breakJars?.(this.pos.x, this.pos.z, f.x, f.z, 2.2) ?? [];
-      if (cut.length || jars.length) this.bushesCut = true;
+      const thorns = env.area.hitThorns?.(this.pos.x, this.pos.z, f.x, f.z, 2.2) ?? [];
+      if (cut.length || jars.length || thorns.length) this.bushesCut = true;
       for (const p of cut) env.onCutBush(p);
       for (const j of jars) env.onBreakJar?.(j);
+      for (const t of thorns) env.onHitThorn?.(t);
     }
   }
 

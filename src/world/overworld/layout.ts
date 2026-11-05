@@ -456,3 +456,149 @@ export function thicketClusters(t: { x: number; z: number; r: number; gap: numbe
   }
   return out;
 }
+
+/**
+ * The blight's scars (docs/world.md, "The blight"): jagged violet veins in the ground, seeping south from the
+ * sealed gate. Each point is (x, z, width in m); the line between is jagged by `scarLine`. Touching one with
+ * your feet hurts like a thorn clump; most are thin enough to jump (a jump clears ~5.5 m), the pool at the gate
+ * is not. Thorn clumps burst out along the `thorns` stretches (meters along the vein): that's where a vein
+ * becomes a wall, until the sword cuts through. Roads, the village and water stay clear (layout.test.ts).
+ */
+export const SCARS = [
+  {
+    id: 'spine', // from the gate straight down the north field, splitting it between the village and the grove
+    pts: [[4, -106, 7], [1, -97, 6], [-5, -86, 3], [-11, -73, 2], [-14, -60, 1.8], [-9, -47, 1.6], [-2, -38, 1.1]],
+    thorns: [[24, 34], [50, 62]],
+  },
+  {
+    id: 'westFork', // off the spine toward the shield's cottage, dying out before the village
+    pts: [[-11, -73, 1.8], [-19, -81, 1.6], [-24, -90, 1.4], [-26, -100, 1]],
+    thorns: [[22, 30]],
+  },
+  {
+    id: 'eastFork', // past the gate home's ruin toward the grove's marsh
+    pts: [[1, -97, 3], [10, -88, 2.2], [22, -81, 1.6], [34, -77, 1.4], [44, -73, 1]],
+    thorns: [[16, 28], [40, 46]],
+  },
+  {
+    id: 'westVein', // across the way from Thistledown to the Hushing Gorge
+    pts: [[-100, -28, 1.2], [-100, -19, 1.6], [-98, -6, 2], [-102, 6, 1.6], [-107, 16, 1.1]],
+    thorns: [[10, 30]],
+  },
+] as const satisfies readonly { id: string; pts: readonly (readonly [number, number, number])[]; thorns: readonly (readonly [number, number])[] }[];
+
+export type ScarId = (typeof SCARS)[number]['id'];
+type ScarDef = (typeof SCARS)[number];
+
+/** A point of a scar's jagged line: where it is, how wide, and how far along it (m). */
+export interface ScarPoint {
+  x: number;
+  z: number;
+  w: number;
+  s: number;
+}
+
+/** A small hash noise in -1..1 (pure, so the look and the hurt rule agree). */
+const jag = (i: number, k: number) => {
+  const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453;
+  return (v - Math.floor(v)) * 2 - 1;
+};
+
+const scarLines = new Map<string, ScarPoint[]>();
+
+/** A scar's jagged line: its points split into ~2.5 m steps, each knocked sideways and its width varied. */
+export function scarLine(scar: ScarDef): ScarPoint[] {
+  const cached = scarLines.get(scar.id);
+  if (cached) return cached;
+  const k = scar.id.length * 7 + scar.id.charCodeAt(0);
+  const out: ScarPoint[] = [];
+  let i = 0;
+  for (let p = 0; p < scar.pts.length - 1; p++) {
+    const [ax, az, aw] = scar.pts[p], [bx, bz, bw] = scar.pts[p + 1];
+    const len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 2.5));
+    const nx = -(bz - az) / len, nz = (bx - ax) / len;
+    for (let j = 0; j < n; j++, i++) {
+      const t = j / n, w = aw + (bw - aw) * t;
+      // The ends of each stretch stay on the given points (so forks meet); between, it zigzags.
+      const side = j === 0 ? 0 : jag(i, k) * Math.min(1.1, 0.4 + w * 0.25);
+      out.push({ x: ax + (bx - ax) * t + nx * side, z: az + (bz - az) * t + nz * side, w: w * (0.8 + 0.4 * Math.abs(jag(i, k + 1))), s: 0 });
+    }
+  }
+  const [lx, lz, lw] = scar.pts[scar.pts.length - 1];
+  out.push({ x: lx, z: lz, w: lw * 0.6, s: 0 });
+  for (let j = 1; j < out.length; j++) out[j].s = out[j - 1].s + Math.hypot(out[j].x - out[j - 1].x, out[j].z - out[j - 1].z);
+  scarLines.set(scar.id, out);
+  return out;
+}
+
+/** The point `s` meters along a scar's jagged line. */
+function alongScar(line: ScarPoint[], s: number) {
+  for (let j = 1; j < line.length; j++) {
+    if (line[j].s < s) continue;
+    const a = line[j - 1], b = line[j], t = (s - a.s) / Math.max(1e-6, b.s - a.s);
+    return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t };
+  }
+  const l = line[line.length - 1];
+  return { x: l.x, z: l.z };
+}
+
+/** The thorn clumps bursting out of a scar: one every 1.5 spreads (so they overlap) along each `thorns` stretch. */
+export function scarClusters(scar: ScarDef) {
+  const line = scarLine(scar);
+  const out: { id: `thorn.${string}`; x: number; z: number }[] = [];
+  for (const [from, to] of scar.thorns) {
+    const n = Math.max(1, Math.round((to - from) / (THORN_SPREAD * 1.5)) + 1);
+    for (let i = 0; i < n; i++) out.push({ id: `thorn.${scar.id}.${out.length}`, ...alongScar(line, from + ((to - from) * i) / Math.max(1, n - 1)) });
+  }
+  return out;
+}
+
+/**
+ * Lone thorn clumps out in the open field, seedlings of the veins (hand-placed, so they never wall a way:
+ * each stands well clear of the next and of the veins' own clumps).
+ */
+export const LONE_THORNS = [
+  [-12, -110], [24, -62], [16, -48], [-36, -14], [-76, -12], [-38, 10], [38, -106], [62, -18], [-118, -6], [-86, 22],
+  [-30, 34], [38, 4], [34, 50], [-4, 104], [42, 120], [-58, 22],
+] as const;
+
+/**
+ * Every thorn clump on the valley while the blight lies on it: the thickets' rings, the veins' stretches and the
+ * lone ones, each with the id its cut flag is saved under (`<id>` is `thorn.<thicket|scar|lone>.<n>`).
+ */
+export function thornClusters() {
+  const out: { id: `thorn.${string}`; x: number; z: number }[] = [];
+  for (const t of THICKETS) thicketClusters(t).forEach((p, i) => out.push({ id: `thorn.${t.id}.${i}`, ...p }));
+  for (const s of SCARS) out.push(...scarClusters(s));
+  LONE_THORNS.forEach(([x, z], i) => out.push({ id: `thorn.lone.${i}`, x, z }));
+  return out;
+}
+
+/** The scar under (x, z), if any: its half-width there, how far from its middle, and the way out (unit, xz). */
+export function scarAt(x: number, z: number, widthScale = 1) {
+  for (const scar of SCARS) {
+    const line = scarLine(scar);
+    for (let j = 1; j < line.length; j++) {
+      const a = line[j - 1], b = line[j];
+      const dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz;
+      const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / l2));
+      const cx = a.x + dx * t, cz = a.z + dz * t, d = Math.hypot(x - cx, z - cz);
+      const hw = ((a.w + (b.w - a.w) * t) / 2) * widthScale;
+      if (d >= hw) continue;
+      // Out the side she's on (the line's normal if she's dead centre).
+      const len = Math.sqrt(l2);
+      const side = (x - a.x) * -dz + (z - a.z) * dx >= 0 ? 1 : -1;
+      const out = d > 0.05 ? { x: (x - cx) / d, z: (z - cz) / d } : { x: (-dz / len) * side, z: (dx / len) * side };
+      return { id: scar.id, d, hw, out };
+    }
+  }
+  return null;
+}
+
+/**
+ * Where some of the blighted valley's thornlings always wait (they come back there after a death, like every
+ * enemy). The grove's: on the way to the sword, so Wren slips past them unarmed and comes back to fight.
+ */
+export const FIELD_POSTS = [
+  { id: 'groveRoad', x: 55, z: -60, count: 3 }, // where the road wades into the grove's marsh
+] as const;

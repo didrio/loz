@@ -28,14 +28,7 @@ dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things 
 6. **Blip loose ends** (small; per character, never line by line, owner's call 2026-11-04): tweak a character's voice only if the owner
    asks (`/blips.html`, values in `content/voices.ts`); a smoke step that a talk blips and the skip rule holds; a whole-page
    `[soft]`/`[shake]` only where a line clearly needs it. Fold into the next session that touches dialog.
-7. **Blight scars and routing** (was C8; owner's ask, 2026-11-04; **plan mode**: it's level design across the valley). While the
-    blight lies on the valley: jagged violet **scars** streak the ground (not in the village, not in water) and hurt exactly
-    like a thorn clump (`THORN_ATTACK`: same damage, same shove), and they can't be destroyed. **Thorn clumps become
-    breakable** (changes the "sword never cuts them" rule in [world.md](world.md), "The blight"): only with the sword, about
-    5 hits. Then re-place clumps and scars together so the routes to the POIs take a little thought (the field, the grove,
-    the Hushing Gorge on the way to the Morrowbell), never a maze: e.g. the way to the sword chest runs past enemies, so
-    Wren turns round armed and fights them. It should look grown, not designed, and the valley's ground must still make
-    sense once the blight lifts and it all shrinks away. Extend `layout.test.ts` (roads, POIs still reachable, gaps).
+7. ~~Blight scars and routing~~ done 2026-11-04 ([world.md](world.md), "The blight"; unplayed).
 8. **The inventory tab** in the pause menu (milestone 2 below).
 
 Later, not yet in the queue: an **SFX pass** (owner's ask, 2026-11-04), and the rescue quests for Maren, Tobin and Odo
