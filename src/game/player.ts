@@ -11,6 +11,7 @@ import type { ThornHit } from '../world/overworld/blight';
 import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
 import { ATTACK_BOOST } from './flasks';
 import { Guard } from './guard';
+import { LUNGE_SPEED, LUNGE_TIME, lungeClear } from './lunge';
 import { SURF_MIN_SPEED, SURF_SPEED, surfNext, surfSpeedNext } from './surf';
 
 /** What the player wants to do this frame, in world space. Built from input, or by scripts. */
@@ -370,6 +371,9 @@ export class Player {
     this.queued = false;
   }
 
+  /** This swing steps forward (see lunge.ts); not when that could carry Wren onto thorns, off a ledge or away from a sign. */
+  private lunge = false;
+
   private startAttack(i: number, env: PlayerEnv) {
     this.state = 'attack';
     this.combo = i;
@@ -378,6 +382,8 @@ export class Player {
     this.hitSet.clear();
     this.struck = false;
     this.bushesCut = false;
+    const f = this.forward;
+    this.lunge = lungeClear(env.area, (x, z) => this.physics.groundY(x, z, this.pos.y + 1), this.pos, f.x, f.z);
     env.onSwing();
   }
 
@@ -456,7 +462,7 @@ export class Player {
       }
       case 'attack': {
         const sw = SWINGS[this.combo];
-        vel.copy(this.forward).multiplyScalar(this.t < 0.12 ? 3 : 0);
+        vel.copy(this.forward).multiplyScalar(this.lunge && this.t < LUNGE_TIME ? LUNGE_SPEED : 0);
         if (this.t > 0.07 && this.t < sw.dur * 0.75) this.swordHits(env, sw.dmg);
         if (this.t >= sw.dur) {
           if (this.queued) this.startAttack(this.combo + 1, env);

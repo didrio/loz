@@ -16,7 +16,7 @@ function setup() {
   const p = new Player(new THREE.Scene(), physics, health);
   p.teleport(0, 0, 0, 0); // facing +z
   const env = {
-    area: { waterLevel: null, cut: () => [] } as unknown as Area,
+    area: { waterLevel: null, interactables: [], cut: () => [] } as unknown as Area,
     lockTarget: null, enemies: [], hasSword: true, hasShield: true as boolean,
     onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
   } satisfies PlayerEnv;
@@ -229,7 +229,7 @@ describe('Player.receiveHit', () => {
       hurt: (dmg: number) => (dealt.push(dmg), 'hit'),
     };
     const env = {
-      area: { waterLevel: null, cut: () => [] } as unknown as Area,
+      area: { waterLevel: null, interactables: [], cut: () => [] } as unknown as Area,
       lockTarget: null, enemies: [target] as unknown as PlayerEnv['enemies'], hasSword: true, hasShield: true,
       onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
     } satisfies PlayerEnv;
@@ -260,7 +260,7 @@ describe('Player.receiveHit', () => {
       hurt: (_dmg: number, _from: THREE.Vector3, part: string) => (parts.push(part), part === 'maul' ? 'guarded' : 'hit'),
     };
     const env = {
-      area: { waterLevel: null, cut: () => [] } as unknown as Area,
+      area: { waterLevel: null, interactables: [], cut: () => [] } as unknown as Area,
       lockTarget: null, enemies: [target] as unknown as PlayerEnv['enemies'], hasSword: true, hasShield: true,
       onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
     } satisfies PlayerEnv;
@@ -339,7 +339,7 @@ describe('Player on a moving platform', () => {
     const p = new Player(new THREE.Scene(), physics, { hp: 6, maxHp: 6 });
     p.teleport(startX, 1, 0, 0);
     const env = {
-      area: { waterLevel: null, cut: () => [] } as unknown as Area,
+      area: { waterLevel: null, interactables: [], cut: () => [] } as unknown as Area,
       lockTarget: null, enemies: [], hasSword: true, hasShield: true,
       onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
     } satisfies PlayerEnv;
@@ -424,7 +424,7 @@ describe('Edge stickiness (trial rooms)', () => {
     p.edgeAssist = edgeAssist;
     p.teleport(0, 1, 0, 0);
     const env = {
-      area: { waterLevel: null, cut: () => [] } as unknown as Area,
+      area: { waterLevel: null, interactables: [], cut: () => [] } as unknown as Area,
       lockTarget: null, enemies: [], hasSword: true, hasShield: true,
       onSwing() {}, onHitEnemy() {}, onCutBush() {}, onJump() {},
     } satisfies PlayerEnv;

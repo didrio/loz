@@ -155,6 +155,7 @@ Each item: what, why it matters at 50–100×, and the trigger that says "do it 
 
 ## Known quirks and tech debt
 
+- **`combat` smoke fails its scar step** ("a scar underfoot … shoves Wren out of its middle": shoved 0.50 m; also on main before the lunge change, 2026-11-04). Find out if the scar's shove or the test's position is wrong.
 - **Village homes are shells**: the two standing cottages have locked doors (`door.home0/1`, "The door is locked.") and no
   interior. When they become enterable, follow the mill: a `HingedDoor` (`world/objects.ts`), a room inside the walls
   (the camera's doorway pane is `Layer.CameraOnly`), a bed or story beat. Outside the square the road-gate lanterns have glow but no real light

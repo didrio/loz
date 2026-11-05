@@ -138,6 +138,7 @@ src/
     pauseMenu.ts           the pause menu (P / Start): tabs Settings, Hints, Messages, Dev (sprint, invincible, save states)
     murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, sounds, the gauge)
     player.ts, guard.ts, surf.ts   Wren (movement, sword, shield, stagger); the shield's guard; surfing's rule
+    lunge.ts               whether a swing's small step forward is allowed (not near thorns, ledges, signs, buds)
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
     sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
     blight.ts              the blight's rules (where it lies, the lift, the strays, its songs, THORN_ATTACK)

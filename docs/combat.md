@@ -34,7 +34,7 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
 - Blocking with fewer slots up than the cost **breaks the guard**: that hit is still
   stopped, but Wren is knocked back and **staggered for 2 s**: no shield, no jumping, and
   movement drops to a crawl at 6% speed (`STAGGER_SPEED`), and **no sword** (owner's call,
-  2026-11-02: a swing's lunge carried Wren out of the crawl). The shield droops and flashes
+  2026-11-02: a swing's lunge carried Wren out of the crawl; the swing's ~0.36 m step is cancelled near thorns/scars, ledges, signs, people and Murmurbuds: `game/lunge.ts`, owner's call 2026-11-04). The shield droops and flashes
   red; slots refill meanwhile since it's down. The shield stays
   up through jumps (Space works while holding Shift).
 - **Shield surfing** (`game/surf.ts`, owner's design 2026-11-03): once Lark has given Wren the idea
