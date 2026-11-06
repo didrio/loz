@@ -21,10 +21,10 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 As of 2026-11-06: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
-after it only Lark and Pip remain in the village. Text is terse and tagged (`textRules.test.ts`); NPCs talk in **blips**. **Touch controls** are
+after it only Lark and Pip remain in the village. The picture has a **retro look** (720 rows, dithered, bloomed; a Setting). Text is terse and tagged (`textRules.test.ts`); NPCs talk in **blips**. **Touch controls** are
 in a friend's playtest on GitHub Pages. Past the Waybell the road goes down into **Sallowmere** ([sallowmere.md](docs/sallowmere.md) "The map"):
 the mere, its water (shallow wades, deep is a fall), causeways, the Weir's wall and **Stiltwick** (the town on stilts, still empty of people) stand, streamed a step a frame.
-**Next:** the town's people, enemy, bell, ferry, lantern and dungeon, through the open tickets in [docs/tickets.md](docs/tickets.md). Every gate
+**Next:** the town's people, enemy, bell, ferry, lantern and dungeon, and the look pass (textures, de-uniforming), through the open tickets in [docs/tickets.md](docs/tickets.md). Every gate
 from a new game to the descent is data (`content/progression.ts`, checked by a test). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
@@ -118,7 +118,8 @@ src/
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
     blips.ts               talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
-  render/                  materials (shared/unique, static merging), shapes, characters, sky (incl. the blight look), particles, motes (ash)
+  render/                  materials (shared/unique, static merging), shapes, characters, sky (incl. the blight look), particles, motes (ash),
+                           retro.ts (the retro look: low-res target, bloom, dither + colour crush; Settings' Retro look)
   world/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern

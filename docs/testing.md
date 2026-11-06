@@ -34,9 +34,10 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   `npm run look -- <scenes> --approve` saves them as the new baselines (commit `scripts/baselines/`); a refactor should print
   "unchanged". `--approve` also rewrites those scenes' budgets in `scripts/look-budgets.json` (peak draw calls and triangles
   of the scene + 25%); a scene over its budget fails the run. Use `--approve` on the scenes you ran, not blindly on all.
-  **No baselines are committed yet** (owner's call, 2026-11-06: a big visual overhaul, the polygon-count increase, is coming and
-  would change every shot): until the first full `npm run look -- --approve` and commit, every shot prints "new", budgets are
-  unset, and `looker` works as it did before.
+  **Only the `sallowmere` scene has committed baselines** (owner's call, 2026-11-06: a big visual overhaul, the polygon-count increase, is coming and
+  would change every shot, so the rest wait for a full `npm run look -- --approve`); other shots print "new" and have no budgets. T18's retro look
+  (on by default) changed every shot; the Sallowmere baselines were re-approved with it. Since the look moves `renderer.info`, `RetroPipeline`
+  turns `autoReset` off so the budgets still count the whole frame.
   Look runs on a **stepped clock** (`openGame(..., { stepped: true })` in `browser.mjs`): the page's frames only run when the
   script steps them (50 ms of game time each), `h.wait(ms)` runs frames instead of sleeping, `h.until` checks after every
   frame (its timeout is game time), `Math.random` is seeded and CSS animations are finished before a shot. Two runs on

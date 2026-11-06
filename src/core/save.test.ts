@@ -160,8 +160,23 @@ describe('save files', () => {
   });
 
   it('keeps saved settings and clamps or drops nonsense', () => {
-    const s = decodeSettings('{"masterVolume":0.3,"mouseSensitivity":9,"stickSensitivity":"fast","invertY":true,"quality":2,"sfxVolume":-1}');
-    expect(s).toMatchObject({ masterVolume: 0.3, mouseSensitivity: 2, stickSensitivity: 1, invertY: true, quality: 2, sfxVolume: 0 });
-    expect(decodeSettings('{"quality":7}').quality).toBe(1);
+    const s = decodeSettings('{"masterVolume":0.3,"mouseSensitivity":9,"stickSensitivity":"fast","invertY":true,"look":4,"sfxVolume":-1}');
+    expect(s).toMatchObject({ masterVolume: 0.3, mouseSensitivity: 2, stickSensitivity: 1, invertY: true, look: 4, sfxVolume: 0 });
+    expect(decodeSettings('{"look":7}').look).toBe(DEFAULT_SETTINGS.look);
+  });
+
+  it('turns the old Sharpness setting into a look: sharp stays crisp, performance goes cheapest, standard gets the default', () => {
+    expect(decodeSettings('{"quality":2}').look).toBe(0);
+    expect(decodeSettings('{"quality":0}').look).toBe(4);
+    expect(decodeSettings('{"quality":1}').look).toBe(DEFAULT_SETTINGS.look);
+    expect(decodeSettings('{"quality":7}').look).toBe(DEFAULT_SETTINGS.look);
+    expect(decodeSettings('{"quality":2,"look":1}').look).toBe(1); // a saved look wins
+  });
+
+  it('gives a fresh install the caller\'s defaults (touch passes a cheaper look)', () => {
+    const touch = { ...DEFAULT_SETTINGS, look: 4 as const };
+    expect(decodeSettings(null, touch).look).toBe(4);
+    expect(decodeSettings('not json', touch).look).toBe(4);
+    expect(decodeSettings('{"look":1}', touch).look).toBe(1);
   });
 });

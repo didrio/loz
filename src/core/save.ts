@@ -51,8 +51,8 @@ export interface Settings {
   mouseSensitivity: number;
   stickSensitivity: number;
   invertY: boolean;
-  /** Render sharpness: 0 performance, 1 standard, 2 sharp (see QUALITY_PIXEL_RATIO). */
-  quality: 0 | 1 | 2;
+  /** The retro look (render/retro.ts): 0 off, then 1-4 by internal height (1080, 720, 540, 360). Replaced the old Sharpness. */
+  look: 0 | 1 | 2 | 3 | 4;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -63,7 +63,7 @@ export const DEFAULT_SETTINGS: Settings = {
   mouseSensitivity: 1,
   stickSensitivity: 1,
   invertY: false,
-  quality: 1,
+  look: 2,
 };
 
 export const SENSITIVITY_RANGE = { min: 0.2, max: 2 };
@@ -200,12 +200,17 @@ function decodeDungeons(v: unknown): Record<string, DungeonSave> {
   return out;
 }
 
-export function decodeSettings(raw: string | null): Settings {
+/** The old Sharpness setting (0 performance, 1 standard, 2 sharp) as a look: sharp stays crisp, performance goes cheapest. */
+const OLD_QUALITY_TO_LOOK = [4, 2, 0] as const;
+
+/** `defaults` is what a fresh install gets (touch devices pass a cheaper look). */
+export function decodeSettings(raw: string | null, defaults: Settings = DEFAULT_SETTINGS): Settings {
   try {
     const o = JSON.parse(raw ?? '{}') as Record<string, unknown>;
     const num = (v: unknown, fallback: number, min: number, max: number) =>
       typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
-    const d = DEFAULT_SETTINGS;
+    const d = defaults;
+    const oldQuality = o.quality === 0 || o.quality === 1 || o.quality === 2 ? OLD_QUALITY_TO_LOOK[o.quality] : d.look;
     return {
       masterVolume: num(o.masterVolume, d.masterVolume, 0, 1),
       // The first settings were just `music: boolean`; an old "off" stays silent.
@@ -215,10 +220,10 @@ export function decodeSettings(raw: string | null): Settings {
       mouseSensitivity: num(o.mouseSensitivity, d.mouseSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
       stickSensitivity: num(o.stickSensitivity, d.stickSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
       invertY: typeof o.invertY === 'boolean' ? o.invertY : d.invertY,
-      quality: o.quality === 0 || o.quality === 1 || o.quality === 2 ? o.quality : d.quality,
+      look: o.look === 0 || o.look === 1 || o.look === 2 || o.look === 3 || o.look === 4 ? o.look : oldQuality,
     };
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    return { ...defaults };
   }
 }
 

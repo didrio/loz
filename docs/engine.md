@@ -37,6 +37,19 @@ and has sunk out of sight by 18:00, and the moon does the same overnight, so the
 fed the render camera's look direction every frame (`Hud.setHeading`), so it is right in cutscene shots too;
 `bearing(dx, dz)` maps +x east, −z north, the same in the field and in dungeons.
 
+## The retro look (`render/retro.ts`, T18)
+
+A "PS2, a bit demastered" picture, and it hides the clean edges of primitives. Think of it as a bitcrusher on the image: the internal height
+is the sample rate, the colour levels the bit depth. With the look on, `Game.frame` calls `RetroPipeline.render` instead of rendering to the canvas:
+the scene goes to a small, **nearest-filtered, un-antialiased render target** (`internalSize(look, w, h)` with the window in device pixels, canvas ratio cap 2: the setting's rows, the window's aspect,
+never more rows than the canvas has); a bright-pass → separable Gaussian blur at ¼ size gives the **bloom** (`BLOOM_THRESHOLD`, `BLOOM_STRENGTH`);
+a composite pass adds it, converts to sRGB (`<colorspace_fragment>`), and **crushes each channel to `COLOR_LEVELS` (32) with a 4×4 Bayer dither**
+laid on the *internal* pixel grid, so the dither is as chunky as the picture. The canvas is at the device pixel ratio (cap 2) so the upscale is one clean nearest step.
+The HUD is DOM and unaffected. Off draws straight to the canvas as before (antialiased, pixel ratio cap 1.5). `Sky.retro` (1 while on) makes the fog **warmer**
+(horizon pulled toward amber, less at night, none in the blight; `retroHaze`) and **thicker** (reach ×0.7). The fog colour is still the horizon colour,
+so the sky meets it. The pure parts (`bayerOffset`, `crushChannel`, `internalSize`, the settings migration) are unit-tested; the shaders are not (no GL in tests): look at them.
+The sun's shadow map and the bloom threshold are tuned by eye; if a scene blooms too hard, lower `BLOOM_STRENGTH`.
+
 ## Menus (`game/menu.ts`, `game/pauseMenu.ts`)
 
 `MenuStack` is the reusable menu: rows are an action, a toggle (flips, stays open) or a
@@ -70,7 +83,7 @@ Row kinds in `menu.ts`: action, toggle, submenu, **slider** (left/right or click
 choose to cycle), **entry**. `MenuDriver.onTab` is how a tabbed menu hears Q/E (they win over confirm, which E also is).
 **Settings** (`Settings` in `core/save.ts`, saved at once under `embervale:settings`, applied by `Game.changeSettings`/`applySettings`):
 master/music/effects volume (0..1; 0.8 is the original loudness; `Sfx.setVolumes`), mouse and stick sensitivity (0.2..2×, one number
-scaling both axes: `Input.mouseSensitivity/stickSensitivity`), invert camera up/down (`Input.invertY`), Sharpness (render pixel-ratio cap 1 / 1.5 / 2) and Fullscreen
+scaling both axes: `Input.mouseSensitivity/stickSensitivity`), invert camera up/down (`Input.invertY`), the **Retro look** (Off / Fine 1080 / Soft 720 / Retro 540 / Crunchy 360 rows; default Soft 720 (owner's pick), Crunchy on touch; replaced Sharpness, whose old values migrate: sharp → Off, performance → Crunchy; see "The retro look") and Fullscreen
 (browser Fullscreen API, hidden if unsupported, not saved; a gamepad button may be refused by the browser, which toasts). There is no music hotkey:
 the music slider at 0 is mute. Old `music: false` saves load as music volume 0.
 
@@ -284,7 +297,7 @@ as none and the shrine's `restore` re-derives held keys from opened key chests w
 held flute songs) load with the songs dropped and 0 keys; v1/v2 load in the overworld with
 no items or dungeon progress. Saved: flags, keys, area, items, dungeons, flasks, bells, gems, hearts, clock. Not saved: position (continue starts at the saved area's spawn, e.g. a dungeon's
 entrance, with at least 3 hearts), enemies, cut bushes, where stones were pushed. Autosave: after every script, every 30 s of play, and on page
-hide. Settings (`embervale:settings`): volumes, sensitivities, invert Y, sharpness (see "The pause menu"). Storage goes through `KeyValueStore` so the
+hide. Settings (`embervale:settings`): volumes, sensitivities, invert Y, the retro look (see "The pause menu"). Storage goes through `KeyValueStore` so the
 desktop build can write real files.
 
 ## Conventions

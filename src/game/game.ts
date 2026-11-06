@@ -7,9 +7,10 @@ import { Sfx } from '../core/audio';
 import { Director } from '../core/director';
 import { Input, type Action } from '../core/input';
 import type { Physics } from '../core/physics';
-import { decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings } from '../core/save';
+import { DEFAULT_SETTINGS, decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings } from '../core/save';
 import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
+import { RetroPipeline, TOUCH_DEFAULT_LOOK, internalSize } from '../render/retro';
 import { Sky } from '../render/sky';
 import { Hud } from '../ui/hud';
 import { nearestInteractable, sameLevel, type Area } from '../world/area';
@@ -31,7 +32,7 @@ import { NO_CONTROLS, Player, type Controls } from './player';
 import type { Page, Script, ScriptApi } from './script';
 import { GameState, dayTurn } from './state';
 import { TitleMenu } from './title';
-import { TouchControls, type TouchContext } from '../ui/touch';
+import { TouchControls, wantsTouch, type TouchContext } from '../ui/touch';
 
 /**
  * - title: the menu over a slow camera orbit
@@ -41,8 +42,10 @@ import { TouchControls, type TouchContext } from '../ui/touch';
 export type Mode = 'title' | 'play' | 'cutscene';
 
 const SETTINGS_KEY = 'embervale:settings';
-/** The most pixels per CSS pixel the renderer draws at, for Settings' Sharpness (performance, standard, sharp). */
-const QUALITY_PIXEL_RATIO = [1, 1.5, 2];
+/** The most device pixels per CSS pixel the canvas has: with the retro look on it only holds the nearest-neighbour upscale. */
+const LOOK_CANVAS_RATIO = 2;
+/** With the look off the scene is drawn at the canvas's own size (antialiased), as before the look existed. */
+const CRISP_PIXEL_RATIO = 1.5;
 const AUTOSAVE_SECONDS = 30;
 /** A full day passes in about five minutes. */
 const HOURS_PER_SECOND = 1 / 24; // a day and night take 10 minutes
@@ -54,6 +57,8 @@ const WARP_HOURS_PER_SECOND = 6;
  */
 export class Game implements ScriptApi {
   readonly renderer: THREE.WebGLRenderer;
+  /** The retro look's render targets and passes (render/retro.ts); inactive when the setting is Off. */
+  private readonly retro = new RetroPipeline();
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1500);
   private lookDir = new THREE.Vector3();
@@ -103,12 +108,11 @@ export class Game implements ScriptApi {
 
   constructor(canvas: HTMLCanvasElement, readonly physics: Physics, private readonly store: KeyValueStore = localStore) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, CRISP_PIXEL_RATIO));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene.fog = new THREE.Fog(0xbfe0f2, 50, 215);
-    window.addEventListener('resize', () => this.resize());
-    this.resize();
+    window.addEventListener('resize', () => this.resize()); // sized for real by applySettings, once the settings are read
 
     this.input = new Input(canvas);
     this.touch = new TouchControls(this.input, document.getElementById('hud')!, () => this.sfx.init());
@@ -123,7 +127,7 @@ export class Game implements ScriptApi {
     this.combat = new Combat(this);
 
     this.saveSlot = new SaveSlot(store);
-    this.settings = decodeSettings(store.get(SETTINGS_KEY));
+    this.settings = decodeSettings(store.get(SETTINGS_KEY), wantsTouch() ? { ...DEFAULT_SETTINGS, look: TOUCH_DEFAULT_LOOK } : DEFAULT_SETTINGS);
     this.applySettings();
     this.loadArea('overworld');
 
@@ -236,7 +240,8 @@ export class Game implements ScriptApi {
 
     this.updateWorld(dt, rawDt);
     this.input.endFrame();
-    this.renderer.render(this.scene, this.camera);
+    if (this.retro.active) this.retro.render(this.renderer, this.scene, this.camera);
+    else this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this.frame);
   };
 
@@ -668,7 +673,6 @@ export class Game implements ScriptApi {
     this.input.mouseSensitivity = s.mouseSensitivity;
     this.input.stickSensitivity = s.stickSensitivity;
     this.input.invertY = s.invertY;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, QUALITY_PIXEL_RATIO[s.quality]));
     this.resize();
   }
 
@@ -691,7 +695,14 @@ export class Game implements ScriptApi {
   }
 
   private resize() {
+    // The look's rows are counted in device pixels (up to the canvas's own), so 1080 is a true 1080 on a retina screen.
+    const dpr = Math.min(window.devicePixelRatio, LOOK_CANVAS_RATIO);
+    const size = internalSize(this.settings.look, window.innerWidth * dpr, window.innerHeight * dpr);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, size ? LOOK_CANVAS_RATIO : CRISP_PIXEL_RATIO));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.retro.setSize(size);
+    this.renderer.info.autoReset = !size;
+    this.sky.retro = size ? 1 : 0;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
   }

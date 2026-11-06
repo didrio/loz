@@ -17,13 +17,13 @@ when it's near.
 
 - **Next region:** Sallowmere and the Old Weir ([sallowmere.md](sallowmere.md), tickets T8–T16). Region 3 lies past
   the Lightless Cut; plan it as we go (owner's call, 2026-11-05).
-- **The look pass** (owner's idea, 2026-11-06): T18 retro post-processing, T19 procedural textures, T20 de-uniforming; independent of Sallowmere.
+- **The look pass** (owner's idea, 2026-11-06): T18 retro post-processing is in (2026-11-06); T19 procedural textures and T20 de-uniforming are open; independent of Sallowmere.
 - **Optional, any time:** the Glimmer Lake grotto (the glove pulls a half-sunk wakestone; shrine.md).
 - **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
   quests out in the world, Odo back at his stall, the kids' lines changing with them;
   [world.md](world.md) "The empty village").
 - **Touch controls:** tune by the friend's reports: camera drag (`TOUCH_LOOK`), button sizes,
-  lower default sharpness on touch if phones run slow.
+  the touch default is the Crunchy look (360 rows, `TOUCH_DEFAULT_LOOK`); lower it further if phones run slow.
 - **Gem economy** (for balancing): 95 in the shrine plus bushes, against the 50-gem tunic and 20
   per flask refill.
 - **Pause menu:** Settings, Hints, Messages ([engine.md](engine.md) "The pause menu"). A new tab

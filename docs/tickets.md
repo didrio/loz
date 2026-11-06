@@ -114,18 +114,7 @@ and arena, B phase 1, C phase 2, D defeat and the way out through the Lightless 
 ## The look pass (owner's idea, 2026-11-06)
 
 A "PS2, a bit demastered" look, and less of the clean machine-made feel. Independent of the Sallowmere tickets: the owner
-reorders freely. Run T18, then T19, then T20 (each reads better once the one before it is in).
-
-### T18: The retro look (post-processing)
-**Run:** auto · sonnet · high
-**Why:** Low internal resolution, dithering, bloom and haze give the game a deliberate PS2-era look, and hide the clean edges of primitives.
-**Done when:**
-- The scene renders at a low internal height (about 480-540 px, scaled up with nearest-neighbour, no antialiasing), with an ordered-dither and reduced-colour-depth pass, a soft bloom on bright things, and the sky/fog tuned thicker and warmer by time of day (fog colour follows the sky).
-- A Settings entry turns the look on or off and sets its strength (internal height); it saves. The existing sharpness setting is folded in or kept coherent with it (one resolution control, not two). The HUD (DOM) stays crisp.
-- Default on desktop; touch keeps its lower default. Frame time with the look on is no worse than today's (measure one busy scene before and after and report both numbers).
-**Read first:** engine.md "Frame loop" and "Tech stack"; `game/game.ts` (Grep `WebGLRenderer`, `sharpness`); `game/pauseMenu.ts` and `core/save.ts` (the settings); `render/sky.ts` (fog); testing.md "look scenes".
-**Verify:** `npm run check`; `looker` on the village, Stiltwick and a night scene, on and off; pure parts (dither matrix, setting migration) unit-tested.
-**Notes:** Rules stay: no imported assets, the shader is code. Name what you couldn't judge (pixel shimmer in motion, feel): the owner plays it. Look baselines change: update them and say so.
+reorders freely. Run T19, then T20 (T18, the retro post-processing, is in).
 
 ### T19: Procedural textures
 **Run:** plan · opusplan · high
@@ -133,7 +122,7 @@ reorders freely. Run T18, then T19, then T20 (each reads better once the one bef
 **Done when:**
 - The owner approved a small texture system on paper: which surfaces get one (stone, plaster, thatch, wood, grass, water edge, dirt), the size (small, e.g. 32-64 px, nearest-filtered), how they are drawn (seeded canvas: noise, bricks, planks, grime), how they fit merged static geometry and the shared-material rules, and the cost.
 - Built for the village as the proof, with a look shot before and after; AGENTS.md "Hard rules" and docs name the new rule (generated textures allowed, imports still not).
-**Read first:** `render/materials.ts` and `render/shapes.ts` (merging, shared vs unique materials); engine.md "Conventions"; T18's result.
+**Read first:** `render/materials.ts` and `render/shapes.ts` (merging, shared vs unique materials); engine.md "Conventions" and "The retro look" (the picture is drawn at 720 rows by default and colour-crushed, so a texture is seen through that).
 **Verify:** `npm run check`; `looker` before/after on the village.
 **Notes:** Ask the owner up front how strong the texturing should be (subtle grain vs clearly painted). Check the scaling checklist for draw calls and memory when it runs. If the plan spans sessions, write the rest as tickets.
 

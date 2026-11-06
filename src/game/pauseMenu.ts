@@ -2,6 +2,7 @@ import { DEV_STATES } from '../content/devStates';
 import { foundHints } from '../content/hints';
 import { foundSigils } from '../content/sigils';
 import { SENSITIVITY_RANGE, type Settings } from '../core/save';
+import { LOOK_NAMES } from '../render/retro';
 import type { Game } from './game';
 import type { Menu, MenuRow } from './menu';
 import { MenuDriver } from './menuDriver';
@@ -10,7 +11,6 @@ import { TRIAL_RULES } from './trialFalls';
 type TabId = 'settings' | 'hints' | 'messages' | 'dev';
 
 const TAB_LABEL: Record<TabId, string> = { settings: 'Settings', hints: 'Hints', messages: 'Messages', dev: 'Dev' };
-const QUALITY_NAMES = ['Performance', 'Standard', 'Sharp'];
 
 /**
  * The pause menu (P / Start): the one menu, a row of tabs. Settings is always first; Hints
@@ -100,7 +100,7 @@ export class PauseMenu {
       sensitivity('Mouse sensitivity', 'mouseSensitivity', true),
       sensitivity('Stick sensitivity', 'stickSensitivity'),
       { kind: 'toggle', label: 'Invert camera up/down', get: () => s.invertY, set: (on) => this.change({ invertY: on }) },
-      { kind: 'choice', label: 'Sharpness', space: true, options: QUALITY_NAMES, get: () => s.quality, set: (i) => this.change({ quality: i as Settings['quality'] }) },
+      { kind: 'choice', label: 'Retro look', space: true, options: LOOK_NAMES, get: () => s.look, set: (i) => this.change({ look: i as Settings['look'] }) },
     ];
     if (game.canFullscreen) {
       rows.push({ kind: 'toggle', label: 'Fullscreen', get: () => game.isFullscreen, set: (on) => game.setFullscreen(on) });

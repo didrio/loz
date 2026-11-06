@@ -50,6 +50,16 @@ export interface FogLook {
   far: number;
 }
 
+/** The retro look's haze (T18): how much of the horizon colour is pulled toward amber, and how much the fog's reach shrinks. */
+export const RETRO_WARM = 0.4;
+export const RETRO_THICKEN = 0.3;
+const RETRO_AMBER = 0xf2b98a;
+
+/** The haze at strength `retro` (0 look off, 1 on); night keeps its blue (`night` 0..1), the blight keeps its violet (`blight` 0..1). */
+export function retroHaze(retro: number, night: number, blight: number) {
+  return { warm: RETRO_WARM * retro * (1 - 0.75 * night) * (1 - blight), reach: 1 - RETRO_THICKEN * retro };
+}
+
 /** The fog indoors when an area names none. */
 export const DEFAULT_INDOOR_FOG: FogLook = { color: 0x0a0c10, near: 14, far: 60 };
 
@@ -77,6 +87,8 @@ export class Sky {
   private moonDisc: THREE.Mesh;
   /** 0 by day, 1 at full night. */
   night = 0;
+  /** 1 while the retro look is on (render/retro.ts): a warmer, thicker haze; 0 off. Set by `Game.resize`. */
+  retro = 0;
   /** Boss-fight darkness, 0–1: dims the lights, pulls the fog in and tints it violet. */
   gloom = 0;
   /**
@@ -197,10 +209,13 @@ export class Sky {
     this.uniforms.horizon.value.lerp(tmpA.copy(this.blightHorizon).multiplyScalar(dim), bl * 0.85);
     this.uniforms.top.value.lerp(this.gloomFog, g * 0.8);
     this.uniforms.horizon.value.lerp(this.gloomFog, g * 0.85);
+    // The retro look warms the horizon (and so the fog, which follows it) and thickens the haze.
+    const haze = retroHaze(this.retro, this.night, bl);
+    this.uniforms.horizon.value.lerp(tmpA.set(RETRO_AMBER), haze.warm * (1 - g));
     fog.color.copy(this.uniforms.horizon.value);
     // A close valley haze (owner's call, 2026-11-04); a boss fight and the blight pull it in further.
-    fog.near = 50 - 35 * g - 32 * bl * (1 - g);
-    fog.far = 215 - 145 * g - 105 * bl * (1 - g);
+    fog.near = (50 - 35 * g - 32 * bl * (1 - g)) * haze.reach;
+    fog.far = (215 - 145 * g - 105 * bl * (1 - g)) * haze.reach;
 
     this.sun.color.copy(sample(hours, 'sun', new THREE.Color())).lerp(this.blightSun, bl * 0.85);
     this.sun.intensity = sampleNum(hours, 'sunI') * (1 - 0.8 * g) * (1 - 0.5 * bl);
