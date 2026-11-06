@@ -15,7 +15,8 @@
     "check": "npm run lint && npm test && npm run build",
     "look": "node scripts/look.mjs",
     "map": "node scripts/map.mjs",
-    "midi": "node scripts/midi-import.mjs"
+    "midi": "node scripts/midi-import.mjs",
+    "flags": "node scripts/flags.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",

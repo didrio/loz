@@ -64,7 +64,7 @@ enemy randomness.
   data format. *Trigger: evaluate after the first dungeon; decide with the owner.*
 - [ ] **The travel menu at scale**: group bells by region, mark where Wren is, maybe a
   little map of the valley. *Trigger: more than ~8 bells.*
-- [ ] **Quest/flag overview**: fired (33 flags); it's ticket T1.
+- [x] **Quest/flag overview**: done (`npm run flags`, `game/flags.test.ts`).
 - [ ] **Docs hygiene**: if a topic doc passes ~400 lines, split it. *Trigger: as stated.*
 - [ ] **AGENTS.md's layout tree at scale**: every region and dungeon adds files, and the tree is
   loaded into every session. When a folder lists more than ~8 files, give it one line in the
@@ -83,7 +83,6 @@ enemy randomness.
 
 ## Known quirks and tech debt
 
-- **`combat` smoke fails its scar step** ("a scar underfoot … shoves Wren out of its middle": shoved 0.50 m; also on main before the lunge change, 2026-11-04). Find out if the scar's shove or the test's position is wrong.
 - **Village homes are shells**: the two standing cottages have locked doors (`door.home0/1`, "The door is locked.") and no
   interior. When they become enterable, follow the mill: a `HingedDoor` (`world/objects.ts`), a room inside the walls
   (the camera's doorway pane is `Layer.CameraOnly`), a bed or story beat. Outside the square the road-gate lanterns have glow but no real light

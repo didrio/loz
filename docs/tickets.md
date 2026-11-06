@@ -35,25 +35,6 @@ implementation.
 
 ## Open tickets
 
-### T1: Make the checks trustworthy: the scar smoke step and a flag check
-**Run:** auto · sonnet · medium
-**Why:** The `combat` smoke fails its scar step (Wren shoved 0.50 m; it fails on main too), so
-every combat ticket starts from a red check someone has to look into again. And with 33 named
-quest flags we're past the roadmap's ~30-flag trigger: TypeScript already catches a misspelled
-flag, but not one that nothing sets or nothing reads.
-**Done when:**
-- The scar step passes, because the actual cause is fixed: either the scar's shove or the
-  test's position (if it's the game, a failing unit test first).
-- A unit test fails when a flag in `FLAGS` has no setter or no reader in `src/` (exceptions in
-  an explicit list, each with a reason).
-- A short command (e.g. `npm run flags`) prints who sets and who reads each flag (file:line).
-**Read first:** roadmap.md "Known quirks" (the scar line); `scripts/smoke/combat.mjs` ~105–122;
-world.md "The blight" (scars); the top of `src/game/state.ts` (`FLAGS`, `Flag`); testing.md
-"Smoke scenarios and save fixtures".
-**Verify:** check; `npm run smoke -- combat`.
-**Notes:** Tick "Quest/flag overview" in the scaling checklist. Add the command to testing.md
-and AGENTS.md's Commands line.
-
 ### T2: Move the player's text into per-area text files
 **Run:** auto · sonnet · medium
 **Why:** The roadmap's "dialog as data" trigger is "before the second dungeon's content", and
@@ -112,7 +93,7 @@ smoke step). Each points at the docs instead of copying them, and gives its defa
 the doc for each recipe (combat.md, dungeons.md, engine.md "Regions", world.md); `git log --stat`
 of a few real additions (the Cragstalker, the Northpass, Pip) to see what they touched.
 **Verify:** check; the skills show up in the skill list. No game change.
-**Notes:** Run after T1–T3, so the recipes describe the text files, the flag check and the look
+**Notes:** Run after T2–T3, so the recipes describe the text files and the look
 baselines. Update CLAUDE.md's Skills list.
 
 ### T5: Plan what lies past Wayfarers' Camp

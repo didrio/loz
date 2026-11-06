@@ -24,7 +24,7 @@ As of 2026-11-05: Emberfield plays start to finish: a wordless start, the shield
 **scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
 tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`); the speech synth is shelved (`labs/speech/`). **Touch controls** (phones and
 tablets, landscape; [engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages (their first notes are fixed: hearts drawn as SVG, camera from the Shield finger while surfing, button labels; the first exit after the boss is noon).
-**Next:** ticket T1 in [docs/tickets.md](docs/tickets.md) (prep before building past the starting area). Dev server: port 5273.
+**Next:** ticket T2 in [docs/tickets.md](docs/tickets.md) (prep before building past the starting area). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -159,6 +159,7 @@ src/
 scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers
   map.mjs, midi-import.mjs a dungeon's text map + problems (npm run map -- <id>); assets/music-src/<folder>/*.mid → src/core/imported/ (npm run midi)
+  flags.mjs                who sets/reads each quest flag (npm run flags; game/flags.test.ts uses it)
   lexicon.mjs              the game's words → src/labs/speech/lexicon.ts from CMUdict (npm run lexicon)
 src/dev/ the blips test bench (/blips.html, dev only) · src/labs/ the shelved speech synth (nothing imports it)
 CREDITS.md third-party credits · assets/music-src/ the owner's MIDI exports, one folder per song (docs/audio.md)
@@ -168,7 +169,7 @@ docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, 
 ## Commands
 
 `npm run dev` (then `?debug`) · `npm run check` · `npm run smoke [-- <scenarios>]` · `npm run look -- <scenes>`
-· `npm run map -- <dungeon id>` · `npm run midi -- <song folder>` · `npm run lexicon`. Details in [docs/testing.md](docs/testing.md).
+· `npm run map -- <dungeon id>` · `npm run midi -- <song folder>` · `npm run lexicon` · `npm run flags`. Details in [docs/testing.md](docs/testing.md).
 
 ## Design decisions (don't undo without asking)
 
