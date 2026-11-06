@@ -1,5 +1,9 @@
 import type { Page, ScriptApi } from '../game/script';
 
+/** Odo's Stoneward Tunic, and what Pip pays for her doll. */
+export const TUNIC_PRICE = 50;
+export const DOLL_REWARD = 20;
+
 export interface Ware {
   /** The choice's label; the price is added: "Life Potion (20 gems)". */
   label: string;

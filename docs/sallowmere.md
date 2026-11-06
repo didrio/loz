@@ -1,7 +1,7 @@
 # Sallowmere (the second region) and the Old Weir (its dungeon): design
 
 Status: **design approved by the owner** (2026-11-06, T5). Nothing is built yet. All names are working names. The
-build is tickets T6–T16 in [tickets.md](tickets.md). This doc holds what the data and code won't: the place, the item, the
+build is tickets T7–T16 in [tickets.md](tickets.md). This doc holds what the data and code won't: the place, the item, the
 dungeon's idea, the enemies, the boss, and the story beats. Keep it current as the tickets land, and move details into
 their topic docs (combat.md, dungeons.md, bells.md) once they're built.
 
@@ -131,7 +131,7 @@ flame glows as a lure** hanging in front of its jaws. It's what the town sees gl
 
 ## World progression
 
-**Decided (T5): start the world progression solver now** (T6), kept lean:
+**Decided (T5), built (T6): the world progression solver (`content/progression.ts`), kept lean:
 - every gate is data (items, flags, keys, gem prices, bells, area links);
 - one test proves a new save can reach the current end.
 - It comes before the region while the gates are few. After that, each Sallowmere ticket adds its gates.

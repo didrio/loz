@@ -3,7 +3,7 @@ import { POTIONS, REFILL_PRICE, type Potion } from '../game/flasks';
 import type { Page, Script, ScriptApi } from '../game/script';
 import type { GameState } from '../game/state';
 import type { Overworld } from '../world/overworld';
-import { offerWares, type Ware } from './shop';
+import { DOLL_REWARD, offerWares, TUNIC_PRICE, type Ware } from './shop';
 import { V } from './text/village';
 import { adultsGone, VANISHED, withNews } from './villageNews';
 
@@ -186,7 +186,7 @@ export function villageContent(ow: Overworld) {
           ...P.found.map((text) => ({ who, text })),
         ]);
         state.set('village.dollReturned');
-        state.addGems(20);
+        state.addGems(DOLL_REWARD);
         api.sfx.gem();
         await api.say([{ text: P.reward }]);
         return;
@@ -278,7 +278,7 @@ export function villageContent(ow: Overworld) {
       // Before the scare, Odo is meeting Wren for the first time (everyone else knows Wren).
       if (!state.has('village.scare') && !state.has('metMaren')) pages.unshift({ who, text: O.meet });
       if (tunic) {
-        wares.push({ label: O.tunicWare, price: 50 });
+        wares.push({ label: O.tunicWare, price: TUNIC_PRICE });
         pages.push({ who, text: O.tunicPitch });
       }
       if (empty >= 0) {
@@ -335,7 +335,7 @@ async function honorStall(api: ScriptApi) {
     return;
   }
   const wares: (Ware & { potion?: Potion })[] = [];
-  if (tunic) wares.push({ label: V.odo.tunicWare, price: 50 });
+  if (tunic) wares.push({ label: V.odo.tunicWare, price: TUNIC_PRICE });
   if (empty >= 0) for (const potion of ['life', 'attack'] as const) wares.push({ label: POTIONS[potion].name, potion, price: REFILL_PRICE });
   const result = await offerWares(api, [{ text: V.stall.offer }], wares);
   if (result === 'declined') return;

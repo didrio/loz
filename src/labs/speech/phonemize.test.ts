@@ -20,7 +20,7 @@ function strings(src: string): string[] {
 function playerText(): string[] {
   const all: string[] = [];
   for (const [path, src] of Object.entries(sources)) {
-    if (path.endsWith('.test.ts') || path.endsWith('fakeApi.ts')) continue;
+    if (path.endsWith('.test.ts') || path.endsWith('fakeApi.ts') || path.endsWith('progression.ts')) continue; // not player text
     all.push(...strings(src));
   }
   for (const src of Object.values(defs)) {

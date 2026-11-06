@@ -39,23 +39,6 @@ The next stretch is **Sallowmere** (drowned lowlands) and its dungeon **the Old 
 [sallowmere.md](sallowmere.md) (owner-approved 2026-11-06). T15 and T16 write the dungeon's and the
 boss's build tickets (and the Wickmoth, Reedwight and Lightless Cut ones) when they run.
 
-### T6: Start the world progression solver
-**Run:** auto · sonnet · high
-**Why:** Gates now cross areas (embers, items, bells, keys, gem prices). A check that a new save can reach the current
-end, with no softlock, is cheapest to build while the gates are few; each Sallowmere ticket then adds its gates as data.
-**Done when:**
-- Every gate between a new game and the Waybell hung at the camp is data: what it needs (items, flags, keys, gems, a
-  beaten boss, a bell) and what it gives, including the shrine as one node (its own solver covers its inside).
-- A unit test walks that data from a new save and reaches the current end; it fails if a gate is made unreachable, a
-  one-time item is spent twice, or the gems needed exceed the gems that can be found.
-- Each gate's flag names match `FLAGS` (`game/state.ts`), checked against `npm run flags` data, so the data can't drift
-  from the code silently.
-- The format is described in a short section of [dungeons.md](dungeons.md) (or engine.md) with how to add a gate.
-**Read first:** roadmap.md "World progression solver"; world.md "The quest thread so far"; sallowmere.md "World
-progression"; `src/world/dungeon/solve.ts` (its shape, to mirror); `scripts/flags.mjs` and `src/game/flags.test.ts`.
-**Verify:** `npm run check`.
-**Notes:** Lean: a list of gates and a fixpoint walk, not a planner. Tick the roadmap item.
-
 ### T7: Overworld water: wading and the deep-water fall
 **Run:** auto · sonnet · high
 **Why:** Sallowmere is mostly water and there's no swimming. Shallow water should slow Wren; deep water should be a fall.
@@ -127,7 +110,7 @@ reachable from the town, travel works both ways.
 **Run:** auto · sonnet · medium
 **Why:** The Weir must be earned in town, the way the Lamplighter woke the shrine.
 **Done when:** A short errand chain in Stiltwick (propose it in 2–3 lines before building) ends with the way to the
-Weir open; flags, saves, a smoke step; the progression data (T6) has its gates.
+Weir open; flags, saves, a smoke step; `content/progression.ts` gets its gates.
 **Read first:** the `/add-quest-beat` skill; sallowmere.md "Story beats" and "World progression".
 **Verify:** `npm run check`; the new smoke step.
 **Notes:** Fired: "a test that plays the whole game" (a second region's quest chain now exists): write it as a ticket at

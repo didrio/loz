@@ -3,6 +3,9 @@ import { heartGeometry } from '../render/shapes';
 
 export type PickupKind = 'gem' | 'bluegem' | 'heart';
 
+/** What a blue gem is worth (a plain gem is 1). */
+export const BLUEGEM_GEMS = 5;
+
 interface Pickup {
   mesh: THREE.Object3D;
   kind: PickupKind;

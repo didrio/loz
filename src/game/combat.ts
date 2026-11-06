@@ -10,7 +10,7 @@ import type { CameraRig } from './camera';
 import type { Enemy, EnemyEnv, EnemyManager, HurtResult } from './enemies';
 import type { HazardEnv, Hazards } from './hazards';
 import { pickLockTarget, type LockTarget } from './lockon';
-import type { Pickups } from './pickups';
+import { BLUEGEM_GEMS, type Pickups } from './pickups';
 import type { Player, PlayerEnv } from './player';
 import type { GameState } from './state';
 import { TetherCord } from './tether';
@@ -101,7 +101,7 @@ export class Combat {
         state.heal(2);
         sfx.heart();
       } else {
-        state.addGems(k === 'bluegem' ? 5 : 1);
+        state.addGems(k === 'bluegem' ? BLUEGEM_GEMS : 1);
         sfx.gem();
       }
     });

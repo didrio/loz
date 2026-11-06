@@ -15,7 +15,7 @@ early unless the owner asks: they're best designed against the real use case.
 What's next is in [tickets.md](tickets.md). This is the longer view; an idea becomes a ticket
 when it's near.
 
-- **Next region:** Sallowmere and the Old Weir ([sallowmere.md](sallowmere.md), tickets T6–T16). Region 3 lies past
+- **Next region:** Sallowmere and the Old Weir ([sallowmere.md](sallowmere.md), tickets T7–T16). Region 3 lies past
   the Lightless Cut; plan it as we go (owner's call, 2026-11-05).
 - **Optional, any time:** the Glimmer Lake grotto (the glove pulls a half-sunk wakestone; shrine.md).
 - **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
@@ -72,9 +72,9 @@ enemy randomness.
 - [ ] **AGENTS.md's layout tree at scale**: every region and dungeon adds files, and the tree is
   loaded into every session. When a folder lists more than ~8 files, give it one line in the
   tree and move its file list to its topic doc. *Trigger: as stated, or AGENTS.md over ~200 lines.*
-- [ ] **World progression solver**: the dungeon solver for the whole game. Every gate (item,
-  flag, key, gem price) as data, and a check that a new save can reach the end with no softlock
-  (one-time items, gem shortages). *Fired: decided 2026-11-06 (T5), lean version is ticket T6.*
+- [x] **World progression solver**: done lean (`content/progression.ts`, [dungeons.md](dungeons.md) "World progression"):
+  every gate as data, a walk from a new save to the Waybell. Each Sallowmere ticket adds its gates. Not yet: gates by
+  time of day, or a bell lifted off its post. *Trigger to extend: a gate that depends on either.*
 - [ ] **An item selector**: the glove owns `item`; the Ember Lantern is passive (Interact) on purpose. *Trigger: a third
   item that needs its own button.*
 - [ ] **A test that plays the whole game** (owner noted, 2026-11-05): a scripted run from a new

@@ -170,6 +170,28 @@ plates is a per-room puzzle question for a separate puzzle checker (planned with
 wakestones; see [shrine.md](shrine.md)). If a dungeon needs more (a timed
 switch, a key you can lose, a door that re-locks), extend the solver first, with a test.
 
+## World progression: the gates between dungeons
+
+`content/progression.ts` is the same idea for the whole game: **every gate as data**, and a walk that proves a new save gets
+through them all (`progression.test.ts`). A **gate** is one thing Wren does: it `needs` facts (and may `spends` keys or gems),
+and `gives` facts (and may `gains` keys or gems). A **fact** is a quest flag (a name in `FLAGS`), or `item:<id>`,
+`bell:<id>:carried|hung`, `dungeon:<id>:done`, `area:<id>`. `optional` marks a gate nothing on the way waits on (a purchase, a side
+errand). `walk` fires what can fire, required gates before optional ones, until nothing changes; a gate that never fires is
+**stuck**. `GOAL` is the end of what's built (now: the Waybell hung at the camp).
+
+The test fails when: a gate on the way can't be reached; a one-time key is spent by two gates (the second is stuck); the gates
+ask for more gems than can be found; the way on needs an optional gate; or a flag in the data isn't in `FLAGS`, isn't set
+when a gate gives it, or isn't read when a gate needs it (checked against `scripts/flags.mjs`, so a rename in the code
+or the data fails).
+
+**Adding a gate:** one entry in `GATES`, with the flag names the script really sets and reads. A dungeon is one gate:
+`dungeonGate(DEF, 'where', needs, gives)` takes its gems, items, flasks and bells from the dungeon's own data (add
+it for each new dungeon; its inside is `solveDungeon`'s job). Prices and rewards come from constants the scripts use too
+(`TUNIC_PRICE`, `DOLL_REWARD`, `REFILL_PRICE`, `BLUEGEM_GEMS`), and the blue-gem jars come from `RUINS`, so those can't
+drift. A new region: add its gates, move `GOAL` to its end. Not modelled, on purpose: the time of day, fights and
+platforming (players can always win them; courses have their own checks), gems that enemies and bushes drop (random, never
+counted on), and a bell lifted off its post (facts only grow).
+
 ## Reading the text map
 
 One character is 1 m east–west, one line is 2 m north–south, north is up. `#` wall, gaps

@@ -23,7 +23,8 @@ As of 2026-11-06: Emberfield plays start to finish: a wordless start, the shield
 **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the valley (violet
 **scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
 tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`). **Touch controls** ([engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages.
-**Next:** **Sallowmere**, the second region (designed: [sallowmere.md](docs/sallowmere.md)), built through the open tickets in [docs/tickets.md](docs/tickets.md). Dev server: port 5273.
+**Next:** **Sallowmere**, the second region (designed: [sallowmere.md](docs/sallowmere.md)), built through the open tickets in [docs/tickets.md](docs/tickets.md). The gates from a new game to the Waybell are data
+(`content/progression.ts`, checked by a test); each Sallowmere ticket adds its own. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -152,6 +153,7 @@ src/
     sigils.ts, villageNews.ts   the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)
     gorge.ts, northpass.ts the Hushing Gorge (monsters, fall rule); the canyon past the camp (Cragstalkers, fall rule)
     shrine.ts, gravelheart.ts  the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
+    progression.ts         the world progression solver: every gate as data, a walk from a new save to the end (dungeons.md)
     devStates.ts, fakeApi.ts   the Dev tab's save states; the fake ScriptApi content tests run against
   ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title
        richText.ts          text tags `[gear]…[/]` → spans, tag checks (the content text rules test uses it)
