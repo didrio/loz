@@ -5,9 +5,17 @@
 //   npm run look                    every scene
 //   npm run look -- boss village    just these
 //   npm run look -- --list          scene names
+//   npm run look -- village --approve   accept what the scenes show now as the baselines and budgets
+//
+// Every shot is compared with its approved baseline (scripts/baselines/look/, shrunk 4x) and reported
+// unchanged / changed / new: only the changed and new ones need a pair of eyes. Each scene's peak draw
+// calls and triangles are checked against scripts/look-budgets.json. The page runs on a stepped clock
+// (browser.mjs), so two runs on unchanged code give identical frames.
 //
 // Add a scene when you add a place, a boss or a visual system.
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { launch, openGame } from './browser.mjs';
+import { budgetFor, compare, shrink, overBudget, readBaseline, readBudgets, readPng, writeBaseline, writeBudgets, writePng } from './lookCompare.mjs';
 
 const OUT = new URL('../look-output/', import.meta.url).pathname;
 
@@ -24,7 +32,12 @@ const park = (h, opts) =>
 
 /** Walks into Gloaming Hollow and waits until the Lamplighter fight is on. */
 const startBossFight = async (h) => {
-  await h.game(() => (window.embervale.state.hours = 21)); // it only walks at night
+  await h.game(() => {
+    const g = window.embervale;
+    g.state.set('hasSword'); // unarmed, the hollow's trigger sends Wren home
+    g.player.setSword(true);
+    g.state.hours = 21; // it only walks at night
+  });
   await h.until(() => window.embervale.enemies.list.some((e) => e.title), 10000);
   await h.teleport(-23, 116.5, 0);
   await h.until(() => window.embervale.mode === 'play' && !!window.embervale.activeBoss, 60000);
@@ -183,7 +196,7 @@ const SCENES = {
     for (const hh of [5.5, 7, 12, 17, 18, 19, 0]) {
       await h.game((n) => (window.embervale.state.hours = n), hh);
       await h.wait(400);
-      await h.page.locator('.hud-top-right').screenshot({ path: `${OUT}hud-dial-${String(hh).replace('.', '_')}.png` });
+      await h.shotOf(h.page.locator('.hud-top-right'), `hud-dial-${String(hh).replace('.', '_')}`);
     }
     await h.game(() => (window.embervale.state.hours = 12));
     for (const [name, facing] of [['north', Math.PI], ['southwest', -Math.PI / 4]]) {
@@ -191,7 +204,7 @@ const SCENES = {
       await h.teleport(0, 14, facing);
       await h.game((f) => (window.embervale.rig.yaw = f + Math.PI), facing);
       await h.wait(800);
-      await h.page.locator('.compass').screenshot({ path: `${OUT}hud-compass-${name}.png` });
+      await h.shotOf(h.page.locator('.compass'), `hud-compass-${name}`);
     }
     await h.shot('hud-full');
   },
@@ -1441,32 +1454,105 @@ if (args.includes('--list')) {
   console.log(Object.keys(SCENES).join('\n'));
   process.exit(0);
 }
-const names = args.length ? args : Object.keys(SCENES);
+const approve = args.includes('--approve');
+const requested = args.filter((a) => !a.startsWith('--'));
+const names = requested.length ? requested : Object.keys(SCENES);
 const unknown = names.filter((n) => !SCENES[n]);
 if (unknown.length) {
   console.error(`Unknown scene(s): ${unknown.join(', ')}. Try --list.`);
   process.exit(1);
 }
 
+await rm(`${OUT}diff/`, { recursive: true, force: true });
+await mkdir(`${OUT}diff/`, { recursive: true });
+const budgets = await readBudgets();
+const needLook = []; // changed and new shots, for whoever looks
+const overBudgets = [];
+const fmtShare = (share) => `${(share * 100).toFixed(2)}%`;
+
 const env = await launch();
 let failed = false;
 for (const name of names) {
-  const h = await openGame(env, OUT);
-  const shot = h.shot;
-  h.shot = (n) => shot(n.startsWith(name) ? n : `${name}-${n}`);
+  const h = await openGame(env, OUT, { stepped: true });
+  const prefixed = (n) => (n.startsWith(name) ? n : `${name}-${n}`);
+  const shots = []; // { name, status, share }
+  const peak = { calls: 0, triangles: 0 };
+
+  /** Saves the shot, compares it with its baseline, and notes the frame's draw calls and triangles. */
+  const record = async (shotName, buffer, stats) => {
+    await writeFile(`${OUT}${shotName}.png`, buffer);
+    peak.calls = Math.max(peak.calls, stats.calls);
+    peak.triangles = Math.max(peak.triangles, stats.triangles);
+    const current = shrink(readPng(buffer));
+    const base = await readBaseline(shotName);
+    if (!base) {
+      shots.push({ name: shotName, status: 'new' });
+    } else {
+      const r = compare(base, current);
+      if (r.diff) await writeFile(`${OUT}diff/${shotName}.png`, writePng(r.diff));
+      shots.push({ name: shotName, status: r.changed ? 'changed' : 'unchanged', share: r.share });
+    }
+    if (approve && shots.at(-1).status !== 'unchanged') shots.at(-1).pending = current;
+  };
+  const stats = () =>
+    h.game(() => {
+      const i = window.embervale.renderer.info.render;
+      return { calls: i.calls, triangles: i.triangles };
+    });
+  h.shot = async (n) => {
+    const s = await stats();
+    await record(prefixed(n), await h.page.screenshot({ animations: 'disabled', caret: 'hide' }), s);
+  };
+  h.shotOf = async (locator, n) => {
+    const s = await stats();
+    await record(prefixed(n), await locator.screenshot({ animations: 'disabled', caret: 'hide' }), s);
+  };
+
+  let ok = true;
   try {
     await SCENES[name](h);
-    console.log(`  ✓ ${name}`);
   } catch (e) {
+    ok = false;
     failed = true;
     console.log(`  ✗ ${name}: ${e.message}`);
   }
   if (h.errors.length) {
+    ok = false;
     failed = true;
     console.log(`    console errors: ${h.errors.join(' | ')}`);
+  }
+
+  const count = (status) => shots.filter((x) => x.status === status).length;
+  if (ok) {
+    const over = overBudget(budgets, name, peak);
+    overBudgets.push(...over);
+    if (over.length) failed = true;
+    const mark = over.length ? '✗' : '✓';
+    console.log(`  ${mark} ${name}: ${shots.length} shots, ${count('unchanged')} unchanged, ${count('changed')} changed, ${count('new')} new`);
+    const b = budgets[name];
+    console.log(`      draw calls ${peak.calls}${b ? ` / ${b.calls}` : ''}, triangles ${peak.triangles}${b ? ` / ${b.triangles}` : ' (no budget yet)'}`);
+    for (const o of over) console.log(`      OVER BUDGET: ${o.what} ${o.value} > ${o.limit}`);
+  }
+  for (const x of shots) {
+    if (x.status === 'unchanged') continue;
+    console.log(`      ${x.status}: ${x.name}${x.share === undefined ? '' : ` (${fmtShare(x.share)} of pixels)`}`);
+    needLook.push(x);
+  }
+  if (approve && ok) {
+    for (const x of shots) if (x.pending) await writeBaseline(x.name, x.pending);
+    budgets[name] = budgetFor(peak);
   }
   await h.page.close();
 }
 await env.close();
-console.log(`Screenshots in look-output/. Open them and check they look right.`);
+
+if (approve) await writeBudgets(budgets);
+console.log('');
+if (needLook.length) {
+  console.log(`${approve ? 'Approved' : 'Open'} these ${needLook.length} (full size in look-output/, differences in look-output/diff/):`);
+  for (const x of needLook) console.log(`  ${OUT}${x.name}.png`);
+} else {
+  console.log('Every shot is unchanged: nothing to look at.');
+}
+if (approve) console.log('Baselines and budgets saved: commit scripts/baselines/ and scripts/look-budgets.json.');
 process.exit(failed ? 1 : 0);

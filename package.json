@@ -25,7 +25,9 @@
   "devDependencies": {
     "@types/three": "^0.187.0",
     "oxlint": "^1.90.0",
+    "pixelmatch": "^8.0.0",
     "playwright-core": "^1.64.1",
+    "pngjs": "^7.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"

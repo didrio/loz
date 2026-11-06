@@ -25,8 +25,24 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   changed, asking the owner first. CI runs everything on every push anyway.
 - `npm run look -- <scenes>` (`--list` for names: title, touch (desktop without controls; phone title, play, stick, dialog, pause; tablet; portrait card), field, village, villageDetails (well, cottage fronts, mill doorstep, night lighting), mill (incl. its room), grove, chest,
   door, dungeon, camera, glove, landmarks, buds, bells, bellShaft, gorge, shrine, enemies, hollow, night, guard, shield, surf, orbs, boss, boss-moves, gravelheart, gravelheart2, gate, northpass, camp, wardenIntro, seal, blight, emptyVillage, hud (the sky dial through the day, the compass), choice (the choice window over a dialog question, and the script menu), text (text boxes: the longest note, two place signs, a sigil and its toast), lostBell (the Morrowbell by the windmill), thorns (a thicket and its gap, a lone clump, the lone oak, the scars: the spine, the gate's pool, the west vein, the grove's guard post)): captures named scenes to
-  `look-output/` for you to inspect. Boss scenes slow time, make Wren invulnerable, park
+  `look-output/` (full size). Boss scenes slow time, make Wren invulnerable, park
   the camera and force moves. Add a scene when you add a place, a boss or a visual system.
+  **Baselines and budgets:** every shot is compared with its approved baseline
+  (`scripts/baselines/look/<shot>.png`, in git, shrunk 4x; `scripts/lookCompare.mjs`) and printed as
+  unchanged / changed (with the share of pixels; over 0.05% counts as changed) / new; **only changed and new shots need a look** (the full-size file is in
+  `look-output/`, a picture of the differences in `look-output/diff/`). After you or `looker` judged the changed shots right,
+  `npm run look -- <scenes> --approve` saves them as the new baselines (commit `scripts/baselines/`); a refactor should print
+  "unchanged". `--approve` also rewrites those scenes' budgets in `scripts/look-budgets.json` (peak draw calls and triangles
+  of the scene + 25%); a scene over its budget fails the run. Use `--approve` on the scenes you ran, not blindly on all.
+  **No baselines are committed yet** (owner's call, 2026-11-06: a big visual overhaul, the polygon-count increase, is coming and
+  would change every shot): until the first full `npm run look -- --approve` and commit, every shot prints "new", budgets are
+  unset, and `looker` works as it did before.
+  Look runs on a **stepped clock** (`openGame(..., { stepped: true })` in `browser.mjs`): the page's frames only run when the
+  script steps them (50 ms of game time each), `h.wait(ms)` runs frames instead of sleeping, `h.until` checks after every
+  frame (its timeout is game time), `Math.random` is seeded and CSS animations are finished before a shot. Two runs on
+  unchanged code give nearly identical frames: a few shots (gorge, orbs, hollow) still differ by a handful of scattered pixels
+  (cause not found), which the tolerance absorbs. A "changed" shot is a real change, or a new random draw order. A scene must use
+  `h.wait`/`h.until`/`h.shot`/`h.shotOf(locator, name)`, never `page.waitForTimeout` or its own screenshots. The full run takes ~16 min.
 - Both scripts share `scripts/browser.mjs` (dev server, Chrome, `newGame`, `teleport`,
   `finishScript`...). One-off investigation scripts belong in your session scratchpad, not
   the repo.

@@ -27,11 +27,62 @@ export async function launch() {
   };
 }
 
+/** `stepped` pages: game time per frame, and the frames per `wait` second. The game caps a frame at 0.05 s anyway. */
+export const STEP_MS = 50;
+
+/**
+ * Installed before the page's scripts when `stepped`: a clock that only moves when the script says so.
+ * requestAnimationFrame callbacks queue up and run `__step(n)` times, each frame STEP_MS later on
+ * performance.now (and the audio clock), and Math.random is seeded. Two runs of the same steps then draw the same frames
+ * (the look scenes compare screenshots with baselines).
+ */
+const steppedClock = (stepMs) => {
+  let t = 0;
+  let id = 0;
+  let queue = [];
+  window.requestAnimationFrame = (cb) => {
+    queue.push([++id, cb]);
+    return id;
+  };
+  window.cancelAnimationFrame = (n) => {
+    queue = queue.filter(([i]) => i !== n);
+  };
+  performance.now = () => t;
+  // The music scheduler reads the audio clock (core/synth.ts) and draws random numbers as it goes: on the real clock
+  // its draws would land differently every run and shift every other random number after them.
+  const RealAudio = window.AudioContext;
+  if (RealAudio) {
+    window.AudioContext = class extends RealAudio {
+      get currentTime() {
+        return t / 1000;
+      }
+    };
+  }
+  let seed = 0x2f6e2b1;
+  Math.random = () => {
+    seed = (seed + 0x6d2b79f5) | 0; // mulberry32
+    let r = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+  window.__step = (n) => {
+    let ran = 0;
+    for (let i = 0; i < n; i++) {
+      t += stepMs;
+      const run = queue;
+      queue = [];
+      for (const [, cb] of run) cb(t);
+      ran += run.length;
+    }
+    return ran; // 0: nothing is animating yet (the game is still loading)
+  };
+};
+
 /**
  * A page plus helpers for driving the game. Headless rendering is slow and game time runs
  * slower than real time there, so helpers wait on game state, never on fixed delays.
  */
-export async function openGame(env, outDir, { fixture, touch = false } = {}) {
+export async function openGame(env, outDir, { fixture, touch = false, stepped = false } = {}) {
   await mkdir(outDir, { recursive: true });
   // `touch`: a landscape phone with the on-screen controls (ui/touch.ts, forced on with ?touch=1).
   const page = await env.browser.newPage(
@@ -45,13 +96,36 @@ export async function openGame(env, outDir, { fixture, touch = false } = {}) {
       if (!localStorage.getItem(key)) localStorage.setItem(key, raw);
     }, ['embervale:save:0', save]);
   }
+  if (stepped) await page.addInitScript(steppedClock, STEP_MS);
   const errors = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
 
-  const wait = (ms) => page.waitForTimeout(ms);
+  // Stepped: waits run frames (STEP_MS of game time each) instead of sleeping, and `until` checks after every frame,
+  // so a script reaches the same frame on every run however slow the machine is.
+  const step = async (frames) => {
+    const ran = await page.evaluate((n) => window.__step(n), frames);
+    if (!ran) await page.waitForTimeout(25); // nothing is animating yet (the game is still loading)
+    return ran;
+  };
+  const wait = stepped ? (ms) => step(Math.max(1, Math.round(ms / STEP_MS))) : (ms) => page.waitForTimeout(ms);
   const game = (fn, arg) => page.evaluate(fn, arg);
-  const until = (fn, timeout = 45000, arg) => page.waitForFunction(fn, arg, { timeout, polling: 100 });
+  // Stepped: `timeout` is game time (STEP_MS per frame), so a slow machine takes longer but doesn't fail; real time only
+  // bounds a game that never loads.
+  const until = stepped
+    ? async (fn, timeout = 45000, arg) => {
+        const realEnd = Date.now() + timeout * 10;
+        for (let t = 0; ; ) {
+          const value = await page.evaluate(fn, arg);
+          if (value) return value;
+          if (t > timeout || Date.now() > realEnd) throw new Error(`Timeout ${timeout}ms exceeded waiting for ${fn}`);
+          // Loading takes real time: no frames until the game exists, or the number of frames before the title would vary
+          // with the machine's load (and so would everything that animates from then on, like the windmill).
+          if (!(await page.evaluate(() => !!window.embervale))) await page.waitForTimeout(25);
+          else if (await step(1)) t += STEP_MS;
+        }
+      }
+    : (fn, timeout = 45000, arg) => page.waitForFunction(fn, arg, { timeout, polling: 100 });
   const shot = (name) => page.screenshot({ path: `${outDir}${name}.png` });
   const press = async (key, times = 1, gap = 160) => {
     for (let i = 0; i < times; i++) {

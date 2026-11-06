@@ -158,7 +158,7 @@ src/
        touch.ts             the on-screen controls (phones/tablets, landscape; detection, layout, rotate card)
        skyDial.ts, compass.ts   the clock's sky dial (sun and moon over the ground); the compass strip
 scripts/
-  smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers
+  smoke.mjs, look.mjs, browser.mjs   smoke runner (smoke/, fixtures/); look scenes (baselines + budgets: lookCompare.mjs); shared helpers, the look stepped clock
   map.mjs, midi-import.mjs a dungeon's text map + problems (npm run map -- <id>); assets/music-src/<folder>/*.mid → src/core/imported/ (npm run midi)
   flags.mjs                who sets/reads each quest flag (npm run flags; game/flags.test.ts uses it)
   lexicon.mjs              the game's words → src/labs/speech/lexicon.ts from CMUdict (npm run lexicon)

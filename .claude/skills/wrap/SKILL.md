@@ -14,8 +14,11 @@ which ones you skipped.
    (FLAKY = passed on its solo retry, fine). The full suite only at a milestone's end or
    after shared systems changed, and ask the owner first. If a quest beat, boss or system was added, smoke has a
    new step for it.
-4. **Anything visible changed**: send `looker` with the scenes and what to check. Open a
-   screenshot yourself only if looker flags a problem you need to see.
+4. **Anything visible changed**: send `looker` with the scenes and what to check; it opens only the
+   shots that changed against their baselines (a refactor should change none) and checks the render
+   budgets. Open a screenshot yourself only if looker flags a problem you need to see. When the
+   changed shots are right, `npm run look -- <scenes> --approve` (the scenes you ran) so the new
+   baselines and budgets go in the commit.
 5. **Docs** (this is what lets the next session start without a recap). Every session
    reads AGENTS.md and the topic docs, so **edit them to describe the game as it is now:
    replace, never append**. History lives in git; a doc isn't a changelog.

@@ -35,27 +35,6 @@ implementation.
 
 ## Open tickets
 
-### T3: Look baselines and a render budget
-**Run:** auto · sonnet · high
-**Why:** Every visual check sends every screenshot to `looker`. As content grows that's the
-costliest routine step, and slowdowns creep in with nothing to flag them.
-**Done when:**
-- `npm run look -- <scenes>` compares each shot with an approved baseline and prints
-  changed/unchanged per shot (with how much changed); only changed shots go to `looker`. An
-  option (e.g. `--approve`) saves new baselines.
-- Each scene records draw calls and triangles and fails when it goes over its budget (a small
-  file of per-scene budgets with headroom). No fps: it depends on the machine.
-- Two runs in a row on unchanged code give "unchanged" (pin the clock, particles, seeds and
-  animation time where needed).
-**Read first:** testing.md "Commands" and the look-scene parts; the top of `scripts/look.mjs`
-and one scene in it; `scripts/browser.mjs`; `.claude/agents/looker.md`; CLAUDE.md
-"Where the money goes" (Images).
-**Verify:** check; look on 3–4 scenes twice (unchanged), change a color, run again (changed),
-revert.
-**Notes:** Whether baselines go in git is the agent's call; the tradeoff is repo size against
-every session and machine having them (a capped resolution helps). Allow a small pixel
-tolerance. Update the looker agent, the wrap skill's step 4 and testing.md.
-
 ### T4: Recipe skills for repeated content work
 **Run:** auto · sonnet · medium
 **Why:** Building past the starting area means dozens more enemies, NPCs, rooms and regions.

@@ -83,6 +83,9 @@ enemy randomness.
 
 ## Known quirks and tech debt
 
+- **Look baselines don't exist yet**: after the polygon-count increase lands (it changes every shot), run
+  `npm run look -- --approve` (full, ~16 min, in the background) and commit `scripts/baselines/` (~7.5 MB) and
+  `scripts/look-budgets.json`; budgets then show what the new models cost. Each later full re-approve adds that much to git history.
 - **Village homes are shells**: the two standing cottages have locked doors (`door.home0/1`, "The door is locked.") and no
   interior. When they become enterable, follow the mill: a `HingedDoor` (`world/objects.ts`), a room inside the walls
   (the camera's doorway pane is `Layer.CameraOnly`), a bed or story beat. Outside the square the road-gate lanterns have glow but no real light
