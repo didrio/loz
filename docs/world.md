@@ -87,6 +87,10 @@ recheck old text against them when you touch it.
   keeper still stands guard in the corridor, thornlings nest below, and the way on is over a pit on
   rock pillars.
 
+- **Past the mountains** (designed, not built): beyond Wayfarers' Camp the road drops onto **Sallowmere**, a drowned
+  river plain with the stilt town **Stiltwick**, the dungeon **the Old Weir** and **the Lightless Cut** onward. Design:
+  [sallowmere.md](sallowmere.md).
+
 ## The keepers' bells
 
 While the great lantern burned, the shrine's keepers rang its hours from bells on crooked posts
@@ -228,7 +232,9 @@ a sword) → the Lamplighter falls, its ember relights the lantern and **wakes t
 door** (its spiral goes from dark to glowing, `StoneDoor.wake`) → interact with the door
 ("Open") to sink it → walk in: **the Waking Shrine** (the first dungeon; the entrance seals
 behind Wren until its keeper falls; see [shrine.md](shrine.md)). The boss is the only way
-in.
+in. → the prism breaks the gate: the Northpass, the Waybell and Wayfarers' Camp → *(designed, not built)*
+Sallowmere: Stiltwick's ferry errand, the Old Weir (the Ember Lantern, the Lurelight, the third ember), hints of the
+vanished adults, the Lightless Cut ([sallowmere.md](sallowmere.md)).
 
 ## Characters
 

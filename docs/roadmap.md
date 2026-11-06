@@ -15,6 +15,9 @@ early unless the owner asks: they're best designed against the real use case.
 What's next is in [tickets.md](tickets.md). This is the longer view; an idea becomes a ticket
 when it's near.
 
+- **Next region:** Sallowmere and the Old Weir ([sallowmere.md](sallowmere.md), tickets T6–T16). Region 3 lies past
+  the Lightless Cut; plan it as we go (owner's call, 2026-11-05).
+- **Optional, any time:** the Glimmer Lake grotto (the glove pulls a half-sunk wakestone; shrine.md).
 - **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
   quests out in the world, Odo back at his stall, the kids' lines changing with them;
   [world.md](world.md) "The empty village").
@@ -71,7 +74,9 @@ enemy randomness.
   tree and move its file list to its topic doc. *Trigger: as stated, or AGENTS.md over ~200 lines.*
 - [ ] **World progression solver**: the dungeon solver for the whole game. Every gate (item,
   flag, key, gem price) as data, and a check that a new save can reach the end with no softlock
-  (one-time items, gem shortages). *Trigger: when the next region's design is written (T5 decides).*
+  (one-time items, gem shortages). *Fired: decided 2026-11-06 (T5), lean version is ticket T6.*
+- [ ] **An item selector**: the glove owns `item`; the Ember Lantern is passive (Interact) on purpose. *Trigger: a third
+  item that needs its own button.*
 - [ ] **A test that plays the whole game** (owner noted, 2026-11-05): a scripted run from a new
   game to the current end, nightly in CI, with smoke fixtures exported from it instead of written
   by hand. *Trigger: a second region's quest chain exists, or a fixture turns out not to match

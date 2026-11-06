@@ -19,12 +19,11 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-05: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
+As of 2026-11-06: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
 **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the valley (violet
 **scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
-tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`); the speech synth is shelved (`labs/speech/`). **Touch controls** (phones and
-tablets, landscape; [engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages (their first notes are fixed: hearts drawn as SVG, camera from the Shield finger while surfing, button labels; the first exit after the boss is noon).
-**Next:** the first open ticket in [docs/tickets.md](docs/tickets.md). Dev server: port 5273.
+tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`). **Touch controls** ([engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages.
+**Next:** **Sallowmere**, the second region (designed: [sallowmere.md](docs/sallowmere.md)), built through the open tickets in [docs/tickets.md](docs/tickets.md). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -36,6 +35,7 @@ tablets, landscape; [engine.md](docs/engine.md)) are being playtested by a frien
 | [docs/combat.md](docs/combat.md) | touching the sword, shield/guard, enemies, hazards or bosses (incl. boss fairness rules) |
 | [docs/dungeons.md](docs/dungeons.md) | designing or building a dungeon (the data format, solver, text map) |
 | [docs/shrine.md](docs/shrine.md) | working on the first dungeon: its design, item, enemies, boss, the Northpass gate, build plan |
+| [docs/sallowmere.md](docs/sallowmere.md) | working on the second region (drowned lowlands, Stiltwick) or its dungeon, the Old Weir (the Ember Lantern, the Lurelight) |
 | [docs/bells.md](docs/bells.md) | bell posts (bonfires), fast travel, bell trials and platforming: lore, rules, the recipe for a new bell site, build plan |
 | [docs/world.md](docs/world.md) | writing dialog, quests, places, characters (world bible and the quest thread) |
 | [docs/audio.md](docs/audio.md) | touching sound effects or music |
