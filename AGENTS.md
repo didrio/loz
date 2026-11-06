@@ -24,7 +24,7 @@ As of 2026-11-06: Emberfield plays start to finish: a wordless start, the shield
 **scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
 tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`). **Touch controls** ([engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages.
 Overworld water works: shallow slows Wren, deep is a fall ([engine.md](docs/engine.md)); a region can set its own water level.
-**Next:** **Sallowmere**, the second region (designed: [sallowmere.md](docs/sallowmere.md)), built through the open tickets in [docs/tickets.md](docs/tickets.md) (T17 first: a stale smoke scenario). The gates from a new game to the Waybell are data
+**Next:** **Sallowmere**, the second region (designed: [sallowmere.md](docs/sallowmere.md)), built through the open tickets in [docs/tickets.md](docs/tickets.md). The gates from a new game to the Waybell are data
 (`content/progression.ts`, checked by a test); each Sallowmere ticket adds its own. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching

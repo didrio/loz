@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T17**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T18**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
