@@ -12,6 +12,7 @@ import { BELLS, bellContent, answering, emptyPostText, liftVillageBell, settleVi
 import { fakeApi } from './fakeApi';
 import { overworldContent } from './overworld';
 import { shrineContent } from './shrine';
+import { B } from './text/bells';
 
 beforeAll(async () => {
   await initPhysics();
@@ -172,7 +173,7 @@ describe('the keepers\' bells', () => {
       content.restore(state);
       await content.scripts.lullPost(api);
       expect(chosen).toEqual([]);
-      expect(said.at(-1)!.text).toBe(`${BELLS.lull.carries}... and nothing answers.`);
+      expect(said.at(-1)!.text).toBe(B.alone(B.carries.lull));
       state.bells.hung.add('way');
       choices.push(0);
       await content.scripts.lullPost(api);

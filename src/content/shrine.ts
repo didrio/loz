@@ -10,6 +10,7 @@ import { PRISM_HITS } from '../world/dungeon/prism';
 import { floorY, keyName, lockSwitches, type Condition, type Loot, type Potion, type RoomDef } from '../world/dungeon/format';
 import { bellContent } from './bells';
 import { readSigil } from './sigils';
+import { SH } from './text/shrine';
 import { wardenContent } from './gravelheart';
 import type { AreaContent } from './overworld';
 
@@ -24,18 +25,8 @@ import type { AreaContent } from './overworld';
 /** The hour the valley is shown at, the first time Wren walks out after the ward breaks. */
 const REVEAL_HOUR = 12;
 
-const LOOT_TEXT: Record<string, string> = {
-  bossKey: '[gear]Boss Key[/]. Its great teeth fit the keeper\'s door.',
-  tether: '[gear]Tether Glove[/]. Its glowing cord tugs toward the shrine\'s stones, as if it knows them.',
-};
-
 /** A flask chest's message; `slot` is the flask's button (flask1, flask2). */
-const flaskText = (potion: Potion, slot: number) => {
-  const key = `[flask${slot + 1}]`;
-  return potion === 'life'
-    ? `[gear]Life Potion[/], in a flask. ${key} drinks it: every heart back. Odo in [place]Thistledown[/] refills it.`
-    : `[gear]Attack Potion[/], in a flask. ${key} drinks it: double sword damage for 30 seconds. Odo in [place]Thistledown[/] refills it.`;
-};
+const flaskText = (potion: Potion, slot: number) => SH.loot.flask(potion, `[flask${slot + 1}]`);
 
 export function shrineContent(area: DungeonArea): AreaContent {
   const def = area.def;
@@ -95,11 +86,11 @@ export function shrineContent(area: DungeonArea): AreaContent {
   const alive = (room: string) => (roomEnemies.get(room) ?? []).some((e) => e.alive);
 
   const lootMessage = (api: ScriptApi, loot: Loot) => {
-    if (typeof loot === 'string') return LOOT_TEXT[loot];
-    if ('key' in loot) return `[gear]${keyName(loot.key)}[/]. It opens the shrine's one ${loot.key} door.`;
-    if ('item' in loot) return LOOT_TEXT[loot.item] ?? `[gear]${loot.item}[/].`;
+    if (typeof loot === 'string') return SH.loot[loot];
+    if ('key' in loot) return SH.loot.key(keyName(loot.key), loot.key);
+    if ('item' in loot) return loot.item in SH.loot ? SH.loot[loot.item as 'tether'] : SH.loot.item(loot.item);
     if ('flask' in loot) return flaskText(loot.flask, api.state.flasks.slots.length - 1);
-    return `${loot.gems} gems.`;
+    return SH.loot.gems(loot.gems);
   };
 
   const bells = bellContent(Object.fromEntries(area.bellPostsById), Object.fromEntries(area.bellPickups));
@@ -148,7 +139,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
       await api.say([{ text: lootMessage(api, loot) }]);
       if (typeof loot === 'object' && 'item' in loot && loot.item === 'tether') {
         api.releaseCamera();
-        api.toast('[item] throws the glove. A stone it catches comes to you.');
+        api.toast(SH.tetherToast);
       }
     };
   }
@@ -160,13 +151,13 @@ export function shrineContent(area: DungeonArea): AreaContent {
       const p = progress(api.state);
       if (door.style === 'key') {
         const color = door.keyColor!;
-        if (!p.keys.has(color)) return api.say([{ text: `Locked. It needs the [gear]${keyName(color)}[/].` }]);
+        if (!p.keys.has(color)) return api.say([{ text: SH.door.needsKey(keyName(color)) }]);
         p.keys.delete(color);
       } else if (door.style === 'boss') {
-        if (!p.bossKey) return api.say([{ text: 'A great iron lock. It needs the [gear]Boss Key[/].' }]);
+        if (!p.bossKey) return api.say([{ text: SH.door.needsBossKey }]);
         p.bossKey = false; // spent, like a small key
       } else {
-        return api.say([{ text: 'Iron bars. Something here must raise them.' }]);
+        return api.say([{ text: SH.door.barred }]);
       }
       p.doors.add(d.id);
       api.sfx.clank();
@@ -272,7 +263,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
           // The first heavy stone a blade meets: say why it won't budge.
           heavyHinted = true;
           api.sfx.stoneThunk();
-          api.toast(api.state.items.has('tether') ? 'Too heavy for a blade. Try the [item] Tether Glove.' : 'Too heavy for a blade.');
+          api.toast(api.state.items.has('tether') ? SH.heavy.withGlove : SH.heavy.plain);
         }
         else if (result === 'sunk') {
           api.sfx.stoneSlide();

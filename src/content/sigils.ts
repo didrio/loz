@@ -1,6 +1,7 @@
 import type { Script } from '../game/script';
 import type { Flag, GameState } from '../game/state';
 import type { SigilLook } from '../world/sigil';
+import { S } from './text/sigils';
 
 /**
  * The sigils: messages written in the air by the one who waits in the shrine (docs/world.md "Story").
@@ -9,11 +10,11 @@ import type { SigilLook } from '../world/sigil';
  * and never his name. The pause menu's Messages page lists the ones Wren has read, in this order. `text` is its boxes, one per page.
  */
 export const SIGILS = [
-  { id: 'sigil.hollow', title: 'Come and see me', text: ['If you\'ve laid old Corwin down, come and see me.\nI\'m in the shrine.'] },
-  { id: 'sigil.cell', title: 'Over the pass', text: ['They sent me over the pass with nothing.\nNobody cared if I came back.'] },
-  { id: 'sigil.crypt', title: 'The world past the mountains', text: ['None of them knew what the world past the mountains had become, or what it did to me.\nThey could have wondered.'] },
-  { id: 'sigil.gauntlet', title: 'Home', text: ['THIS IS MY HOME.'] },
-  { id: 'sigil.seal', title: 'Sorry', text: ['Something is happening to me, here in the shrine. I am becoming more powerful.', 'But if you are reading this, I suppose you have felled me.\nIn that case... well... I\'m sorry for what happened.'] },
+  { id: 'sigil.hollow', ...S.hollow },
+  { id: 'sigil.cell', ...S.cell },
+  { id: 'sigil.crypt', ...S.crypt },
+  { id: 'sigil.gauntlet', ...S.gauntlet },
+  { id: 'sigil.seal', ...S.seal },
 ] as const;
 
 export type SigilId = (typeof SIGILS)[number]['id'];
@@ -36,7 +37,7 @@ export function readSigil(id: string): Script {
     api.state.set(flag);
     api.sfx.select();
     await api.say(sigil.text.map((t) => ({ who: '', text: `[old]${t}[/]` })));
-    if (first) api.toast('Messages are kept in the pause menu ([pause]).');
+    if (first) api.toast(S.messagesKept);
   };
 }
 

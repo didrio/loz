@@ -1,6 +1,7 @@
 import type { Script } from '../game/script';
 import type { Flag, GameState } from '../game/state';
 import type { MurmurbudLook } from '../world/murmurbud';
+import { H } from './text/hints';
 
 /**
  * The keepers' notes, sealed in Murmurbuds around the valley (docs/world.md "Murmurbuds"). The
@@ -8,26 +9,10 @@ import type { MurmurbudLook } from '../world/murmurbud';
  * one idea the player can act on, and its title says plainly what it helps with. The pause menu lists the found ones in this order.
  */
 export const HINTS = [
-  {
-    id: 'tunic',
-    title: 'The Stoneward tunic',
-    text: 'The shrine\'s stone beasts hit hard. The [gear]Stoneward Tunic[/], from Odo by the well, halves their blows. Do not haggle.',
-  },
-  {
-    id: 'flasks',
-    title: 'Refilling your flasks',
-    text: 'A flask is never empty for good, only waiting. Odo, by [place]Thistledown[/]\'s well, fills it again for 20 gems.',
-  },
-  {
-    id: 'bells',
-    title: 'Bells, posts and travel',
-    text: 'Hang each bell on the post carved with its name. Ring one to travel to any other hung bell. Bells never heal; beds do.',
-  },
-  {
-    id: 'boss',
-    title: 'Fighting the stone giant',
-    text: 'Jump the giant\'s shock ring. After each slam a chest plate glows loose: pull it off. With all three gone, strike.',
-  },
+  { id: 'tunic', ...H.tunic },
+  { id: 'flasks', ...H.flasks },
+  { id: 'bells', ...H.bells },
+  { id: 'boss', ...H.boss },
 ] as const;
 
 export type HintId = (typeof HINTS)[number]['id'];
@@ -55,7 +40,7 @@ export function hintContent(buds: ReadonlyMap<string, MurmurbudLook>) {
       bud?.take();
       api.sfx.select();
       await api.say([{ who: hint.title, text: hint.text }]);
-      if (first) api.toast('Notes are kept in the pause menu ([pause]).');
+      if (first) api.toast(H.notesKept);
     };
   }
   return {

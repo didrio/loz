@@ -52,7 +52,7 @@ enemy randomness.
   ~700 lines (696 on 2026-11-04).*
 - [ ] **Split content per area and topic**: `content/overworld.ts` → `content/overworld/`
   (village NPCs, the hollow, the shrine...). *Trigger: a content file passes ~500 lines.* (The hollow is next out of `overworld.ts`.)
-- [ ] **Dialog as data**: in progress: Thistledown is done (`content/text/village.ts`); the rest is ticket T2b.
+- [x] **Dialog as data**: the player's words live in `content/text/<area>.ts` (done; new text goes there).
 - [ ] **Per-region scenery seeds**: each overworld region gets its own RNG so adding or
   changing one region can't reshuffle another (see Conventions in [engine.md](engine.md)).
   Done for the hollow and the gorge (`regionRng(name)` in `layout.ts`); the valley keeps its 1337

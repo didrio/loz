@@ -12,6 +12,7 @@ import { northpassContent } from './northpass';
 import { gorgeContent } from './gorge';
 import { hintContent } from './hints';
 import { sigilContent } from './sigils';
+import { O } from './text/overworld';
 import { villageContent } from './village';
 
 /** What a loaded area needs from content: scripts by interactable/trigger id, and save restore. */
@@ -35,7 +36,7 @@ const say = (text: string, who?: string): Script => (api) => api.say([{ who, tex
  */
 function crossroads() {
   const sign = SIGNS.find((s) => s.id === 'sign.crossroads')!;
-  return `${signArrow(sign, VILLAGE)} [place]Thistledown Village[/]`;
+  return O.signs.crossroads(signArrow(sign, VILLAGE));
 }
 
 /**
@@ -49,7 +50,7 @@ function doorFace(ow: Overworld, dy = 0) {
 
 /** The shrine door cutscene: the camera cuts to the door and watches it sink. */
 async function shrineDoorOpens(api: ScriptApi, ow: Overworld) {
-  await api.say([{ text: 'You lay a hand on the glowing spiral. The stone groans.' }]);
+  await api.say([{ text: O.door.opens }]);
   const at = doorFace(ow, -0.5);
   api.shot(new THREE.Vector3(ow.door.x - 11, at.y + 3, ow.door.z + 7), at);
   await api.wait(0.9);
@@ -173,7 +174,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     // Where the Lamplighter stood, something has been written in the air.
     ow.sigil.setPresent(true);
     api.particles.burst(ow.sigil.group.position, 0xe2d6ff, 24, 2, 1.2, false);
-    await api.say([{ text: 'The flame flew home. Northeast, the [place]Waking Shrine[/]\'s door is glowing.' }]);
+    await api.say([{ text: O.hollow.flameHome }]);
   };
 
   /**
@@ -205,22 +206,18 @@ export function overworldContent(ow: Overworld): AreaContent {
 
     async 'chest.grove'(api) {
       if (api.state.keys <= 0) {
-        await api.say([{ text: 'An old iron padlock. Someone in [place]Thistledown[/] may have the key.' }]);
+        await api.say([{ text: O.grove.padlock }]);
         return;
       }
       api.state.keys--;
-      await api.say([{ text: 'The [gear]Small Key[/] turns.' }]);
+      await api.say([{ text: O.grove.keyTurns }]);
       ow.chest.open();
       api.state.set('groveChestOpened');
       await api.wait(0.9);
       api.sfx.fanfare();
       api.giveSword();
       api.particles.burst(new THREE.Vector3(ow.chest.x, api.player.pos.y + 1.2, ow.chest.z), 0xfff1a8, 30, 4, 1.2, false);
-      await api.say([
-        { text: '[gear]Wayfarer\'s Blade[/]. Nicked, and it still sings.' },
-        { text: '[attack] swings; three in rhythm make a combo. [lock] locks on.' },
-        { text: 'Maren should see this, back in [place]Thistledown[/].' },
-      ]);
+      await api.say(O.grove.sword.map((text) => ({ text })));
     },
 
     async 'door.shrine'(api) {
@@ -229,9 +226,9 @@ export function overworldContent(ow: Overworld): AreaContent {
         return;
       }
       const hint = api.state.has('hasSword')
-        ? 'The lantern is dark. Its flame went southwest, to the [place]Gloaming Hollow[/].'
-        : 'Someone in [place]Thistledown[/] might know more.';
-      await api.say([{ text: `A spiral carved in cold stone. It won't budge.\n${hint}` }]);
+        ? O.door.hintArmed
+        : O.door.hintUnarmed;
+      await api.say([{ text: O.door.shut(hint) }]);
     },
 
     async 'trigger.shrineEntrance'(api) {
@@ -242,12 +239,12 @@ export function overworldContent(ow: Overworld): AreaContent {
     ...hints.scripts,
     ...sigilContent(new Map([['sigil.hollow', ow.sigil]])),
     'sign.crossroads': say(crossroads()),
-    'sign.gorge': say('[place]Hushing Gorge[/]\n"Walk soft. What guards the old bell hates noise."\nBelow, in a child\'s hand: [soft]up is over the gap[/]'),
-    'sign.hollow': say('[place]Gloaming Hollow[/]\n"Lamps lit at dusk, snuffed at dawn."\nScratched under it, fresh: [danger]TURN BACK[/]'),
+    'sign.gorge': say(O.signs.gorge),
+    'sign.hollow': say(O.signs.hollow),
     async 'trigger.hollow'(api) {
       if (api.state.has('hasSword')) return lamplighterWakes(api);
       // Unarmed: it doesn't wake, and Wren thinks better of it.
-      await api.say([{ text: 'Something tall stands in the hollow, still, its back to you.\nNot without a weapon.' }]);
+      await api.say([{ text: O.hollow.unarmed }]);
       await api.fade(1, 0.4);
       api.player.teleport(HOLLOW_ENTRANCE.x, api.physics.groundY(HOLLOW_ENTRANCE.x, HOLLOW_ENTRANCE.z - 6) ?? api.player.pos.y, HOLLOW_ENTRANCE.z - 6, Math.PI);
       await api.fade(0, 0.4);
@@ -259,13 +256,13 @@ export function overworldContent(ow: Overworld): AreaContent {
       api.state.maxHp += 2;
       api.state.hp = api.state.maxHp;
       api.sfx.fanfare();
-      await api.say([{ text: '[gear]Heart Vessel[/]. One more heart, and all of them full.' }]);
+      await api.say([{ text: O.vessel }]);
     },
-    'sign.village': say('[place]Thistledown Village[/]\n"Mind the windmill. Mind the thornlings more."'),
-    'sign.canyon': say('[place]Wayfarers\' Camp[/]\n"The Waybell went over the gap. Nobody has come back with it."'),
-    'sign.gate': (api) => api.say([{ text: api.state.has('valleyOpen') ? '[place]The Northpass[/]\nThe gate has fallen. Nobody has walked this road in years.' : '[place]The Northpass[/]\nA gate of floating stone rose the night the lantern died. Nobody has gone through since.' }]),
-    'sign.grove': say('[place]Whispering Grove[/]\n"The trees remember every word said under them."'),
-    'sign.pedestal': say('Worn letters:\n"While the lantern burns, the stone shall wake. Rekindle it, and the night shall break."'),
+    'sign.village': say(O.signs.village),
+    'sign.canyon': say(O.signs.canyon),
+    'sign.gate': (api) => api.say([{ text: api.state.has('valleyOpen') ? O.signs.gate.open : O.signs.gate.shut }]),
+    'sign.grove': say(O.signs.grove),
+    'sign.pedestal': say(O.signs.pedestal),
   };
 
   return {

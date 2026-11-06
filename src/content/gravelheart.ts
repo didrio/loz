@@ -7,6 +7,7 @@ import { liftVillageBell } from './bells';
 import { glow } from '../render/shapes';
 import type { DungeonArea } from '../world/dungeon/build';
 import type { Overworld } from '../world/overworld';
+import { G } from './text/gravelheart';
 
 /**
  * Gravelheart's encounter in Warden's Hearth: it sleeps in a heap facing the boss door;
@@ -93,7 +94,7 @@ export function wardenContent(area: DungeonArea) {
     api.releaseCamera();
     hearth.clear();
     if (!api.state.has('gravelheartVessel')) hearth.vessel.show();
-    await api.say([{ text: 'Gravelheart kneels, and the stone goes quiet. Its ember flies home to the lantern.' }]);
+    await api.say([{ text: G.falls }]);
 
     // The north wall: stones climb out of the pit, and a door that was never there grinds open.
     const door = hearth.sealDoor;
@@ -111,7 +112,7 @@ export function wardenContent(area: DungeonArea) {
       }
       await api.wait(2.2);
       api.releaseCamera();
-      api.toast('The north wall has opened.');
+      api.toast(G.wallOpens);
     }
   };
 
@@ -124,7 +125,7 @@ export function wardenContent(area: DungeonArea) {
     api.silenceMusic(true); // the dungeon is quiet since the boss; the vision of the valley must be too
     await api.wait(1.4); // the shards fall and the beams go dark
     api.sfx.solved();
-    await api.say([{ text: 'Its light runs out through the walls, far to the northwest, to a gate of floating stone.' }]);
+    await api.say([{ text: G.vision }]);
     // The shot is set as the valley loads, before the screen fades in: it is a vision, and Wren isn't standing there.
     await api.travel('overworld', 'gateView', true, () => {
       const gc = (api.area as unknown as Overworld).gate.center;
@@ -147,7 +148,7 @@ export function wardenContent(area: DungeonArea) {
     api.hidePlayer(false);
     api.releaseCamera();
     api.silenceMusic(false); // back in the quiet dungeon
-    api.toast('The ward is broken. [place]The Northpass[/] is open.');
+    api.toast(G.wardBroken);
   };
 
   /** The Heart Vessel the Warden leaves behind. */
@@ -157,7 +158,7 @@ export function wardenContent(area: DungeonArea) {
     api.state.maxHp += 2;
     api.state.hp = api.state.maxHp;
     api.sfx.fanfare();
-    await api.say([{ text: '[gear]Heart Vessel[/]. One more heart, and all of them full.' }]);
+    await api.say([{ text: G.vessel }]);
   };
 
   return {

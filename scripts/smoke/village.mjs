@@ -41,6 +41,32 @@ export default async function run(t) {
     check((await state()).flags.includes('village.millKey'), 'no mill key');
   });
 
+  await step('a villager talks in blips as the line types; skipping the typing is silent', async () => {
+    const p = await at('npc.tobin');
+    await teleport(p.x + 1.4, p.z, -Math.PI / 2);
+    await game(() => {
+      const g = window.embervale;
+      window.__blips = 0;
+      const talk = g.sfx.talk.bind(g.sfx);
+      g.sfx.talk = (...a) => ((window.__blips += 1), talk(...a));
+    });
+    await press('KeyE');
+    await until(() => window.embervale.mode === 'cutscene', 5000);
+    await until(() => window.__blips > 0, 5000);
+    // Skip the typing (what confirm does mid-page): the rest appears at once, and nothing more blips.
+    const skipped = await game(() => {
+      window.embervale.hud.finishTyping();
+      return window.__blips;
+    });
+    await wait(600);
+    check((await game(() => window.__blips)) === skipped, 'skipping the typing still blipped');
+    await finishScript();
+    await game(() => {
+      const g = window.embervale;
+      delete g.sfx.talk; // back to the prototype's method
+    });
+  });
+
   await step('the mill door swings open in place; Wren walks in, sleeps (heals, clock to 18:00), and a shut door keeps her in', async () => {
     const MILL = { x: -62 - 22, z: -58 };
     const millDoor = () => window.embervale.area.millDoor.open;

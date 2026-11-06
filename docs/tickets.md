@@ -35,20 +35,6 @@ implementation.
 
 ## Open tickets
 
-### T2b: Move the rest of the player's text into per-area text files
-**Run:** auto · sonnet · medium
-**Why:** T2 set the pattern and converted Thistledown (`src/content/text/village.ts`, used as `V.maren.bell`
-in `village.ts`; day/night pairs `{day, night}`; a function where a line needs numbers). The other
-content modules still hold their lines inline.
-**Done when:** the same for `villageNews.ts`, `overworld.ts`, `bells.ts`, `hints.ts`, `sigils.ts`,
-`shrine.ts`, `gravelheart.ts`, `gorge.ts`, `northpass.ts`, `shop.ts`, `story.ts` (one text module per
-area or topic, copy the style of `text/village.ts`). Nothing changes for the player. Then add a
-smoke step that a talk blips and the skip rule holds, and tick "Dialog as data" in the roadmap checklist.
-**Read first:** `src/content/text/village.ts` and how `village.ts` uses it; `textRules.test.ts` (already
-globs `text/*.ts`).
-**Verify:** check; smoke for the areas touched (see testing.md).
-**Notes:** Do it in two sessions if needed (overworld/bells/hints first, shrine/gravelheart after).
-
 ### T3: Look baselines and a render budget
 **Run:** auto · sonnet · high
 **Why:** Every visual check sends every screenshot to `looker`. As content grows that's the

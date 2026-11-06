@@ -3,6 +3,7 @@ import type { Script, ScriptApi } from '../game/script';
 import type { Flag, GameState } from '../game/state';
 import { BELL_IDS, type BellId, type BellPickup, type BellPost } from '../world/bell';
 import type { AreaId } from './areas';
+import { B } from './text/bells';
 
 /**
  * The keepers' bells (docs/bells.md): what finding, hanging and ringing one does. A bell is
@@ -25,27 +26,17 @@ export interface BellSite {
   entrance: string;
   /** Its note (Hz): the Morrowbell rings A4, the Lullbell the D a fifth below. */
   note: number;
-  /** The second line when it's found: which hour it rang, and a nudge toward its post. */
-  found: string;
-  /** Where its note goes when it's rung (for "...and nothing answers"). */
-  carries: string;
 }
 
 export const BELLS: Record<BellId, BellSite> = {
   morrow: {
     id: 'morrow', name: 'Morrowbell', carving: 'MORROW', site: 'Thistledown', area: 'overworld', entrance: 'bell.morrow', note: 440,
-    found: 'The keepers rang the dawn with it. Its post stands in [place]Thistledown[/].',
-    carries: 'Its bright note rolls out over the roofs',
   },
   lull: {
     id: 'lull', name: 'Lullbell', carving: 'LULL', site: 'Hall of Sleepers', area: 'shrine', entrance: 'lullPost', note: 293.66,
-    found: 'The keepers rang it at dusk, to put the stones to sleep. Its post is somewhere in these halls.',
-    carries: 'Its low note rolls through the sleeping halls',
   },
   way: {
     id: 'way', name: 'Waybell', carving: 'WAY', site: 'Wayfarers\' Camp', area: 'overworld', entrance: 'bell.way', note: 329.63,
-    found: 'The keepers rang it at noon, to call travelers off the pass. Its post is at the camp, across the gap.',
-    carries: 'Its green note rolls down the pass',
   },
 };
 
@@ -78,11 +69,11 @@ export function answering(state: GameState, bell: BellId) {
 
 /** What a post with an empty hook says, depending on what Wren knows and carries. */
 export function emptyPostText(state: GameState, post: BellId) {
-  const carving = `Carved on the arm: [old]${BELLS[post].carving}[/].`;
+  const carving = B.post.carving(BELLS[post].carving);
   const carried = [...state.bells.carried].find((b) => b !== post);
-  if (carried) return `An empty hook. ${carving}\nThe [gear]${BELLS[carried].name}[/] doesn't belong here.`;
-  if (state.bells.hung.size) return `Another empty hook. ${carving}`;
-  return `A crooked post with an empty hook. Something hung here once.\n${carving}`;
+  if (carried) return B.post.wrongBell(carving, BELLS[carried].name);
+  if (state.bells.hung.size) return B.post.another(carving);
+  return B.post.first(carving);
 }
 
 /** Where the camera watches a post from: in front and off to the side, looking at the bell. */
@@ -105,22 +96,22 @@ async function hangBell(api: ScriptApi, post: BellPost) {
   await api.until(() => !post.hanging);
   api.sfx.bell(bell.note, 0.35);
   await api.wait(0.5);
-  await api.say([{ text: `The [gear]${bell.name}[/] hangs again.` }]);
+  await api.say([{ text: B.hangs(bell.name) }]);
   // It rings once by itself, as if it had been waiting to.
   post.ring();
   api.sfx.bell(bell.note);
   await api.wait(1.4);
   const others = answering(api.state, post.bell);
   if (!others.length) {
-    await api.say([{ text: `${bell.carries}... and nothing answers.` }]);
+    await api.say([{ text: B.alone(B.carries[post.bell]) }]);
     return;
   }
   // The second bell: the network wakes up, and the game says what it means.
   others.forEach((o, i) => api.sfx.bell(o.note, 0.3, i * 0.35));
   await api.wait(1.2);
   await api.say([
-    { text: `Far off, the [gear]${others[0].name}[/] answers. The notes hang together, like a road between them.` },
-    { text: 'Ring a bell with [interact], then follow an answer to travel to that bell.' },
+    { text: B.answers(others[0].name) },
+    { text: B.howTo },
   ]);
   await travelMenu(api, post);
 }
@@ -133,7 +124,7 @@ async function ringBell(api: ScriptApi, post: BellPost) {
   const others = answering(api.state, post.bell);
   if (!others.length) {
     await api.wait(1.4);
-    await api.say([{ text: `${bell.carries}... and nothing answers.` }]);
+    await api.say([{ text: B.alone(B.carries[post.bell]) }]);
     return;
   }
   // The others answer from far off, one after another.
@@ -145,7 +136,7 @@ async function ringBell(api: ScriptApi, post: BellPost) {
 /** Follow the answer: pick a hung bell (or stay), travel there, and it rings as Wren arrives. */
 async function travelMenu(api: ScriptApi, post: BellPost) {
   const others = answering(api.state, post.bell);
-  const pick = await api.choose('Follow the answer', [...others.map((o) => o.site), 'Stay'], others.length);
+  const pick = await api.choose(B.follow.title, [...others.map((o) => o.site), B.follow.stay], others.length);
   if (pick === null || pick >= others.length) return;
   const to = others[pick];
   api.releaseCamera();
@@ -176,7 +167,7 @@ export function bellPickupScript(pickup: BellPickup, posts: Iterable<BellPost>):
     for (const p of posts) if (p.bell === pickup.bell) p.canHang = true;
     api.sfx.fanfare();
     api.sfx.bell(bell.note, 0.4, 0.5);
-    await api.say([{ text: `[gear]${bell.name}[/]. ${bell.found}` }]);
+    await api.say([{ text: B.gotBell(bell.name, B.found[pickup.bell]) }]);
   };
 }
 
