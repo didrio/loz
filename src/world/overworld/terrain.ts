@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { fbm } from '../../core/math';
 import { Layer } from '../../core/physics';
+import { applySurface } from '../../render/textures';
 import type { AreaBuilder } from '../area';
 import { GROVE, HOLLOW, passFrame, pathDist, PASS, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
 
@@ -64,7 +65,8 @@ export function buildTerrain(b: AreaBuilder, rect: TerrainRect = VALLEY_RECT, pa
     for (let k = 0; k < 3; k++) colors.set([c.r, c.g, c.b], (f + k) * 3);
   }
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+  // The ground tile on flat ground, the rock tile on steep faces (render/textures.ts), tinted by the paint.
+  const mesh = new THREE.Mesh(geo, applySurface(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }), 'ground'));
   mesh.receiveShadow = true;
   b.dynamic(mesh); // already one draw call; keep its vertex colors out of the merge
 }

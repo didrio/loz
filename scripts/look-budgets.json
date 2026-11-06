@@ -1,6 +1,22 @@
 {
+  "emptyVillage": {
+    "calls": 600,
+    "triangles": 244000
+  },
+  "mill": {
+    "calls": 790,
+    "triangles": 266000
+  },
   "sallowmere": {
     "calls": 970,
     "triangles": 344000
+  },
+  "village": {
+    "calls": 790,
+    "triangles": 267000
+  },
+  "villageDetails": {
+    "calls": 740,
+    "triangles": 264000
   }
 }

@@ -1,8 +1,10 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { applySurface, faceNormals, type SurfaceId } from './textures';
 
 /**
- * The look of the game: flat-shaded Lambert materials in solid colors. Materials are shared
+ * The look of the game: flat-shaded Lambert materials in solid colors, some with a generated
+ * detail texture (`surf`). Materials are shared
  * per color, which keeps memory down and lets `mergeStatic` batch meshes by material.
  * Never mutate a material from `mat()`; use `uniqueMat()` for anything that animates.
  */
@@ -13,6 +15,20 @@ export function mat(color: number, emissive = 0) {
   let m = cache.get(key);
   if (!m) {
     m = new THREE.MeshLambertMaterial({ color, emissive, flatShading: true });
+    cache.set(key, m);
+  }
+  return m;
+}
+
+/**
+ * A shared material in `color`, textured as `surface` (render/textures.ts): plaster walls, stone,
+ * wood, roof shingles. Same rules as `mat()`: shared per colour and surface, never mutate it.
+ */
+export function surf(surface: SurfaceId, color: number) {
+  const key = `${color}:0:${surface}`;
+  let m = cache.get(key);
+  if (!m) {
+    m = applySurface(new THREE.MeshLambertMaterial({ color, flatShading: true }), surface);
     cache.set(key, m);
   }
   return m;
@@ -63,6 +79,7 @@ export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
     let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
     for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
     g.applyMatrix4(o.matrixWorld);
+    if (material.userData.surface) faceNormals(g); // the texture's projection reads them (textures.ts)
     g.computeBoundingBox();
     g.boundingBox!.getCenter(center);
     const key = `${material.uuid}:${o.castShadow}:${Math.floor(center.x / cellSize)}:${Math.floor(center.z / cellSize)}`;

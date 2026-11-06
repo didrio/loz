@@ -50,6 +50,37 @@ The HUD is DOM and unaffected. Off draws straight to the canvas as before (antia
 so the sky meets it. The pure parts (`bayerOffset`, `crushChannel`, `internalSize`, the settings migration) are unit-tested; the shaders are not (no GL in tests): look at them.
 The sun's shadow map and the bloom threshold are tuned by eye; if a scene blooms too hard, lower `BLOOM_STRENGTH`.
 
+## Textures (`render/textures.ts`, T19)
+
+Generated in code, never imported (owner's call, 2026-11-06). A texture is a small grey **detail tile**: a single channel with
+mean ~128. It only brightens or darkens the material's own colour (`colour × (1 + strength·(t − 0.5)·2)`), so one tile
+serves every colour of that surface, and the palette, the blight and the retro crush behave as before. Think of it as a
+send effect on a channel, not a new instrument.
+- **Placed by position, not UVs** (`mergeStatic` drops UVs). The patched Lambert shader projects along each face's own normal,
+  read as a `flat` value: `mergeStatic` rewrites textured meshes' normals to face normals (`faceNormals`; free, flat shading
+  never reads them), and the terrain's are already. A dynamic textured cone or cylinder needs `faceNormals` too (or its tile
+  tilts). Not screen derivatives: their float error times world coordinates (~150 m) smeared the tile. **Walls**: u runs along the
+  wall and v up, so turned houses don't stretch and courses stay level. **Slopes** (roofs, hills): v runs downhill.
+  **Flat tops**: x and z. Merged statics are in world space; a moving mesh keeps its tile. Corners don't line up (fine at this
+  resolution).
+- **Density**: 32 texels per metre everywhere (~3 cm, `TEXELS_PER_METRE`). Tiles are 64 px (2 m); the ground's is 128 px (4 m),
+  to hide the repeat. Up close the filter is nearest (chunky texels); at a distance it's mipmapped (no sparkle).
+- **Surfaces** (`SURFACES`): `plaster`, `stone` (courses and mortar), `wood` (planks running along v), `shingle` (rows across a
+  slope), `ground` (a clumpy ground tile on tops, a rock tile on steep faces). Each sets a top tile, a side tile and a `strength`.
+  Tiles are pure `(size, seed) → Uint8Array` drawings (`drawTile`), unit-tested for determinism, mean (no colour shift),
+  spread and seamless wrap.
+- **Use**: `surf('plaster', 0xeadcbc)` instead of `mat(0xeadcbc)`. It's shared and cached like `mat`, so never mutate it.
+  `applySurface(material, kind)` is for materials of your own: the terrain's vertex-colour material (so **all terrain**,
+  valley and regions, is textured) and the mill's BackSide inside. Small bits stay plain: cloth, flowers, knobs, glows, windows.
+- **Cost**: six tiles under 100 KB with mips, and one shader program shared by every textured material (`customProgramCacheKey
+  'surface'`). Draw calls only rise when the same colour is used both plain and textured (two merge buckets): the village went
+  585 → 632 because its stone and wood colours are still plain in the ruins and the rest of the valley (T21 removes most of
+  that). Done: the village and all terrain. To do: tickets T21–T24.
+- **Look baselines barely see a texture**: they're shrunk 4× by averaging, and a tile averages to grey. Judge a texture
+  change on the full-size shots in `look-output/`, by eye.
+- **A new tile**: a drawing function in `DRAW` (periodic noise via `periodicNoise`/`fbmTile`; structure like `cuts` for courses
+  and planks, wrapping with `wrap`), a size in `TILE_SIZE`, and a `SURFACES` entry. The tests cover it automatically.
+
 ## Menus (`game/menu.ts`, `game/pauseMenu.ts`)
 
 `MenuStack` is the reusable menu: rows are an action, a toggle (flips, stays open) or a
@@ -307,7 +338,8 @@ desktop build can write real files.
   6:00 or 18:00 shows a one-word card, "Dawn" / "Nightfall" (`dayTurn` in `game/state.ts`, on the HUD's area-name card).
   The HUD clock shows only the time (no day number).
 - Materials from `mat(color)` are shared: **never mutate them**; use `uniqueMat` for
-  anything that flashes or glows.
+  anything that flashes or glows. Buildings and props are textured: `surf('stone' | 'plaster' | 'wood' | 'shingle', color)`
+  (see "Textures").
 - Overworld scenery is placed with a seeded RNG (`regionRng('valley')`, 1337) in a fixed build
   order; reordering build calls reshuffles every tree. **Adding a landmark must not move
   existing scenery**: placement checks use `placementHeight` (the terrain before later
