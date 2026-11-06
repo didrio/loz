@@ -105,8 +105,10 @@ enemy randomness.
   "inverted" meant, whether a hit pinned Wren against the fire wall. Wren starts ~2 m inside the seal (the trigger is
   `HOLLOW.r - 2`), by design so far.
 
-- A streamed region builds in one frame: a hitch at the streaming point (the Northpass is 150×60 cells of
-  terrain plus a trimesh; unmeasured on a real GPU). Spread the build over frames when regions get big.
+- A plain region (the Northpass, 150×60 cells of terrain plus a trimesh) still builds in one frame, out of sight; big ones
+  build a step a frame (engine.md "Regions"). Neither is measured on a real GPU.
+- `npm run lexicon` (the shelved speech lab) now writes ~230 words where the committed lexicon has ~730: it scans fewer files
+  than when it was last run. Not re-run since; new words go in `labs/speech/names.ts` until someone fixes the scan.
 
 - Two roads ford ponds: the grove road (11 m of road, ≤ 0.44 m deep) and the shrine road
   (14 m, ≤ 1.03 m). Still walkable: deep water (a fall) starts at 1.2 m (`DEEP_DEPTH`, game/water.ts), and

@@ -8,6 +8,9 @@ export const NAMES: Record<string, string> = {
   emberfield: 'EH1 M B ER0 F IY2 L D',
   thistledown: 'TH IH1 S AH0 L D AW2 N',
   northpass: 'N AO1 R TH P AE2 S',
+  sallowmere: 'S AE1 L OW0 M IH2 R',
+  stiltwick: 'S T IH1 L T W IH0 K',
+  descent: 'D IH0 S EH1 N T', // in CMUdict, but `npm run lexicon` now drops ~500 words, so it's here (roadmap)
   overworld: 'OW1 V ER0 W ER2 L D',
   // bells
   morrowbell: 'M AA1 R OW0 B EH2 L',

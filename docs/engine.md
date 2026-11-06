@@ -102,13 +102,25 @@ valley are *regions* that exist only while Wren is near (owner's call, 2026-11-0
 a terrain `rect` and `build(physics)`, which returns its `root`, its `interactables`/`triggers` (they join the
 overworld's lists while it is loaded), an `update` and a `dispose`. `RegionStreamer` builds one when Wren is
 within 70 m of its rect and drops it past 110 m (a `RegionDef` may override both: fog is full at 215 m, so a region
-that can be seen from afar, like the Northpass, loads at 260 m and drops at 300 m, where it never visibly pops). `Area.streamAt(x, z)` is called every frame in `updateWorld`
-and in `placeAtSpawn` *before* Wren is placed, so a teleport (a bell, a save) finds ground. A region builds in
-one frame (a small hitch; spread it over frames if regions get big). Regions use the same `terrainHeight`
+that can be seen from afar, like the Northpass, loads at 260 m and drops at 300 m, where it never visibly pops). `Area.streamAt(x, z)` is called every frame in `updateWorld`,
+and in `placeAtSpawn` and `loadDevState` *before* Wren is placed, so a teleport (a bell, a save, a dev state) finds ground.
+A small region builds in one frame. A big one's `build` is a generator that `yield`s between steps (a 20 m strip of
+terrain, a kind of scenery, each with its own `AreaBuilder`): the streamer starts it at `loadDist`, runs one step per
+`update`, and attaches it when done; within `FINISH_DIST` (30 m) `streamAt` finishes it at once, so the teleport rule
+holds. `buildStats` keeps each build's steps and slowest step (the look scene logs them). Regions use the same `terrainHeight`
 and the same 2 m grid as the valley (`buildTerrain(b, rect)`), so seams match; each has its own seed in
-`REGION_SEEDS` (`layout.ts`). The only region so far is the Northpass (`northpass.ts`). Objects whose state must survive streaming (the camp's bell post, the canyon's crossing, the Waybell) are built in the overworld proper instead; enemies that need the region's ground (the Cragstalker) are spawned by content while `loadedRegions` has it. Scenery of the valley
+`REGION_SEEDS` (`layout.ts`). The regions are the Northpass (`northpass.ts`: the corridor and the camp's mountains, built in one go) and
+Sallowmere (`sallowmere.ts`, its map in `mere.ts`, which `terrainHeight` folds in with `carveMere`; stepped,
+see [sallowmere.md](sallowmere.md) "The map"). `buildTerrain(b, rect, paint)` takes a region's own palette. Objects whose state must survive streaming (the camp's bell post, the canyon's crossing, the Waybell) are built in the overworld proper instead; enemies that need the region's ground (the Cragstalker) are spawned by content while `loadedRegions` has it. Scenery of the valley
 stays out of a region's carved land with an `inX` check (as `inGorge`, `inPass`), applied after the seeded
 placement so it never reshuffles.
+
+**Overworld files** (`world/overworld/`): `index.ts` (the `Overworld` area), `layout.ts` (the valley's map as pure functions:
+`terrainHeight`, places, roads, the pass, `areaNameAt`), `terrain.ts` (ground chunks with a palette, the valley's water and
+bounds), `village.ts`, `landmarks.ts` (bridge, grove, shrine, signs), `nature.ts` (trees, rocks, grass, bushes), `hollow.ts`,
+`gorge.ts`, `camp.ts` (Wayfarers' Camp, the crossing, the Waybell), `ruins.ts` (ruined homes, the shield's cottage),
+`blight.ts` (thorn clumps and thickets, `thornTouch`), `gate.ts`, `region.ts` (`RegionStreamer`), and the regions:
+`northpass.ts`; `mere.ts` + `sallowmere.ts` (Sallowmere's map and build).
 
 **Moving between areas**: `api.travel(id, entrance?)` fades out, `loadArea`s the other area
 with Wren at a named entrance (`Area.entrances`, e.g. the overworld's `shrineDoor`) or its

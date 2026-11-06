@@ -22,12 +22,21 @@ export interface RegionDef {
   readonly unloadDist?: number;
   /** Its water surface, m. Inside its rectangle this replaces the valley's; omitted: no water there. */
   readonly waterLevel?: number;
-  build(physics: Physics): BuiltRegion;
+  /**
+   * Builds it. A big region is a generator: it `yield`s between steps (a strip of terrain, a kind of scenery), and
+   * the streamer runs one step a frame from `loadDist` on, so its build never stalls a frame.
+   */
+  build(physics: Physics): BuiltRegion | Generator<void, BuiltRegion, void>;
 }
 
 /** By default a region loads when Wren is within this many meters of its rectangle and drops past `UNLOAD_DIST`. */
 export const LOAD_DIST = 70;
 export const UNLOAD_DIST = 110;
+/** Nearer than this to a region still being built, the rest of its build runs at once (a teleport, a save, a bell). */
+export const FINISH_DIST = 30;
+
+/** How a region's last build went (the look scene reports it): its steps and the slowest one, ms. */
+export interface BuildStats { steps: number; slowestMs: number; totalMs: number }
 
 /** Meters from (x, z) to the rectangle (0 inside it). */
 export function distToRect(r: TerrainRect, x: number, z: number) {
@@ -35,12 +44,15 @@ export function distToRect(r: TerrainRect, x: number, z: number) {
 }
 
 /**
- * Builds and drops regions as Wren moves. A region is built in one go (it appears behind a mountain
- * well before she can see it), and its interactables and triggers join the host area's lists while it
- * is loaded. The hysteresis between the two distances stops a region flickering at the edge.
+ * Builds and drops regions as Wren moves. A plain region is built in one go (it appears behind a mountain
+ * well before she can see it); a generator one a step per frame, and appears when it's done. Its
+ * interactables and triggers join the host area's lists while it is loaded. The hysteresis between the
+ * two distances stops a region flickering at the edge.
  */
 export class RegionStreamer {
   private readonly loaded = new Map<string, BuiltRegion>();
+  private readonly pending = new Map<string, Generator<void, BuiltRegion, void>>();
+  readonly buildStats: Record<string, BuildStats> = {};
 
   constructor(
     private readonly defs: readonly RegionDef[],
@@ -58,33 +70,67 @@ export class RegionStreamer {
     return def && (def.waterLevel ?? null);
   }
 
-  /** Loads what is near (x, z) and unloads what is far; colliders are ready when this returns. */
+  /**
+   * Loads what is near (x, z) and unloads what is far. Within `FINISH_DIST` of a region its colliders are
+   * ready when this returns; further out a generator region may still be building (`update` steps it).
+   */
   streamAt(x: number, z: number) {
     let changed = false;
     for (const def of this.defs) {
       const d = distToRect(def.rect, x, z);
       const region = this.loaded.get(def.id);
-      if (!region && d < (def.loadDist ?? LOAD_DIST)) {
-        this.load(def);
+      if (!region && !this.pending.has(def.id) && d < (def.loadDist ?? LOAD_DIST)) {
+        this.start(def);
         changed = true;
       } else if (region && d > (def.unloadDist ?? UNLOAD_DIST)) {
         this.unload(def.id);
+      }
+      if (this.pending.has(def.id) && d < FINISH_DIST) {
+        while (!this.step(def.id));
+        changed = true;
       }
     }
     if (changed) this.physics.refreshQueries();
   }
 
+  /** Steps each region still being built (one step each), then runs the loaded ones. */
   update(dt: number) {
+    let done = false;
+    for (const id of [...this.pending.keys()]) done = this.step(id) || done;
+    if (done) this.physics.refreshQueries();
     for (const r of this.loaded.values()) r.update?.(dt);
   }
 
   dispose() {
+    for (const id of [...this.pending.keys()]) while (!this.step(id));
     for (const id of [...this.loaded.keys()]) this.unload(id);
   }
 
-  private load(def: RegionDef) {
+  private start(def: RegionDef) {
+    const t0 = performance.now();
     const r = def.build(this.physics);
-    this.loaded.set(def.id, r);
+    this.buildStats[def.id] = { steps: 1, slowestMs: performance.now() - t0, totalMs: performance.now() - t0 };
+    if ('next' in r) this.pending.set(def.id, r);
+    else this.attach(def.id, r);
+  }
+
+  /** Runs one step of a pending build; true once it's done and attached. */
+  private step(id: string) {
+    const gen = this.pending.get(id)!;
+    const t0 = performance.now();
+    const next = gen.next();
+    const ms = performance.now() - t0, stats = this.buildStats[id];
+    stats.steps++;
+    stats.totalMs += ms;
+    stats.slowestMs = Math.max(stats.slowestMs, ms);
+    if (!next.done) return false;
+    this.pending.delete(id);
+    this.attach(id, next.value);
+    return true;
+  }
+
+  private attach(id: string, r: BuiltRegion) {
+    this.loaded.set(id, r);
     this.host.root.add(r.root);
     this.host.interactables.push(...(r.interactables ?? []));
     this.host.triggers.push(...(r.triggers ?? []));

@@ -139,7 +139,7 @@ const SCENES = {
     await hours(12);
     await h.wait(1500);
     await h.shot('blight-day');
-    await hours(0);
+    await hours(22);
     await h.wait(1500);
     await h.shot('blight-night');
     await hours(12);
@@ -1250,6 +1250,48 @@ const SCENES = {
     await view('canyon-cragstalker-and-bell', [-10, 16, -296], [-10, 12.5, -314]);
     await view('canyon-cragstalker-eyes', [-10, 13.6, -322], [-10, 12.6, -311]); // from behind the bell, looking at its face
     await view('canyon-from-above', [-10, 115, -245], [-10, 12, -295]);
+  },
+  /** Sallowmere (T8): the first view from the canyon's mouth by day and night, the switchbacks, the causeway, the town's and the Weir's footprints, the Cut, the farm and trial pool, the whole mere from above. */
+  async sallowmere(h) {
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.set('valleyOpen'); // the blight is long gone by the time Wren gets here
+      g.sky.blight = 0;
+      g.enemies.list.forEach((e) => (e.alive = false));
+      g.area.gate.setOpen();
+      g.area.streamAt(-10, -343); // builds it now (it would build over a few frames on the way)
+    });
+    await h.teleport(-10, -255, Math.PI); // Wren parks at the camp, out of every shot, near enough to keep both regions
+    await h.wait(1500);
+    // The canyon's Cragstalkers spawn once the Northpass is built: clear them too, and keep Wren safe through the scene.
+    await h.game(() => { const g = window.embervale; g.enemies.list.forEach((e) => (e.alive = false)); g.state.invincible = true; });
+    console.log('sallowmere build:', JSON.stringify(await h.game(() => window.embervale.area.regionBuildStats.sallowmere)));
+    const view = async (name, eye, target) => {
+      await h.game(([eye, target]) => {
+        const g = window.embervale;
+        g.rig.frozen = true;
+        g.camera.position.set(...eye);
+        g.camera.lookAt(...target);
+      }, [eye, target]);
+      await h.wait(700);
+      await h.shot(name);
+    };
+    const hours = (n) => h.game((n) => (window.embervale.state.hours = n), n);
+    await hours(11);
+    await view('mere-overlook', [-10, 30, -328], [4, -2, -462]);
+    await view('mere-switchbacks', [48, 18, -338], [-10, 5, -360]);
+    await view('mere-descent-foot', [-8, 3.6, -388], [-42, 1, -428]);
+    await view('mere-stiltwick-footprint', [-22, 9, -398], [-60, 0, -432]);
+    await view('mere-channel-and-weir', [22, 5, -460], [22, 7, -522]);
+    await view('mere-lightless-cut', [-98, 7, -482], [-130, 3, -514]);
+    await view('mere-farm-and-trial', [55, 8, -392], [115, 0, -415]);
+    await view('mere-canyon-mouth-from-below', [-8, 4, -392], [-10, 12, -335]);
+    await view('mere-from-above', [0, 75, -350], [0, 0, -462]);
+    await hours(22);
+    await h.wait(1500);
+    await view('mere-overlook-night', [-10, 30, -328], [4, -2, -462]);
+    await view('mere-weir-from-town-night', [-45, 4, -440], [22, 7, -522]);
   },
   /** Gravelheart's intro, first shots: the camera looking back past Wren as the door rises (it must not sit inside her), then over the shoulder. */
   async wardenIntro(h) {

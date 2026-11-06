@@ -39,30 +39,15 @@ The next stretch is **Sallowmere** (drowned lowlands) and its dungeon **the Old 
 [sallowmere.md](sallowmere.md) (owner-approved 2026-11-06). T15 and T16 write the dungeon's and the
 boss's build tickets (and the Wickmoth, Reedwight and Lightless Cut ones) when they run.
 
-### T8: Sallowmere's map
-**Run:** plan · opusplan · high
-**Why:** The region's layout (where the descent, Stiltwick, the Weir, the Lightless Cut, islands and the bell trial sit)
-is a design the owner should see before it's built.
-**Done when:**
-- The owner approved a top-down layout (a text map or a render) in plan mode.
-- The road continues past the Waybell's canyon (the Northpass's far `Bounds` wall moves) down a descent onto the mere;
-  terrain, water level (`RegionDef.waterLevel`, engine.md "Physics"; the region builds its own water plane), causeways, the sites' footprints (empty), bounds, area names.
-- The region streams in without a visible hitch: its build is spread over frames.
-- Look scene `sallowmere` (day and night) and a dev state at the descent.
-**Read first:** sallowmere.md "The place"; engine.md "Areas" (Regions); `src/world/overworld/northpass.ts`,
-`region.ts`, and the `PASS`/`BEYOND` parts of `layout.ts` (Grep).
-**Verify:** `npm run check`; smoke `northpass`; `looker` on the new scene.
-**Notes:** Fired checklist items: per-region seeds (`regionRng('sallowmere')`); spread the streamed build over frames
-(roadmap "Known quirks"); AGENTS.md's layout tree at scale (overworld/ passes ~8 files: give it one line, move the list
-to engine.md).
-
 ### T9: Build Stiltwick
 **Run:** auto · sonnet · medium
 **Why:** The region's town: the hub where its people, trader and bell post live.
 **Done when:** Houses on stilts and rooftops above the water, boardwalks and moored boats joining them, a spot for the
 bell post, the trader's stall and 5–6 NPCs (empty for now); walkable, the camera clear of stilts and eaves; look scene.
-**Read first:** sallowmere.md "The place"; `src/world/overworld/village.ts` (how Thistledown is built); engine.md
-"Conventions".
+**Read first:** sallowmere.md "The place" and "The map" (`STILTWICK` in `world/overworld/mere.ts`: a shallow circle, r 30,
+the town causeway ends at its east edge); `src/world/overworld/village.ts` (how Thistledown is built); engine.md
+"Conventions". Build it as a step of `sallowmere.ts`'s generator (or its own region objects; see engine.md "Regions" for
+what must live in the overworld proper to survive streaming).
 **Verify:** `npm run check`; `looker` (the town by day and night, the camera on the boardwalks).
 
 ### T10: Stiltwick's people
@@ -89,7 +74,8 @@ tell, is dazed by a guarded snap; placed in the mere's shallows; tests and a loo
 **Why:** Fast travel to the region: the post in Stiltwick, its bell at the end of a trial out on the mere.
 **Done when:** A new bell (named for an hour: bells.md "Lore") follows bells.md "Adding a bell site", its trial
 reachable from the town, travel works both ways.
-**Read first:** bells.md "Adding a bell site (the recipe)" and "Lore"; sallowmere.md "Story beats".
+**Read first:** bells.md "Adding a bell site (the recipe)" and "Lore"; sallowmere.md "Story beats" and "The map" (the trial's
+deep pool, `BELL_TRIAL` in `world/overworld/mere.ts`).
 **Verify:** `npm run check`; smoke for the new site; `looker` on the trial.
 
 ### T13: The ferry errand that opens the Weir
@@ -97,7 +83,8 @@ reachable from the town, travel works both ways.
 **Why:** The Weir must be earned in town, the way the Lamplighter woke the shrine.
 **Done when:** A short errand chain in Stiltwick (propose it in 2–3 lines before building) ends with the way to the
 Weir open; flags, saves, a smoke step; `content/progression.ts` gets its gates.
-**Read first:** the `/add-quest-beat` skill; sallowmere.md "Story beats" and "World progression".
+**Read first:** the `/add-quest-beat` skill; sallowmere.md "Story beats", "World progression" and "The map" (the channel
+cuts the Weir's forecourt off; the ferry crosses it).
 **Verify:** `npm run check`; the new smoke step.
 **Notes:** Fired: "a test that plays the whole game" (a second region's quest chain now exists): write it as a ticket at
 `/wrap`.

@@ -1,4 +1,5 @@
-import { fbm, mix, mulberry32, smoothstep } from '../../core/math';
+import { centerline, fbm, mix, mulberry32, smoothstep } from '../../core/math';
+import { carveMere, mereNameAt } from './mere';
 
 /**
  * The map of Emberfield and its landmarks, as pure functions of (x, z). The terrain shape is
@@ -56,7 +57,7 @@ export const BUDS = [
  * reshuffle another. The valley's 1337 and the hollow's 4242 are the original seeds (the layout
  * players already know); new regions add a line here.
  */
-const REGION_SEEDS = { valley: 1337, hollow: 4242, gorge: 7301, pass: 9157, blight: 5521 } as const;
+const REGION_SEEDS = { valley: 1337, hollow: 4242, gorge: 7301, pass: 9157, blight: 5521, sallowmere: 6113 } as const;
 export const regionRng = (region: keyof typeof REGION_SEEDS) => mulberry32(REGION_SEEDS[region]);
 
 /**
@@ -75,42 +76,6 @@ export const GORGE = {
   reach: 28,
   wall: 11,
 };
-
-/** A centerline through points: how far along it you are, and the point, direction and normal at a distance. */
-function centerline(path: [number, number][]) {
-  const segs = path.slice(1).map((p, i) => {
-    const [ax, az] = path[i];
-    return { ax, az, bx: p[0], bz: p[1], len: Math.hypot(p[0] - ax, p[1] - az) };
-  });
-  const offsets = segs.reduce<number[]>((o, g) => [...o, o[o.length - 1] + g.len], [0]);
-  const length = offsets[segs.length];
-  return {
-    length,
-    segs,
-    /** The point `s` meters along, its unit direction (inward) and its left-hand normal. */
-    point(s: number) {
-      const c = Math.max(0, Math.min(length, s));
-      let i = segs.findIndex((_, k) => c <= offsets[k + 1]);
-      if (i < 0) i = segs.length - 1;
-      const g = segs[i];
-      const t = (c - offsets[i]) / g.len;
-      const dx = (g.bx - g.ax) / g.len, dz = (g.bz - g.az) / g.len;
-      return { x: g.ax + (g.bx - g.ax) * t, z: g.az + (g.bz - g.az) * t, dx, dz, nx: dz, nz: -dx };
-    },
-    /** Distance `d` from the centerline and how far along it (`s`) the nearest point is. */
-    frame(x: number, z: number) {
-      let d = Infinity, s = 0;
-      for (let i = 0; i < segs.length; i++) {
-        const g = segs[i];
-        const dx = g.bx - g.ax, dz = g.bz - g.az;
-        const t = Math.max(0, Math.min(1, ((x - g.ax) * dx + (z - g.az) * dz) / (dx * dx + dz * dz)));
-        const di = Math.hypot(x - (g.ax + dx * t), z - (g.az + dz * t));
-        if (di < d) { d = di; s = offsets[i] + t * g.len; }
-      }
-      return { d, s };
-    },
-  };
-}
 
 const gorgeLine = centerline(GORGE.path);
 /** Length of the gorge's centerline, m. */
@@ -288,7 +253,7 @@ export function terrainHeight(x: number, z: number) {
   let withHollow = mix(h, HOLLOW.floor, smoothstep(HOLLOW.r + 9, HOLLOW.r, Math.hypot(x - HOLLOW.x, z - HOLLOW.z)));
   // Each ruin sits on a level pad at its center's height, easing back into the land 6 m out.
   for (const r of RUINS) withHollow = mix(withHollow, placementHeight(r.x, r.z), smoothstep(r.r + 6, r.r, Math.hypot(x - r.x, z - r.z)));
-  return carveBeyond(raiseGateShoulders(carvePass(carveGorge(withHollow, x, z), x, z), x, z), x, z);
+  return carveMere(carveBeyond(raiseGateShoulders(carvePass(carveGorge(withHollow, x, z), x, z), x, z), x, z), x, z);
 }
 
 /** The gate's pillars stand 5 m either side of its middle, each 1.7 m wide: the outer faces are at this offset. */
@@ -376,6 +341,8 @@ export function onVillageStep(x: number, z: number) {
 
 /** Which named place a point is in (shown as a title when you walk in). */
 export function areaNameAt(x: number, z: number) {
+  const mere = mereNameAt(x, z);
+  if (mere) return mere;
   if (inVillageMusic(x, z)) return 'Thistledown Village'; // the same ground the village song covers
   if (Math.hypot(x - GROVE.x, z - GROVE.z) < 36) return 'The Whispering Grove';
   if (Math.hypot(x - SHRINE.x, z - SHRINE.z) < 28) return 'The Waking Shrine';

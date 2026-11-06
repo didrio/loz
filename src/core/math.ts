@@ -61,3 +61,39 @@ export const damp = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
 
 export const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 export const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+/** A centerline through points: how far along it you are, and the point, direction and normal at a distance. */
+export function centerline(path: [number, number][]) {
+  const segs = path.slice(1).map((p, i) => {
+    const [ax, az] = path[i];
+    return { ax, az, bx: p[0], bz: p[1], len: Math.hypot(p[0] - ax, p[1] - az) };
+  });
+  const offsets = segs.reduce<number[]>((o, g) => [...o, o[o.length - 1] + g.len], [0]);
+  const length = offsets[segs.length];
+  return {
+    length,
+    segs,
+    /** The point `s` meters along, its unit direction (inward) and its left-hand normal. */
+    point(s: number) {
+      const c = Math.max(0, Math.min(length, s));
+      let i = segs.findIndex((_, k) => c <= offsets[k + 1]);
+      if (i < 0) i = segs.length - 1;
+      const g = segs[i];
+      const t = (c - offsets[i]) / g.len;
+      const dx = (g.bx - g.ax) / g.len, dz = (g.bz - g.az) / g.len;
+      return { x: g.ax + (g.bx - g.ax) * t, z: g.az + (g.bz - g.az) * t, dx, dz, nx: dz, nz: -dx };
+    },
+    /** Distance `d` from the centerline and how far along it (`s`) the nearest point is. */
+    frame(x: number, z: number) {
+      let d = Infinity, s = 0;
+      for (let i = 0; i < segs.length; i++) {
+        const g = segs[i];
+        const dx = g.bx - g.ax, dz = g.bz - g.az;
+        const t = Math.max(0, Math.min(1, ((x - g.ax) * dx + (z - g.az) * dz) / (dx * dx + dz * dz)));
+        const di = Math.hypot(x - (g.ax + dx * t), z - (g.az + dz * t));
+        if (di < d) { d = di; s = offsets[i] + t * g.len; }
+      }
+      return { d, s };
+    },
+  };
+}

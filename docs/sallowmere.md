@@ -1,6 +1,7 @@
 # Sallowmere (the second region) and the Old Weir (its dungeon): design
 
-Status: **design approved by the owner** (2026-11-06, T5). Nothing is built yet. All names are working names. The
+Status: **design approved by the owner** (2026-11-06, T5). **The map is built** (T8: ground, water, causeways, scenery, the
+Weir's wall; the sites are empty footprints). All names are working names. The
 build is tickets T8–T16 in [tickets.md](tickets.md). This doc holds what the data and code won't: the place, the item, the
 dungeon's idea, the enemies, the boss, and the story beats. Keep it current as the tickets land, and move details into
 their topic docs (combat.md, dungeons.md, bells.md) once they're built.
@@ -30,6 +31,42 @@ silver by night.
 - **Off the road:** islands and drowned farms with chests, a bell trial, and reed thickets the lantern burns (some hide
   chests).
 
+### The map (built, T8)
+
+Owner's calls (2026-11-06): **the Weir dead ahead** of the first view, **mixed water**, **valley-sized**. The data is
+`world/overworld/mere.ts` (pure, tested by `mere.test.ts`), the build `world/overworld/sallowmere.ts`. North is -z; the water
+is at y 0 (`MERE_WATER`).
+
+```
+z -550 ^^^^^^^^^^^^^^^^^^^ north hills ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       ^^ hill                 #### OLD WEIR wall (22,-522) ####       ^^
+z -505 ^^ [CUT] (-128,-512)    forecourt (22,-508), ferry only         ^^
+       ^^   :   ~~~~~~~~~~~~ old river channel, deep, z~-486 ~~~~~~~~~~~^^
+       ^^   :  north causeway   ,,   ,,      ,,   [east isle] (70,-450) ^
+z -430 ^^   :=STILTWICK (-60,-425) r30, shallow    ,,  (bell trial pool) ^
+       ^^         =  ,, | ditch ,,      fence tops     (115,-420) deep ^^
+       ^ [willow isle]  =     ,,   | ditch       [drowned farm]         ^
+       ^^ (-140,-395)    = causeway  ====== east causeway (110,-385)  ^^
+z -375 ^^~~~~~~ shore, willows ~~~ descent foot (-10,-384) ~~~~~~~~~~~~^^
+       ^^^^^^^^^^^^^^^ switchbacks, z -343..-376 ^^^^^^^^^^^^^^^^^^^^^^
+z -343 ^^^^^^^^^^^^^^^^^^^^ overlook (-10,-343), y 12 ^^^^^^^^^^^^^^^^^^
+                              || canyon, Waybell at z -319
+       x -190                                                    x 190
+,, shallows (wade)   ~~ deep (a fall)   = causeway (dry, +0.8 m)
+```
+
+- **Rect** `{ x0: -190, x1: 190, z0: -550, z1: -330 }`, against the Northpass's at z -330. It loads 150 m out (inside the
+  canyon's walls) and builds a step a frame: 11 terrain strips, then each kind of scenery.
+- **The descent**: the canyon runs on to the overlook (y 12), then the road switchbacks down an open slope to the shore. The
+  Northpass's end wall stays, open only at the canyon; the rim's wall stands on the hills' crest all round, except over the
+  slope, whose sides have their own walls back to the end wall.
+- **Water**: the open mere is about 0.6 m deep (wading); causeways, shore, islands, the farm, the Cut's apron and the Weir's
+  forecourt are dry; the channel, the two field ditches and the bell trial's pool are 2.8 m deep (a fall). The channel's arms
+  run into the north hills, so only a boat reaches the forecourt (`mere.test.ts` walks the grid to prove it).
+- **The Weir**: a plain wall, three timber gates and two towers stand there now, so the first view has its goal (~180 m away:
+  a grey shape in the fog by day). T13/T15/T16 give it a door, an inside and the night glow (~115 m from the town).
+- **Names**: Sallowmere, Stiltwick, The Old Weir, The Lightless Cut (`mereNameAt`). The region plays the field song for now, and its night is the valley's blue one (the "silver by night" look is still to do: a sky tint by region).
+
 **Water** (new for the overworld; built, see engine.md "Physics"):
 - **Shallow water** (up to about knee or waist height) is wadeable but slows Wren, and Mudlurks hide in it.
 - **Deep water is a fall:** half a heart, and Wren goes back to the last dry ground, like a pit (`TrialFalls`). There's
@@ -38,8 +75,8 @@ silver by night.
   and builds its own plane (`buildWater` is the valley's, 420 m square at `WATER_Y`).
 
 **Building rules** (scaling checklist):
-- The region gets its own seed (`regionRng('sallowmere')`).
-- Its streamed build is spread over frames, because it's bigger than the Northpass.
+- The region gets its own seed (`regionRng('sallowmere')`). Built.
+- Its streamed build is spread over frames, because it's bigger than the Northpass. Built.
 - Its content goes in its own `content/sallowmere.ts`.
 
 ## The item: the Ember Lantern

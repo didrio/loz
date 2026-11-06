@@ -13,6 +13,7 @@ import { SigilLook } from '../sigil';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
 import { areaNameAt, BUDS, FIELD_POSTS, HOMES, MILL_BED, MILL_TOWER, inVillageGuard, inVillageMusic, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_LOST, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { NORTHPASS } from './northpass';
+import { SALLOWMERE } from './sallowmere';
 import { RegionStreamer } from './region';
 import { buildGrass, buildLoneOak, buildRocks, buildTrees, bushSpots } from './nature';
 import { buildRuins } from './ruins';
@@ -221,7 +222,7 @@ export class Overworld implements Area {
     const done = b.finish();
     this.root = done.root;
     this.disposer = done.dispose;
-    this.regions = new RegionStreamer([NORTHPASS], physics, this);
+    this.regions = new RegionStreamer([NORTHPASS, SALLOWMERE], physics, this);
   }
 
   /** The valley's water level, or the level of the region Wren stands in (none: null). */
@@ -251,6 +252,11 @@ export class Overworld implements Area {
   /** Which regions are built right now (tests). */
   get loadedRegions() {
     return this.regions.loadedIds;
+  }
+
+  /** How each region's last build went: its steps and the slowest one, ms (the look scene reports it). */
+  get regionBuildStats() {
+    return this.regions.buildStats;
   }
 
   nameAt(x: number, z: number) {

@@ -69,4 +69,16 @@ export default async function run(t) {
     await until(() => window.embervale.activeBoss === null && window.embervale.enemies.list.some((e) => e.alive), 10000);
     check(Math.abs(g.hours - 22) < 0.5 && !g.open && Math.abs(g.z - 100) < 1.5, JSON.stringify(g));
   });
+
+  await step('a state in a streamed region (Sallowmere\'s descent) puts Wren on its ground, not under it', async () => {
+    await press('KeyP');
+    await until(() => window.embervale.pauseMenu.isOpen, 5000);
+    await t.page.click('.gmenu-tab >> text=Dev');
+    const row = await rowOf('Sallowmere: the descent');
+    await t.page.click(`.gmenu-row >> nth=${row}`);
+    await until(() => window.embervale.player.pos.z < -330, 20000);
+    await wait(1000);
+    const g = await game(() => ({ y: window.embervale.player.pos.y, z: window.embervale.player.pos.z, mode: window.embervale.mode, regions: window.embervale.area.loadedRegions }));
+    check(Math.abs(g.y - 12) < 0.6 && g.mode === 'play' && g.regions.includes('sallowmere'), JSON.stringify(g));
+  });
 }

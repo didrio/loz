@@ -2,11 +2,13 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Physics } from '../../core/physics';
 import type { Interactable, Trigger } from '../area';
-import { LOAD_DIST, RegionStreamer, UNLOAD_DIST, distToRect, type RegionDef } from './region';
+import { FINISH_DIST, LOAD_DIST, RegionStreamer, UNLOAD_DIST, distToRect, type BuiltRegion, type RegionDef } from './region';
 import { Overworld } from './index';
 import { NORTHPASS, NORTHPASS_RECT } from './northpass';
 import { GATE, PASS, SPAWN, terrainHeight, WATER_Y } from './layout';
 import { VALLEY_RECT } from './terrain';
+import { MERE_WATER, OVERLOOK, SALLOWMERE_RECT, STILTWICK } from './mere';
+import { SALLOWMERE } from './sallowmere';
 
 beforeAll(async () => {
   await initPhysics();
@@ -85,6 +87,97 @@ describe('RegionStreamer', () => {
     streamer.dispose();
     expect(streamer.loadedIds).toEqual([]);
     expect(log).toEqual(['dispose']);
+  });
+});
+
+describe('a region built over several frames', () => {
+  function stepped() {
+    const log: string[] = [];
+    const it1: Interactable = { id: 'npc.slow', x: 0, z: -150, r: 1, label: 'Talk', enabled: () => true };
+    const def: RegionDef = {
+      id: 'slow',
+      rect,
+      *build(): Generator<void, BuiltRegion, void> {
+        for (let i = 0; i < 3; i++) {
+          log.push(`step ${i}`);
+          yield;
+        }
+        return { root: new THREE.Group(), interactables: [it1], dispose: () => log.push('dispose') };
+      },
+    };
+    const host = { root: new THREE.Group(), interactables: [] as Interactable[], triggers: [] as Trigger[] };
+    return { streamer: new RegionStreamer([def], new Physics(), host), host, log };
+  }
+
+  it('runs one step a frame from the load distance and appears only when done', () => {
+    const { streamer, host, log } = stepped();
+    streamer.streamAt(10, -100 + LOAD_DIST - 1);
+    expect(streamer.loadedIds).toEqual([]);
+    expect(log).toEqual([]);
+    streamer.update(0.016);
+    streamer.update(0.016);
+    expect(log).toEqual(['step 0', 'step 1']);
+    expect(host.root.children).toHaveLength(0);
+    streamer.update(0.016);
+    streamer.update(0.016);
+    expect(streamer.loadedIds).toEqual(['slow']);
+    expect(host.root.children).toHaveLength(1);
+    expect(host.interactables).toHaveLength(1);
+    expect(streamer.buildStats.slow.steps).toBe(5); // starting it, three steps, and the one that returns
+  });
+
+  it('finishes at once when Wren is close (a teleport, a save), so there is ground under her', () => {
+    const { streamer, log } = stepped();
+    streamer.streamAt(10, -100 + LOAD_DIST - 1);
+    streamer.update(0.016);
+    streamer.streamAt(10, -100 + FINISH_DIST - 1);
+    expect(log).toEqual(['step 0', 'step 1', 'step 2']);
+    expect(streamer.loadedIds).toEqual(['slow']);
+  });
+
+  it('a build left mid-way still finishes and is dropped by distance as usual, and the area\'s disposal finishes it first', () => {
+    const { streamer, log } = stepped();
+    streamer.streamAt(10, -100 + LOAD_DIST - 1);
+    streamer.update(0.016);
+    streamer.streamAt(10, -100 + UNLOAD_DIST + 10);
+    for (let i = 0; i < 4; i++) streamer.update(0.016);
+    streamer.streamAt(10, -100 + UNLOAD_DIST + 10);
+    expect(streamer.loadedIds).toEqual([]);
+    expect(log.at(-1)).toBe('dispose');
+    const other = stepped();
+    other.streamer.streamAt(10, -150 + LOAD_DIST - 1);
+    other.streamer.dispose();
+    expect(other.log).toEqual(['step 0', 'step 1', 'step 2', 'dispose']);
+  });
+});
+
+describe('Sallowmere', () => {
+  it('meets the Northpass edge to edge on the same 2 m grid', () => {
+    expect(SALLOWMERE_RECT.z1).toBe(NORTHPASS_RECT.z0);
+    for (const v of [SALLOWMERE_RECT.x0, SALLOWMERE_RECT.x1, SALLOWMERE_RECT.z0, SALLOWMERE_RECT.z1]) expect(Math.abs(v % 2)).toBe(0);
+  });
+
+  it('starts building inside the canyon, a step a frame, with ground under Wren at the overlook and its own water', () => {
+    const physics = new Physics();
+    const world = new Overworld(physics);
+    world.streamAt(PASS.camp.x, PASS.camp.z);
+    expect(world.loadedRegions).toEqual(['northpass']); // building, not there yet
+    for (let i = 0; i < 40 && !world.loadedRegions.includes('sallowmere'); i++) world.update(0.016, { night: 0, playerPos: new THREE.Vector3(PASS.camp.x, 12, PASS.camp.z) } as never);
+    expect(world.loadedRegions).toContain('sallowmere');
+    expect(world.regionBuildStats.sallowmere.steps).toBeGreaterThan(12);
+    expect(physics.groundY(OVERLOOK.x, OVERLOOK.z)).toBeCloseTo(12, 0);
+    expect(world.waterLevelAt(STILTWICK.x, STILTWICK.z)).toBe(MERE_WATER);
+    world.dispose();
+  });
+
+  it('a teleport straight into the mere finds its ground', () => {
+    const physics = new Physics();
+    const world = new Overworld(physics);
+    world.streamAt(STILTWICK.x, STILTWICK.z);
+    expect(world.loadedRegions).toContain('sallowmere');
+    expect(physics.groundY(STILTWICK.x, STILTWICK.z)).toBeCloseTo(MERE_WATER - 0.6, 0);
+    world.dispose();
+    expect(physics.groundY(STILTWICK.x, STILTWICK.z)).toBeNull();
   });
 });
 

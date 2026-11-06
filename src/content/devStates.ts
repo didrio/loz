@@ -3,6 +3,7 @@ import { HINTS, hintFlag } from './hints';
 import { floorY, worldPos, type DungeonDef } from '../world/dungeon/format';
 import { SHRINE } from '../world/dungeon/defs/shrine';
 import { GATE, GORGE, gorgePoint, MORROW_POST, VILLAGE } from '../world/overworld/layout';
+import { OVERLOOK } from '../world/overworld/mere';
 
 /**
  * Dev-menu save states: ready-made points in the game to jump to while testing. Loading one
@@ -102,6 +103,16 @@ function atTheGate(): DevState {
   };
 }
 
+/** The gate open and the Waybell hung at Wayfarers' Camp: Wren at the canyon's mouth, where the road goes down to Sallowmere, facing the mere. */
+function atTheDescent(): DevState {
+  const gate = atTheGate();
+  return {
+    name: 'Sallowmere: the descent',
+    save: { ...gate.save!, bells: { carried: [], hung: ['morrow', 'lull', 'way'] } },
+    at: { x: OVERLOOK.x, z: OVERLOOK.z, facing: OVERLOOK.facing },
+  };
+}
+
 /** On Thistledown's square, 3 m from the Morrowbell's post toward the well, facing it. */
 function atMorrowPost(): DevState['at'] {
   const dx = VILLAGE.x - MORROW_POST.x, dz = VILLAGE.z - MORROW_POST.z, len = Math.hypot(dx, dz);
@@ -190,6 +201,7 @@ const STATES: DevState[] = [
   shrineAtBossDoor(),
   shrineAfterBoss(),
   atTheGate(),
+  atTheDescent(),
 ];
 
 export const DEV_STATES: DevState[] = STATES.map((s) => (s.save ? { ...s, save: withNotes(s.save) } : s));

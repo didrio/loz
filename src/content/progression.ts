@@ -40,8 +40,8 @@ export interface Gate {
   optional?: boolean;
 }
 
-/** The end of what's built: the Waybell hangs on its post at Wayfarers' Camp. */
-export const GOAL: Fact[] = ['bell:way:hung'];
+/** The end of what's built: the Waybell hangs on its post at Wayfarers' Camp, and the road goes on down into Sallowmere. */
+export const GOAL: Fact[] = ['bell:way:hung', 'area:sallowmere'];
 
 /**
  * A dungeon as one gate. What Wren finds inside comes from its data: the gems in its chests, its items, its
@@ -82,6 +82,8 @@ export const GATES: Gate[] = [
   { id: 'northpassGate', at: 'the gate in the north cliffs', needs: ['valleyOpen'], gives: ['area:northpass'] },
   { id: 'waybell', at: 'the canyon beyond Wayfarers\' Camp', needs: ['area:northpass'], gives: ['bell:way:carried'] },
   { id: 'hangWaybell', at: 'the post at Wayfarers\' Camp', needs: ['bell:way:carried'], gives: ['bell:way:hung'] },
+  // Sallowmere (docs/sallowmere.md): the road goes on past the Waybell, down the descent onto the mere.
+  { id: 'descent', at: 'the road past the Waybell', needs: ['area:northpass'], gives: ['area:sallowmere'] },
 
   // Optional: things nothing waits on.
   { id: 'millKey', at: 'Tobin, by the mill', needs: ['hasSword'], gives: ['village.millKey'], optional: true },

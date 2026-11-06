@@ -20,12 +20,12 @@ built almost entirely by AI agents. Build everything as if it will ship.
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
 As of 2026-11-06: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
-**Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the valley (violet
-**scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
-tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`). **Touch controls** ([engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages.
-Overworld water works: shallow slows Wren, deep is a fall ([engine.md](docs/engine.md)); a region can set its own water level.
-**Next:** **Sallowmere**, the second region (designed: [sallowmere.md](docs/sallowmere.md)), built through the open tickets in [docs/tickets.md](docs/tickets.md). The gates from a new game to the Waybell are data
-(`content/progression.ts`, checked by a test); each Sallowmere ticket adds its own. Dev server: port 5273.
+**Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
+after it only Lark and Pip remain in the village. Text is terse and tagged (`textRules.test.ts`); NPCs talk in **blips**. **Touch controls** are
+in a friend's playtest on GitHub Pages. Past the Waybell the road goes down into **Sallowmere** ([sallowmere.md](docs/sallowmere.md) "The map"):
+the mere, its water (shallow wades, deep is a fall), causeways and the Weir's wall stand, streamed a step a frame; its sites are still empty.
+**Next:** the town, people, enemy, bell, ferry, lantern and dungeon, through the open tickets in [docs/tickets.md](docs/tickets.md). Every gate
+from a new game to the descent is data (`content/progression.ts`, checked by a test). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -124,8 +124,7 @@ src/
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern
     jars.ts, sigil.ts, bell.ts, murmurbud.ts   JarField (ruins' jars: gem/heart/empty, `jar.<id>` flags); SigilLook; BellPost, BellPickup; MurmurbudLook
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
-    overworld/             Emberfield: layout (pure map), terrain, village, landmarks, nature, hollow, gorge, camp (Wayfarers' Camp,
-                           the crossing, the Waybell), ruins (ruined homes; the shield's cottage), blight (thorn clumps and thickets, thornTouch), gate, region (RegionStreamer), northpass (the first region), index (Overworld)
+    overworld/             the overworld: the valley, its landmarks, the streamed regions (Northpass, Sallowmere); files: engine.md "Overworld files"
     dungeon/               data format, validator, softlock solver, text map, DUNGEONS; defs/ the dungeons; build.ts + pieces.ts
                            (data → 3D Area); grid.ts + puzzle.ts (2 m grids, wakestone checker); landmarks.ts (statues);
                            hearth.ts (Gravelheart's arena, causeway, Heart Vessel); prism.ts (the Keepers' Seal's prism); decor.ts (each wing's palette and light)
@@ -135,21 +134,17 @@ src/
     menu.ts, menuDriver.ts MenuStack (rows, submenus, toggles, body text); MenuDriver (input → menu → HUD), ChoiceMenu (api.choose)
     pauseMenu.ts           the pause menu (P / Start): tabs Settings, Hints, Messages, Dev (sprint, invincible, save states)
     murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, sounds, the gauge)
-    player.ts, guard.ts, surf.ts   Wren (movement, sword, shield, stagger); the shield's guard; surfing's rule
-    lunge.ts               whether a swing's small step forward is allowed (not near thorns, ledges, signs, buds)
+    player.ts, guard.ts, surf.ts, lunge.ts   Wren (movement, sword, shield, stagger); the guard; surfing; whether a swing may step forward
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
     sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
     blight.ts              the blight's rules (where it lies, the lift, the strays, its songs, THORN_ATTACK)
-    boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss)
-    dungeonQuiet.ts        no music in a dungeon once its boss is beaten
-    lockon.ts, trialFalls.ts, flasks.ts   what lock-on picks; bell trials' fall rule; the two flasks (Odo refills them)
-    water.ts               dry/shallow/deep from the water's depth at Wren's feet (wading, the deep-water fall: WaterFalls)
+    boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss); dungeonQuiet.ts (no music once beaten)
+    lockon.ts, trialFalls.ts, flasks.ts, water.ts   lock-on's pick; trials' fall rule; the two flasks; dry/shallow/deep at Wren's feet (WaterFalls)
     camera.ts, dialog.ts (say + ask), pickups.ts, state.ts, debug.ts, enemyTestEnv.ts (enemy unit tests' stand-in game)
   content/                 the game's story; what things DO
-    areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death
+    areas.ts, story.ts, voices.ts   createArea(id): builds an area, binds its content; intro, death; speaker → VoiceProfile + Delivery
     overworld.ts           scripts for every overworld interactable/trigger, save restore
     text/                  the player's words, one typed module per area or topic (`text/village.ts`: `V.maren.bell`; also `news`, `overworld`, `bells`, `hints`, `sigils`, `shrine`, `gravelheart`); scripts keep the logic
-    voices.ts              who sounds like what (speaker → VoiceProfile + Delivery)
     village.ts, shop.ts    Thistledown: villagers, mill door and bed, locked cottages, Odo's stall, the opening, Pip's doll; offerWares (the buy menu)
     bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
     sigils.ts, villageNews.ts   the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)
@@ -157,15 +152,12 @@ src/
     shrine.ts, gravelheart.ts  the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
     progression.ts         the world progression solver: every gate as data, a walk from a new save to the end (dungeons.md)
     devStates.ts, fakeApi.ts   the Dev tab's save states; the fake ScriptApi content tests run against
-  ui/  hud.ts, style.css   DOM HUD: hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title
-       richText.ts          text tags `[gear]…[/]` → spans, tag checks (the content text rules test uses it)
-       touch.ts             the on-screen controls (phones/tablets, landscape; detection, layout, rotate card)
-       skyDial.ts, compass.ts   the clock's sky dial (sun and moon over the ground); the compass strip
+  ui/  hud.ts, style.css, richText.ts   DOM HUD (hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title); text tags `[gear]…[/]`
+       touch.ts, skyDial.ts, compass.ts   on-screen controls (phones/tablets); the clock's sky dial; the compass strip
 scripts/
   smoke.mjs, look.mjs, browser.mjs   smoke runner (smoke/, fixtures/); look scenes (baselines + budgets: lookCompare.mjs); shared helpers, the look stepped clock
   map.mjs, midi-import.mjs a dungeon's text map + problems (npm run map -- <id>); assets/music-src/<folder>/*.mid → src/core/imported/ (npm run midi)
-  flags.mjs                who sets/reads each quest flag (npm run flags; game/flags.test.ts uses it)
-  lexicon.mjs              the game's words → src/labs/speech/lexicon.ts from CMUdict (npm run lexicon)
+  flags.mjs, lexicon.mjs   who sets/reads each quest flag (npm run flags; flags.test.ts); the game's words → labs/speech/lexicon.ts (npm run lexicon)
 src/dev/ the blips test bench (/blips.html, dev only) · src/labs/ the shelved speech synth (nothing imports it)
 CREDITS.md third-party credits · assets/music-src/ the owner's MIDI exports, one folder per song (docs/audio.md)
 docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, agents/, skills/ /start and /wrap)

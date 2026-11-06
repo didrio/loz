@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Layer } from '../../core/physics';
 import { mat } from '../../render/materials';
 import { AreaBuilder } from '../area';
-import { PASS, passFrame, passPoint, PASS_LENGTH, regionRng, terrainHeight } from './layout';
+import { BEYOND, PASS, passFrame, passPoint, PASS_LENGTH, regionRng, terrainHeight } from './layout';
 import type { BuiltRegion, RegionDef } from './region';
 import { buildTerrain, type TerrainRect } from './terrain';
 
@@ -29,10 +29,13 @@ function buildRocks(b: AreaBuilder) {
   }
 }
 
-/** The mountain end: nothing walks past the camp. */
+/** The mountain end: nothing walks over the peaks into Sallowmere; only the canyon's road goes on (`CANYON_GAP` m either side of it). */
+const CANYON_GAP = 14;
 function buildEnd(b: AreaBuilder) {
-  const z = NORTHPASS_RECT.z0 + 2;
-  b.box((NORTHPASS_RECT.x0 + NORTHPASS_RECT.x1) / 2, 40, z, (NORTHPASS_RECT.x1 - NORTHPASS_RECT.x0) / 2, 80, 0.5, 0, Layer.Bounds);
+  const z = NORTHPASS_RECT.z0 + 2, cx = BEYOND.path[0][0];
+  for (const [x0, x1] of [[NORTHPASS_RECT.x0, cx - CANYON_GAP], [cx + CANYON_GAP, NORTHPASS_RECT.x1]]) {
+    b.box((x0 + x1) / 2, 40, z, (x1 - x0) / 2, 80, 0.5, 0, Layer.Bounds);
+  }
 }
 
 /**

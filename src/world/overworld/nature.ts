@@ -5,7 +5,7 @@ import { mat } from '../../render/materials';
 import type { AreaBuilder } from '../area';
 import { GROVE, LONE_OAK, inGate, inGorge, inRuin, inHollow, inPass, isOpen, onVillageStep, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
 
-function instanced(b: AreaBuilder, geo: THREE.BufferGeometry, material: THREE.Material, ms: THREE.Matrix4[], colors?: THREE.Color[], shadow = true) {
+export function instanced(b: AreaBuilder, geo: THREE.BufferGeometry, material: THREE.Material, ms: THREE.Matrix4[], colors?: THREE.Color[], shadow = true) {
   const im = new THREE.InstancedMesh(geo, material, ms.length);
   ms.forEach((m, i) => im.setMatrixAt(i, m));
   colors?.forEach((c, i) => im.setColorAt(i, c));

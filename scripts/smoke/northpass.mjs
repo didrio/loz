@@ -95,6 +95,33 @@ export default async function run(t) {
     check(r.d < 1.5 && Math.abs(r.y - 12) < 1, `arrived ${r.d.toFixed(2)} m from the post's spot at y ${r.y.toFixed(1)}`);
   });
 
+  await step('past the Waybell the road goes down to Sallowmere: the descent and its foot are dry, the town\'s shallows wade, the channel is a fall', async () => {
+    await game(() => { window.embervale.area.streamAt(-10, -343); window.embervale.enemies.list.forEach((e) => (e.alive = false)); });
+    check(await game(() => window.embervale.area.loadedRegions.includes('sallowmere')), 'Sallowmere did not stream in');
+    await teleport(-10, -343, Math.PI);
+    await wait(900);
+    let p = await pos();
+    check(Math.abs(p.y - 12) < 0.6, `the overlook at y ${p.y.toFixed(2)}`);
+    check(await game(() => window.embervale.area.nameAt(-10, -350) === 'Sallowmere'), 'not named Sallowmere');
+    const hp = p.hp;
+    await teleport(-10, -384, Math.PI);
+    await wait(900);
+    p = await pos();
+    check(p.y > 0.5 && p.hp === hp, `the descent's foot at y ${p.y.toFixed(2)}, hp ${p.hp}`);
+    await teleport(-60, -425, Math.PI);
+    await wait(1500);
+    p = await pos();
+    check(p.y < 0 && p.y > -1.2 && p.hp === hp && (await game(() => window.embervale.mode)) === 'play', `Stiltwick's shallows: y ${p.y.toFixed(2)}, hp ${p.hp}`);
+    await teleport(70, -450, Math.PI); // the east island: dry ground
+    await wait(900);
+    await teleport(22, -486, Math.PI); // the channel before the Weir
+    await until(() => window.embervale.mode === 'cutscene', 8000);
+    await wait(1500);
+    await finishScript();
+    p = await pos();
+    check(p.hp === hp - 1 && Math.hypot(p.x - 70, p.z + 450) < 3 && p.y > 0.5, `after the fall: (${p.x.toFixed(1)}, ${p.y.toFixed(2)}, ${p.z.toFixed(1)}), hp ${p.hp} (was ${hp})`);
+  });
+
   await step('Thistledown without its grown-ups: only the kids, Pip asks, Odo\'s stall takes the gems on trust', async () => {
     const v = await game(() => {
       const g = window.embervale, n = g.area.npcs;

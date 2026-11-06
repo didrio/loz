@@ -36,6 +36,7 @@ describe('dev save states', () => {
       'Waking Shrine: at the boss door',
       'Waking Shrine: Gravelheart beaten, seal room open',
       'Northpass: the gate is open',
+      'Sallowmere: the descent',
     ]);
   });
 

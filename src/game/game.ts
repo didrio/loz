@@ -634,6 +634,7 @@ export class Game implements ScriptApi {
     this.player.setShield(this.state.has('hasShield'));
     this.player.setStoneward(this.state.has('village.stonewardTunic'));
     if (s.at) {
+      this.area.streamAt?.(s.at.x, s.at.z); // a region there must have its ground before we look for it
       const y = s.at.y ?? this.physics.groundY(s.at.x, s.at.z) ?? 0;
       this.player.teleport(s.at.x, y, s.at.z, s.at.facing);
       this.rig.snap(this.player.pos, s.at.facing);
