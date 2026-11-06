@@ -97,6 +97,8 @@ visuals → `/wrap` (checks, docs, commit, the next ticket's Run line) → `/cle
   line, then build (auto) or plan (plan mode).
 - `/wrap`: Definition of done, doc updates, delete the finished ticket, commit and push, and
   name the next ticket with its Run line.
+- `/add-enemy`, `/add-npc`, `/add-quest-beat`: recipes for the repeated content work. Each opens
+  with what it assumes; if the game's direction changes, rewrite or delete it.
 
 When a kind of work repeats (adding an enemy, a dungeon room, a quest beat, a look scene),
 write its recipe as a skill the second time you do it. A skill costs one line of context
