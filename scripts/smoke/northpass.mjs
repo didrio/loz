@@ -52,7 +52,7 @@ export default async function run(t) {
   };
   const spot = (id) => game((id) => { const i = window.embervale.area.interactables.find((i) => i.id === id); return { x: i.x, z: i.z, y: i.y }; }, id);
 
-  await step('the Waybell can be taken from behind the Cragstalker, and hung on the camp\'s post: the network offers both other bells', async () => {
+  await step('the Waybell can be taken from behind the Cragstalker, and hung on the camp\'s post: with the village bell lifted, it offers only the Hall', async () => {
     await game(() => { window.embervale.enemies.list.forEach((e) => (e.alive = false)); window.embervale.player.invuln = 5; });
     const b = await spot('bellPickup.way');
     await teleport(b.x, b.z + 1.2, 0, b.y + 0.1);
@@ -66,14 +66,20 @@ export default async function run(t) {
     await press('KeyE');
     await menuOpen();
     const m = await menu();
-    check(m.rows.join('|') === 'Thistledown|Hall of Sleepers|Stay', `menu ${JSON.stringify(m)}`);
+    check(m.rows.join('|') === 'Hall of Sleepers|Stay', `menu ${JSON.stringify(m)}`); // the village bell was lifted after the boss
     check(await game(() => window.embervale.state.bells.hung.has('way')), 'the Waybell is not hung');
-    await press('Enter'); // Thistledown
-    await until(() => window.embervale.player.pos.x < -40, 20000);
+    await press('ArrowDown');
+    await press('Enter'); // Stay
     await finishScript();
   });
 
-  await step('from Thistledown, ringing the Morrowbell offers Wayfarers\' Camp, and Wren arrives at the camp\'s post', async () => {
+  await step('the Morrowbell found and rehung in Thistledown: the menu offers both other bells, and Wayfarers\' Camp arrives at the camp\'s post', async () => {
+    const lost = await spot('bellPickup.morrowLost');
+    await teleport(lost.x, lost.z + 1.2, 0);
+    await wait(700);
+    await press('KeyE');
+    await finishScript();
+    check(await game(() => window.embervale.state.bells.carried.has('morrow')), 'taking the Morrowbell did not carry it');
     const post = await spot('bellPost.morrow');
     await teleport(post.x, post.z, 0);
     await wait(700);

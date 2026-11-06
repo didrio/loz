@@ -134,12 +134,3 @@ and arena, B phase 1, C phase 2, D defeat and the way out through the Lightless 
 **Read first:** sallowmere.md "The boss"; combat.md "Bosses" and "Fairness rules"; shrine.md "The boss" (as the model).
 **Verify:** docs.
 **Notes:** Ask the owner how an ember of the stolen flame got past the mountains (sallowmere.md "Open questions").
-
-### T17: Repair the `northpass` smoke scenario
-**Run:** auto · sonnet · medium
-**Why:** Its last three steps fail on a clean checkout too (seen 2026-11-06, before and after T7): the bell travel menu offers only
-"Hall of Sleepers" / "Wayfarers' Camp" (not the rows the steps expect), and the Thistledown step reads `.maren` off something now undefined.
-Probably stale since the text/progression changes (T5/T6). CI runs the suite, so this is red there.
-**Done when:** `npm run smoke -- northpass` passes; the steps match what the game now does (fix the scenario, not the game, unless the game is wrong).
-**Read first:** `scripts/smoke/northpass.mjs`; testing.md (`northpass` row); `src/content/bells.ts`, `src/content/text/village.ts` (`V.maren`).
-**Verify:** `npm run smoke -- northpass`.
