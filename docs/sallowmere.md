@@ -1,7 +1,7 @@
 # Sallowmere (the second region) and the Old Weir (its dungeon): design
 
 Status: **design approved by the owner** (2026-11-06, T5). Nothing is built yet. All names are working names. The
-build is tickets T7–T16 in [tickets.md](tickets.md). This doc holds what the data and code won't: the place, the item, the
+build is tickets T8–T16 in [tickets.md](tickets.md). This doc holds what the data and code won't: the place, the item, the
 dungeon's idea, the enemies, the boss, and the story beats. Keep it current as the tickets land, and move details into
 their topic docs (combat.md, dungeons.md, bells.md) once they're built.
 
@@ -30,11 +30,12 @@ silver by night.
 - **Off the road:** islands and drowned farms with chests, a bell trial, and reed thickets the lantern burns (some hide
   chests).
 
-**Water** (new for the overworld, T7):
+**Water** (new for the overworld; built, see engine.md "Physics"):
 - **Shallow water** (up to about knee or waist height) is wadeable but slows Wren, and Mudlurks hide in it.
 - **Deep water is a fall:** half a heart, and Wren goes back to the last dry ground, like a pit (`TrialFalls`). There's
   no swimming, and none is planned for this region.
-- The surface is a flat plane, with the depth read from the terrain.
+- The surface is a flat plane, with the depth read from the terrain. Sallowmere sets `RegionDef.waterLevel` for its own height
+  and builds its own plane (`buildWater` is the valley's, 420 m square at `WATER_Y`).
 
 **Building rules** (scaling checklist):
 - The region gets its own seed (`regionRng('sallowmere')`).

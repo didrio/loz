@@ -50,6 +50,11 @@ export class TrialFalls {
     return this.busy;
   }
 
+  /** Make (x, y, z) the place a fall returns to (ground that isn't a ledge: the water's dry shore). */
+  mark(x: number, y: number, z: number) {
+    this.last.set(x, y, z);
+  }
+
   /** Call every frame. Returns true on the frame a fall begins (then call `recover`). */
   check(pos: THREE.Vector3, grounded: boolean, inPit = false): boolean {
     if (this.busy) return false;

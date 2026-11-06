@@ -20,6 +20,8 @@ export interface RegionDef {
   /** Overrides `LOAD_DIST` / `UNLOAD_DIST`: a region that can be seen from far away loads where the fog still hides it. */
   readonly loadDist?: number;
   readonly unloadDist?: number;
+  /** Its water surface, m. Inside its rectangle this replaces the valley's; omitted: no water there. */
+  readonly waterLevel?: number;
   build(physics: Physics): BuiltRegion;
 }
 
@@ -48,6 +50,12 @@ export class RegionStreamer {
 
   get loadedIds() {
     return [...this.loaded.keys()];
+  }
+
+  /** The water level of the region whose rectangle holds (x, z): its own, or null if it has none. undefined: no region there. */
+  waterAt(x: number, z: number): number | null | undefined {
+    const def = this.defs.find((d) => distToRect(d.rect, x, z) === 0);
+    return def && (def.waterLevel ?? null);
   }
 
   /** Loads what is near (x, z) and unloads what is far; colliders are ready when this returns. */

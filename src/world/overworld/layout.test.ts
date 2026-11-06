@@ -1,5 +1,6 @@
 import { mulberry32 } from '../../core/math';
 import { describe, expect, it } from 'vitest';
+import { DEEP_DEPTH } from '../../game/water';
 import { areaNameAt, inVillageGuard, inVillageMusic, MILL, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS, THICKETS, thicketClusters, THORN_SPREAD, atBearing, inGate, inHollow, SCARS, scarLine, scarClusters, scarAt, thornClusters, LONE_THORNS, FIELD_POSTS, gorgeFrame, HOLLOW_ENTRANCE, LONE_OAK, SHRINE_DOOR, inRuin } from './layout';
 import { SIGNS } from './landmarks';
 
@@ -37,7 +38,8 @@ describe('overworld layout', () => {
   it('keeps roads walkable: inside the valley and never deeper than waist-deep water', () => {
     // Two roads ford ponds: the grove road (11 m of road, up to 0.44 m deep) and the shrine
     // road (14 m, up to 1.03 m, about waist height on Wren).
-    // Walkable today (no swimming yet); if swimming or drowning is added, revisit these.
+    // Walkable: wading stops at DEEP_DEPTH (game/water.ts), where deep water becomes a fall, so every road ford stays
+    // shallower than that.
     for (const path of PATHS) {
       for (let i = 0; i < path.length - 1; i++) {
         const [ax, az] = path[i], [bx, bz] = path[i + 1];
@@ -45,7 +47,7 @@ describe('overworld layout', () => {
           const x = ax + (bx - ax) * t, z = az + (bz - az) * t;
           expect(Math.hypot(x, z)).toBeLessThan(WORLD_RADIUS);
           const onBridge = Math.abs(x - BRIDGE.x) < 1 && Math.abs(z - BRIDGE.z) <= BRIDGE.halfLen + 2;
-          if (!onBridge) expect(terrainHeight(x, z), `road at ${x.toFixed(0)},${z.toFixed(0)}`).toBeGreaterThan(WATER_Y - 1.1);
+          if (!onBridge) expect(terrainHeight(x, z), `road at ${x.toFixed(0)},${z.toFixed(0)}`).toBeGreaterThan(WATER_Y - DEEP_DEPTH);
         }
       }
     }

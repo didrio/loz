@@ -1,7 +1,10 @@
+import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Physics } from '../core/physics';
 import { GameState } from '../game/state';
+import { DEEP_DEPTH } from '../game/water';
 import { Overworld } from '../world/overworld';
+import { riverZ, terrainHeight, WATER_Y } from '../world/overworld/layout';
 import { fakeApi } from './fakeApi';
 import { overworldContent } from './overworld';
 import { intro } from './story';
@@ -368,6 +371,30 @@ describe('overworld content', () => {
     expect(fresh.door.open).toBe(true);
     expect(fresh.door.awake).toBe(false); // the lantern isn't lit in this save
     fresh.dispose();
+  });
+
+  it('deep water is a fall back to the last dry ground and costs half a heart; the fords are not', async () => {
+    const p = new Physics();
+    const area = new Overworld(p);
+    const content = overworldContent(area);
+    const f = fakeApi(area, p);
+    const player = f.player as unknown as { pos: THREE.Vector3; grounded: boolean };
+    player.grounded = true;
+    const at = (x: number, z: number) => player.pos.set(x, terrainHeight(x, z), z);
+    // The river's middle is deep; the shrine road's ford (the deepest) is not.
+    const bank = { x: -60, z: riverZ(-60) + 30 };
+    const deep = { x: -60, z: riverZ(-60) };
+    expect(WATER_Y - terrainHeight(deep.x, deep.z)).toBeGreaterThan(DEEP_DEPTH);
+    at(bank.x, bank.z);
+    content.update!(f.api, 1 / 60);
+    expect(f.queued).toHaveLength(0);
+    at(deep.x, deep.z);
+    const hp = f.state.hp;
+    content.update!(f.api, 1 / 60);
+    expect(f.queued).toHaveLength(1);
+    await f.runQueued();
+    expect(f.state.hp).toBe(hp - 1);
+    area.dispose();
   });
 
   it('removes all of its colliders when disposed', () => {

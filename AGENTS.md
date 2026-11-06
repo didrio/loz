@@ -23,7 +23,8 @@ As of 2026-11-06: Emberfield plays start to finish: a wordless start, the shield
 **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the valley (violet
 **scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
 tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`). **Touch controls** ([engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages.
-**Next:** **Sallowmere**, the second region (designed: [sallowmere.md](docs/sallowmere.md)), built through the open tickets in [docs/tickets.md](docs/tickets.md). The gates from a new game to the Waybell are data
+Overworld water works: shallow slows Wren, deep is a fall ([engine.md](docs/engine.md)); a region can set its own water level.
+**Next:** **Sallowmere**, the second region (designed: [sallowmere.md](docs/sallowmere.md)), built through the open tickets in [docs/tickets.md](docs/tickets.md) (T17 first: a stale smoke scenario). The gates from a new game to the Waybell are data
 (`content/progression.ts`, checked by a test); each Sallowmere ticket adds its own. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
@@ -142,6 +143,7 @@ src/
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss)
     dungeonQuiet.ts        no music in a dungeon once its boss is beaten
     lockon.ts, trialFalls.ts, flasks.ts   what lock-on picks; bell trials' fall rule; the two flasks (Odo refills them)
+    water.ts               dry/shallow/deep from the water's depth at Wren's feet (wading, the deep-water fall: WaterFalls)
     camera.ts, dialog.ts (say + ask), pickups.ts, state.ts, debug.ts, enemyTestEnv.ts (enemy unit tests' stand-in game)
   content/                 the game's story; what things DO
     areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death

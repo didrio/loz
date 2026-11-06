@@ -24,6 +24,8 @@ export interface Area {
   readonly bellPosts?: ReadonlyMap<BellId, BellPost>;
   /** Water surface height, if the area has water (for wading). */
   readonly waterLevel: number | null;
+  /** The water level at (x, z) when it differs from `waterLevel` (a region with its own: Sallowmere). null: none there. */
+  waterLevelAt?(x: number, z: number): number | null;
   /** Where NPC voices are heard: outdoors (dry), a house (close), a dungeon (big). Omitted = outdoors. */
   readonly voiceRoom?: 'outdoors' | 'house' | 'dungeon';
   readonly interactables: Interactable[];

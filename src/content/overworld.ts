@@ -3,10 +3,11 @@ import { easeInOut } from '../core/math';
 import { HollowLamplighter } from '../game/bosses/lamplighter';
 import type { Script, ScriptApi } from '../game/script';
 import type { GameState } from '../game/state';
+import { WaterFalls } from '../game/water';
 import { glow } from '../render/shapes';
 import type { Overworld } from '../world/overworld';
 import { signArrow, SIGNS } from '../world/overworld/landmarks';
-import { HOLLOW, HOLLOW_ENTRANCE, VILLAGE } from '../world/overworld/layout';
+import { HOLLOW, HOLLOW_ENTRANCE, SPAWN, terrainHeight, VILLAGE } from '../world/overworld/layout';
 import { bellContent } from './bells';
 import { northpassContent } from './northpass';
 import { gorgeContent } from './gorge';
@@ -73,6 +74,8 @@ export function overworldContent(ow: Overworld): AreaContent {
   let lamplighter: HollowLamplighter | null = null;
   const gorge = gorgeContent(ow);
   const northpass = northpassContent(ow);
+  /** Deep water is a fall (game/water.ts): back to the last dry ground Wren stood on. */
+  const waterFalls = new WaterFalls(new THREE.Vector3(SPAWN.x, terrainHeight(SPAWN.x, SPAWN.z), SPAWN.z));
   const hints = hintContent(ow.buds);
   const village = villageContent(ow);
   const bells = bellContent({ 'bellPost.morrow': ow.morrowPost, 'bellPost.way': ow.wayPost }, { 'bellPickup.morrow': ow.morrowBell, 'bellPickup.way': ow.wayBell }, { 'bellPickup.morrowLost': ow.morrowLost });
@@ -294,12 +297,15 @@ export function overworldContent(ow: Overworld): AreaContent {
     onRespawn(api) {
       gorge.onRespawn(api);
       northpass.onRespawn(api);
+      waterFalls.reset();
     },
 
     update(api) {
       watchTheHollow(api);
       gorge.update(api);
       northpass.update(api);
+      const { pos, grounded } = api.player;
+      if (waterFalls.check(pos, grounded, ow.waterLevelAt(pos.x, pos.z))) api.run((a) => waterFalls.recover(a));
     },
   };
 }

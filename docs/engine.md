@@ -158,6 +158,11 @@ Units are meters; gravity 30 m/s² (snappier than real). Layers:
 `Character` = kinematic capsule + Rapier's character controller (slides along walls, climbs
 slopes ≤ 50°, auto-steps ≤ 0.45 m, snaps to ground). Positions are **feet** positions. Call
 `move` at most once per physics step. Player: radius 0.4, 1.8 m tall, run 8.5 m/s, jump 11.
+**Water** (`game/water.ts`, pure): from the depth of the water at Wren's feet, a spot is dry, shallow (feet 0.35 m under: she wades,
+5 m/s, jumps lower, no surfing) or deep (1.2 m under, about chest height: a fall). No swimming. A fall is `TrialFalls` underneath
+(`WaterFalls`: half a heart, back to the last dry ground she stood on; `content/overworld.ts` runs it every frame). The level
+comes from `Area.waterLevelAt(x, z)` if the area has it, else `waterLevel`: the overworld answers the valley's `WATER_Y`, or a
+`RegionDef.waterLevel` inside that region's rectangle (a region without one has no water), so a region can sit at its own height.
 `groundY(x, z)` and `rayDistance(...)` are the queries; gameplay never calls Rapier directly.
 Jump is forgiving: coyote time and a jump buffer (0.12 s each). Moving platforms are
 `kinematicBox` bodies; a grounded Wren is carried by the mover's per-frame delta (`carryDelta`),

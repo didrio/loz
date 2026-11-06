@@ -12,6 +12,7 @@ import type { Attack, Enemy, HitResult, Hurtbox, HurtResult } from './enemies';
 import { ATTACK_BOOST } from './flasks';
 import { Guard } from './guard';
 import { LUNGE_SPEED, LUNGE_TIME, lungeClear } from './lunge';
+import { WADE_SPEED, waterState } from './water';
 import { SURF_MIN_SPEED, SURF_SPEED, surfNext, surfSpeedNext } from './surf';
 
 /** What the player wants to do this frame, in world space. Built from input, or by scripts. */
@@ -395,8 +396,8 @@ export class Player {
     this.bladeMat.emissive.setRGB(1 * ember, 0.45 * ember, 0.1 * ember);
     // Guard slots only recover while the shield is lowered (last frame's state); surfing freezes them.
     this.guard.update(dt, this.shielding || this.surfing);
-    const water = env.area.waterLevel;
-    const wading = water !== null && this.pos.y < water - 0.35;
+    const water = env.area.waterLevelAt ? env.area.waterLevelAt(this.pos.x, this.pos.z) : env.area.waterLevel;
+    const wading = waterState(this.pos.y, water) !== 'dry';
     const lock = env.lockTarget;
     const grounded = this.body.grounded;
     const canAct = this.alive;
@@ -453,7 +454,7 @@ export class Player {
         }
         // With surfing learned, raising the shield in the air doesn't slow the jump: she's getting on.
         const guardWalk = this.shielding && (grounded || !env.canSurf);
-        const speed = (guardWalk ? 3.2 : wading ? 5 : RUN_SPEED) * (staggered ? STAGGER_SPEED : 1) * this.devSpeed;
+        const speed = (guardWalk ? 3.2 : wading ? WADE_SPEED : RUN_SPEED) * (staggered ? STAGGER_SPEED : 1) * this.devSpeed;
         vel.copy(move).multiplyScalar(speed);
         if (!lock && move.lengthSq() > 0.01 && !this.shielding) {
           this.facing = lerpAngle(this.facing, Math.atan2(move.x, move.z), damp(40, dt)); // near-instant: turning shouldn't cost a step

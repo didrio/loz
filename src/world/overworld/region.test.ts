@@ -5,7 +5,7 @@ import type { Interactable, Trigger } from '../area';
 import { LOAD_DIST, RegionStreamer, UNLOAD_DIST, distToRect, type RegionDef } from './region';
 import { Overworld } from './index';
 import { NORTHPASS, NORTHPASS_RECT } from './northpass';
-import { GATE, PASS, SPAWN, terrainHeight } from './layout';
+import { GATE, PASS, SPAWN, terrainHeight, WATER_Y } from './layout';
 import { VALLEY_RECT } from './terrain';
 
 beforeAll(async () => {
@@ -58,6 +58,23 @@ describe('RegionStreamer', () => {
     expect(host.interactables).toEqual([]);
     expect(host.triggers).toEqual([]);
     expect(log).toEqual(['update', 'dispose']);
+  });
+
+  it('knows the water level of the region a point is in (none if it has no water)', () => {
+    const wet: RegionDef = { id: 'wet', rect: { x0: 100, x1: 120, z0: 0, z1: 20 }, waterLevel: 12, build: () => ({ root: new THREE.Group(), dispose() {} }) };
+    const dry: RegionDef = { id: 'dry', rect, build: () => ({ root: new THREE.Group(), dispose() {} }) };
+    const host = { root: new THREE.Group(), interactables: [] as Interactable[], triggers: [] as Trigger[] };
+    const s = new RegionStreamer([wet, dry], new Physics(), host);
+    expect(s.waterAt(110, 10)).toBe(12);
+    expect(s.waterAt(10, -150)).toBeNull();
+    expect(s.waterAt(500, 500)).toBeUndefined(); // outside every region: the valley's water
+  });
+
+  it('the overworld uses the valley\'s water, and none in the Northpass', async () => {
+    const ow = new Overworld(new Physics());
+    expect(ow.waterLevelAt(0, 0)).toBe(WATER_Y);
+    expect(ow.waterLevelAt(0, (NORTHPASS_RECT.z0 + NORTHPASS_RECT.z1) / 2)).toBeNull();
+    ow.dispose();
   });
 
   it('builds a region only once while Wren stays near, and disposes it with the area', () => {

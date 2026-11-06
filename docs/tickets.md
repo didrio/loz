@@ -39,20 +39,6 @@ The next stretch is **Sallowmere** (drowned lowlands) and its dungeon **the Old 
 [sallowmere.md](sallowmere.md) (owner-approved 2026-11-06). T15 and T16 write the dungeon's and the
 boss's build tickets (and the Wickmoth, Reedwight and Lightless Cut ones) when they run.
 
-### T7: Overworld water: wading and the deep-water fall
-**Run:** auto · sonnet · high
-**Why:** Sallowmere is mostly water and there's no swimming. Shallow water should slow Wren; deep water should be a fall.
-**Done when:**
-- A pure rule says, from terrain height and the water level, whether a spot is dry, shallow (wade, slower) or deep.
-- Wading slows Wren (tested); deep water acts as a fall (half a heart, back to the last dry ground, as `TrialFalls`).
-- The valley's existing ponds, lake and two fords still play as before, or deliberately change (say which, and update
-  roadmap.md's ford note).
-- The rule takes a region's own water level, so Sallowmere can sit at a different height than the valley.
-**Read first:** sallowmere.md "The place" (Water); engine.md "Physics"; `src/world/overworld/terrain.ts`
-(`buildWater`, `WATER_Y`); `src/game/trialFalls.ts`; roadmap.md "Known quirks" (the fords).
-**Verify:** `npm run check`; smoke `northpass` and one valley scenario that crosses a ford (testing.md says which).
-**Notes:** Touches the player (shared system): don't run the full smoke suite without asking.
-
 ### T8: Sallowmere's map
 **Run:** plan · opusplan · high
 **Why:** The region's layout (where the descent, Stiltwick, the Weir, the Lightless Cut, islands and the bell trial sit)
@@ -60,7 +46,7 @@ is a design the owner should see before it's built.
 **Done when:**
 - The owner approved a top-down layout (a text map or a render) in plan mode.
 - The road continues past the Waybell's canyon (the Northpass's far `Bounds` wall moves) down a descent onto the mere;
-  terrain, water level, causeways, the sites' footprints (empty), bounds, area names.
+  terrain, water level (`RegionDef.waterLevel`, engine.md "Physics"; the region builds its own water plane), causeways, the sites' footprints (empty), bounds, area names.
 - The region streams in without a visible hitch: its build is spread over frames.
 - Look scene `sallowmere` (day and night) and a dev state at the descent.
 **Read first:** sallowmere.md "The place"; engine.md "Areas" (Regions); `src/world/overworld/northpass.ts`,
@@ -148,3 +134,12 @@ and arena, B phase 1, C phase 2, D defeat and the way out through the Lightless 
 **Read first:** sallowmere.md "The boss"; combat.md "Bosses" and "Fairness rules"; shrine.md "The boss" (as the model).
 **Verify:** docs.
 **Notes:** Ask the owner how an ember of the stolen flame got past the mountains (sallowmere.md "Open questions").
+
+### T17: Repair the `northpass` smoke scenario
+**Run:** auto · sonnet · medium
+**Why:** Its last three steps fail on a clean checkout too (seen 2026-11-06, before and after T7): the bell travel menu offers only
+"Hall of Sleepers" / "Wayfarers' Camp" (not the rows the steps expect), and the Thistledown step reads `.maren` off something now undefined.
+Probably stale since the text/progression changes (T5/T6). CI runs the suite, so this is red there.
+**Done when:** `npm run smoke -- northpass` passes; the steps match what the game now does (fix the scenario, not the game, unless the game is wrong).
+**Read first:** `scripts/smoke/northpass.mjs`; testing.md (`northpass` row); `src/content/bells.ts`, `src/content/text/village.ts` (`V.maren`).
+**Verify:** `npm run smoke -- northpass`.

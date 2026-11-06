@@ -43,6 +43,26 @@ function setup() {
   return { p, health, env, physics, settle, step, run, frame };
 }
 
+describe('Player wading', () => {
+  it('runs slower in shallow water, and at the region\'s own water level', () => {
+    const dry = setup();
+    dry.settle();
+    const dryDist = dry.run(1);
+    const shallow = setup();
+    // Ground at 0, surface at 0.6: feet 0.6 m under (shallow). The level comes from the area's own `waterLevelAt`.
+    (shallow.env.area as { waterLevelAt?: () => number | null }).waterLevelAt = () => 0.6;
+    shallow.settle();
+    const wadeDist = shallow.run(1);
+    expect(wadeDist).toBeLessThan(dryDist * 0.75);
+    expect(wadeDist).toBeGreaterThan(dryDist * 0.4);
+    // The same ground with the surface far below is dry again: full speed.
+    const elsewhere = setup();
+    (elsewhere.env.area as { waterLevelAt?: () => number | null }).waterLevelAt = () => -5;
+    elsewhere.settle();
+    expect(elsewhere.run(1)).toBeCloseTo(dryDist, 1);
+  });
+});
+
 const front = new THREE.Vector3(0, 0, 3);
 const LIGHT = { damage: 1, guard: 1 };
 const HEAVY = { damage: 2, guard: 2 };

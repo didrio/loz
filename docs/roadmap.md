@@ -15,7 +15,7 @@ early unless the owner asks: they're best designed against the real use case.
 What's next is in [tickets.md](tickets.md). This is the longer view; an idea becomes a ticket
 when it's near.
 
-- **Next region:** Sallowmere and the Old Weir ([sallowmere.md](sallowmere.md), tickets T7–T16). Region 3 lies past
+- **Next region:** Sallowmere and the Old Weir ([sallowmere.md](sallowmere.md), tickets T8–T16). Region 3 lies past
   the Lightless Cut; plan it as we go (owner's call, 2026-11-05).
 - **Optional, any time:** the Glimmer Lake grotto (the glove pulls a half-sunk wakestone; shrine.md).
 - **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
@@ -109,7 +109,8 @@ enemy randomness.
   terrain plus a trimesh; unmeasured on a real GPU). Spread the build over frames when regions get big.
 
 - Two roads ford ponds: the grove road (11 m of road, ≤ 0.44 m deep) and the shrine road
-  (14 m, ≤ 1.03 m). Walkable since there's no swimming; revisit when swimming lands.
+  (14 m, ≤ 1.03 m). Still walkable: deep water (a fall) starts at 1.2 m (`DEEP_DEPTH`, game/water.ts), and
+  `layout.test.ts` keeps every road shallower than that. The river and lake beds, once walkable, are now a fall.
 - Bundle is ~5 MB (1.8 MB gzipped), mostly Rapier's WASM inlined as base64 by the
   `-compat` package. Fix in the load/perf pass: `@dimforge/rapier3d` + a WASM plugin, or
   lazy loading.

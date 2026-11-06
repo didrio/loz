@@ -224,6 +224,12 @@ export class Overworld implements Area {
     this.regions = new RegionStreamer([NORTHPASS], physics, this);
   }
 
+  /** The valley's water level, or the level of the region Wren stands in (none: null). */
+  waterLevelAt(x: number, z: number): number | null {
+    const region = this.regions.waterAt(x, z);
+    return region === undefined ? WATER_Y : region;
+  }
+
   /** The sky's blight level, 0–1 (the game feeds it every frame). */
   setBlight(level: number) {
     this.blightLevel = level;
