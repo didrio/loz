@@ -190,7 +190,7 @@ The valley is sick from the first frame until the Keepers' seal breaks (`valleyO
 - **Guard posts** (`FIELD_POSTS` in `layout.ts`): while blighted, 3 of the field's 14 thornlings wait where the grove
   road wades into the marsh, so the way to the sword runs past them: Wren slips by unarmed and comes back to fight.
   Posted ones only come back with the area (a death, a reload), never on the 45 s timer; the restored field has none.
-- **Music**: placeholder `blight`, `blightNight`, `blightVillage` ([audio.md](audio.md)); the owner listens.
+- **Music**: placeholder `blight`, `blightNight`, `blightVillage` ([audio.md](audio.md)).
 - **The lift**: when `valleyOpen` is set in the gate vision, the level eases to 0 over ~4 s (`BLIGHT_RATE`) and the
   music crossfades. A loaded area starts at its level (no easing). Not a new cutscene: it happens inside the existing vision.
 - **Restored field** (owner's call): `STRAY_THORNLINGS` = 3 thornlings, day and night, and **no gloomwisps** any more.

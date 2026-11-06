@@ -8,15 +8,13 @@ the Definition of done still applies in full.
 
 ## Where the money goes
 
-1. **The main session's model.** Opus costs several times what Sonnet does per token.
-   Most work here is Sonnet work, because the patterns are built and documented: content,
-   rooms, enemies on the existing base, UI, tests, smoke steps, docs. The project default
-   is `opusplan` (`.claude/settings.json`): Opus in plan mode, Sonnet when building. Use
-   full Opus (`/model opus`) only for design talks with the owner, milestone planning,
-   or a bug that survived one fix.
-2. **Context length.** Every turn re-sends the whole conversation. One task per session;
-   when it's done, `/wrap`, then `/clear`. The docs carry the state between sessions, not
-   the chat (`/start` picks it up). `/compact` if a task runs long.
+1. **The main session's model and effort.** Opus costs several times what Sonnet does per
+   token, and higher effort means more thinking tokens on every turn. Most work here is
+   Sonnet at medium effort, because the patterns are built and documented. Each ticket's
+   **Run line** says what to use (table below).
+2. **Context length.** Every turn re-sends the whole conversation. One ticket per session;
+   when it's done, `/wrap`, then `/clear`. The docs and tickets carry the state between
+   sessions, not the chat. `/compact` if a ticket runs long.
 3. **Reading.** AGENTS.md maps every file, so go straight to the one you need. Files over
    ~400 lines (`game/bosses/lamplighter.ts`, `game/game.ts`, `world/dungeon/build.ts`,
    `game/enemies.ts`, `game/boss.ts`, `game/player.ts`): Grep for the symbol, then read
@@ -30,13 +28,30 @@ the Definition of done still applies in full.
    better. Don't delegate what you'll need in your own context anyway, or a two-minute
    edit.
 
-## Plan mode: when, and how
+## Choosing a ticket's Run line
 
-With `opusplan`, plan mode is the only time the session runs on Opus, so it's the expensive
-mode. **Use it only when a task needs real design**: a new system, a dungeon or a boss, a data
-format change (e.g. the colored keys), or a choice between approaches the owner should
-approve. For documented patterns and fix lists, skip it: `/start <task>` writes the plan in
-chat on Sonnet, and the owner says go. `/start` says which of the two a task needs.
+Every ticket ([docs/tickets.md](docs/tickets.md)) carries `Run: <mode> · <model> · <effort>`,
+chosen by whoever writes it, and every "Next for you" repeats it. Pick the cheapest setting
+that gets the ticket right **the first time**: a redo costs more than the upgrade would have.
+
+| The ticket is... | Run |
+|---|---|
+| A documented pattern or recipe: content, rooms, enemies, NPCs, text, UI, tests, smoke steps, docs, tooling, a clear-cut fix | **auto · sonnet · medium** (the default) |
+| A clear spec but fiddly: many files to keep consistent, timing or determinism, a refactor through a shared system (player, physics, camera, saves, `game.ts`) | **auto · sonnet · high** |
+| Real design: a new system, a data format the owner should see, a dungeon, a boss or a region, or a choice between approaches the owner should make | **plan · opusplan · high** (plans on Opus, builds on Sonnet once the owner approves) |
+| A bug that survived one fix; physics, collision or camera math; performance | **auto · opus · high** (or hand it to `architect`) |
+| The same, after high effort failed once | **auto · opus · xhigh** |
+
+- **Never as a first try:** xhigh, or Opus for content. Low effort isn't used in the main session.
+- **Plan mode with Sonnet** is not a combination we use: real design deserves Opus, and
+  anything that doesn't need Opus doesn't need plan mode either.
+- **How the owner sets it:** `/model sonnet` / `opus` / `opusplan`, the effort level, and plan
+  mode on or off (shift+tab). The project default model is `opusplan`, so an "auto · sonnet"
+  ticket needs no model change from it.
+- Don't upgrade mid-ticket on a hunch. If a ticket turns out harder than its Run line, say so,
+  and finish it or stop at a clean point and write the rest as a ticket with a better Run line.
+
+## Plan mode
 
 **Inside plan mode, these rules override the built-in plan-mode workflow:**
 - No `Explore` or `Plan` subagents. Each one starts cold and re-reads what you're about to
@@ -45,9 +60,9 @@ chat on Sonnet, and the owner says go. `/start` says which of the two a task nee
 - Ask the owner's design questions in one AskUserQuestion, up front.
 - Keep the plan file short: what changes, in which files, how it's verified. Then exit
   plan mode, so the build runs on Sonnet.
-- If the plan spans several sessions, write it into `docs/roadmap.md` (or the topic doc)
-  before the session ends. The plan file in `~/.claude/plans/` doesn't survive `/clear`
-  as far as the next session knows.
+- If the plan spans several sessions, write it as tickets in `docs/tickets.md` (and the
+  design in the topic doc) before the session ends. The plan file in `~/.claude/plans/`
+  doesn't survive `/clear` as far as the next session knows.
 
 ## Commands: run them directly
 
@@ -65,7 +80,7 @@ browser work at the same time: they compete for the CPU and make each other flak
 | Agent | Model | Use it for | Don't use it for |
 |---|---|---|---|
 | `scout` | Haiku, low | Sweeping read-only searches: every use of a flag/id, which modules touch a system, inventories | A file AGENTS.md already names |
-| `looker` | Sonnet, medium | Every visual check: runs `npm run look`/scratch Playwright, reports in text | Judging motion, feel or audio (ask the owner) |
+| `looker` | Sonnet, medium | Every visual check: runs `npm run look`/scratch Playwright, reports in text | Judging motion, feel or audio (the owner plays every change) |
 | `builder` | Sonnet, medium | Executing a decided plan from an Opus session; independent modules in parallel; it verifies with check/smoke | Small edits in a Sonnet session (do them) |
 | `architect` | Opus, high | A bug that survived one fix; physics/collision/camera math; boss move system; engine design; perf | Routine content and features |
 
@@ -73,17 +88,16 @@ browser work at the same time: they compete for the CPU and make each other flak
 (ideally a failing test), what you tried and why it failed, and hand it to `architect`.
 It fixes, or returns a spec for `builder`.
 
-**Typical feature** (e.g. a shrine milestone): `/start` → plan in plan mode (Opus via
-opusplan), with the owner's design calls asked up front → build on Sonnet (main session,
-or `builder` for independent parts in parallel) → `looker` for visuals → `/wrap` →
-`/clear`.
+**The loop:** `/start T<n>` → build (or plan, if its Run line says so) → `looker` for
+visuals → `/wrap` (checks, docs, commit, the next ticket's Run line) → `/clear`.
 
 ## Skills (`.claude/skills/`)
 
-- `/start [task]`: orient from the docs and git, check the scaling checklist, propose a
-  plan with a model/agent per step.
-- `/wrap`: Definition of done, doc updates (incl. "Where things stand"), plain report.
+- `/start [T<n>]`: read the ticket and its Read-first list, check the session matches its Run
+  line, then build (auto) or plan (plan mode).
+- `/wrap`: Definition of done, doc updates, delete the finished ticket, commit and push, and
+  name the next ticket with its Run line.
 
-When a kind of task repeats (adding an enemy, a dungeon room, a quest beat, a look scene),
+When a kind of work repeats (adding an enemy, a dungeon room, a quest beat, a look scene),
 write its recipe as a skill the second time you do it. A skill costs one line of context
 until it's used, and it turns the next one into Sonnet work.

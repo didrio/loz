@@ -4,156 +4,82 @@ The game is meant to grow to **50–100× its current content** (a 10–15 hour 
 almost entirely by AI agents. This file is how we keep the codebase ready for that
 without stopping to refactor everything up front.
 
-**How to use it (every session, before starting a feature):** read the scaling checklist
-below. If the work you're about to do fires an item's trigger, do that item as part of the
-work (or first), tell the owner, and tick it off here with the date. When you notice a new
-scaling risk, add it with a trigger. Don't do untriggered items early unless the owner
-asks: they're best designed against the real use case.
+**How to use it:** whoever **writes a ticket** ([tickets.md](tickets.md)) reads the scaling
+checklist below. If the ticket fires an item's trigger, the item goes into the ticket (or
+becomes its own ticket first). The session doing the ticket ticks the item off here with the
+date. When you notice a new scaling risk, add it with a trigger. Don't do untriggered items
+early unless the owner asks: they're best designed against the real use case.
 
 ## Feature roadmap
 
-### The queue (renumbered 2026-11-04, owner's call: run in order, each with `/start <n>`, e.g. `/start 1`)
+What's next is in [tickets.md](tickets.md). This is the longer view; an idea becomes a ticket
+when it's near.
 
-Done before it: the owner's batch of 2026-11-04 (C1–C6: the 10-minute day, Dawn/Nightfall cards, the Lamplighter's dawn
-burn, text tags and the terse-text rule, the text pass on all player text, the bell lift after the boss, the silent beaten
-dungeon, the choice window). All unplayed by the owner (AGENTS.md "Where things stand"); details in git.
-
-1. ~~Boss hazards end with the boss~~ done 2026-11-04 (`Boss.die` clears `Hazards`; unplayed).
-2. ~~The shrine respawn count~~ done 2026-11-04: `shrine-keys` passes (the 39-vs-38 no longer reproduces; cause unknown, likely a
-   stale count in an older run). A unit test now pins it (`shrine.test.ts`). The full suite is still to run once (owner's OK).
-3. ~~NPC voices: the speech synth~~ done 2026-11-04, then shelved (too creepy; `labs/speech/`, [audio.md](audio.md)).
-4. ~~Dungeon fog and lighting~~ done 2026-11-04 (one fog for the whole dungeon (near 12, far 52), so distant rooms never change; the boss arena is big, so don't tighten it; pit haze, shaft specks; [dungeons.md](dungeons.md)). Unplayed by the owner.
-5. ~~The voice system~~ done 2026-11-04, rebuilt as talking blips (the box types, each NPC page blips; Voice volume, music ducking,
-   `Area.voiceRoom`; [audio.md](audio.md) "Talking blips"). Unheard by the owner. Left: per-phrase moods, a house room.
-6. **Blip loose ends** (small; per character, never line by line, owner's call 2026-11-04): tweak a character's voice only if the owner
-   asks (`/blips.html`, values in `content/voices.ts`); a smoke step that a talk blips and the skip rule holds; a whole-page
-   `[soft]`/`[shake]` only where a line clearly needs it. Fold into the next session that touches dialog.
-7. ~~Blight scars and routing~~ done 2026-11-04 ([world.md](world.md), "The blight"; unplayed).
-7.5. ~~Touch controls~~ done 2026-11-04 (owner's ask, for a friend's playtest; [engine.md](engine.md) "Touch controls"). Tune by
-   their report: camera drag (`TOUCH_LOOK`), button sizes; lower default sharpness on touch if phones run slow.
-8. **The inventory tab** in the pause menu (milestone 2 below).
-
-Later, not yet in the queue: an **SFX pass** (owner's ask, 2026-11-04), and the rescue quests for Maren, Tobin and Odo
-(milestone 0.7, "The empty village").
-
-### Milestones (after the queue)
-
-0. ~~The owner's playtest tweaks A–G (2026-11-02)~~ done. Untested by play: the gem economy
-   (95 in the shrine plus bushes, against the 50-gem tunic (it was 100 until 2026-11-03) and 20 per flask refill).
-0.5. **Bells: bell posts, fast travel, bell trials** (owner's request, 2026-11-02, before the
-   shrine's boss). Done: bells, posts and the travel menu, the platforming base, both trials (the Bell Shaft,
-   the Hushing Gorge; the latter awaits the owner's play). See [bells.md](bells.md).
-0.7. **Story revamp** (owner's direction, 2026-11-03; the story is in [world.md](world.md), "Story").
-   Five Sonnet sessions, no plan mode needed; run each with `/start story S<n>`:
-   - ~~S1, the shield-first opening~~ done (2026-11-03; [world.md](world.md), "The opening"). **For S2–S5:** no new story
-     cutscenes without asking (AGENTS.md design decisions); the blight lift (S2) and the prism (S5) were planned as cutscenes.
-   - ~~S2, the blight~~ done (2026-11-03; [world.md](world.md), "The blight"). Music is placeholder (owner listens); the restored field has 3 strays and no wisps (owner's call).
-   - ~~S3, village and ruins~~ done (2026-11-03; [world.md](world.md), "Places"): four bigger cottages (two ruined) plus the mill, six `RUINS` in all
-     (`world/overworld/ruins.ts`), scenery filtered with `inRuin` (per-region seeds trigger stays narrowed; nothing reshuffled). Added with it (owner's
-     asks): clay **jars** in every ruin (`world/jars.ts`; one blue gem, 1-2 hearts, the rest empty; saved as `jar.<id>` flags), the Murmurbuds spread
-     across the valley, a fourth note (`bud.boss`: jump the shock ring, tether a loose plate) and plainer note titles and texts.
-   - ~~S4, sigils and the village's silence~~ done (2026-11-03; [world.md](world.md), "Story": the sigils, Messages page, villagers' reactions, text pass).
-   - ~~S5, the prism~~ done 2026-11-03 (unplayed; [shrine.md](shrine.md) D1). The full suite hasn't run since; do it at the next milestone's end.
-   - ~~The empty village~~ done 2026-11-03 (owner's ask; unplayed; [world.md](world.md) "The empty village"). **Later:** the rescue quests for Maren, Tobin and Odo
-     (major story quests out in the world; Odo back at his stall), and the kids' lines changing with them.
-1. **First dungeon: the Waking Shrine.** In progress: milestones 1–5 done (see the status
-   in [shrine.md](shrine.md)); **milestone 6** (Gravelheart) is in its last part, **6D+**
-   (owner's redesign, 2026-11-03, replacing the old glove-stone Northpass): beating the boss opens a
-   hidden room whose seal-stone breaks the magic gate at the valley's north edge; beyond it, the
-   Northpass (streamed in, one continuous world), the Cragstalker, a third bell and a camp. Three
-   sessions, **D1 (done, unplayed), D2, D3 (built 2026-11-03, unplayed)**, in [shrine.md](shrine.md) "Build plan". Then polish (8).
-2. **Pause menu**: one tabbed menu (P / Start, `game/pauseMenu.ts`, [engine.md](engine.md) "The pause menu"): Settings (built 2026-11-03,
-   unplayed: volumes, sensitivities, invert Y, sharpness, fullscreen), Hints, Messages. Still to come: inventory / equipment / character tabs
-   (a tab appears when there is something to show). Settings for the Steam build (key rebinding, resolution, quit) are deferred. (No dungeon map or compass items by design; the HUD's compass strip only shows heading.)
-2.5. ~~Shield surfing~~ built, unplayed (rules in [combat.md](combat.md), Lark in [world.md](world.md)). Tune `SURF_SPEED`, the carve and the dust by play.
-3. **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later. Ship `CREDITS.md` with CMUdict's
-   full license text (its BSD license requires it in binary distributions) and the libraries' notices.
-4. **Load/perf pass**: Rapier WASM as a file, code splitting, character mesh merging.
-5. **Depth**: more enemy types, target switching, jump attack, original items/tools,
-   heart pieces, swimming, ledges/climbing, NPC day/night schedules, music per area,
-   camera rails for cutscenes.
-
-Then: itch.io demo, Steam page (wishlists), playtesting with real players.
+- **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
+  quests out in the world, Odo back at his stall, the kids' lines changing with them;
+  [world.md](world.md) "The empty village").
+- **Touch controls:** tune by the friend's reports: camera drag (`TOUCH_LOOK`), button sizes,
+  lower default sharpness on touch if phones run slow.
+- **Gem economy** (for balancing): 95 in the shrine plus bushes, against the 50-gem tunic and 20
+  per flask refill.
+- **Pause menu:** Settings, Hints, Messages ([engine.md](engine.md) "The pause menu"). A new tab
+  only when there's something to show. Steam-build settings (key rebinding, resolution, quit) wait
+  for the desktop build.
+- **Desktop build** (Electron) with a file-based `KeyValueStore`; Steamworks later. Ship
+  `CREDITS.md` with CMUdict's full license text (its BSD license requires it in binary
+  distributions) and the libraries' notices.
+- **Load/perf pass:** Rapier WASM as a file, code splitting, character mesh merging.
+- **Depth:** more enemy types, target switching, jump attack, original items/tools, heart pieces,
+  swimming, ledges/climbing, NPC day/night schedules, music per area, camera rails for cutscenes.
+- Then: itch.io demo, Steam page (wishlists), playtesting with real players.
 
 ## Scaling checklist
 
 Each item: what, why it matters at 50–100×, and the trigger that says "do it now".
 
-### Done
+### Done (details in the topic docs and git)
 
-- [x] **Split AGENTS.md into an index + topic docs** (2026-11-02). AGENTS.md is loaded into
-  every session, so it stays short (aim ≤ ~200 lines) and points to `docs/`. Keep it that
-  way: details go in the topic doc, not the index.
-- [x] **Dungeon data format + validator + solvability checker + text map** (2026-11-02,
-  `world/dungeon/`). Dungeons are data, checked for structure and softlocks before any 3D
-  exists. See [dungeons.md](dungeons.md).
-- [x] **Agent setup for cost** (2026-11-02): project-local Claude Code agents, skills and
-  model routing (see CLAUDE.md). Keeps the per-session cost flat as content grows: docs
-  carry the state, Sonnet does the documented patterns, Opus only plans and unsticks.
-  Keep adding a skill whenever a kind of task repeats.
-- [x] **Split `game/game.ts`** (2026-11-02, before the boss): 748 → 529 lines. Combat wiring
-  (lock-on, glove throw, hit feedback, enemy/hazard envs) → `game/combat.ts`; the title menu
-  → `game/title.ts`; "what's in reach" → `nearestInteractable` in `world/area.ts` (tested).
-
-### Triggered by building the first dungeon (do these with it)
-
-- [x] **Dungeon builder** (2026-11-02, shrine milestone 1): `DungeonArea` turns a
-  `DungeonDef` into an indoor `Area`; the `dungeon` look scene renders every floor top-down.
-  See [dungeons.md](dungeons.md).
-- [x] **Area transitions** (2026-11-02, shrine milestone 2): `api.travel(id, entrance)`,
-  named `Area.entrances`. See [engine.md](engine.md).
-- [x] **Save the current area** (2026-11-02): `SAVE_VERSION` 3; continue resumes in the
-  saved area.
-- [x] **Per-dungeon keys and dungeon state** (2026-11-02): `GameState.dungeon(id)`; a
-  dungeon's small keys only count inside it (design decision recorded in AGENTS.md).
-- [x] **Namespaced flags at scale** (2026-11-02): dungeon objects save by their data ids in
-  their dungeon's progress, no hand-added flags; story flags still use `<area>.<thing>`.
-- [x] **Room puzzle checker** (2026-11-02, shrine milestone 3): `solveRoomPuzzle` in
-  `checkDungeon`. See [dungeons.md](dungeons.md).
-- [x] **Scenario smoke tests from save fixtures** (2026-11-02): `npm run smoke` runs named
-  scenarios in parallel pages, each from a save fixture (`scripts/fixtures/`, validated by a
-  unit test). See [testing.md](testing.md). Add shrine/enemy steps as scenarios.
-
-### Triggered by the Northpass (shrine milestone 6D+)
-
-- [x] **Overworld streaming (regions)** (2026-11-03, session D2): the overworld stays one area (owner's call: one
-  continuous world, no loading between field regions; dungeons and interiors still load). The valley stays
-  loaded; the Northpass is the first region (`world/overworld/region.ts`, `northpass.ts`). See
-  [engine.md](engine.md), "Regions". Later regions: add a `RegionDef` and a seed; bell posts and entrances
-  inside a region join `Overworld.entrances` when D3 needs them. (D3 2026-11-03: the Waybell's post, bell and the camp are built in
-  the overworld proper, with `bell.way` in `Overworld.entrances`, so their state survives streaming; see [bells.md](bells.md).)
+AGENTS.md as an index plus topic docs; dungeons as data with validator, solver, puzzle checker,
+text map and builder; area transitions and per-area saves; per-dungeon keys and namespaced
+dungeon state; scenario smoke tests from save fixtures; agent setup for cost (CLAUDE.md); the
+first `game.ts` split; overworld streaming by region ([engine.md](engine.md) "Regions"); seeded
+enemy randomness.
 
 ### Later triggers
 
 - [ ] **Split `game/game.ts` again** if it grows back: next out would be areas/transitions
   (`loadArea`, `travel`, respawn) and the HUD feed in `updateWorld`. *Trigger: it passes
-  ~700 lines, or the inventory/settings pages land.* (2026-11-03: the pause menu's notes page
-  landed in its own modules, `pauseMenu.ts` and `buds.ts`, and game.ts only went 594 → 604, so the
-  split waited. 2026-11-04: 696 lines after the touch wiring; the inventory tab will fire it.)
+  ~700 lines (696 on 2026-11-04).*
 - [ ] **Split content per area and topic**: `content/overworld.ts` → `content/overworld/`
-  (village NPCs, the hollow, the shrine...). *Trigger: a content file passes ~500 lines.* (2026-11-03, S1: the
-  village's NPCs and opening moved out to `content/village.ts`, overworld.ts 447 → 305 lines; the hollow is next out.)
-- [ ] **Dialog as data**: lines in per-area data files keyed by id, scripts reference
-  keys. Makes writing reviewable in one place and enables localization (Steam players
-  expect translations). *Trigger: before the second dungeon's content, or when
-  localization is planned; at the latest before the Steam page.*
+  (village NPCs, the hollow, the shrine...). *Trigger: a content file passes ~500 lines.* (The hollow is next out of `overworld.ts`.)
+- [ ] **Dialog as data**: fired; it's ticket T2.
 - [ ] **Per-region scenery seeds**: each overworld region gets its own RNG so adding or
   changing one region can't reshuffle another (see Conventions in [engine.md](engine.md)).
-  Done 2026-11-03 for the hollow and the gorge (`regionRng(name)` in `layout.ts`; the valley keeps
-  its 1337 stream). *Still open, trigger narrowed: a change to the valley's own scenery (split it
-  into per-area streams then).* (2026-11-03, S1: the first ruin only filters scenery out with `inRuin` and levels
-  a pad in `terrainHeight`, not `placementHeight`, so nothing reshuffled; S3's ruins should do the same.)
+  Done for the hollow and the gorge (`regionRng(name)` in `layout.ts`); the valley keeps its 1337
+  stream (new things in it filter scenery with `inRuin`-style checks and level pads in
+  `terrainHeight`, so nothing reshuffles). *Trigger: a change to the valley's own scenery (split it
+  into per-area streams then).*
 - [ ] **Visual level editor (maybe)**: if authoring dungeons as data + text map + top-down
   renders proves slow or error-prone, build a small in-browser editor that edits the same
   data format. *Trigger: evaluate after the first dungeon; decide with the owner.*
 - [ ] **The travel menu at scale**: group bells by region, mark where Wren is, maybe a
   little map of the valley. *Trigger: more than ~8 bells.*
-- [ ] **Quest/flag overview**: a generated list of every flag, who sets it and who reads
-  it, so quest logic stays understandable across many areas. *Trigger: ~30+ flags.*
-- [x] **Seed enemy randomness** (done 2026-11-03, shrine session B; `Enemy.rng`, tests seed it): Thornling/Shellback wandering uses `Math.random`, so a few unit tests
-  in `thornling.test.ts` fail about 1 run in 8. Give enemies an injected RNG (as `core/math.ts` has).
-  *Trigger: the next time one of them flakes in CI, or any enemy work.*
+- [ ] **Quest/flag overview**: fired (33 flags); it's ticket T1.
 - [ ] **Docs hygiene**: if a topic doc passes ~400 lines, split it. *Trigger: as stated.*
+- [ ] **AGENTS.md's layout tree at scale**: every region and dungeon adds files, and the tree is
+  loaded into every session. When a folder lists more than ~8 files, give it one line in the
+  tree and move its file list to its topic doc. *Trigger: as stated, or AGENTS.md over ~200 lines.*
+- [ ] **World progression solver**: the dungeon solver for the whole game. Every gate (item,
+  flag, key, gem price) as data, and a check that a new save can reach the end with no softlock
+  (one-time items, gem shortages). *Trigger: when the next region's design is written (T5 decides).*
+- [ ] **A test that plays the whole game** (owner noted, 2026-11-05): a scripted run from a new
+  game to the current end, nightly in CI, with smoke fixtures exported from it instead of written
+  by hand. *Trigger: a second region's quest chain exists, or a fixture turns out not to match
+  a real playthrough.*
+- [ ] **A code index tool** (CodeGraph, Graphify; looked at 2026-11-05, not worth it yet: our
+  docs make discovery cheap, and CodeGraph leaves more code in the context). *Trigger: AGENTS.md's
+  map can't stay short, or sessions often need 10+ reads to find code. Then A/B CodeGraph on one
+  real ticket.*
 
 ## Known quirks and tech debt
 

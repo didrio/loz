@@ -1,34 +1,32 @@
 ---
 name: start
-description: Start a work session on Embervale - get oriented from the docs (not the chat history), check the scaling checklist, and propose a plan for the next task with the cheapest capable model/agent per step. Use at the start of a session or when the owner asks "where were we" / "what's next".
+description: Start a work session on Embervale by picking up a ticket from docs/tickets.md - read the ticket and only what it names, check the session matches its Run line, then build it (auto) or plan it (plan mode). Use at the start of a session, with a ticket id ("/start T3") or without (the first open ticket), or when the owner asks "where were we" / "what's next".
 ---
 
-The docs carry the project's state between sessions, so a fresh session needs no recap
-from the owner. Orient cheaply: read docs, not code.
+The ticket was written by a session that had the context, so it is your orientation: trust
+it and read narrowly.
 
-1. "Where things stand" in AGENTS.md (already in your context) and `git status --short` /
-   `git log --oneline -5` for anything uncommitted or newer than the docs. Don't read diffs
-   unless the plan needs them.
-2. `docs/roadmap.md`: the feature order and the **scaling checklist**. Note any item whose
-   trigger the next task fires.
-3. The topic doc for the area the next task touches (docs table in AGENTS.md), e.g.
-   `docs/shrine.md` for shrine milestones. Read only the relevant sections.
-4. Read code only if the plan can't be written without it, and then only the files the
-   plan names (scout for sweeping questions).
+1. **Find the ticket.** `docs/tickets.md`: the one named in $ARGUMENTS (e.g. `T3`), else the
+   first open ticket. Read only that ticket, not the whole file's other tickets in detail.
+   `git status --short` and `git log --oneline -3` for anything uncommitted or newer.
+2. **Check the Run line** against this session (plan mode on or off, the model you are).
+   If they don't match, say so in one line with the exact switch (e.g. "This ticket wants
+   plan · opusplan · high: `/model opusplan`, effort high, shift+tab into plan mode, then
+   `/start T5` again") and stop. You can't see the effort level: if it matters, mention it.
+3. **Read the ticket's Read-first list**, the doc sections and files it names, and nothing
+   else up front. Read more code only when the work needs it (Grep, then offset/limit; `scout`
+   for sweeps). If a pointer is stale (a file moved), fix it in the ticket.
+4. **Questions for the owner** in the ticket's Notes, or a design call only they can make:
+   ask them all now in one AskUserQuestion, before building.
+5. **Go.**
+   - **auto ticket:** reply with a 2–5 line plan (and which agent does what, if any:
+     `builder`, `looker`, `scout`, `architect`; see CLAUDE.md) and **start building in the
+     same turn**. Don't wait for "go": the owner reads along and stops you if needed.
+   - **plan ticket:** follow "Plan mode" in CLAUDE.md. The plan ends as written design plus
+     tickets, or as an approved build on Sonnet, whichever the ticket asks for.
+6. Finish with `/wrap` (the owner may type it, or you run the Definition of done and say
+   "ready for `/wrap`").
 
-If the owner named a task in the arguments ($ARGUMENTS), plan that one; otherwise plan the
-next item from "Where things stand".
-
-Reply briefly with:
-- **Where we are**: 2-3 lines.
-- **Next task** and any **triggered checklist items** (do those as part of it).
-- **Plan**: 3-8 steps. For each, who does it: main session on Sonnet (default),
-  `builder` (planned multi-file work, parallel modules), `looker` (visual checks),
-  `scout` (sweeping searches), `architect` (hard math/physics/stuck bugs). Say where Opus
-  is worth it and where it isn't.
-- **Questions for the owner**: design calls only they can make. Ask them now, not
-  halfway through.
-- **Next for you**: say plainly what the owner should do now. Usually "say go and I'll
-  build it" (stay out of plan mode). If the task needs real design (a new system, a
-  boss, a data format change; see CLAUDE.md), say "switch to plan mode (shift+tab) and say
-  plan", and why. If plan mode is already on and the task doesn't need it, say so too.
+**No ticket, just "where were we":** answer from AGENTS.md "Where things stand" and the
+open tickets' titles and Run lines (2–4 lines), and end with **Next for you**: the first
+ticket's Run line as settings, then `/start T<n>`.

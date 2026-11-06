@@ -23,15 +23,15 @@ As of 2026-11-05: Emberfield plays start to finish: a wordless start, the shield
 **Gravelheart** and the **prism**, which opens the gate to the Northpass and **Wayfarers' Camp**. Until then **the blight** lies on the valley (violet
 **scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
 tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`); the speech synth is shelved (`labs/speech/`). **Touch controls** (phones and
-tablets, landscape; [engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages (their first notes are fixed: hearts drawn as SVG, camera from the Shield finger while surfing, button labels; the first exit after the boss is noon). Unplayed by the owner:
-most of the 2026-11-04 batch (day/night, the bell hunt, Settings, surfing, the gate, D3, the prism, dungeon fog, the scars, cutting and guards).
-**Next:** the queue in the roadmap, from 8 (the inventory tab; no plan mode). Dev server: port 5273.
+tablets, landscape; [engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages (their first notes are fixed: hearts drawn as SVG, camera from the Shield finger while surfing, button labels; the first exit after the boss is noon).
+**Next:** ticket T1 in [docs/tickets.md](docs/tickets.md) (prep before building past the starting area). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
 | Doc | Read it before... |
 |---|---|
-| [docs/roadmap.md](docs/roadmap.md) | **starting any feature** (see "Before you start" below); what's next, the scaling checklist, tech debt |
+| [docs/tickets.md](docs/tickets.md) | **starting work**: the open tickets in order, each with its Run line; how to write one |
+| [docs/roadmap.md](docs/roadmap.md) | **writing a ticket**: the longer view, the scaling checklist, tech debt |
 | [docs/engine.md](docs/engine.md) | touching the frame loop, modes, areas, physics, input, scripts/cutscenes, saves; conventions |
 | [docs/combat.md](docs/combat.md) | touching the sword, shield/guard, enemies, hazards or bosses (incl. boss fairness rules) |
 | [docs/dungeons.md](docs/dungeons.md) | designing or building a dungeon (the data format, solver, text map) |
@@ -53,49 +53,45 @@ most of the 2026-11-04 batch (day/night, the bell hunt, Settings, surfing, the g
 
 ## Working with the owner
 
-- Fullstack (React) developer and long-time Ableton/keyboard producer; new to game dev
-  terms. Explain engine concepts in plain words (DAW/web-dev analogies help).
-- They describe what they want and explicitly invite pushback: give an honest opinion,
-  propose a simpler model when there is one, then build it and say where you deviated.
-- They want depth over speed: take the time to do things properly, but report plainly.
-- You can't hear audio or judge game feel: say so and ask them to play/listen.
-- They pay for every token: read narrowly (the layout below names the files), keep a
-  session to one task, and leave the docs ready for a fresh session instead of relying on
-  chat history.
+- Fullstack (React) developer and long-time Ableton/keyboard producer, new to game dev terms: explain engine
+  concepts in plain words (DAW/web-dev analogies help).
+- They invite pushback: give an honest opinion, propose a simpler model when there is one, then build it and say
+  where you deviated.
+- **Done properly, but time and tokens matter** (owner, 2026-11-05): take the cheapest route that gets it right the
+  first time. Read narrowly (the layout below names the files), one ticket per session, docs ready for a fresh session.
+- **They play every change** (owner's call, 2026-11-05) and push back before moving on if something's off. Don't ask
+  them to test, don't wait for results, don't mark work "unplayed". You still can't hear audio or judge feel: name
+  what you couldn't verify in one line of the report (Definition of done 7), then move on.
 - Commit or push only when asked, with one standing exception (owner's call, 2026-11-04): **`/wrap` commits and pushes to `main`** (see the wrap skill).
 - **Guide them; they follow your lead on process.** End every reply that finishes a step
   with a short **Next for you** line saying exactly what to do: a command to type (`/wrap`,
-  `/clear`, `/start <task>`, `/model sonnet`), something to play or listen to, a question to
-  answer, or "nothing, I'm continuing". Say so when a session has run long enough that
-  `/clear` would save money, and say whether the next task wants plan mode (usually not).
+  `/clear`, `/start T<n>`), a question to answer, or "nothing, I'm continuing". When the next
+  step is a new ticket, give its **Run line** (mode · model · effort) as settings to switch to. Say so when a
+  session has run long enough that `/clear` would save money.
 
 ## Text the player reads
 
-Dialog, signs, item messages and toasts are designed, not filler: follow "Writing for the
-player" in [docs/world.md](docs/world.md) (short, clear, in-voice, specific to Emberfield,
-and NPCs that react to day/night, story progress and Wren's gear where it adds life).
+Dialog, signs, item messages and toasts are designed, not filler: follow "Writing for the player" in
+[docs/world.md](docs/world.md) (short, clear, in-voice, specific to Emberfield; NPCs react to time, progress and gear).
 
-## Before you start a feature
+## Tickets
 
-Read the **scaling checklist** in [docs/roadmap.md](docs/roadmap.md). If your work fires
-an item's trigger, do that item as part of the work, tell the owner, and tick it off with
-the date. This is how the plan for growing the game 50–100× survives between sessions.
+Work comes in **tickets** ([docs/tickets.md](docs/tickets.md)): one per session, a clear spec with a Run line
+(mode · model · effort) and a Read-first list. The writer had the context, so trust it: read what it names, not
+the whole repo. Whoever writes a ticket checks the **scaling checklist** ([docs/roadmap.md](docs/roadmap.md)) and
+puts any fired item in it. Done tickets are deleted; their lasting facts go to the topic docs.
 
 ## Definition of done
 
-Every change, before you call it done. These habits have caught real bugs here (a camera
-inside a tree, a boss that froze, Wren stuck under the floor, a cutscene camera inside a
-door), so don't skip them because the change "looks small":
+Every change, even a "small" one (these caught a camera inside a tree, a frozen boss, Wren under the floor):
 
 1. **Rules get tests.** A logic change gets a unit test next to its module that would fail
    without it. A bug gets **reproduced in a failing test first**, then fixed.
 2. **`npm run check`** passes (lint, unit tests, typecheck, build).
-3. **Gameplay or content changes: the smoke scenarios that cover it** pass
-   (`npm run smoke -- <scenarios>`, 1–2 min), and smoke gets a new step when you add a
-   quest beat, a boss or a system. The **full suite** (~3–6 min) is for the end of a
-   milestone, before the owner commits, or after touching shared systems (player, physics,
-   camera, saves, game.ts): **ask the owner first** (owner's call, 2026-11-02; CI also runs
-   it on every push). See [docs/testing.md](docs/testing.md) for which scenario covers what.
+3. **Gameplay or content changes: the smoke scenarios that cover it** pass (`npm run smoke -- <scenarios>`, 1–2 min);
+   a new quest beat, boss or system gets a smoke step. The **full suite** (~3–6 min) only at a milestone's end or after
+   touching shared systems (player, physics, camera, saves, game.ts), and **ask the owner first** (owner's call,
+   2026-11-02; CI runs it on every push). [docs/testing.md](docs/testing.md) says which scenario covers what.
 4. **Anything visible: look at it.** `npm run look -- <scenes>` (or a scratch Playwright script on
    `scripts/browser.mjs`), then check the screenshots; refactors: before and after. Dungeons: `npm run map -- <id>`.
 5. **When a check fails, find out why before touching game code.** It may be the test
@@ -164,10 +160,8 @@ scripts/
   smoke.mjs, look.mjs, browser.mjs   scenario smoke runner (smoke/ scenarios, fixtures/ saves); scene captures; shared helpers
   map.mjs, midi-import.mjs a dungeon's text map + problems (npm run map -- <id>); assets/music-src/<folder>/*.mid → src/core/imported/ (npm run midi)
   lexicon.mjs              the game's words → src/labs/speech/lexicon.ts from CMUdict (npm run lexicon)
-src/dev/blips.ts, blips.html   the blips test bench (dev server only: /blips.html)
-src/labs/              the shelved speech synth (speech/, voices.ts, voices.html); nothing in the game imports it
-CREDITS.md                 third-party credits (CMUdict, libraries)
-assets/music-src/          the owner's MIDI exports, one folder per song (see docs/audio.md "Importing the owner's music")
+src/dev/ the blips test bench (/blips.html, dev only) · src/labs/ the shelved speech synth (nothing imports it)
+CREDITS.md third-party credits · assets/music-src/ the owner's MIDI exports, one folder per song (docs/audio.md)
 docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, agents/, skills/ /start and /wrap)
 ```
 

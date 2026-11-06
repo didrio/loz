@@ -123,7 +123,7 @@ edge (`WardenHearth.platform`), so the drops are walled off then.
 a win or a death (the boss is the one exception to "never sealed"). Phase 2's tiles don't slide:
 the outer 2 m ring **rises into a low wall and stays** (arena ~20×16 m), and Cairn Roll is dazed
 against it. Harder than the Lamplighter: ~4–5 minutes, about two plate cycles per phase, hits of
-1–2 half-hearts. The theme is ours to write (a boss version of The Sleeping Stones); the owner listens.
+1–2 half-hearts. The theme is ours to write (a boss version of The Sleeping Stones).
 
 More intricate than the Lamplighter because every opening takes **two steps** (glove, then
 sword), the arena changes in phase two, and the item is the key to the fight. Built on
@@ -217,17 +217,17 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
    [engine.md](engine.md). Not yet confirmed by eye: the cord in flight, the camera in
    small rooms.
 6. **Gravelheart**, in four sessions (planned 2026-11-03; each ends with check passing):
-   - ~~**A, rig, arena, intro**~~ done (the owner hasn't played it): `game/bosses/gravelheart/`,
+   - ~~**A, rig, arena, intro**~~ done: `game/bosses/gravelheart/`,
      `world/dungeon/hearth.ts`, `content/gravelheart.ts`, `Boss.music`. The ring rises 2.4 m (Wren jumps ~2 m). To judge in
      play: the palette is low contrast, and the sleeping heap barely reads as kneeling.
    - ~~**B, phase 1**~~ done (details in [combat.md](combat.md), "Bosses"; the owner has played it and likes it).
-   - ~~**C, phase 2**~~ done (2026-11-03; the owner hasn't played it): `HOWL`, `ROLL`, `KNEEL`, `DOUBLE_SWEEP` in
+   - ~~**C, phase 2**~~ done (2026-11-03): `HOWL`, `ROLL`, `KNEEL`, `DOUBLE_SWEEP` in
      `bosses/gravelheart/moves.ts` (details in [combat.md](combat.md), "Bosses"). Also the owner's damage call: every
      Gravelheart attack is 4 half-hearts (2 in the tunic); the Hammerfall ring is faster. Look scene `gravelheart2`.
      To judge in play: Cairn Roll's speed and tell, the keystone window, the ring shrinking the arena (~20x16 m).
    - **D, the boss's end and the way out** (owner's redesign 2026-11-03, see "After the boss" above;
      three sessions, no plan mode needed, all Sonnet):
-     - ~~**D1, defeat and the seal room.**~~ done (2026-11-03; the owner hasn't played it):
+     - ~~**D1, defeat and the seal room.**~~ done (2026-11-03):
        - Door lock `{ cleared: room }` (`format.ts`, `solve.ts`, validator, `DoorStyle` `hidden`; tests). A cleared-lock
          door may open onto a pit (the causeway bridges it).
        - The Keepers' Seal room (`sealRoom`, 24x20 m, S5) north of the Hearth, door `sealDoor`; the prism `sealStone`
@@ -245,7 +245,7 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
        - The gate (`world/overworld/gate.ts`, `GATE` and `inGate` in `layout.ts`): two pillars, nine floating
          ember-lit stones, a veil of glowing strips, a `Bounds` wall across the cut while closed. Scenery is filtered with `inGate` after the seeded placement.
          `sign.gate` beside it.
-       - `warden` music ("The Warden's Vigil", `core/tracks.ts`): Gravelheart's `music`. Unheard: ask the owner.
+       - `warden` music ("The Warden's Vigil", `core/tracks.ts`): Gravelheart's `music`.
        - Dev states: "boss door" has the tunic and both bells; new "Warden asleep, the seal room open".
        - Fixture `shrine-boss.json` and smoke `shrine-boss`.
        - To judge in play: the defeat's pacing and camera, the causeway rising, the veil and falling stones, the theme.
@@ -269,7 +269,6 @@ Each milestone ends with check + smoke (+ look) passing, so the game stays playa
        - `game/cragstalker.ts` on `GroundEnemy` (combat.md), bell id `way` ("Waybell"), `world/overworld/camp.ts`, `content/northpass.ts`.
        - No camp NPC and no other paths yet (owner: later).
        - Dev state "Northpass: at the opened gate, Warden beaten"; fixture `northpass.json`, smoke `northpass`, look scene `camp`.
-       - Unplayed: the owner judges the Cragstalker, the crossing and the canyon.
 7. (Folded into 6D: the Northpass. The lake grotto stays optional, for later.)
 8. **Polish**: decoration passes, smoke scenarios for the dungeon. (Dungeon music is done:
    "The Sleeping Stones".) **No map or compass** (owner's call, 2026-11-02): those chests hold

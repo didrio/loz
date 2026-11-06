@@ -1,6 +1,6 @@
 ---
 name: wrap
-description: Finish a task on Embervale - run the Definition of done (tests, check, smoke, look), update the docs so the next session can start cold, and report plainly. Use before telling the owner a task is done.
+description: Finish a ticket on Embervale - run the Definition of done (tests, check, smoke, look), update the docs, delete the finished ticket, commit and push, and name the next ticket with its Run line. Use before telling the owner a ticket is done.
 ---
 
 Work through AGENTS.md's Definition of done. Skip steps that truly don't apply, and say
@@ -25,9 +25,12 @@ which ones you skipped.
      where it belongs, in one or two lines. Delete what no longer holds. Don't add
      "(fixed 2026-…)" notes or playtest stories; record a decision only if a future agent
      could undo it by mistake (then: the rule, plus "owner's call" and the date).
-   - **Finished plans and milestones** shrink to one line ("~~B: shrine fixes~~ done") or
-     disappear. Detail that a future task still needs moves to the topic doc's
-     description of how things work.
+   - **Tickets** (`docs/tickets.md`): **delete the finished ticket** (no strikethrough, no
+     "done" line). Facts a future agent needs move to the topic doc's description of how
+     things work. Follow-up work this ticket revealed becomes a new ticket in the template
+     (next free id, a Run line, a Read-first list from what you just learned) or, if it
+     isn't near, a line in roadmap.md. Then reread the **next** ticket: if what you learned
+     changes its spec, pointers or Run line, fix it now.
    - AGENTS.md layout tree only if files moved or were added. `docs/roadmap.md`: tick
      checklist items (with the date), add new risks with a trigger.
    - **Size check**: `wc -l AGENTS.md docs/*.md`. AGENTS.md over ~200 lines or a topic doc
@@ -35,8 +38,8 @@ which ones you skipped.
 6. **Report** to the owner, briefly:
    - what changed;
    - what you verified (with results);
-   - what you could not verify (audio, game feel, a real GPU or gamepad): ask them to
-     play or listen;
+   - what you could not verify (audio, game feel, a real GPU or gamepad), in one line. The
+     owner plays every change, so don't ask them to; they push back if something's off;
    - where you deviated from the request.
 7. **Commit and push** (owner's standing call, 2026-11-04: `/wrap` always does this; it's the one time you commit
    without being asked). Only after check passes, and never with failing tests: stop and report instead.
@@ -48,6 +51,5 @@ which ones you skipped.
    attribution line from the session's system-reminder. Then `git push origin main` (never force). If the push is
    rejected or fails, report it and stop; don't rebase or force on your own.
 8. **End with "Next for you"**, a short list of exactly what the owner should do, in order:
-   say the commit is pushed (with its short hash), what to play-test, then `/clear`, then
-   the exact next command (e.g. `/start C: colored keys`), and whether that task wants plan
-   mode (shift+tab) or not. Plan mode only for real design work; see CLAUDE.md.
+   the commit is pushed (short hash); `/clear`; the next ticket's **Run line as settings**
+   (e.g. "plan mode off, `/model sonnet`, effort medium"); then `/start T<n>`.
