@@ -337,7 +337,7 @@ export class Overworld implements Area {
     this.bushes.update(dt);
     for (const bud of this.buds.values()) bud.update(dt);
     this.sigil.update(dt);
-    this.regions.update(dt);
+    this.regions.update(dt, night);
     this.npcs.maren.update(dt, env.playerPos);
     this.npcs.tobin.update(dt, env.playerPos);
     this.npcs.odo.update(dt, env.playerPos);

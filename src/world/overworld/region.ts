@@ -8,7 +8,8 @@ export interface BuiltRegion {
   readonly root: THREE.Group;
   readonly interactables?: Interactable[];
   readonly triggers?: Trigger[];
-  update?(dt: number): void;
+  /** Every frame; `night` is 0 by day, 1 at night (a town's windows and lanterns glow). */
+  update?(dt: number, night: number): void;
   dispose(): void;
 }
 
@@ -94,11 +95,11 @@ export class RegionStreamer {
   }
 
   /** Steps each region still being built (one step each), then runs the loaded ones. */
-  update(dt: number) {
+  update(dt: number, night = 0) {
     let done = false;
     for (const id of [...this.pending.keys()]) done = this.step(id) || done;
     if (done) this.physics.refreshQueries();
-    for (const r of this.loaded.values()) r.update?.(dt);
+    for (const r of this.loaded.values()) r.update?.(dt, night);
   }
 
   dispose() {

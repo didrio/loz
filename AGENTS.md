@@ -23,8 +23,8 @@ As of 2026-11-06: Emberfield plays start to finish: a wordless start, the shield
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
 after it only Lark and Pip remain in the village. Text is terse and tagged (`textRules.test.ts`); NPCs talk in **blips**. **Touch controls** are
 in a friend's playtest on GitHub Pages. Past the Waybell the road goes down into **Sallowmere** ([sallowmere.md](docs/sallowmere.md) "The map"):
-the mere, its water (shallow wades, deep is a fall), causeways and the Weir's wall stand, streamed a step a frame; its sites are still empty.
-**Next:** the town, people, enemy, bell, ferry, lantern and dungeon, through the open tickets in [docs/tickets.md](docs/tickets.md). Every gate
+the mere, its water (shallow wades, deep is a fall), causeways, the Weir's wall and **Stiltwick** (the town on stilts, still empty of people) stand, streamed a step a frame.
+**Next:** the town's people, enemy, bell, ferry, lantern and dungeon, through the open tickets in [docs/tickets.md](docs/tickets.md). Every gate
 from a new game to the descent is data (`content/progression.ts`, checked by a test). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching

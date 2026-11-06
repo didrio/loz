@@ -1251,7 +1251,7 @@ const SCENES = {
     await view('canyon-cragstalker-eyes', [-10, 13.6, -322], [-10, 12.6, -311]); // from behind the bell, looking at its face
     await view('canyon-from-above', [-10, 115, -245], [-10, 12, -295]);
   },
-  /** Sallowmere (T8): the first view from the canyon's mouth by day and night, the switchbacks, the causeway, the town's and the Weir's footprints, the Cut, the farm and trial pool, the whole mere from above. */
+  /** Sallowmere (T8): the first view from the canyon's mouth by day and night, the switchbacks, the causeway, the town (T9: from the causeway, plaza, market, a house, the pier, above, at night) and the Weir's footprint, the Cut, the farm and trial pool, the whole mere from above. */
   async sallowmere(h) {
     await h.newGame();
     await h.game(() => {
@@ -1288,10 +1288,17 @@ const SCENES = {
     await view('mere-farm-and-trial', [55, 8, -392], [115, 0, -415]);
     await view('mere-canyon-mouth-from-below', [-8, 4, -392], [-10, 12, -335]);
     await view('mere-from-above', [0, 75, -350], [0, 0, -462]);
+    await view('mere-stiltwick-from-causeway', [-14, 4, -404], [-58, 2, -425]);
+    await view('mere-stiltwick-plaza', [-50, 4.5, -418], [-62, 1.5, -430]);
+    await view('mere-stiltwick-market', [-50, 3, -420], [-38, 2, -432]);
+    await view('mere-stiltwick-house', [-62, 3.2, -420], [-54, 3, -402]);
+    await view('mere-stiltwick-pier', [-58, 4, -418], [-70, 1, -396]);
+    await view('mere-stiltwick-from-above', [-60, 70, -405], [-60, 0, -426]);
     await hours(22);
     await h.wait(1500);
     await view('mere-overlook-night', [-10, 30, -328], [4, -2, -462]);
-    await view('mere-weir-from-town-night', [-45, 4, -440], [22, 7, -522]);
+    await view('mere-weir-from-town-night', [-32, 4, -430], [22, 7, -522]);
+    await view('mere-stiltwick-night', [-50, 4.5, -418], [-62, 1.5, -430]);
   },
   /** Gravelheart's intro, first shots: the camera looking back past Wren as the door rises (it must not sit inside her), then over the shoulder. */
   async wardenIntro(h) {

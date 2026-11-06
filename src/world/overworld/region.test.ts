@@ -175,7 +175,8 @@ describe('Sallowmere', () => {
     const world = new Overworld(physics);
     world.streamAt(STILTWICK.x, STILTWICK.z);
     expect(world.loadedRegions).toContain('sallowmere');
-    expect(physics.groundY(STILTWICK.x, STILTWICK.z)).toBeCloseTo(MERE_WATER - 0.6, 0);
+    expect(physics.groundY(STILTWICK.x, STILTWICK.z)).toBeCloseTo(0.9, 1); // the plaza's deck
+    expect(physics.groundY(-20, -430)).toBeCloseTo(MERE_WATER - 0.6, 0); // the open mere beside the town
     world.dispose();
     expect(physics.groundY(STILTWICK.x, STILTWICK.z)).toBeNull();
   });

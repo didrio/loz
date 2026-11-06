@@ -65,6 +65,14 @@ z -343 ^^^^^^^^^^^^^^^^^^^^ overlook (-10,-343), y 12 ^^^^^^^^^^^^^^^^^^
   run into the north hills, so only a boat reaches the forecourt (`mere.test.ts` walks the grid to prove it).
 - **The Weir**: a plain wall, three timber gates and two towers stand there now, so the first view has its goal (~180 m away:
   a grey shape in the fog by day). T13/T15/T16 give it a door, an inside and the night glow (~115 m from the town).
+- **Stiltwick (built, T9)**: `stiltwick.ts`. An 18 m plaza deck at the town's middle (deck top y 0.9, a hair above the causeways' 0.8),
+  a boardwalk east to the town causeway's end and one north to the north causeway's start, four houses (`HOUSES`: saltwife,
+  netmender, lampwright, tallhouse; each on its own platform with a porch, a spoke to the plaza), a market deck on the east
+  boardwalk with the trader's stall, and a pier (108°) with a landing and two moored boats. Decks are World colliders; each deck's
+  skirt and stilts are Prop (Wren can't wade under the town, the camera passes through). Wren reaches the decks only from the two
+  causeways (the skirts are too high to climb). Windows and lamps glow at night (`BuiltRegion.update(dt, night)`). Content hooks:
+  `STILTWICK_SITES` (the bell post's spot, the stall, `people` x6 with yaw: trader, ferryman at the landing, one per porch, and
+  the ferry boat's mooring); `stiltwick.test.ts` keeps each on a deck 1.5 m from its edge. Houses are solid (no interiors).
 - **Names**: Sallowmere, Stiltwick, The Old Weir, The Lightless Cut (`mereNameAt`). The region plays the field song for now, and its night is the valley's blue one (the "silver by night" look is still to do: a sky tint by region).
 
 **Water** (new for the overworld; built, see engine.md "Physics"):

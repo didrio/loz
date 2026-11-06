@@ -9,12 +9,13 @@ import {
   SALLOWMERE_RECT, STILTWICK, WEIR,
 } from './mere';
 import { instanced } from './nature';
+import { buildStiltwick, lightStiltwick } from './stiltwick';
 import type { BuiltRegion, RegionDef } from './region';
 import { buildTerrain, type TerrainPaint, type TerrainRect } from './terrain';
 
 /**
  * Sallowmere, the third region of the overworld (docs/sallowmere.md): its ground, water, scenery and rim. The map
- * itself is `mere.ts`; the town, the bell trial, the ferry and the Weir's door are later tickets' (their footprints
+ * itself is `mere.ts`; the town is `stiltwick.ts`; the bell trial, the ferry and the Weir's door are later tickets' (their footprints
  * are empty, except the Weir's wall, which the first view looks at). It's built a step per frame (region.ts).
  */
 
@@ -223,7 +224,8 @@ function* build(physics: Physics): Generator<void, BuiltRegion, void> {
     yield;
   }
   let water: THREE.Mesh | undefined;
-  for (const part of [(b: AreaBuilder) => { water = buildWater(b); buildRim(b); }, buildWillows, buildReeds, buildFences, buildRocks, buildWeir]) {
+  let town: ReturnType<typeof buildStiltwick> | undefined;
+  for (const part of [(b: AreaBuilder) => { water = buildWater(b); buildRim(b); }, buildWillows, buildReeds, buildFences, buildRocks, buildWeir, (b: AreaBuilder) => { town = buildStiltwick(b); }]) {
     const b = new AreaBuilder(physics, rand);
     part(b);
     add(b);
@@ -232,8 +234,9 @@ function* build(physics: Physics): Generator<void, BuiltRegion, void> {
   let t = 0;
   return {
     root,
-    update(dt) {
+    update(dt, night) {
       t += dt;
+      if (town) lightStiltwick(town, night);
       if (water) water.position.y = MERE_WATER + Math.sin(t * 0.7) * 0.04;
     },
     dispose() {

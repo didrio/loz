@@ -120,7 +120,7 @@ placement so it never reshuffles.
 bounds), `village.ts`, `landmarks.ts` (bridge, grove, shrine, signs), `nature.ts` (trees, rocks, grass, bushes), `hollow.ts`,
 `gorge.ts`, `camp.ts` (Wayfarers' Camp, the crossing, the Waybell), `ruins.ts` (ruined homes, the shield's cottage),
 `blight.ts` (thorn clumps and thickets, `thornTouch`), `gate.ts`, `region.ts` (`RegionStreamer`), and the regions:
-`northpass.ts`; `mere.ts` + `sallowmere.ts` (Sallowmere's map and build).
+`northpass.ts`; `mere.ts` + `sallowmere.ts` (Sallowmere's map and build) + `stiltwick.ts` (its town and the sites content binds to).
 
 **Moving between areas**: `api.travel(id, entrance?)` fades out, `loadArea`s the other area
 with Wren at a named entrance (`Area.entrances`, e.g. the overworld's `shrineDoor`) or its

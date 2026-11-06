@@ -39,24 +39,13 @@ The next stretch is **Sallowmere** (drowned lowlands) and its dungeon **the Old 
 [sallowmere.md](sallowmere.md) (owner-approved 2026-11-06). T15 and T16 write the dungeon's and the
 boss's build tickets (and the Wickmoth, Reedwight and Lightless Cut ones) when they run.
 
-### T9: Build Stiltwick
-**Run:** auto · sonnet · medium
-**Why:** The region's town: the hub where its people, trader and bell post live.
-**Done when:** Houses on stilts and rooftops above the water, boardwalks and moored boats joining them, a spot for the
-bell post, the trader's stall and 5–6 NPCs (empty for now); walkable, the camera clear of stilts and eaves; look scene.
-**Read first:** sallowmere.md "The place" and "The map" (`STILTWICK` in `world/overworld/mere.ts`: a shallow circle, r 30,
-the town causeway ends at its east edge); `src/world/overworld/village.ts` (how Thistledown is built); engine.md
-"Conventions". Build it as a step of `sallowmere.ts`'s generator (or its own region objects; see engine.md "Regions" for
-what must live in the overworld proper to survive streaming).
-**Verify:** `npm run check`; `looker` (the town by day and night, the camera on the boardwalks).
-
 ### T10: Stiltwick's people
 **Run:** auto · sonnet · medium
 **Why:** Story through NPC lines: the town's lives, the flood, the light at the Weir, and the hints of the adults.
 **Done when:** 5–6 NPCs with lines that change with time and progress (`/add-npc`), the trader and its one ware (a gem
 sink: propose it), the ferryman's dawn sighting, Maren's shawl placed by the Lightless Cut; Lark and Pip each get a line
 for news of the shawl.
-**Read first:** world.md "Writing for the player"; sallowmere.md "Story beats"; the `/add-npc` skill.
+**Read first:** world.md "Writing for the player"; sallowmere.md "Story beats" and "Stiltwick (built, T9)" (`STILTWICK_SITES` in `stiltwick.ts` has the six people's spots and yaws); the `/add-npc` skill.
 **Verify:** `npm run check` (`textRules.test.ts`).
 **Notes:** Hints only: no rescue, nothing about why he was exiled. Fired: content split (`content/sallowmere.ts`,
 `content/text/sallowmere.ts`).
