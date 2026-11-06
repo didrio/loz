@@ -9,7 +9,7 @@ import { highlightCount, tagProblems, visibleText } from '../ui/richText';
 const MAX_CHARS = 120;
 const MAX_HIGHLIGHTS = 2;
 
-const sources = import.meta.glob('./*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const sources = import.meta.glob(['./*.ts', './text/*.ts'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const files = Object.keys(sources)
   .map((p) => p.slice(2))
   .filter((f) => !f.endsWith('.test.ts') && f !== 'fakeApi.ts');

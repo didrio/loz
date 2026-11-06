@@ -6,6 +6,8 @@ Glimmer Lake); avoid names that echo existing franchises.
 
 ## Writing for the player (the text rules)
 
+The words live in `src/content/text/<area>.ts`, typed objects keyed `speaker.moment` (`V.maren.bell`); the script in `content/` picks which line and when. Day/night variants are `{ day, night }`; a line with numbers is a function.
+
 Every word the player sees (dialog, signs, item messages, toasts, tutorial lines) follows
 these. They are the owner's direction (2026-11-02); keep them in mind for all new text, and
 recheck old text against them when you touch it.
@@ -39,7 +41,7 @@ recheck old text against them when you touch it.
   `content/overworld.test.ts` scans every content string for kin words.
 - **Every word earns its place** (owner's rule, 2026-11-04; reference: Dark Souls dialog and item text). Draft the line,
   then cut it by half without losing what it tells or asks of the player. A box is **at most ~120 visible characters**
-  (a button counts as one) and **at most 2 highlights**. A content test (`content/textRules.test.ts`) enforces both and
+  (a button counts as one) and **at most 2 highlights**. A content test (`content/textRules.test.ts`, which also reads `content/text/*.ts`) enforces both and
   that tags are valid, on every string in `content/` and every sign's `text` in the dungeon data (`world/dungeon/defs/`);
   there are no exceptions (the text pass, roadmap C3/C6, cut the last ones). Something longer becomes two boxes.
   - Before: `You found a *Wooden Shield*!\nScorched at the rim, but the planks are sound.`

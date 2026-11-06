@@ -35,28 +35,19 @@ implementation.
 
 ## Open tickets
 
-### T2: Move the player's text into per-area text files
+### T2b: Move the rest of the player's text into per-area text files
 **Run:** auto · sonnet · medium
-**Why:** The roadmap's "dialog as data" trigger is "before the second dungeon's content", and
-that's next. The starting area's text is cheap to move now and expensive at 10× the content.
-Text in one place per area makes the writing reviewable (the terse rule), and makes
-translations possible for Steam.
-**Done when:**
-- Every line the player reads (NPC talk, signs, item messages, toasts, choices) lives in a
-  text module per area or topic (e.g. `src/content/text/village.ts`), keyed by id. Scripts
-  refer to keys and keep all the logic (which line, when).
-- A wrong key fails the typecheck.
-- `textRules.test.ts` checks the text modules.
-- Nothing changes for the player: same lines, same order, same conditions.
-**Read first:** world.md "Writing for the player"; engine.md "Scripts and cutscenes";
-`src/content/village.ts` (the most lines, ~40 calls: convert it first); `src/content/textRules.test.ts`;
-`src/content/fakeApi.ts`.
-**Verify:** check; `npm run smoke -- village hints bells shrine-exit`.
-**Notes:** Design default (decided 2026-11-05; the owner can veto at `/start`): typed TS objects,
-not JSON loaded at runtime (a translation export can come later), one module per area or
-topic, keys like `<speaker>.<moment>`. Also do the blip loose end: a smoke step that checks a
-talk blips and the skip rule holds. Update world.md and AGENTS.md's layout; tick "Dialog as
-data" in the checklist. If it won't fit one session, stop at a clean point and write T2b.
+**Why:** T2 set the pattern and converted Thistledown (`src/content/text/village.ts`, used as `V.maren.bell`
+in `village.ts`; day/night pairs `{day, night}`; a function where a line needs numbers). The other
+content modules still hold their lines inline.
+**Done when:** the same for `villageNews.ts`, `overworld.ts`, `bells.ts`, `hints.ts`, `sigils.ts`,
+`shrine.ts`, `gravelheart.ts`, `gorge.ts`, `northpass.ts`, `shop.ts`, `story.ts` (one text module per
+area or topic, copy the style of `text/village.ts`). Nothing changes for the player. Then add a
+smoke step that a talk blips and the skip rule holds, and tick "Dialog as data" in the roadmap checklist.
+**Read first:** `src/content/text/village.ts` and how `village.ts` uses it; `textRules.test.ts` (already
+globs `text/*.ts`).
+**Verify:** check; smoke for the areas touched (see testing.md).
+**Notes:** Do it in two sessions if needed (overworld/bells/hints first, shrine/gravelheart after).
 
 ### T3: Look baselines and a render budget
 **Run:** auto · sonnet · high

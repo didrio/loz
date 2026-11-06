@@ -24,7 +24,7 @@ As of 2026-11-05: Emberfield plays start to finish: a wordless start, the shield
 **scars**, **thorn clumps** that 5 sword hits fell, 3 thornlings on the grove road); after it only Lark and Pip remain in the village. Text is terse and
 tagged (`textRules.test.ts`); NPCs talk in **blips** (`core/blips.ts`); the speech synth is shelved (`labs/speech/`). **Touch controls** (phones and
 tablets, landscape; [engine.md](docs/engine.md)) are being playtested by a friend on GitHub Pages (their first notes are fixed: hearts drawn as SVG, camera from the Shield finger while surfing, button labels; the first exit after the boss is noon).
-**Next:** ticket T2 in [docs/tickets.md](docs/tickets.md) (prep before building past the starting area). Dev server: port 5273.
+**Next:** ticket T2b in [docs/tickets.md](docs/tickets.md) (the rest of the text into `content/text/`). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -145,6 +145,7 @@ src/
   content/                 the game's story; what things DO
     areas.ts, story.ts     createArea(id): builds an area and binds its content; intro, death
     overworld.ts           scripts for every overworld interactable/trigger, save restore
+    text/                  the player's words, one typed module per area (`text/village.ts`: `V.maren.bell`); scripts keep the logic (T2b moves the rest in)
     voices.ts              who sounds like what (speaker → VoiceProfile + Delivery)
     village.ts, shop.ts    Thistledown: villagers, mill door and bed, locked cottages, Odo's stall, the opening, Pip's doll; offerWares (the buy menu)
     bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
