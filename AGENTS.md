@@ -50,7 +50,7 @@ from a new game to the descent is data (`content/progression.ts`, checked by a t
   names, characters, story, map layout, music, sound effects, logos or UI design, and never
   use another franchise's names in code, text or marketing. If a request would recreate a
   specific game's content, do the original version and say so.
-- **Art is primitives only** (boxes, cylinders, cones, spheres, flat colors; no imported models, textures or sprites).
+- **Art is primitives only** (boxes, cylinders, cones, spheres; no imported models, textures or sprites). Owner's call, 2026-11-06: textures **generated in code** are allowed (T19 designs the system); imported images never.
   **Audio is synthesized in code** (no samples; all melodies original). The owner discloses the AI-generated code and writing on Steam.
 
 ## Working with the owner

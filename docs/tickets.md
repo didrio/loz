@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T18**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T21**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -110,3 +110,41 @@ and arena, B phase 1, C phase 2, D defeat and the way out through the Lightless 
 **Read first:** sallowmere.md "The boss"; combat.md "Bosses" and "Fairness rules"; shrine.md "The boss" (as the model).
 **Verify:** docs.
 **Notes:** Ask the owner how an ember of the stolen flame got past the mountains (sallowmere.md "Open questions").
+
+## The look pass (owner's idea, 2026-11-06)
+
+A "PS2, a bit demastered" look, and less of the clean machine-made feel. Independent of the Sallowmere tickets: the owner
+reorders freely. Run T18, then T19, then T20 (each reads better once the one before it is in).
+
+### T18: The retro look (post-processing)
+**Run:** auto · sonnet · high
+**Why:** Low internal resolution, dithering, bloom and haze give the game a deliberate PS2-era look, and hide the clean edges of primitives.
+**Done when:**
+- The scene renders at a low internal height (about 480-540 px, scaled up with nearest-neighbour, no antialiasing), with an ordered-dither and reduced-colour-depth pass, a soft bloom on bright things, and the sky/fog tuned thicker and warmer by time of day (fog colour follows the sky).
+- A Settings entry turns the look on or off and sets its strength (internal height); it saves. The existing sharpness setting is folded in or kept coherent with it (one resolution control, not two). The HUD (DOM) stays crisp.
+- Default on desktop; touch keeps its lower default. Frame time with the look on is no worse than today's (measure one busy scene before and after and report both numbers).
+**Read first:** engine.md "Frame loop" and "Tech stack"; `game/game.ts` (Grep `WebGLRenderer`, `sharpness`); `game/pauseMenu.ts` and `core/save.ts` (the settings); `render/sky.ts` (fog); testing.md "look scenes".
+**Verify:** `npm run check`; `looker` on the village, Stiltwick and a night scene, on and off; pure parts (dither matrix, setting migration) unit-tested.
+**Notes:** Rules stay: no imported assets, the shader is code. Name what you couldn't judge (pixel shimmer in motion, feel): the owner plays it. Look baselines change: update them and say so.
+
+### T19: Procedural textures
+**Run:** plan · opusplan · high
+**Why:** Hand-painted low-res textures are most of what makes a PS2 game look intentional. The owner OK'd textures **generated in code** (2026-11-06): no imported images.
+**Done when:**
+- The owner approved a small texture system on paper: which surfaces get one (stone, plaster, thatch, wood, grass, water edge, dirt), the size (small, e.g. 32-64 px, nearest-filtered), how they are drawn (seeded canvas: noise, bricks, planks, grime), how they fit merged static geometry and the shared-material rules, and the cost.
+- Built for the village as the proof, with a look shot before and after; AGENTS.md "Hard rules" and docs name the new rule (generated textures allowed, imports still not).
+**Read first:** `render/materials.ts` and `render/shapes.ts` (merging, shared vs unique materials); engine.md "Conventions"; T18's result.
+**Verify:** `npm run check`; `looker` before/after on the village.
+**Notes:** Ask the owner up front how strong the texturing should be (subtle grain vs clearly painted). Check the scaling checklist for draw calls and memory when it runs. If the plan spans sessions, write the rest as tickets.
+
+### T20: De-uniform the village and Stiltwick
+**Run:** auto · sonnet · high
+**Why:** Perfect symmetry, identical props and even spacing read as machine-made. Small, seeded imperfections read as hand-built.
+**Done when:**
+- Repeated props (trees, fences, rocks, crates, lamps) get seeded jitter in tilt, scale and colour; buildings gain asymmetry (sagging roof, crooked chimney, uneven eaves); wall bases darken (dirt/wear); a few intentional clutter groups (a bucket by a door, a cart at a bend) in the village and Stiltwick.
+- Colliders, the dungeon solver and every existing smoke scenario are unaffected (decor only; nothing moves a door, a path or an interactable). Per-region seeds so one region's change can't reshuffle another.
+- A reusable helper (seeded jitter) lives in `render/` or `world/`, so later regions use it from the start.
+**Read first:** engine.md "Conventions" (seeds); `world/overworld/` for the village and `stiltwick.ts` (see engine.md "Overworld files"); `render/shapes.ts`.
+**Verify:** `npm run check`; smoke for the village and Sallowmere scenarios; `looker` before/after on both places.
+**Notes:** Add "use the jitter helper" to the `/add-npc`-style recipes or AGENTS.md so new places start with it.
+

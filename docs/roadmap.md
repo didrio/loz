@@ -17,6 +17,7 @@ when it's near.
 
 - **Next region:** Sallowmere and the Old Weir ([sallowmere.md](sallowmere.md), tickets T8–T16). Region 3 lies past
   the Lightless Cut; plan it as we go (owner's call, 2026-11-05).
+- **The look pass** (owner's idea, 2026-11-06): T18 retro post-processing, T19 procedural textures, T20 de-uniforming; independent of Sallowmere.
 - **Optional, any time:** the Glimmer Lake grotto (the glove pulls a half-sunk wakestone; shrine.md).
 - **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
   quests out in the world, Odo back at his stall, the kids' lines changing with them;
