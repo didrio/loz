@@ -37,20 +37,26 @@ implementation.
 
 ### T4: Recipe skills for repeated content work
 **Run:** auto · sonnet · medium
-**Why:** Building past the starting area means dozens more enemies, NPCs, rooms and regions.
-A recipe written from how we already did it turns each into a short Sonnet ticket and stops
-every agent from re-learning the pattern.
-**Done when:** `.claude/skills/` has one short skill (≤ ~60 lines) per repeated kind of work,
-covering the steps, files touched, tests/smoke/look to add, and the gotchas that bit us. At
-least: a new enemy; an NPC with dialog that reacts to progress; a dungeon (data → build → map
-→ smoke); an overworld region (`RegionDef`, seed, streaming); a quest beat (flag, script,
-smoke step). Each points at the docs instead of copying them, and gives its default Run line.
+**Why:** Building past the starting area means dozens more enemies, NPCs and quest beats. A recipe
+written from how we already did it turns each into a short Sonnet ticket and stops every agent
+from re-learning the pattern. The game's shape may change (owner, 2026-11-06: a polygon-count
+increase; maybe a more Souls-like or Metroidvania direction), so only recipes that survive
+that are written now.
+**Done when:** `.claude/skills/` has one short skill (≤ ~40 lines) for each of: a new enemy; an NPC
+with dialog that reacts to progress; a quest beat (flag, script, smoke step). Each lists the steps,
+files touched, the tests/smoke/look to add, and the gotchas that bit us; points at the docs instead
+of copying them; gives its default Run line; and opens with one line saying what it assumes (e.g.
+"assumes hearts, a sword and a shield guard") so a later agent knows when to stop trusting it.
+**Not now:** recipes for a dungeon, an overworld region or a bell site (bells.md already has the
+last): they depend on the key/gate/progression design the owner may change. T5's plan decides
+that; write them after it, or after the direction settles.
 **Read first:** CLAUDE.md "Skills"; bells.md's recipe for a new bell site (the model to follow);
-the doc for each recipe (combat.md, dungeons.md, engine.md "Regions", world.md); `git log --stat`
-of a few real additions (the Cragstalker, the Northpass, Pip) to see what they touched.
+combat.md, world.md "Writing for the player", engine.md "scripts"; `git log --stat` of a few real
+additions (the Cragstalker, Pip, a quest beat) to see what they touched.
 **Verify:** check; the skills show up in the skill list. No game change.
-**Notes:** Run after T2–T3, so the recipes describe the text files and the look
-baselines. Update CLAUDE.md's Skills list.
+**Notes:** Look baselines don't exist yet (roadmap.md), so recipes say "add a look scene"
+without mentioning approving baselines. Update CLAUDE.md's Skills list. Recipes are cheap to
+rewrite or delete when the game's direction changes; say so in each one.
 
 ### T5: Plan what lies past Wayfarers' Camp
 **Run:** plan · opusplan · high
