@@ -20,7 +20,7 @@ when it's near.
 - **The N64 look rebuild** (owner, 2026-11-07; replaces the shelved PS2 "look pass", old T20–T26 in git history): the
   starter zone rebuilt on the new pipeline ([art.md](art.md), [pipeline.md](pipeline.md)) before any new area. Behaviour
   never changes. In order, each written as a ticket when it's near (at the previous one's `/wrap`):
-  1. **Foundations:** T27–T39 in [tickets.md](tickets.md).
+  1. **Foundations:** T27–T39 in [tickets.md](tickets.md) (T27, a fast look loop and the "before" baselines, is done).
   2. **The golden set**, one Final-pass ticket each, locked only when the owner approves (the first ones
      plan · opusplan · high, as they define the style): a Thornling → Wren with her full animation set → the starter-area
      entrance vignette (phone frame rate checked) → the prop set (chest from T35, door, jar, crate, sign) → Pip → the Hollow
@@ -114,11 +114,6 @@ enemy randomness.
 
 ## Known quirks and tech debt
 
-- **The `ruins` look scene's last two shots are black** (`ruins-ring-north`, `ruins-ring-south`, at (-62, -50) and (-62, -66)),
-  from before the textures: find out why (the camera inside something? the teleport?) before approving that scene's baselines.
-
-- **Look baselines don't exist yet** (only `sallowmere`): T27 makes the run fast, then approves every scene as the
-  rebuild's "before" and decides how baselines are stored (each full re-approve adds ~7.5 MB to git history).
 - **Village homes are shells**: the two standing cottages have locked doors (`door.home0/1`, "The door is locked.") and no
   interior. When they become enterable, follow the mill: a `HingedDoor` (`world/objects.ts`), a room inside the walls
   (the camera's doorway pane is `Layer.CameraOnly`), a bed or story beat. Outside the square the road-gate lanterns have glow but no real light

@@ -17,8 +17,19 @@ describe('shrink', () => {
     paint(png, 0, 0, 2, [200, 100, 40]); // one whole 2x2 block
     const out = shrink(png, 2);
     expect([out.width, out.height]).toEqual([4, 2]);
-    expect(Array.from(out.data.slice(0, 4))).toEqual([200, 100, 40, 255]);
+    expect(Array.from(out.data.slice(0, 4))).toEqual([200, 104, 40, 255]); // 100 rounds to the nearest multiple of 8
     expect(Array.from(out.data.slice(4, 8))).toEqual([0, 0, 0, 255]);
+  });
+
+  it('keeps 5 bits per channel, white included, and an opaque alpha', () => {
+    const out = shrink(solid(4, 4, [255, 253, 3]), 2);
+    expect(Array.from(out.data.slice(0, 4))).toEqual([248, 248, 0, 255]);
+  });
+
+  it('does not call a wobble across a rounding step a change', () => {
+    const a = shrink(solid(8, 8, [123, 123, 123]), 2); // between 120 and 128
+    const b = shrink(solid(8, 8, [125, 125, 125]), 2);
+    expect(compare(a, b).changed).toBe(false);
   });
 });
 

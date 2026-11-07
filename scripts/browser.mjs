@@ -8,18 +8,27 @@ export const CHROME =
   process.env.CHROME_PATH ??
   (process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : '/usr/bin/google-chrome');
 
+/**
+ * Which renderer headless Chrome draws with: `gpu` (the real graphics card: ANGLE on Metal on a Mac) or `software`
+ * (SwiftShader, on the CPU). The GPU is the default on a Mac outside CI; everywhere else (CI's Linux has no GPU) it is
+ * software. `GL=software` or `GL=gpu` overrides. Look baselines are GPU renders; see docs/testing.md.
+ */
+export const GL = process.env.GL ?? (process.platform === 'darwin' && !process.env.CI ? 'gpu' : 'software');
+const GL_ARGS = {
+  software: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+  gpu: ['--ignore-gpu-blocklist'], // Chrome's own pick: Metal on a Mac, a measured 0.4 s to start vs 1.4 s for SwiftShader
+};
+
 /** Starts a dev server and a headless Chrome. Call `close()` when done. */
 export async function launch() {
   const server = await createServer({ server: { port: 0, hmr: false, watch: null }, logLevel: 'error' }); // no reloads while files change mid-run
   await server.listen();
   const url = server.resolvedUrls.local[0];
-  const browser = await chromium.launch({
-    executablePath: CHROME,
-    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
-  });
+  const browser = await chromium.launch({ executablePath: CHROME, args: GL_ARGS[GL] ?? GL_ARGS.software });
   return {
     url,
     browser,
+    gl: GL,
     async close() {
       await browser.close();
       await server.close();
@@ -97,13 +106,6 @@ export async function openGame(env, outDir, { fixture, touch = false, stepped = 
     }, ['embervale:save:0', save]);
   }
   if (stepped) await page.addInitScript(steppedClock, STEP_MS);
-  // Look scenes (stepped): their baselines were approved with the retro look on (Soft, 720), which was the default
-  // until 2026-11-06. Keep it for them until the baselines are re-approved with the look off.
-  if (stepped) {
-    await page.addInitScript(([key, raw]) => {
-      if (!localStorage.getItem(key)) localStorage.setItem(key, raw);
-    }, ['embervale:settings', JSON.stringify({ look: 2, resolution: 0 })]);
-  }
   const errors = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));

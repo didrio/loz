@@ -40,31 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T27: Make the look loop fast, then approve the "before" baselines
-**Run:** auto · sonnet · high
-**Why:** Every ticket ahead is visual, and `npm run look` takes ~16 min for the full run (~20 s a scene): it renders
-with SwiftShader (on the CPU) one scene at a time. A fast loop pays back on every later ticket. The rebuild also needs a
-full set of baselines as its "before" (only `sallowmere` has any).
-**Done when:**
-- A short measurement in testing.md: where one scene's time goes (Vite start, Chrome start, game boot, stepped frames,
-  screenshot and compare).
-- Locally, look renders on the real GPU (headless Chrome with ANGLE on Metal, or whatever measures fastest), with
-  SwiftShader kept as the fallback and for CI (an env switch). Scenes run in parallel pages, bounded by the machine, as
-  smoke does. Two runs on unchanged code still print "unchanged".
-- One scene in about a minute or less, cold; the full run ≤ ~5 min (or the measured floor, explained).
-- The Soft (720) retro pin in `openGame`'s `stepped` option is gone (the game's default is the look Off), and every scene is
-  approved: `npm run look -- --approve`, baselines and budgets committed. The owner approved this full re-approve
-  (2026-11-07, plan review).
-- Baseline size decided and written down: about 30 re-approves are ahead at ~7.5 MB each, so shrink them further, store
-  them more compactly, or keep them untracked (CI doesn't run look).
-**Read first:** testing.md (Commands: look, baselines, stepped clock); `scripts/browser.mjs`; `scripts/look.mjs` (the
-main loop at the end, ~line 1515; Grep for scene names rather than reading the 1,600 lines); `scripts/lookCompare.mjs`.
-**Verify:** `npm run check`; `npm run look -- village dungeon` twice (unchanged the second time); one full run timed.
-**Notes:** Try the GPU flag on smoke too; keep it only if it's faster and not flakier (CI runs Linux, no GPU). Known quirk:
-the `ruins` scene's last two shots are black (roadmap.md tech debt). Find out why before approving them; if it's deep,
-approve the rest and leave a note. Update roadmap.md's "Look baselines don't exist yet" item and testing.md's note
-about the "polygon-count increase".
-
 ### T28: One Display setting: Native, Performance, N64
 **Run:** auto · sonnet · medium
 **Why:** art.md "Display modes": the two settings (Resolution, Retro look) become one with three options, and every later

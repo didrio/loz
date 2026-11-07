@@ -1,22 +1,194 @@
 {
+  "bells": {
+    "calls": 1600,
+    "triangles": 265000
+  },
+  "bellShaft": {
+    "calls": 330,
+    "triangles": 43000
+  },
+  "blight": {
+    "calls": 870,
+    "triangles": 267000
+  },
+  "boss": {
+    "calls": 1500,
+    "triangles": 272000
+  },
+  "boss-moves": {
+    "calls": 470,
+    "triangles": 235000
+  },
+  "buds": {
+    "calls": 870,
+    "triangles": 244000
+  },
+  "camera": {
+    "calls": 370,
+    "triangles": 48000
+  },
+  "camp": {
+    "calls": 970,
+    "triangles": 336000
+  },
+  "chest": {
+    "calls": 130,
+    "triangles": 233000
+  },
+  "chestOpen": {
+    "calls": 130,
+    "triangles": 233000
+  },
+  "choice": {
+    "calls": 900,
+    "triangles": 265000
+  },
+  "door": {
+    "calls": 120,
+    "triangles": 210000
+  },
+  "dungeon": {
+    "calls": 1600,
+    "triangles": 80000
+  },
   "emptyVillage": {
     "calls": 600,
     "triangles": 244000
   },
+  "enemies": {
+    "calls": 810,
+    "triangles": 67000
+  },
+  "entrance": {
+    "calls": 1600,
+    "triangles": 80000
+  },
+  "field": {
+    "calls": 900,
+    "triangles": 265000
+  },
+  "gate": {
+    "calls": 360,
+    "triangles": 242000
+  },
+  "glove": {
+    "calls": 750,
+    "triangles": 59000
+  },
+  "gorge": {
+    "calls": 670,
+    "triangles": 260000
+  },
+  "gravelheart": {
+    "calls": 1600,
+    "triangles": 81000
+  },
+  "gravelheart2": {
+    "calls": 440,
+    "triangles": 49000
+  },
+  "grove": {
+    "calls": 140,
+    "triangles": 234000
+  },
+  "guard": {
+    "calls": 940,
+    "triangles": 266000
+  },
+  "hollow": {
+    "calls": 160,
+    "triangles": 223000
+  },
+  "hud": {
+    "calls": 1100,
+    "triangles": 274000
+  },
+  "landmarks": {
+    "calls": 580,
+    "triangles": 57000
+  },
+  "lostBell": {
+    "calls": 1100,
+    "triangles": 260000
+  },
   "mill": {
-    "calls": 790,
+    "calls": 730,
+    "triangles": 265000
+  },
+  "night": {
+    "calls": 820,
+    "triangles": 269000
+  },
+  "northpass": {
+    "calls": 400,
+    "triangles": 319000
+  },
+  "opening": {
+    "calls": 900,
+    "triangles": 268000
+  },
+  "orbs": {
+    "calls": 1060,
+    "triangles": 272000
+  },
+  "pip": {
+    "calls": 900,
+    "triangles": 267000
+  },
+  "ruins": {
+    "calls": 900,
     "triangles": 266000
   },
   "sallowmere": {
     "calls": 970,
     "triangles": 344000
   },
+  "seal": {
+    "calls": 2000,
+    "triangles": 96000
+  },
+  "shield": {
+    "calls": 400,
+    "triangles": 231000
+  },
+  "shrine": {
+    "calls": 130,
+    "triangles": 210000
+  },
+  "stairs": {
+    "calls": 320,
+    "triangles": 48000
+  },
+  "surf": {
+    "calls": 850,
+    "triangles": 269000
+  },
+  "text": {
+    "calls": 900,
+    "triangles": 265000
+  },
+  "thorns": {
+    "calls": 780,
+    "triangles": 260000
+  },
+  "title": {
+    "calls": 1190,
+    "triangles": 283000
+  },
+  "touch": {
+    "calls": 1220,
+    "triangles": 288000
+  },
   "village": {
-    "calls": 790,
-    "triangles": 267000
+    "calls": 750,
+    "triangles": 266000
   },
   "villageDetails": {
-    "calls": 740,
-    "triangles": 264000
+    "calls": 700,
+    "triangles": 263000
+  },
+  "wardenIntro": {
+    "calls": 960,
+    "triangles": 68000
   }
 }

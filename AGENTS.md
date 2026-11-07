@@ -24,7 +24,7 @@ after it only Lark and Pip remain in the village. Every gate is data (`content/p
 look today is flat-shaded, a colour per material, generated textures on the village and ground, an opt-in retro look. NPCs talk in **blips**;
 **touch controls** are in a playtest on GitHub Pages. **Sallowmere**'s map and Stiltwick stand, empty, while the owner redesigns its story.
 **Next:** the **N64 look rebuild** of the starter zone before any new area ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)): foundations
-T27–T39 in [docs/tickets.md](docs/tickets.md), T27 first. Dev server: port 5273.
+T28–T39 in [docs/tickets.md](docs/tickets.md), T28 first (T27, the fast look loop and the approved "before" baselines, is done). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 

@@ -16,7 +16,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   than real time there. The dev server doesn't hot-reload during a run, so edits (yours or
   another session's) don't reset the pages. A scenario that fails is **retried once alone**
   after the rest: FLAKY means it passed alone (a busy CPU slows software rendering past a
-  step's timeout), a second FAIL is real. Don't run look scenes alongside it.
+  step's timeout; on the GPU it rarely happens), a second FAIL is real. Don't run look scenes alongside it.
   Known load-sensitive steps (2026-11-02, load ~12 on 11 cores): `full`'s bridge walk and
   first walk, `combat`'s stagger check; all pass alone.
 - **When to run what** (owner's call, 2026-11-02): `npm run check` on every change; after a
@@ -34,16 +34,27 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   `npm run look -- <scenes> --approve` saves them as the new baselines (commit `scripts/baselines/`); a refactor should print
   "unchanged". `--approve` also rewrites those scenes' budgets in `scripts/look-budgets.json` (peak draw calls and triangles
   of the scene + 25%); a scene over its budget fails the run. Use `--approve` on the scenes you ran, not blindly on all.
-  **Only the `sallowmere` scene has committed baselines**; other shots print "new" and have no budgets. T27 speeds the run up and approves
-  every scene as the N64 rebuild's "before" ([art.md](art.md)). T18's retro look
-  (on by default) changed every shot; the Sallowmere baselines were re-approved with it. Since the look moves `renderer.info`, `RetroPipeline`
-  turns `autoReset` off so the budgets still count the whole frame. **Look scenes pin the retro look to Soft (720)** (`openGame`'s `stepped` option plants the settings), because their baselines were approved with it on; the game's default became Off on 2026-11-06. Re-approving every baseline with the look off is a full `npm run look -- --approve` (ask the owner), then drop the pin.
+  **Every scene has committed baselines and budgets** (approved 2026-11-07 as the N64 rebuild's "before", with the retro look Off, the
+  game's default; [art.md](art.md)): ~246 shots, 5.7 MB. Re-approve **only the scenes you changed** (`--approve` with their names): a full
+  re-approve costs ~6 MB of git history. To keep that small a baseline is stored at 4x shrunk **and 5 bits per colour channel** (every
+  value a multiple of 8, RGB without alpha, best deflate: `QUANT`, `writeBaseline` in `lookCompare.mjs`; both sides of a compare are
+  quantized, so it never shows as a change). Since the look moves `renderer.info`, `RetroPipeline`
+  turns `autoReset` off so the budgets still count the whole frame.
+  **Speed and the renderer** (measured 2026-11-07, M3 Pro, 11 cores): locally Chrome draws on the **real GPU** (ANGLE on Metal, Chrome's own
+  default flags); `GL=software` switches to SwiftShader (on the CPU, the fallback), and anything outside a Mac, or with `CI` set, uses it
+  by default (`GL` in `browser.mjs`; smoke uses it too). One scene, where the time went (software → GPU): page load to the title
+  7.3 s → 2.7 s (Vite's transform and the game's build; the dev server itself starts in 0.2 s, Chrome in 0.2-1.4 s), new game and intro
+  0.85 → 0.23 s, 20 stepped frames 3.2 → 0.5 s, a screenshot 1.0 → 0.12 s, shrink and compare 0.05 s. Whole runs: one scene ~2-5 s, the
+  **full 48 scenes in ~60 s** (4 scenes at once; `JOBS=n` overrides, default 4 on the GPU, 3 on software), against ~16 min before.
+  The floor is the game's boot per scene. Baselines are **GPU renders**; a `GL=software` run draws nearly the same frames (a few shots
+  differ by a handful of pixels, which the tolerance absorbs) but isn't what they were approved on. Smoke on the GPU is faster too
+  (18-31 s a scenario against 42-127 s) and was not flaky, where the software run was under 3 at a time.
   Look runs on a **stepped clock** (`openGame(..., { stepped: true })` in `browser.mjs`): the page's frames only run when the
   script steps them (50 ms of game time each), `h.wait(ms)` runs frames instead of sleeping, `h.until` checks after every
   frame (its timeout is game time), `Math.random` is seeded and CSS animations are finished before a shot. Two runs on
   unchanged code give nearly identical frames: a few shots (gorge, orbs, hollow) still differ by a handful of scattered pixels
   (cause not found), which the tolerance absorbs. A "changed" shot is a real change, or a new random draw order. A scene must use
-  `h.wait`/`h.until`/`h.shot`/`h.shotOf(locator, name)`, never `page.waitForTimeout` or its own screenshots. The full run takes ~16 min.
+  `h.wait`/`h.until`/`h.shot`/`h.shotOf(locator, name)`, never `page.waitForTimeout` or its own screenshots. The full run takes ~1 min.
 - Both scripts share `scripts/browser.mjs` (dev server, Chrome, `newGame`, `teleport`,
   `finishScript`...). One-off investigation scripts belong in your session scratchpad, not
   the repo.

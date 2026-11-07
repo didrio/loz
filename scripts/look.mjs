@@ -10,7 +10,8 @@
 // Every shot is compared with its approved baseline (scripts/baselines/look/, shrunk 4x) and reported
 // unchanged / changed / new: only the changed and new ones need a pair of eyes. Each scene's peak draw
 // calls and triangles are checked against scripts/look-budgets.json. The page runs on a stepped clock
-// (browser.mjs), so two runs on unchanged code give identical frames.
+// (browser.mjs), so two runs on unchanged code give identical frames. Scenes run in parallel pages (JOBS=n), on the
+// real GPU locally (GL=software for SwiftShader; browser.mjs); the full run takes about a minute.
 //
 // Add a scene when you add a place, a boss or a visual system.
 import { mkdir, rm, writeFile } from 'node:fs/promises';
@@ -279,7 +280,11 @@ const SCENES = {
   /** The ruins (S3): every ruined home from its open front, then one from the side with its jars, and Thistledown's ring from the square. */
   async ruins(h) {
     await h.newGame();
-    await h.game(() => window.embervale.state.set('hasSword'));
+    // The blight's thornlings lie by some of the ruins: Wren stays standing (a death is a cutscene that fades to black).
+    await h.game(() => {
+      window.embervale.state.set('hasSword');
+      window.embervale.player.invuln = 1e6;
+    });
     const ruins = await h.game(async () => (await import('/src/world/overworld/layout.ts')).RUINS.map((r) => ({ id: r.id, x: r.x, z: r.z, yaw: r.yaw, r: r.r })));
     for (const r of ruins) {
       const fx = Math.sin(r.yaw), fz = Math.cos(r.yaw);
@@ -1462,7 +1467,20 @@ const SCENES = {
     await h.wait(500);
     await h.shot('shellback-back');
     await freeze(1);
-    await place('exposed', 4.5);
+    // 4.5 m ahead of the shellback can be outside its territory or behind a wall (then it never spots Wren and just
+    // wanders on): try spots round its front until one is in its territory with a clear line from its eyes.
+    await h.game(() => {
+      const g = window.embervale, e = g.enemies.list.find((e) => 'exposed' in e && e.alive);
+      for (const [dist, turn] of [[4.5, 0], [4.5, 0.5], [4.5, -0.5], [3.5, 0.9], [3.5, -0.9], [3, 0]]) {
+        const a = e.facing + turn, x = e.pos.x + Math.sin(a) * dist, z = e.pos.z + Math.cos(a) * dist;
+        const y = (g.physics.groundY(x, z, e.pos.y + 2) ?? e.pos.y) + 0.05;
+        if (e.territory && !e.territory({ x, y, z })) continue;
+        const eye = e.pos.clone().setY(e.pos.y + 0.5), to = eye.clone().set(x, y + 1, z).sub(eye), len = to.length();
+        if (g.physics.rayDistance(eye, to.divideScalar(len), len) < len - 0.05) continue;
+        g.player.teleport(x, y, z, a + Math.PI);
+        return;
+      }
+    });
     await until('exposed', 'tuck', 0.4);
     await freeze();
     await view('exposed', 3, 2.5, 1.4, 0.4);
@@ -1521,7 +1539,14 @@ const fmtShare = (share) => `${(share * 100).toFixed(2)}%`;
 
 const env = await launch();
 let failed = false;
-for (const name of names) {
+
+/** Scenes at once: each is its own page on the one dev server (stepped, so parallel runs draw the same frames). */
+const JOBS = Math.max(1, Number(process.env.JOBS) || (env.gl === 'gpu' ? 4 : 3));
+
+/** Runs one scene; its report is buffered and printed whole, so parallel scenes don't interleave. */
+async function runScene(name) {
+  const t0 = Date.now();
+  const log = [];
   const h = await openGame(env, OUT, { stepped: true });
   const prefixed = (n) => (n.startsWith(name) ? n : `${name}-${n}`);
   const shots = []; // { name, status, share }
@@ -1563,28 +1588,29 @@ for (const name of names) {
   } catch (e) {
     ok = false;
     failed = true;
-    console.log(`  ✗ ${name}: ${e.message}`);
+    log.push(`  ✗ ${name}: ${e.message}`);
   }
   if (h.errors.length) {
     ok = false;
     failed = true;
-    console.log(`    console errors: ${h.errors.join(' | ')}`);
+    log.push(`    console errors: ${h.errors.join(' | ')}`);
   }
 
   const count = (status) => shots.filter((x) => x.status === status).length;
+  const secs = ((Date.now() - t0) / 1000).toFixed(0);
   if (ok) {
     const over = overBudget(budgets, name, peak);
     overBudgets.push(...over);
     if (over.length) failed = true;
     const mark = over.length ? '✗' : '✓';
-    console.log(`  ${mark} ${name}: ${shots.length} shots, ${count('unchanged')} unchanged, ${count('changed')} changed, ${count('new')} new`);
+    log.push(`  ${mark} ${name}: ${shots.length} shots, ${count('unchanged')} unchanged, ${count('changed')} changed, ${count('new')} new (${secs}s)`);
     const b = budgets[name];
-    console.log(`      draw calls ${peak.calls}${b ? ` / ${b.calls}` : ''}, triangles ${peak.triangles}${b ? ` / ${b.triangles}` : ' (no budget yet)'}`);
-    for (const o of over) console.log(`      OVER BUDGET: ${o.what} ${o.value} > ${o.limit}`);
+    log.push(`      draw calls ${peak.calls}${b ? ` / ${b.calls}` : ''}, triangles ${peak.triangles}${b ? ` / ${b.triangles}` : ' (no budget yet)'}`);
+    for (const o of over) log.push(`      OVER BUDGET: ${o.what} ${o.value} > ${o.limit}`);
   }
   for (const x of shots) {
     if (x.status === 'unchanged') continue;
-    console.log(`      ${x.status}: ${x.name}${x.share === undefined ? '' : ` (${fmtShare(x.share)} of pixels)`}`);
+    log.push(`      ${x.status}: ${x.name}${x.share === undefined ? '' : ` (${fmtShare(x.share)} of pixels)`}`);
     needLook.push(x);
   }
   if (approve && ok) {
@@ -1592,7 +1618,16 @@ for (const name of names) {
     budgets[name] = budgetFor(peak);
   }
   await h.page.close();
+  console.log(log.join('\n'));
 }
+
+const t0 = Date.now();
+const queue = [...names];
+const worker = async () => {
+  for (let name = queue.shift(); name; name = queue.shift()) await runScene(name);
+};
+await Promise.all(Array.from({ length: Math.min(JOBS, names.length) }, worker));
+console.log(`\n${names.length} scene(s) in ${((Date.now() - t0) / 1000).toFixed(0)}s (${env.gl} renderer, ${Math.min(JOBS, names.length)} at a time)`);
 await env.close();
 
 if (approve) await writeBudgets(budgets);

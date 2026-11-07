@@ -10,8 +10,14 @@ import pixelmatch from 'pixelmatch';
 export const BASELINES = new URL('./baselines/look/', import.meta.url).pathname;
 export const BUDGET_FILE = new URL('./look-budgets.json', import.meta.url).pathname;
 
-/** Baselines keep every SHRINK-th pixel's worth of detail per side: the repo holds ~150 of them. */
+/** Baselines keep every SHRINK-th pixel's worth of detail per side: the repo holds ~250 of them. */
 export const SHRINK = 4;
+/**
+ * Baselines keep 5 bits per colour channel (every value a multiple of 8): about half the file size of full colour,
+ * which matters because a full re-approve is committed (the rebuild re-approves ~30 times). Both sides of a comparison
+ * go through `shrink`, and a flip across a step is a delta far below `PIXEL_THRESHOLD`, so nothing is lost.
+ */
+export const QUANT = 8;
 /** A shot counts as changed when more than this share of its (half-size) pixels differ. */
 export const CHANGED_SHARE = 0.0005; // ~29 of a 320x180 baseline's pixels: a few dots of render noise are not a change
 /** pixelmatch's per-pixel colour tolerance (0 strict .. 1 anything). */
@@ -19,7 +25,7 @@ const PIXEL_THRESHOLD = 0.1;
 /** A budget is the scene's measured peak plus this much headroom. */
 export const HEADROOM = 1.25;
 
-/** Shrinks a PNG by `k` (default SHRINK) by averaging each k x k block. Odd edges drop their last row/column. */
+/** Shrinks a PNG by `k` (default SHRINK) by averaging each k x k block, then rounds each channel to a multiple of QUANT (opaque). Odd edges drop their last row/column. */
 export function shrink(png, k = SHRINK) {
   const w = Math.floor(png.width / k), h = Math.floor(png.height / k);
   const out = new PNG({ width: w, height: h });
@@ -29,7 +35,8 @@ export function shrink(png, k = SHRINK) {
       for (let c = 0; c < 4; c++) {
         let sum = 0;
         for (let dy = 0; dy < k; dy++) for (let dx = 0; dx < k; dx++) sum += png.data[((k * y + dy) * png.width + k * x + dx) * 4 + c];
-        out.data[o + c] = Math.round(sum / (k * k));
+        const avg = sum / (k * k);
+        out.data[o + c] = c === 3 ? 255 : Math.min(255 - (QUANT - 1), Math.round(avg / QUANT) * QUANT);
       }
     }
   }
@@ -92,5 +99,6 @@ export async function readBaseline(name) {
 
 export async function writeBaseline(name, png) {
   await mkdir(BASELINES, { recursive: true });
-  await writeFile(`${BASELINES}${name}.png`, writePng(png));
+  // RGB without alpha, best deflate: screenshots are opaque, and these files go into git.
+  await writeFile(`${BASELINES}${name}.png`, PNG.sync.write(png, { colorType: 2, inputColorType: 6, inputHasAlpha: true, deflateLevel: 9 }));
 }

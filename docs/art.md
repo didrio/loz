@@ -10,7 +10,7 @@ that looks the way people *remember* the N64, not the way it literally looked.
 - **Not:** the 3DS remake's busier detail, Wind Waker (cel bands), Twilight Princess, or the generic flat-shaded
   low-poly indie look. (Genre feel only: never a specific game's designs, AGENTS.md "Hard rules".)
 - **How we build it:** [pipeline.md](pipeline.md) (Rough and Final passes, the registry, the checks). The rebuild of
-  everything that exists is tickets T27–T39 ([tickets.md](tickets.md)), then the golden set and the rest
+  everything that exists is tickets T27–T39 (T27 done) ([tickets.md](tickets.md)), then the golden set and the rest
   ([roadmap.md](roadmap.md) "The N64 look rebuild").
 
 Each section says **today** (what the code does now) and **target**. Until a ticket moves a section to the target, don't
