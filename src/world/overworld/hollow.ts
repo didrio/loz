@@ -70,7 +70,7 @@ export function buildHollow(b: AreaBuilder) {
   tufts.forEach((m, i) => grass.setMatrixAt(i, m));
   colors.forEach((c, i) => grass.setColorAt(i, c));
   b.dynamic(grass);
-  const stone = surf('stone', 0xb8b2a4);
+  const stone = surf('rock', 0xb8b2a4);
   for (let i = 0; i < 16; i++) {
     const a = rand() * Math.PI * 2, r = 3 + rand() * (R - 2);
     const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;

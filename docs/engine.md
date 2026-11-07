@@ -77,12 +77,12 @@ send effect on a channel, not a new instrument.
   (crisp chunky texels; the owner tried bilinear in T30 and found it too blurry); far off it's mipmapped (no sparkle).
 - **Surfaces** (`SURFACES`): `plaster`, `stone` (courses and mortar), `wood` (planks running along v), `shingle` (rows across a
   slope), `ground` (a clumpy ground tile on tops, a rock tile on steep faces), `rock`, `bark` (furrows up the trunk), `foliage` (soft
-  blotches and leaf clumps, low strength), `metal` (brushed plates with rivets), `thatch` (straw bands). `faceted(geo)` readies a dynamic cone/cylinder/sphere for a tile. Each sets a top tile, a side tile and a `strength`.
+  blotches and leaf clumps, low strength), `metal` (brushed plates with rivets), `thatch` (straw bands), `cloth` (a plain weave: tents, awnings, sacks). `faceted(geo)` readies a dynamic cone/cylinder/sphere for a tile. Each sets a top tile, a side tile and a `strength`.
   Tiles are pure `(size, seed) → Uint8Array` drawings (`drawTile`), unit-tested for determinism, mean (no colour shift),
   spread and seamless wrap.
 - **Use**: `surf('plaster', 0xeadcbc)` instead of `mat(0xeadcbc)`. It's shared and cached like `mat`, so never mutate it.
   `applySurface(material, kind)` is for materials of your own: the terrain's vertex-colour material (so **all terrain**,
-  valley and regions, is textured) and the mill's BackSide inside. Small bits stay plain: cloth, flowers, knobs, glows, windows.
+  valley and regions, is textured) and the mill's BackSide inside. Small bits stay plain: flowers, knobs, glows, windows.
 - **Cost**: six tiles under 100 KB with mips, and one shader program shared by every textured material (`customProgramCacheKey
   'surface'`). Since T30 merged scenery batches by kind (plain / each surface / emissive), not by colour, so using a colour both
   plain and textured no longer costs a draw call. Done: the village, all terrain and the dungeons' structure (floors, walls, ceilings, stairs, pillars). To do: T40 (the rest of the world), T41 (characters, enemies, bosses).

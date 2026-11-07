@@ -49,7 +49,7 @@ export function buildBridge(b: AreaBuilder) {
 /** The grove clearing: a ring of stones and a fallen log around the chest. */
 export function buildGrove(b: AreaBuilder) {
   const { x, z } = GROVE;
-  const stone = surf('stone', 0x8a877e);
+  const stone = surf('rock', 0x8a877e);
   for (let i = 0; i < 7; i++) {
     const a = (i / 7) * Math.PI * 2 + 0.3;
     const sx = x + Math.cos(a) * 4.2, sz = z + Math.sin(a) * 4.2;

@@ -178,7 +178,7 @@ export function buildVillage(b: AreaBuilder) {
   room(1.2, 0.08, 0.35, wood, -0.8, 1.4, 3.4);
   [0xb4532a, 0x4f7d4a, 0xd9a531].forEach((c, i) => b.mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.32, 7), mat(c), wx - 1.2 + i * 0.4, wy + 1.6, wz + 3.4));
   for (const [ex, ez] of [[2.2, 2.4], [1.2, 2.8], [0.2, 3.2]]) {
-    b.mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.8, 8), mat(0xe2d6bf), wx + ex, wy + 0.4, wz + ez);
+    b.mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.8, 8), surf('cloth', 0xe2d6bf), wx + ex, wy + 0.4, wz + ez);
     b.cylinder(wx + ex, wy + 0.4, wz + ez, 0.4, 0.5, Layer.Prop);
   }
   // A warm lamp: short reach, so it lights the room and not the grass outside.
@@ -210,7 +210,7 @@ export function buildVillage(b: AreaBuilder) {
   {
     const { x: sx, z: sz } = STALL;
     const sy = terrainHeight(sx, sz);
-    const counter = surf('wood', 0x8a5a2b), cloth = mat(0x3f6f8a), stripe = mat(0xe8dfc4);
+    const counter = surf('wood', 0x8a5a2b), cloth = surf('cloth', 0x3f6f8a), stripe = surf('cloth', 0xe8dfc4);
     b.mesh(new THREE.BoxGeometry(0.9, 1, 2.6), counter, sx, sy + 0.5, sz);
     b.mesh(new THREE.BoxGeometry(1.0, 0.1, 2.8), wood, sx, sy + 1.02, sz);
     b.box(sx, sy + 0.55, sz, 0.5, 0.55, 1.4, 0, Layer.Prop);
@@ -292,7 +292,7 @@ export function buildVillage(b: AreaBuilder) {
     b.dynamic(lantern);
     halo(x, y + 2.75, z);
     light(x, y + 2.75, z, inSquare ? 15 : 11); // the gate lanterns too, a smaller reach
-    b.mesh(new THREE.ConeGeometry(0.4, 0.3, 4), mat(0x3a2a1e), x, y + 3.15, z);
+    b.mesh(new THREE.ConeGeometry(0.4, 0.3, 4), surf('shingle', 0x3a2a1e), x, y + 3.15, z);
     b.cylinder(x, y + 1.3, z, 1.3, 0.2, Layer.Prop);
   }
   const barrel = surf('wood', 0x8a5a2b), crate = surf('wood', 0xa47a48);

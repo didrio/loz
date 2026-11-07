@@ -32,8 +32,8 @@
     "triangles": 49000
   },
   "camp": {
-    "calls": 870,
-    "triangles": 337000
+    "calls": 860,
+    "triangles": 305000
   },
   "chest": {
     "calls": 130,
@@ -92,8 +92,8 @@
     "triangles": 49000
   },
   "grove": {
-    "calls": 140,
-    "triangles": 236000
+    "calls": 90,
+    "triangles": 195000
   },
   "guard": {
     "calls": 930,
@@ -140,8 +140,8 @@
     "triangles": 267000
   },
   "ruins": {
-    "calls": 780,
-    "triangles": 268000
+    "calls": 570,
+    "triangles": 216000
   },
   "sallowmere": {
     "calls": 950,
@@ -184,12 +184,12 @@
     "triangles": 289000
   },
   "village": {
-    "calls": 350,
+    "calls": 360,
     "triangles": 215000
   },
   "villageDetails": {
-    "calls": 700,
-    "triangles": 263000
+    "calls": 360,
+    "triangles": 211000
   },
   "wardenIntro": {
     "calls": 930,

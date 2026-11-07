@@ -10,10 +10,10 @@ import { mulberry32 } from '../core/math';
  */
 
 /** The tiles. Each is `size × size`, one byte a texel, mean about 128, and wraps seamlessly. */
-export type TileId = 'plaster' | 'stone' | 'planks' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch';
+export type TileId = 'plaster' | 'stone' | 'planks' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch' | 'cloth';
 
 /** What a material can be made of: which tile on its tops and walls, and how hard it shows. */
-export type SurfaceId = 'plaster' | 'stone' | 'wood' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch';
+export type SurfaceId = 'plaster' | 'stone' | 'wood' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch' | 'cloth';
 
 /**
  * Two separate ideas (owner's call, 2026-11-07):
@@ -61,13 +61,14 @@ export const SURFACES: Record<SurfaceId, SurfaceDef> = {
   foliage: { top: 'foliage', side: 'foliage', strength: 0.35 },
   metal: { top: 'metal', side: 'metal', strength: 0.4 },
   thatch: { top: 'thatch', side: 'thatch', strength: 0.5 },
+  cloth: { top: 'cloth', side: 'cloth', strength: 0.35 },
 };
 
 /** The size a tile is drawn at, in pixels: the most detail it has. */
-export const TILE_SIZE: Record<TileId, number> = { plaster: 64, stone: 64, planks: 64, shingle: 64, ground: 128, rock: 64, bark: 64, foliage: 64, metal: 64, thatch: 64 };
+export const TILE_SIZE: Record<TileId, number> = { plaster: 64, stone: 64, planks: 64, shingle: 64, ground: 128, rock: 64, bark: 64, foliage: 64, metal: 64, thatch: 64, cloth: 32 };
 
 /** How many metres of world one repeat of a tile covers: its authored scale. (Every tile is 32 texels a metre at full detail so far.) */
-export const TILE_METRES: Record<TileId, number> = { plaster: 2, stone: 2, planks: 2, shingle: 2, ground: 4, rock: 2, bark: 2, foliage: 2, metal: 2, thatch: 2 };
+export const TILE_METRES: Record<TileId, number> = { plaster: 2, stone: 2, planks: 2, shingle: 2, ground: 4, rock: 2, bark: 2, foliage: 2, metal: 2, thatch: 2, cloth: 1 };
 
 /** A tile's pixel size at `texelsPerMetre`: never more than it was drawn with, never less than 1. */
 export function tileSizeAt(id: TileId, texelsPerMetre: number) {
@@ -336,7 +337,23 @@ function thatch(n: number, rnd: () => number) {
   return f;
 }
 
-const DRAW: Record<TileId, (n: number, rnd: () => number) => Float32Array> = { plaster, stone, planks, shingle, ground, rock, bark, foliage, metal, thatch };
+/** Cloth: a plain weave (fine warp and weft threads crossing), a few slubs, and a seam fold every half metre. */
+function cloth(n: number, rnd: () => number) {
+  const f = new Float32Array(n * n);
+  const lump = fbmTile(n, 4, 4, 2, rnd);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const weave = (x + y) % 2 === 0 ? 0.05 : -0.05; // over-under
+    f[y * n + x] = 0.55 + weave + (lump[y * n + x] - 0.5) * 0.3 + (rnd() - 0.5) * 0.08;
+    if (x % (n / 2) === 0) f[y * n + x] -= 0.25; // the seam
+  }
+  for (let s = 0; s < 10; s++) { // slubs: a short thicker thread
+    const sx = Math.floor(rnd() * n), sy = Math.floor(rnd() * n), len = 3 + Math.floor(rnd() * 4);
+    for (let k = 0; k < len; k++) f[wrap(sy, n) * n + wrap(sx + k, n)] += 0.2;
+  }
+  return f;
+}
+
+const DRAW: Record<TileId, (n: number, rnd: () => number) => Float32Array> = { plaster, stone, planks, shingle, ground, rock, bark, foliage, metal, thatch, cloth };
 
 /** A tile's bytes: the same for the same id and seed, on every load. */
 export function drawTile(id: TileId, seed = 1) {

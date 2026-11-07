@@ -107,7 +107,7 @@ function buildRuin(b: AreaBuilder, ruin: Ruin): JarSpot[] {
   // Rubble from the broken walls, inside and out.
   const rubble: [number, number, number][] = [[3.9, 0.3, 0.4], [4.3, -1.6, 0.25], [2.6, 3.6, 0.3], [-2.4, 3.6, 0.35], [-0.6, 3.5, 0.2], [2.9, -2.2, 0.3], [-4.1, 2.2, 0.3]];
   rubble.forEach(([lx, lz, r], i) => {
-    part(new THREE.IcosahedronGeometry(r, 0), stone, lx, r * 0.5, lz).rotation.set(i, i * 2, 0);
+    part(new THREE.IcosahedronGeometry(r, 0), surf('rock', 0x8f877a), lx, r * 0.5, lz).rotation.set(i, i * 2, 0);
   });
   b.staticGroup.add(g);
 

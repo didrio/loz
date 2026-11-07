@@ -85,7 +85,7 @@ export const inCrossing = (x: number, z: number) => {
 };
 
 export function buildCamp(b: AreaBuilder) {
-  const stone = surf('stone', 0x8a8478), stoneDark = surf('stone', 0x6e695f), wood = surf('wood', 0x6b4c30), woodDark = surf('wood', 0x4a3322);
+  const stone = surf('rock', 0x8a8478), stoneDark = surf('rock', 0x6e695f), wood = surf('wood', 0x6b4c30), woodDark = surf('wood', 0x4a3322);
   const at = (x: number, z: number) => terrainHeight(x, z);
 
   // The fire: a ring of stones, crossed logs, a low flame (it burns by night and day: the camp is lived in).
@@ -122,7 +122,7 @@ export function buildCamp(b: AreaBuilder) {
   for (const [x, z, color] of [[-21, -259, 0xc9b48a], [-9.5, -246.5, 0x9a7f5a]] as const) {
     const y = at(x, z);
     const yaw = Math.atan2(FIRE.x - x, FIRE.z - z);
-    const tent = b.mesh(new THREE.ConeGeometry(2.1, 2.3, 4), mat(color), x, y + 1.15, z);
+    const tent = b.mesh(new THREE.ConeGeometry(2.1, 2.3, 4), surf('cloth', color), x, y + 1.15, z);
     tent.rotation.y = yaw + Math.PI / 4;
     tent.scale.set(1, 1, 1.25);
     const door = b.mesh(new THREE.BoxGeometry(0.9, 1.3, 0.1), mat(0x2e2620), x + Math.sin(yaw) * 1.35, y + 0.65, z + Math.cos(yaw) * 1.35);
