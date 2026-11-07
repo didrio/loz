@@ -40,24 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T29: The palette
-**Run:** plan · opusplan · high
-**Why:** art.md "Palette": one master palette is what keeps everything one game, and the validator, vertex colours and
-every final pass build on it. Today there are ~400 distinct hex literals.
-**Done when:**
-- `render/palette.ts`: ~24–32 named hues with a few shade steps each, plus sub-palettes per area (the valley, the
-  village, the shrine's wings (adapt `THEMES` in `world/dungeon/decor.ts`), the hollow, the blight, the Northpass).
-- `mat`, `surf`, `uniqueMat` and the terrain's paint snap any colour to the nearest swatch, so the whole game is on-palette
-  at once with no call-site churn. Sky, fog and light keys are chosen from the palette but blend freely.
-- A report (`npm run palette` or similar) lists the hex literals still in code by file; final passes replace them with names.
-- The owner approved the palette on a swatch sheet plus look shots of the game snapped to it (before/after).
-**Read first:** art.md "Palette" and "Rendering rules"; pipeline.md; `render/materials.ts`; `render/sky.ts` (the `KEYS`);
-`world/dungeon/decor.ts`; Grep `world/overworld/terrain.ts` for its paint.
-**Verify:** `npm run check` (palette unit tests: names unique, snapping deterministic); look on title, village, field,
-night, shrine, hollow, blight, before and after.
-**Notes:** Ask the owner up front: a starting mood (warmer or cooler than today, how saturated), and whether to show 2–3
-palette candidates. Snapping changes every shot: re-approve baselines after sign-off.
-
 ### T30: N64 shading: vertex colours, smooth normals, soft textures
 **Run:** auto · sonnet · high
 **Why:** art.md "Rendering rules". Flat shading reads as modern low-poly indie, and one material per colour costs a draw
@@ -72,8 +54,8 @@ call per colour per cell (600–970 per scene today, far too many for phones).
   by eye with `looker`; `TEXELS_PER_METRE`).
 - A simple baked darkening at merge time: undersides and wall feet a shade darker.
 - Budgets re-approved; engine.md "Textures" and the materials notes in "Conventions" rewritten.
-**Read first:** art.md "Rendering rules" and "Budgets"; engine.md "Textures" and "Conventions"; `render/materials.ts`;
-`render/textures.ts` (`applySurface`, `faceNormals`); Grep `world/overworld/terrain.ts` for its material and normals.
+**Read first:** art.md "Rendering rules", "Palette" and "Budgets"; engine.md "Textures" and "Conventions"; `render/materials.ts`
+(colours arrive already snapped); `render/palette.ts` (`pal`, `snap`, shades 0–3); `render/textures.ts` (`applySurface`, `faceNormals`); Grep `world/overworld/terrain.ts` for its material and normals.
 **Verify:** `npm run check`; look `village field shrine night hollow` before/after in Native and N64 mode; the budgets go
 down, not up.
 **Notes:** Dynamic objects (characters, doors) keep their own materials until their final passes (`bakeRig`, T35).

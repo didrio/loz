@@ -5,43 +5,43 @@
   },
   "bellShaft": {
     "calls": 330,
-    "triangles": 43000
+    "triangles": 44000
   },
   "blight": {
-    "calls": 870,
-    "triangles": 267000
+    "calls": 840,
+    "triangles": 268000
   },
   "boss": {
     "calls": 1500,
-    "triangles": 272000
+    "triangles": 273000
   },
   "boss-moves": {
-    "calls": 470,
-    "triangles": 235000
+    "calls": 460,
+    "triangles": 234000
   },
   "buds": {
     "calls": 870,
-    "triangles": 244000
+    "triangles": 247000
   },
   "camera": {
-    "calls": 370,
-    "triangles": 48000
+    "calls": 360,
+    "triangles": 49000
   },
   "camp": {
-    "calls": 970,
-    "triangles": 336000
+    "calls": 950,
+    "triangles": 337000
   },
   "chest": {
     "calls": 130,
-    "triangles": 233000
+    "triangles": 234000
   },
   "chestOpen": {
-    "calls": 130,
-    "triangles": 233000
+    "calls": 120,
+    "triangles": 234000
   },
   "choice": {
     "calls": 900,
-    "triangles": 265000
+    "triangles": 266000
   },
   "door": {
     "calls": 120,
@@ -52,31 +52,31 @@
     "triangles": 80000
   },
   "emptyVillage": {
-    "calls": 600,
-    "triangles": 244000
+    "calls": 580,
+    "triangles": 245000
   },
   "enemies": {
     "calls": 810,
-    "triangles": 67000
+    "triangles": 68000
   },
   "entrance": {
     "calls": 1600,
     "triangles": 80000
   },
   "field": {
-    "calls": 900,
-    "triangles": 265000
+    "calls": 890,
+    "triangles": 266000
   },
   "gate": {
-    "calls": 360,
+    "calls": 350,
     "triangles": 242000
   },
   "glove": {
     "calls": 750,
-    "triangles": 59000
+    "triangles": 60000
   },
   "gorge": {
-    "calls": 670,
+    "calls": 660,
     "triangles": 260000
   },
   "gravelheart": {
@@ -84,7 +84,7 @@
     "triangles": 81000
   },
   "gravelheart2": {
-    "calls": 440,
+    "calls": 410,
     "triangles": 49000
   },
   "grove": {
@@ -92,7 +92,7 @@
     "triangles": 234000
   },
   "guard": {
-    "calls": 940,
+    "calls": 930,
     "triangles": 266000
   },
   "hollow": {
@@ -100,47 +100,47 @@
     "triangles": 223000
   },
   "hud": {
-    "calls": 1100,
+    "calls": 1080,
     "triangles": 274000
   },
   "landmarks": {
-    "calls": 580,
+    "calls": 570,
     "triangles": 57000
   },
   "lostBell": {
-    "calls": 1100,
+    "calls": 1080,
     "triangles": 260000
   },
   "mill": {
-    "calls": 730,
-    "triangles": 265000
+    "calls": 720,
+    "triangles": 266000
   },
   "night": {
-    "calls": 820,
-    "triangles": 269000
+    "calls": 790,
+    "triangles": 268000
   },
   "northpass": {
-    "calls": 400,
+    "calls": 390,
     "triangles": 319000
   },
   "opening": {
-    "calls": 900,
+    "calls": 890,
     "triangles": 268000
   },
   "orbs": {
-    "calls": 1060,
+    "calls": 1030,
     "triangles": 272000
   },
   "pip": {
-    "calls": 900,
+    "calls": 850,
     "triangles": 267000
   },
   "ruins": {
     "calls": 900,
-    "triangles": 266000
+    "triangles": 267000
   },
   "sallowmere": {
-    "calls": 970,
+    "calls": 950,
     "triangles": 344000
   },
   "seal": {
@@ -148,39 +148,39 @@
     "triangles": 96000
   },
   "shield": {
-    "calls": 400,
+    "calls": 390,
     "triangles": 231000
   },
   "shrine": {
-    "calls": 130,
-    "triangles": 210000
+    "calls": 140,
+    "triangles": 211000
   },
   "stairs": {
-    "calls": 320,
+    "calls": 310,
     "triangles": 48000
   },
   "surf": {
-    "calls": 850,
+    "calls": 820,
     "triangles": 269000
   },
   "text": {
     "calls": 900,
-    "triangles": 265000
+    "triangles": 266000
   },
   "thorns": {
-    "calls": 780,
+    "calls": 750,
     "triangles": 260000
   },
   "title": {
-    "calls": 1190,
-    "triangles": 283000
+    "calls": 1170,
+    "triangles": 286000
   },
   "touch": {
-    "calls": 1220,
-    "triangles": 288000
+    "calls": 1200,
+    "triangles": 289000
   },
   "village": {
-    "calls": 750,
+    "calls": 720,
     "triangles": 266000
   },
   "villageDetails": {
@@ -188,7 +188,7 @@
     "triangles": 263000
   },
   "wardenIntro": {
-    "calls": 960,
+    "calls": 930,
     "triangles": 68000
   }
 }

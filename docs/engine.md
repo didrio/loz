@@ -345,7 +345,9 @@ desktop build can write real files.
   6:00 or 18:00 shows a one-word card, "Dawn" / "Nightfall" (`dayTurn` in `game/state.ts`, on the HUD's area-name card).
   The HUD clock shows only the time (no day number).
 - Materials from `mat(color)` are shared: **never mutate them**; use `uniqueMat` for
-  anything that flashes or glows. Buildings and props are textured: `surf('stone' | 'plaster' | 'wood' | 'shingle', color)`
+  anything that flashes or glows. `mat`, `surf` and `uniqueMat` **snap every colour to the master palette**
+  (`render/palette.ts`, art.md "Palette"); name new colours with `pal('hue', shade)`. Colours set on a material later
+  (a flash, a fading glow) and materials built directly with `new THREE.Mesh…Material` aren't snapped: `npm run palette` lists them. Buildings and props are textured: `surf('stone' | 'plaster' | 'wood' | 'shingle', color)`
   (see "Textures").
 - Overworld scenery is placed with a seeded RNG (`regionRng('valley')`, 1337) in a fixed build
   order; reordering build calls reshuffles every tree. **Adding a landmark must not move

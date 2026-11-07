@@ -23,7 +23,7 @@ toward the target.
 |---|---|---|
 | Lighting | Lambert, per pixel | Same: soft diffuse Lambert. Per pixel is fine; the look matters, not the method |
 | Shading | `flatShading: true` everywhere | **Smooth by default**, hard edges only at real creases (box corners, caps, blade edges). three.js primitives already split normals there (T30) |
-| Colour | One shared material per colour (`mat(0x...)`) | Palette colours baked into **vertex colours** on a few shared materials; static scenery merged by kind, not colour (T29, T30) |
+| Colour | One shared material per colour (`mat(0x...)`), snapped to the palette (T29) | Palette colours baked into **vertex colours** on a few shared materials; static scenery merged by kind, not colour (T29, T30) |
 | Baked shade | None | Crevices, undersides, wall feet and joints darkened in the vertex colour, not by real-time effects (T30, kit T35) |
 | Textures | Grey detail tiles × colour, 64 px, 32 texels/m, nearest up close | Same method (intensity texture × colour is what N64 games did). **Bilinear** filtering, ~16 texels/m, ≤ 64 px tiles (the ground's 128 px stays) (T30). Untextured is fine for small props and simple creatures |
 | Fog | Follows the sky's horizon colour; indoor fog per room | Tinted per area to its mood; a core part of the look (T31) |
@@ -55,11 +55,23 @@ The UI is drawn at screen resolution in every mode. Check visual work in **Nativ
 
 ## Palette
 
-**Today:** none; ~400 distinct hex literals in code. `world/dungeon/decor.ts` has per-wing `THEMES`.
-**Target (T29):** one **master palette** of ~24–32 named hues, each with a few shade steps, in `render/palette.ts`.
-Each area picks a **sub-palette** from it plus its fog colour. Every authored colour (material, vertex paint, texture
-tint) comes from it; baked shading darkens a palette colour, which is fine. Sky, fog and light colours take their keys
-from the palette but blend freely between them. This is the main thing that keeps everything one game.
+**Done (T29):** one **master palette** in `render/palette.ts`, the main thing that keeps everything one game. Mood
+(owner, 2026-11-07, tuned by eye): a hair less saturated and a little warmer than the old look (`GRADE`: chroma 0.97,
+warm 0.5; a softer, warmer grade read too grey); glows, gems and the key colours stay vivid.
+- **33 named hues × 4 shades**: `0` deep, `1` shade, `2` base, `3` light. Most hues give a base and the other shades are
+  worked out in OKLCH (shadows lean violet, lights lean warm); the neutrals (`ink`, `stone`, `slate`, `chalk`) and the sky
+  hues (`sky`, `night`, `moon`, `blight`) and `rose` are set by hand. A grade (saturation, warmth) sits over the whole table.
+- **Use it by name:** `pal('grass')`, `pal('stone', 1)`. `mat`, `surf` and `uniqueMat` snap any other colour to the nearest
+  swatch (OKLab distance), so old literals are on palette without being touched; final passes still replace them with names
+  (`npm run palette` lists what's left).
+- **Sub-palettes:** `AREA_PALETTES` lists each area's swatches (valley, village, hollow, blight, Northpass, the four shrine
+  wings, whose `THEMES` in `world/dungeon/decor.ts` are palette names). A final pass paints with its area's list; T33's
+  validator checks against it.
+- **Blending is fine:** sky keys, fog, lights and the ground paint name palette colours but blend freely between them; baked
+  shading darkens a palette colour. Authored flat colours never sit between swatches.
+- **The swatch page:** `/palette.html` on the dev server (every hue and shade, each area's strip).
+- A colour the palette lacks: add a hue (or adjust one) in `palette.ts` and check the swatch page and the look shots; don't
+  hard-code an off-palette colour.
 
 ## Budgets
 

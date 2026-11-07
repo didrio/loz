@@ -15,6 +15,7 @@
  * relative to the room's northwest corner, so moving a room moves its contents.
  */
 
+import { pal } from '../../render/palette';
 import type { MusicMood } from '../../core/tracks';
 import type { BellId } from '../bell';
 import type { PlatformDef } from '../platforming';
@@ -95,7 +96,7 @@ export type Lock = 'boss' | { key: KeyColor } | { switch: string } | { switches:
 export const KEY_COLORS = ['crimson', 'azure', 'jade', 'violet', 'amber'] as const;
 export type KeyColor = (typeof KEY_COLORS)[number];
 /** What each color looks like (door bands, chest-found text, the HUD's key icons). */
-export const KEY_HEX: Record<KeyColor, number> = { crimson: 0xd0384a, azure: 0x3d8fe0, jade: 0x3cc47c, violet: 0x9a58e0, amber: 0xf0a830 };
+export const KEY_HEX: Record<KeyColor, number> = { crimson: pal('crimson'), azure: pal('azure'), jade: pal('jade'), violet: pal('violet'), amber: pal('amber') };
 export const keyName = (c: KeyColor) => `${c[0].toUpperCase()}${c.slice(1)} Key`;
 
 /** The shrine's wings each have a look: sandstone halls, marble galleries, mossy undercroft, basalt hearth. */

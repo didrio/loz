@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Embervale palette (dev)</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { font: 14px/1.4 system-ui, sans-serif; background: #1d1a24; color: #e8e2d6; margin: 0; padding: 24px; }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      h2 { font-size: 16px; margin: 28px 0 8px; }
+      p.note { color: #a99f90; margin: 0 0 16px; max-width: 80ch; }
+      table { border-collapse: separate; border-spacing: 3px; }
+      th { font-weight: 600; text-align: left; padding: 0 8px 0 0; font-size: 13px; color: #cfc6b6; white-space: nowrap; }
+      td.sw { width: 46px; height: 30px; border-radius: 3px; font: 10px/30px ui-monospace, monospace; text-align: center; }
+      .strip { display: flex; gap: 2px; margin: 2px 0 10px; }
+      .strip div { flex: 0 0 24px; height: 24px; border-radius: 2px; }
+      .areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 4px 24px; }
+      .areas h3 { font-size: 13px; margin: 6px 0 0; font-weight: 600; color: #cfc6b6; }
+    </style>
+  </head>
+  <body>
+    <h1>The palette</h1>
+    <p class="note">The master palette (src/render/palette.ts): each hue's shades 0 deep, 1 shade, 2 base, 3 light. Every colour
+      passed to mat / surf / uniqueMat snaps to the nearest swatch; new code names them with pal('hue', shade).</p>
+    <div id="root"></div>
+    <script type="module" src="/src/dev/palette.ts"></script>
+  </body>
+</html>

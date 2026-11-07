@@ -21,7 +21,7 @@ Feel is only iterated in rough. A final pass that fails its checks goes back for
 ## Rough pass: playable today
 
 Detail is wasted at this stage.
-- Built from primitives (the kit, from T35), at the right scale, with the intended silhouette roughly there. Palette colours.
+- Built from primitives (the kit, from T35), at the right scale, with the intended silhouette roughly there. Palette colours by name (`pal('wood', 1)`).
 - **Full gameplay:** behaviour, hurtboxes and hit ranges, attack timings, the standard poses (simple is fine), sounds.
   Recipes: `/add-enemy`, `/add-npc`, `/add-quest-beat`.
 - Registered as `tier: 'rough'` (from T33), with a short spec in its topic doc (design intent, attacks, timings, weak points).
@@ -32,6 +32,7 @@ Detail is wasted at this stage.
 
 - **Frozen:** silhouette, scale, joint hierarchy, hurtboxes and hit ranges, attack timings, AI. If one of these really
   should change, stop and ask the owner first.
+- **Colours:** every literal in the model's files becomes a `pal()` name from its area's sub-palette (`npm run palette -- <file>`).
 - **Added:** secondary forms (horns, plates, teeth, belts, spikes, chipped edges); shaped primitives instead of raw ones
   (tapers, bevels, slight asymmetry); colour breakup by region; crevice darkening; a readable face or eyes.
 - **Animation polish:** anticipation before attacks, overshoot and settle, idle life (breathing, bobbing), hit reactions,
@@ -64,8 +65,8 @@ draw calls; the hit flash becomes a uniform).
 
 ## The registry and validator (T33)
 
-Not built yet. Until then: count triangles by hand if a budget is in doubt (`renderer.info` in `?debug`), use palette
-colours once T29 lands. T33 adds a registry of every model (id, kind, tier, a pure `build()`), a validator that runs in
+Not built yet. Until then: count triangles by hand if a budget is in doubt (`renderer.info` in `?debug`), name
+colours with `pal()` (`render/palette.ts`). T33 adds a registry of every model (id, kind, tier, a pure `build()`), a validator that runs in
 `npm run check` (budget, palette, texture sizes, shared materials, bounds) and `npm run assets` (the table).
 
 ## The viewer, contact sheet and dev shortcuts (T34)

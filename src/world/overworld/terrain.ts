@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { fbm } from '../../core/math';
 import { Layer } from '../../core/physics';
 import { applySurface } from '../../render/textures';
+import { pal } from '../../render/palette';
 import type { AreaBuilder } from '../area';
 import { GROVE, HOLLOW, passFrame, pathDist, PASS, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
 
@@ -22,19 +23,19 @@ const a = new THREE.Color(), d = new THREE.Color();
 
 /** The valley's ground: sand under the water, snow on the peaks, rock on steep faces, dirt roads, grass, the hollow's ash. */
 export const valleyPaint: TerrainPaint = (c, x, y, z, ny, n) => {
-  if (y < -1.7) c.set(0x7f7350);
-  else if (y < -0.35) c.set(0xd8c690);
-  else if (y > 50) c.set(0xf0f3f6);
-  else if (ny < 0.74 || y > 30) c.copy(a.set(0x8d8577)).lerp(d.set(0x67625a), n);
-  else if (pathDist(x, z) < 1.9 + n * 1.4 || (z < PASS.path[0][1] && passFrame(x, z).d < 1.9 + n * 1.4)) c.copy(a.set(0xb98d5a)).lerp(d.set(0x9a7347), n);
+  if (y < -1.7) c.set(pal('sand', 1));
+  else if (y < -0.35) c.set(pal('sand', 3));
+  else if (y > 50) c.set(pal('chalk', 2));
+  else if (ny < 0.74 || y > 30) c.copy(a.set(pal('stone'))).lerp(d.set(pal('stone', 1)), n);
+  else if (pathDist(x, z) < 1.9 + n * 1.4 || (z < PASS.path[0][1] && passFrame(x, z).d < 1.9 + n * 1.4)) c.copy(a.set(pal('earth'))).lerp(d.set(pal('bark', 3)), n);
   else {
-    c.copy(a.set(0x5d9c3a)).lerp(d.set(0x8dbd4c), n);
-    if (Math.hypot(x - GROVE.x, z - GROVE.z) < 40) c.lerp(d.set(0x356b2c), 0.5);
-    if (Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < VILLAGE.r) c.lerp(d.set(0x9cc65a), 0.3);
+    c.copy(a.set(pal('grass'))).lerp(d.set(pal('grass', 3)), n);
+    if (Math.hypot(x - GROVE.x, z - GROVE.z) < 40) c.lerp(d.set(pal('leaf')), 0.5);
+    if (Math.hypot(x - VILLAGE.x, z - VILLAGE.z) < VILLAGE.r) c.lerp(d.set(pal('grass', 3)), 0.3);
   }
   // Gloaming Hollow: dead, ashen ground fading out past its rim.
   const dh = Math.hypot(x - HOLLOW.x, z - HOLLOW.z);
-  if (dh < HOLLOW.r + 10) c.lerp(d.set(n > 0.5 ? 0x4f4a42 : 0x5d574b), Math.min(1, (HOLLOW.r + 10 - dh) / 6) * 0.85);
+  if (dh < HOLLOW.r + 10) c.lerp(d.set(n > 0.5 ? pal('slate', 1) : pal('stone', 1)), Math.min(1, (HOLLOW.r + 10 - dh) / 6) * 0.85);
 };
 
 /** The ground of `rect`: a flat-shaded, vertex-colored heightfield plus a matching physics trimesh. */
@@ -75,7 +76,7 @@ export function buildTerrain(b: AreaBuilder, rect: TerrainRect = VALLEY_RECT, pa
 export function buildWater(b: AreaBuilder) {
   const geo = new THREE.PlaneGeometry(SIZE, SIZE, 1, 1);
   geo.rotateX(-Math.PI / 2);
-  const water = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x3f86b8, transparent: true, opacity: 0.78 }));
+  const water = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: pal('water'), transparent: true, opacity: 0.78 }));
   water.position.y = WATER_Y;
   water.receiveShadow = true;
   return b.dynamic(water);

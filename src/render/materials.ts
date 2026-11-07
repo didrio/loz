@@ -1,16 +1,21 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { snap } from './palette';
 import { applySurface, faceNormals, type SurfaceId } from './textures';
 
 /**
  * The look of the game: flat-shaded Lambert materials in solid colors, some with a generated
- * detail texture (`surf`). Materials are shared
- * per color, which keeps memory down and lets `mergeStatic` batch meshes by material.
+ * detail texture (`surf`). Every colour given to `mat`, `surf` and `uniqueMat` is snapped to the
+ * master palette (render/palette.ts), so the game stays on palette whatever a call site passes;
+ * new code names its colours with `pal()`. Materials are shared per (snapped) color, which keeps
+ * memory down and lets `mergeStatic` batch meshes by material.
  * Never mutate a material from `mat()`; use `uniqueMat()` for anything that animates.
  */
 const cache = new Map<string, THREE.MeshLambertMaterial>();
 
 export function mat(color: number, emissive = 0) {
+  color = snap(color);
+  if (emissive) emissive = snap(emissive);
   const key = `${color}:${emissive}`;
   let m = cache.get(key);
   if (!m) {
@@ -25,6 +30,7 @@ export function mat(color: number, emissive = 0) {
  * wood, roof shingles. Same rules as `mat()`: shared per colour and surface, never mutate it.
  */
 export function surf(surface: SurfaceId, color: number) {
+  color = snap(color);
   const key = `${color}:0:${surface}`;
   let m = cache.get(key);
   if (!m) {
@@ -34,9 +40,13 @@ export function surf(surface: SurfaceId, color: number) {
   return m;
 }
 
-/** A material of its own, safe to animate (flashing enemies, glowing windows). */
+/**
+ * A material of its own, safe to animate (flashing enemies, glowing windows). Its starting colour
+ * and emissive are snapped; what code sets on it later (a hit flash, a glow fading) isn't.
+ */
 export function uniqueMat(color: number, extra: THREE.MeshLambertMaterialParameters = {}) {
-  return new THREE.MeshLambertMaterial({ color, flatShading: true, ...extra });
+  const emissive = typeof extra.emissive === 'number' && extra.emissive ? snap(extra.emissive) : extra.emissive;
+  return new THREE.MeshLambertMaterial({ flatShading: true, ...extra, color: snap(color), ...(emissive !== undefined && { emissive }) });
 }
 
 /**

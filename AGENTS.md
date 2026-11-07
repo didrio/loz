@@ -21,10 +21,10 @@ built almost entirely by AI agents. Build everything as if it will ship.
 As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
 after it only Lark and Pip remain in the village. Every gate is data (`content/progression.ts`, checked by a test). Everything is built in code; the
-look today is flat-shaded, a colour per material, generated textures on the village and ground, a Display setting (Native / Performance / N64). NPCs talk in **blips**;
+look today is flat-shaded, a colour per material snapped to one master palette (`render/palette.ts`), generated textures on the village and ground, a Display setting (Native / Performance / N64). NPCs talk in **blips**;
 **touch controls** are in a playtest on GitHub Pages. **Sallowmere**'s map and Stiltwick stand, empty, while the owner redesigns its story.
 **Next:** the **N64 look rebuild** of the starter zone before any new area ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)): foundations
-T29–T39 in [docs/tickets.md](docs/tickets.md), T29 first (T27, the fast look loop and baselines, and T28, the Display setting, are done). Dev server: port 5273.
+T30–T39 in [docs/tickets.md](docs/tickets.md), T30 first (T27 look loop, T28 Display setting, T29 the **palette** are done). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -55,8 +55,8 @@ T29–T39 in [docs/tickets.md](docs/tickets.md), T29 first (T27, the fast look l
   No imported models, images or sprites (owner's call, 2026-11-07, after a shelved experiment: [models.md](docs/models.md)).
   **Audio is synthesized in code** (no samples; all melodies original). The owner discloses the AI-generated code and writing on Steam.
 - **Every new asset, room or area runs Rough → Final without being asked** ([pipeline.md](docs/pipeline.md)), and **a final pass
-  never changes gameplay** (behaviour, hurtboxes, timings, layout, puzzles; ask first). Colours from the palette, models registered
-  and in budget (from T29, T33); check visuals in Native and N64 mode and on the contact sheet (from T34).
+  never changes gameplay** (behaviour, hurtboxes, timings, layout, puzzles; ask first). Colours from the palette (`pal()`), models registered
+  and in budget (from T33); check visuals in Native and N64 mode and on the contact sheet (from T34).
 
 ## Working with the owner
 
@@ -120,7 +120,7 @@ src/
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
     blips.ts               talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
-  render/                  materials (shared/unique, `surf` textured, static merging), textures.ts (generated detail tiles, the projection shader), shapes, characters, sky (incl. the blight look), particles, motes (ash),
+  render/                  palette.ts (the master palette: `pal`, `snap`, area sub-palettes), materials (shared/unique, `surf` textured, snapped to the palette, static merging), textures.ts (generated detail tiles, the projection shader), shapes, characters, sky (incl. the blight look), particles, motes (ash),
                            retro.ts (the Display modes: N64's 240-row target, dither + colour crush; Native/Performance pixel ratio)
   world/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
@@ -161,7 +161,8 @@ scripts/
   smoke.mjs, look.mjs, browser.mjs   smoke runner (smoke/, fixtures/); look scenes (baselines + budgets: lookCompare.mjs); shared helpers, the look stepped clock
   map.mjs, midi-import.mjs a dungeon's text map + problems (npm run map -- <id>); assets/music-src/<folder>/*.mid → src/core/imported/ (npm run midi)
   flags.mjs, lexicon.mjs   who sets/reads each quest flag (npm run flags; flags.test.ts); the game's words → labs/speech/lexicon.ts (npm run lexicon)
-src/dev/ the blips test bench (/blips.html, dev only) · src/labs/ shelved, nothing imports it: speech/ (a speech synth), rigged/ (imported rigged models, docs/models.md)
+  palette.mjs              hex literals still in code, by file, with their nearest swatch (npm run palette)
+src/dev/ the blips test bench (/blips.html) and the swatch page (/palette.html), dev only · src/labs/ shelved, nothing imports it: speech/ (a speech synth), rigged/ (imported rigged models, docs/models.md)
 CREDITS.md third-party credits · assets/music-src/ the owner's MIDI exports, one folder per song (docs/audio.md)
 docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, agents/, skills/ /start and /wrap)
 ```
@@ -169,7 +170,7 @@ docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, 
 ## Commands
 
 `npm run dev` (then `?debug`) · `npm run check` · `npm run smoke [-- <scenarios>]` · `npm run look -- <scenes>`
-· `npm run map -- <dungeon id>` · `npm run midi -- <song folder>` · `npm run lexicon` · `npm run flags`. Details in [docs/testing.md](docs/testing.md).
+· `npm run map -- <dungeon id>` · `npm run midi -- <song folder>` · `npm run lexicon` · `npm run flags` · `npm run palette`. Details in [docs/testing.md](docs/testing.md).
 
 ## Design decisions (don't undo without asking)
 

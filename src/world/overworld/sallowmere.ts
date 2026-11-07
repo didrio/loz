@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { fbm } from '../../core/math';
 import { Layer, type Physics } from '../../core/physics';
 import { mat } from '../../render/materials';
+import { pal } from '../../render/palette';
 import { AreaBuilder } from '../area';
 import { regionRng, terrainHeight } from './layout';
 import {
@@ -24,12 +25,12 @@ const a = new THREE.Color(), d = new THREE.Color();
 /** The mere's ground: mud under deep water, silt in the shallows, a pale shore, grey-green grass, packed-earth roads. */
 const merePaint: TerrainPaint = (c, x, y, z, ny, n) => {
   // Deep water must read at a glance (it's a fall): its bed is near-black, the shallows' silt is light.
-  if (y < MERE_WATER - 1.2) c.copy(a.set(0x262b22)).lerp(d.set(0x2e3328), n);
-  else if (y < MERE_WATER - 0.1) c.copy(a.set(0x8c8962)).lerp(d.set(0x9a966d), n);
-  else if (ny < 0.74 || y > 26) c.copy(a.set(0x86837a)).lerp(d.set(0x64615a), n);
-  else if (onMereRoad(x, z, n * 0.8)) c.copy(a.set(0x9e8d68)).lerp(d.set(0x887656), n);
-  else if (y < MERE_WATER + 0.7) c.copy(a.set(0xa3a184)).lerp(d.set(0x8f9373), n);
-  else c.copy(a.set(0x6f8f58)).lerp(d.set(0x8aa266), n);
+  if (y < MERE_WATER - 1.2) c.copy(a.set(pal('moss', 0))).lerp(d.set(pal('moss', 1)), n);
+  else if (y < MERE_WATER - 0.1) c.copy(a.set(pal('olive'))).lerp(d.set(pal('olive', 3)), n);
+  else if (ny < 0.74 || y > 26) c.copy(a.set(pal('stone'))).lerp(d.set(pal('stone', 1)), n);
+  else if (onMereRoad(x, z, n * 0.8)) c.copy(a.set(pal('plaster', 1))).lerp(d.set(pal('bark', 3)), n);
+  else if (y < MERE_WATER + 0.7) c.copy(a.set(pal('olive', 3))).lerp(d.set(pal('moss', 3)), n);
+  else c.copy(a.set(pal('grass'))).lerp(d.set(pal('leaf', 3)), n);
 };
 
 /** Terrain strips this deep (m) are one build step each. */
