@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Layer, type RAPIER } from '../../core/physics';
 import { mat, surf, uniqueMat } from '../../render/materials';
 import { faceted } from '../../render/textures';
-import { glow } from '../../render/shapes';
+import { glow, GroundShadow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
 import { Prism } from './prism';
 import { DOOR_HEIGHT, KEY_HEX, type KeyColor, type Lock } from './format';
@@ -101,7 +101,6 @@ export class DungeonDoor {
       const color = style === 'boss' ? 0x4a4440 : style === 'hidden' ? 0x34302d : 0x847d70;
       const slab = new THREE.Mesh(new THREE.BoxGeometry(width, DOOR_HEIGHT, 0.4), surf('stone', color));
       slab.position.y = DOOR_HEIGHT / 2;
-      slab.castShadow = true;
       leaf.add(slab);
       for (const face of [-1, 1]) {
         if (style === 'key') {
@@ -198,6 +197,8 @@ export class Wakestone {
   private moveDur = 0.28;
   private delay = 0;
   private colliderLater: { x: number; y: number; z: number } | null = null;
+  /** A blob on the floor it is heading for: invisible while it rests, it shows when the stone slides or drops. */
+  private readonly blob: GroundShadow;
 
   /**
    * Light stones: pale carved sandstone with green-teal spirals. Heavy ones (glove only) look
@@ -209,7 +210,6 @@ export class Wakestone {
     this.size = size;
     const body = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), surf('stone', heavy ? 0x3a2f4f : 0x9b9486));
     body.position.y = size / 2;
-    body.castShadow = true;
     this.group.add(body);
     const glyph = heavy && glowMat ? glowMat : mat(0x4fb8a4);
     for (let i = 0; i < 4; i++) {
@@ -230,6 +230,14 @@ export class Wakestone {
     this.group.position.set(x, y, z);
     parent.add(this.group);
     this.collider = b.box(x, y + size / 2, z, size / 2, size / 2, size / 2, 0, Layer.Prop);
+    this.blob = new GroundShadow(parent, size * 0.5); // inside the block's footprint: a resting stone hides it
+    this.to.set(x, y, z);
+    this.placeBlob();
+  }
+
+  private placeBlob() {
+    const p = this.group.position;
+    this.blob.place(p.x, p.y, p.z, this.to.y);
   }
 
   /**
@@ -244,6 +252,7 @@ export class Wakestone {
     this.moveDur = seconds;
     this.delay = delay;
     if (seconds <= 0) this.group.position.copy(this.to);
+    this.placeBlob();
     const at = { x, y: y + this.size / 2, z };
     if (colliderAtEnd && seconds > 0) this.colliderLater = at;
     else {
@@ -265,6 +274,7 @@ export class Wakestone {
     this.moveT = Math.min(1, this.moveT + dt / this.moveDur);
     const e = this.moveT * this.moveT * (3 - 2 * this.moveT);
     this.group.position.lerpVectors(this.from, this.to, e);
+    this.placeBlob();
     if (this.moveT >= 1 && this.colliderLater) {
       this.collider.setTranslation(this.colliderLater);
       this.colliderLater = null;
@@ -304,7 +314,6 @@ export class DungeonSwitch {
       base.position.y = 0.45;
       this.top = new THREE.Mesh(new THREE.OctahedronGeometry(0.42), this.glowMat);
       this.top.position.y = 1.45;
-      this.top.castShadow = true;
       this.group.add(base, this.top);
       b.cylinder(x, y + 0.45, z, 0.45, 0.5, Layer.Prop);
     }
@@ -337,7 +346,6 @@ export function buildTablet(b: AreaBuilder, parent: THREE.Object3D, x: number, y
   plinth.position.y = 0.15;
   const slab = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.2), surf('stone', 0xa29b8d));
   slab.position.y = 0.9;
-  slab.castShadow = true;
   const lines = mat(0x4a463f);
   for (let i = 0; i < 3; i++) {
     const l = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.02), lines);

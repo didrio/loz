@@ -1,7 +1,7 @@
 import { mulberry32 } from '../../core/math';
 import { describe, expect, it } from 'vitest';
 import { DEEP_DEPTH } from '../../game/water';
-import { areaNameAt, inVillageGuard, inVillageMusic, MILL, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS, THICKETS, thicketClusters, THORN_SPREAD, atBearing, inGate, inHollow, SCARS, scarLine, scarClusters, scarAt, thornClusters, LONE_THORNS, FIELD_POSTS, gorgeFrame, HOLLOW_ENTRANCE, LONE_OAK, SHRINE_DOOR, inRuin } from './layout';
+import { areaNameAt, atmosphereAt, inVillageGuard, inVillageMusic, MILL, BRIDGE, bridgeDeck, GORGE, GORGE_LENGTH, gorgeFloor, gorgePoint, GROVE, inGorge, inPass, PASS, PASS_LENGTH, passFloor, passPoint, passFrame, isEnemyGround, pathDist, RUINS, BUDS, GATE, HOLLOW, isOpen, LAKE, PATHS, regionRng, riverZ, SHRINE, SPAWN, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS, THICKETS, thicketClusters, THORN_SPREAD, atBearing, inGate, inHollow, SCARS, scarLine, scarClusters, scarAt, thornClusters, LONE_THORNS, FIELD_POSTS, gorgeFrame, HOLLOW_ENTRANCE, LONE_OAK, SHRINE_DOOR, inRuin } from './layout';
 import { SIGNS } from './landmarks';
 
 describe('overworld layout', () => {
@@ -390,5 +390,18 @@ describe('blight scars and routing', () => {
         expect(a - b, `${name}: ${b} m becomes ${a} m`).toBeLessThan(40);
       });
     }
+  });
+});
+
+describe('atmosphereAt', () => {
+  it('puts the hollow\'s gloaming over the hollow, the village\'s haze over Thistledown, the valley\'s everywhere else', () => {
+    expect(atmosphereAt(HOLLOW.x, HOLLOW.z)).toBe('hollow');
+    expect(atmosphereAt(VILLAGE.x, VILLAGE.z)).toBe('village');
+    expect(atmosphereAt(SHRINE.x, SHRINE.z)).toBe('valley');
+    expect(atmosphereAt(0, -100)).toBe('valley');
+  });
+
+  it('starts the hollow\'s look a few steps before its rim, so the eased crossing is finished at the edge', () => {
+    expect(atmosphereAt(HOLLOW.x, HOLLOW.z - HOLLOW.r - 2)).toBe('hollow');
   });
 });

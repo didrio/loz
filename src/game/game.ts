@@ -11,6 +11,7 @@ import { DEFAULT_SETTINGS, decodeSettings, localStore, SaveSlot, type KeyValueSt
 import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
 import { RetroPipeline, internalSize, pixelRatioFor, DISPLAY_NATIVE, DISPLAY_PERFORMANCE } from '../render/retro';
+import type { AtmosphereId } from '../render/atmosphere';
 import { Sky } from '../render/sky';
 import { Hud } from '../ui/hud';
 import { nearestInteractable, sameLevel, type Area } from '../world/area';
@@ -105,8 +106,6 @@ export class Game implements ScriptApi {
   constructor(canvas: HTMLCanvasElement, readonly physics: Physics, private readonly store: KeyValueStore = localStore) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(pixelRatioFor(DISPLAY_NATIVE, window.devicePixelRatio));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene.fog = new THREE.Fog(0xbfe0f2, 50, 215);
     window.addEventListener('resize', () => this.resize()); // sized for real by applySettings, once the settings are read
     this.watchPixelRatio();
@@ -191,12 +190,18 @@ export class Game implements ScriptApi {
     }
   }
 
+  /** The atmosphere (render/atmosphere.ts) of the ground at `p`: the area's say, else the valley's outdoors or the shrine's indoors. */
+  private atmosphereAt(p: THREE.Vector3): AtmosphereId {
+    return this.area.atmosphereAt?.(p.x, p.z) ?? (this.area.indoor ? 'shrine' : 'valley');
+  }
+
   private placeAtSpawn(entrance?: string) {
     const s = (entrance && this.area.entrances?.[entrance]) || this.area.spawn;
     this.area.streamAt?.(s.x, s.z);
     const y = s.y ?? this.physics.groundY(s.x, s.z) ?? 0;
     this.player.teleport(s.x, y, s.z, s.facing);
     this.rig.snap(this.player.pos, s.facing);
+    this.sky.setAtmosphere(this.atmosphereAt(this.player.pos), true);
     this.combat.lock = null;
   }
 
@@ -417,7 +422,7 @@ export class Game implements ScriptApi {
     const isBlighted = blighted(this.area, state.has('valleyOpen'));
     this.sky.blight = stepBlight(this.sky.blight, isBlighted ? 1 : 0, rawDt);
     this.area.setBlight?.(this.sky.blight);
-    this.motes.update(rawDt, player.pos, this.sky.blight);
+    this.motes.update(rawDt, player.pos, this.sky.moteLook());
     hud.setHearts(state.hp, state.maxHp);
     hud.setGems(state.gems);
     hud.setFlasks(state.flasks.slots, player.attackBoost / ATTACK_BOOST_SECONDS, state.items.has('tether'));
@@ -443,6 +448,7 @@ export class Game implements ScriptApi {
     hud.setPrompt(this.interactPrompt());
     this.physics.step(dt);
     if (this.area.fogAt) this.sky.indoorFogTarget = this.area.fogAt(player.pos);
+    this.sky.setAtmosphere(this.atmosphereAt(player.pos));
     this.sky.update(state.hours, this.mode === 'title' ? new THREE.Vector3() : player.pos, this.camera.position, dt);
     this.debug?.update(dt);
   }

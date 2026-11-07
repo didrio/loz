@@ -47,7 +47,6 @@ function bellModel(bronze: THREE.Material) {
   loop.position.y = -0.03;
   const clapper = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 4), mat(0x3a3530));
   clapper.position.y = -0.58;
-  for (const m of [body, dome, lip]) m.castShadow = true;
   g.add(body, dome, lip, loop, clapper);
   return g;
 }
@@ -121,7 +120,6 @@ export class BellPost {
       const mesh = new THREE.Mesh(geo, m);
       mesh.position.set(px, py, pz);
       mesh.rotation.set(rx, 0, rz);
-      mesh.castShadow = true;
       this.group.add(mesh);
       return mesh;
     };
@@ -265,7 +263,6 @@ export class BellPickup {
     if (!ground) {
       const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.8), surf('stone', 0x8d877c));
       plinth.position.y = 0.35;
-      plinth.castShadow = true;
       this.group.add(plinth);
       b.box(x, y + 0.35, z, 0.4, 0.35, 0.4, 0, Layer.Prop);
     }

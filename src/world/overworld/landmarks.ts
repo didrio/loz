@@ -72,7 +72,7 @@ export function buildShrine(b: AreaBuilder) {
   const roof = b.mesh(new THREE.ConeGeometry(5.4, 3.5, 4), dark, x + 0.5, y + 9.2, z);
   roof.rotation.y = Math.PI / 4;
   roof.scale.z = 1.4;
-  b.mesh(new THREE.BoxGeometry(0.4, 5.2, 4.4), mat(0x15151a), x - 3.1, y + 2.5, z, false);
+  b.mesh(new THREE.BoxGeometry(0.4, 5.2, 4.4), mat(0x15151a), x - 3.1, y + 2.5, z);
   for (const s of [-1, 1]) b.mesh(new THREE.BoxGeometry(1.3, 6.2, 1.3), stone, x - 3.6, y + 3.1, z + s * 2.6);
   b.mesh(new THREE.BoxGeometry(1.8, 1, 7.2), stone, x - 3.6, y + 6.6, z);
   b.mesh(new THREE.CylinderGeometry(0.15, 0.15, 2, 6), dark, x + 0.5, y + 11.5, z);
@@ -89,7 +89,7 @@ export function buildShrine(b: AreaBuilder) {
     const py = terrainHeight(px, pz);
     b.mesh(new THREE.BoxGeometry(1.1, h, 1.1), stone, px, py + h / 2, pz).rotation.y = a;
     if (h > 3) b.mesh(new THREE.BoxGeometry(1.4, 0.4, 1.4), dark, px, py + h + 0.2, pz).rotation.y = a;
-    b.mesh(new THREE.BoxGeometry(1.2, 0.3, 1.2), moss, px, py + 0.15, pz, false).rotation.y = a;
+    b.mesh(new THREE.BoxGeometry(1.2, 0.3, 1.2), moss, px, py + 0.15, pz).rotation.y = a;
     b.box(px, py + h / 2, pz, 0.55, h / 2, 0.55, a);
   }
 
@@ -116,10 +116,6 @@ export function buildSign(b: AreaBuilder, x: number, z: number) {
   const part = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
     const me = new THREE.Mesh(geo, m);
     me.position.set(px, py, pz);
-    // Not merged and not shadowed: the merge forces shadows on, and a sign's face in its own
-    // shadow reads as near-black. Only the wood casts.
-    me.castShadow = m === wood || m === dark;
-    me.receiveShadow = false;
     g.add(me);
     return me;
   };

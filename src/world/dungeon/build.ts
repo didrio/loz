@@ -180,7 +180,6 @@ export class DungeonArea implements Area {
     const box = (group: THREE.Group, color: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, layer: number | null = Layer.World) => {
       const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), surf('stone', color));
       m.position.set(x, y, z);
-      m.castShadow = m.receiveShadow = true;
       group.add(m);
       if (layer !== null) b.box(x, y, z, sx / 2, sy / 2, sz / 2, 0, layer);
     };
@@ -250,7 +249,6 @@ export class DungeonArea implements Area {
           const rad = f.r ?? 0.7;
           const m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 1.1, h, 8), surf('stone', pal.pillar));
           m.position.set(r.x + f.x, fy + h / 2, r.z + f.z);
-          m.castShadow = m.receiveShadow = true;
           p.src.solid.add(m);
           b.cylinder(r.x + f.x, fy + h / 2, r.z + f.z, h / 2, rad, Layer.Prop);
           box(p.src.solid, pal.trim, r.x + f.x, fy + 0.2, r.z + f.z, rad * 2.6, 0.4, rad * 2.6, null);

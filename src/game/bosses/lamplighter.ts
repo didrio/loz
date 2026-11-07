@@ -143,9 +143,8 @@ export class HollowLamplighter extends Boss {
     const bone = uniqueMat(0xd9d2bf), iron = uniqueMat(0x2a2c31), wood = uniqueMat(0x2e241c), dark = uniqueMat(0x0c0b0e);
     const maskMat = uniqueMat(0xe9e4d4);
     this.flashMats.push(...cloth, bone, iron, wood, dark, maskMat);
-    const shadow = (m: THREE.Mesh) => ((m.castShadow = true), m);
     const add = (parentNode: THREE.Object3D, geo: THREE.BufferGeometry, material: THREE.Material, x = 0, y = 0, z = 0) => {
-      const m = shadow(new THREE.Mesh(geo, material));
+      const m = new THREE.Mesh(geo, material);
       m.position.set(x, y, z);
       parentNode.add(m);
       return m;

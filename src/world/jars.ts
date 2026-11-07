@@ -41,7 +41,6 @@ export class JarField {
       const band = new THREE.Mesh(new THREE.CylinderGeometry(0.405, 0.405, 0.07, 8), dark);
       band.position.y = 0.5;
       for (const m of [body, neck, rim, band]) {
-        m.castShadow = m.receiveShadow = true;
         g.add(m);
       }
       g.position.set(s.x, s.y, s.z);

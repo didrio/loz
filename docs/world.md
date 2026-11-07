@@ -173,7 +173,7 @@ The valley is sick from the first frame until the Keepers' seal breaks (`valleyO
 `game/blight.ts` (tested), everything else follows them. Dungeons and interiors are never blighted.
 - **Sky** (`Sky.blight`, 0–1): a violet-black sky and fog, weaker sun, dim stars; the same weight by day and night
   (the night sinks as far as the night sky does). Boss gloom stacks on top.
-- **Ash motes** (`render/motes.ts`) drift around the player.
+- **Ash motes** (`render/motes.ts`, the `BLIGHT_ASH` preset in `render/atmosphere.ts`) drift around the player.
 - **Scars** (`SCARS` in `layout.ts`, queue 7, 2026-11-04, owner's design): jagged violet veins in the ground seeping
   south from the sealed gate: the **spine** down the north field (splitting it between the village and the grove), a
   **west fork** toward the shield's cottage, an **east fork** past the gate home toward the grove's marsh, and a **west

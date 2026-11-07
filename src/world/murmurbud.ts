@@ -48,7 +48,6 @@ export class MurmurbudLook {
       const l = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.9, 4), leaf);
       l.position.set(Math.cos(a) * 0.38, 0.25, Math.sin(a) * 0.38);
       l.rotation.set(Math.sin(a) * 1.05, 0, -Math.cos(a) * 1.05);
-      l.castShadow = true;
       this.group.add(l);
     }
     // The bulb: a shell of petals closed around a tip; each petal swings out when it opens.
@@ -60,7 +59,6 @@ export class MurmurbudLook {
       const w = (Math.PI * 2) / PETALS + 0.08;
       const p = new THREE.Mesh(new THREE.SphereGeometry(0.5, 6, 5, -w / 2, w, 0, Math.PI * 0.62), this.shellMat);
       p.position.y = -0.05;
-      p.castShadow = true;
       hinge.add(p);
       this.bulb.add(hinge);
       this.petals.push(p);

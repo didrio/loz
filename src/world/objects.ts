@@ -3,7 +3,7 @@ import { damp, lerpAngle } from '../core/math';
 import { Layer, type RAPIER } from '../core/physics';
 import { buildHumanoid, type Humanoid, type HumanoidColors } from '../render/characters';
 import { fadeInFog, mat, uniqueMat, surf } from '../render/materials';
-import { glow, heartGeometry, shieldModel } from '../render/shapes';
+import { glow, GroundShadow, heartGeometry, shieldModel } from '../render/shapes';
 import { faceted } from '../render/textures';
 import type { AreaBuilder } from './area';
 
@@ -15,6 +15,7 @@ export class Npc {
   private readonly collider: RAPIER.Collider;
   /** False once the villager is gone (content decides who and when). */
   present = true;
+  private readonly blob: GroundShadow;
 
   constructor(b: AreaBuilder, colors: HumanoidColors, readonly x: number, readonly z: number, y: number, private readonly baseYaw: number, scale = 1) {
     this.h = buildHumanoid(colors, scale);
@@ -23,11 +24,15 @@ export class Npc {
     this.h.root.rotation.y = baseYaw;
     b.dynamic(this.h.root);
     this.collider = b.cylinder(x, y + 0.9, z, 0.9, 0.45, Layer.Prop);
+    // Villagers never leave the spot they stand on: one blob, placed once.
+    this.blob = new GroundShadow(b.dynamicGroup, 0.5 * scale);
+    this.blob.place(x, y, z, y);
   }
 
   setPresent(on: boolean) {
     this.present = on;
     this.h.root.visible = on;
+    this.blob.mesh.visible = on;
     this.collider.setEnabled(on);
   }
 
@@ -78,7 +83,6 @@ export class Chest {
     this.lid.add(lidMesh, lock, underside);
     const inside = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.05, 0.85), dark);
     inside.position.y = 0.78;
-    for (const me of [base, band, lidMesh, lock]) me.castShadow = true;
     // The padlock hangs from the clasp on the front.
     const iron = surf('metal', 0x4a4d52);
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.12), iron);
@@ -86,7 +90,6 @@ export class Chest {
     shackle.position.y = 0.13;
     const hole = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.02), dark);
     hole.position.set(0, -0.02, 0.065);
-    body.castShadow = true;
     this.padlock.add(body, shackle, hole);
     this.padlock.position.set(0, 0.6, 0.56);
     this.padlock.visible = locked;
@@ -147,7 +150,6 @@ export class HingedDoor {
     const part = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
       const me = new THREE.Mesh(geo, m);
       me.position.set(px + width / 2, py, pz);
-      me.castShadow = me.receiveShadow = true;
       this.pivot.add(me);
     };
     part(new THREE.BoxGeometry(width, height, 0.14), surf('wood', color), 0, height / 2, 0);
@@ -194,7 +196,6 @@ export class StoneDoor {
     // Its bottom edge starts a hair under the ground so no gap shows on a slope.
     this.mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, height, width), surf('stone', 0x77736a));
     this.mesh.position.set(x, baseY + this.half - 0.1, z);
-    this.mesh.castShadow = true;
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.12, 6, 18), this.glyphMat);
     ring.rotation.y = Math.PI / 2;
     ring.position.set(-0.32, 0.3, 0);
@@ -245,7 +246,6 @@ export class BushField {
 
   constructor(b: AreaBuilder, spots: { x: number; y: number; z: number; rot: number }[]) {
     this.mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.75, 0), mat(0x3f7d2e), spots.length);
-    this.mesh.castShadow = this.mesh.receiveShadow = true;
     spots.forEach((s, i) => {
       this.items.push({ ...s, alive: true, regrow: 0, collider: b.ball(s.x, s.y + 0.1, s.z, 0.6, Layer.Prop) });
       this.place(i, true);
@@ -395,7 +395,6 @@ export class HeartVessel {
   constructor(b: AreaBuilder, readonly x: number, readonly y: number, readonly z: number) {
     const heart = new THREE.Mesh(heartGeometry(0.22), uniqueMat(0xff3b5c, { emissive: 0x5a0d1a }));
     heart.scale.setScalar(1.6);
-    heart.castShadow = true;
     const rim = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 6, 24), mat(0xe8c770));
     this.group.add(heart, rim, glow(0xff7a8a, 1.0, 0.18));
     this.group.position.set(x, y + 1.3, z);
@@ -472,7 +471,6 @@ export class GreatLantern {
   constructor(b: AreaBuilder, x: number, y: number, z: number) {
     this.mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.7), this.material);
     this.mesh.position.set(x, y, z);
-    this.mesh.castShadow = true;
     this.halo = glow(0xff9a3a, 1.3, 0);
     this.halo.position.copy(this.mesh.position);
     this.light = new THREE.PointLight(0xffa64a, 0, 26, 1.6);

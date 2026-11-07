@@ -65,8 +65,6 @@ export function buildBlightGrowths(b: AreaBuilder, rand: () => number) {
 
   const mesh = new THREE.InstancedMesh(new THREE.ConeGeometry(0.6, THORN_H, 5).translate(0, THORN_H / 2, 0), mat(0xffffff, 0x1c0f2a), bases.length);
   colors.forEach((c, i) => mesh.setColorAt(i, c));
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
   b.dynamic(mesh);
   const scars = buildScars(b);
 
@@ -177,7 +175,6 @@ function buildScars(b: AreaBuilder) {
   const crack = scarStrip(0.28, 0.14, 0.04);
   const bandMesh = new THREE.Mesh(band.geo, uniqueMat(0x3a1850, { emissive: 0x1a0828, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   const crackMesh = new THREE.Mesh(crack.geo, new THREE.MeshBasicMaterial({ color: 0xb45ef0, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
-  bandMesh.receiveShadow = true;
   b.dynamic(bandMesh);
   b.dynamic(crackMesh);
   return {

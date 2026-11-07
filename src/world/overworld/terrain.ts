@@ -69,7 +69,6 @@ export function buildTerrain(b: AreaBuilder, rect: TerrainRect = VALLEY_RECT, pa
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   // The ground tile on flat ground, the rock tile on steep faces (render/textures.ts), tinted by the paint.
   const mesh = new THREE.Mesh(geo, applySurface(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }), 'ground'));
-  mesh.receiveShadow = true;
   b.dynamic(mesh); // already one draw call; keep its vertex colors out of the merge
 }
 
@@ -79,7 +78,6 @@ export function buildWater(b: AreaBuilder) {
   geo.rotateX(-Math.PI / 2);
   const water = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: pal('water'), transparent: true, opacity: 0.78 }));
   water.position.y = WATER_Y;
-  water.receiveShadow = true;
   return b.dynamic(water);
 }
 

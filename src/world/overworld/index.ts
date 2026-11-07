@@ -11,7 +11,7 @@ import { buildHollow } from './hollow';
 import { MurmurbudLook } from '../murmurbud';
 import { SigilLook } from '../sigil';
 import { buildBridge, buildGrove, buildShrine, buildSign, SIGNS } from './landmarks';
-import { areaNameAt, BUDS, FIELD_POSTS, HOMES, MILL_BED, MILL_TOWER, inVillageGuard, inVillageMusic, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_LOST, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
+import { areaNameAt, atmosphereAt, BUDS, FIELD_POSTS, HOMES, MILL_BED, MILL_TOWER, inVillageGuard, inVillageMusic, GATE, GROVE, regionRng, HOLLOW, isEnemyGround, MILL, MORROW_LOST, MORROW_POST, SHRINE_DOOR, STALL, SPAWN, terrainHeight, VILLAGE, WATER_Y } from './layout';
 import { NORTHPASS } from './northpass';
 import { SALLOWMERE } from './sallowmere';
 import { RegionStreamer } from './region';
@@ -265,6 +265,10 @@ export class Overworld implements Area {
 
   safeGround(x: number, z: number) {
     return inVillageGuard(x, z);
+  }
+
+  atmosphereAt(x: number, z: number) {
+    return atmosphereAt(x, z);
   }
 
   /** Thistledown and the land around it (out to the shield's cottage) have their own song, day and night. */

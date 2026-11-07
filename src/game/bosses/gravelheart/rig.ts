@@ -95,7 +95,6 @@ export class GravelheartRig {
     const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0) => {
       const mesh = new THREE.Mesh(geo, m);
       mesh.position.set(x, y, z);
-      mesh.castShadow = true;
       parent.add(mesh);
       return mesh;
     };

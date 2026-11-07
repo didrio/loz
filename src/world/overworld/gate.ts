@@ -73,7 +73,6 @@ export class Gate {
       const home = new THREE.Vector3(x + Math.cos(a) * radius, gy + PILLAR_H + 0.9 + Math.sin(a) * 3.1, z);
       mesh.position.copy(home);
       mesh.rotation.z = a - Math.PI / 2;
-      mesh.castShadow = true;
       this.group.add(mesh);
       this.stones.push({ mesh, home, phase: rand() * 6, vel: new THREE.Vector3(), spin: new THREE.Vector3(), rest: false });
     }

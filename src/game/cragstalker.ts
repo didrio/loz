@@ -56,7 +56,6 @@ export class Cragstalker extends GroundEnemy {
     const add = (geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = this.body) => {
       const mesh = new THREE.Mesh(geo, m);
       mesh.position.set(x, y, z);
-      mesh.castShadow = true;
       parent.add(mesh);
       return mesh;
     };

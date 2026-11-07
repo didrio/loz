@@ -25,7 +25,6 @@ export function shieldModel(wood: THREE.Material, iron: THREE.Material) {
   const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.04, 4, 16), iron);
   const boss = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5), iron);
   boss.position.z = 0.05;
-  for (const m of [disc, rim, boss]) m.castShadow = true;
   g.add(disc, rim, boss);
   return g;
 }

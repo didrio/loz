@@ -100,7 +100,7 @@ function buildReeds(b: AreaBuilder) {
     }
     clumps++;
   }
-  instanced(b, new THREE.ConeGeometry(0.07, 1, 4), mat(0xffffff), reeds, colors, false);
+  instanced(b, new THREE.ConeGeometry(0.07, 1, 4), mat(0xffffff), reeds, colors);
 }
 
 /** Drowned field fences: post tops and a rail just above the water (the old fields under the mere). */
@@ -121,7 +121,7 @@ function buildFences(b: AreaBuilder) {
       if (run.length > 1) {
         const p = run[0], q = run[run.length - 1];
         const mx = (p.x + q.x) / 2, mz = (p.z + q.z) / 2, l = Math.hypot(q.x - p.x, q.z - p.z);
-        const rail = b.mesh(new THREE.BoxGeometry(0.12, 0.12, l), dark, mx, MERE_WATER + 0.3, mz, false);
+        const rail = b.mesh(new THREE.BoxGeometry(0.12, 0.12, l), dark, mx, MERE_WATER + 0.3, mz);
         rail.rotation.y = yaw;
         b.box(mx, MERE_WATER, mz, 0.15, 1, l / 2, yaw, Layer.Prop);
       }
@@ -135,7 +135,7 @@ function buildFences(b: AreaBuilder) {
         continue;
       }
       const tilt = Math.sin(x * 3.1 + z * 1.7) * 0.15;
-      const post = b.mesh(new THREE.BoxGeometry(0.16, depth + 0.5, 0.16), wood, x, MERE_WATER + 0.25 - depth / 2, z, false);
+      const post = b.mesh(new THREE.BoxGeometry(0.16, depth + 0.5, 0.16), wood, x, MERE_WATER + 0.25 - depth / 2, z);
       post.rotation.set(tilt, yaw, -tilt);
       run.push({ x, z });
     }
@@ -202,7 +202,6 @@ function buildWater(b: AreaBuilder) {
   geo.rotateX(-Math.PI / 2);
   const water = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x6f978a, transparent: true, opacity: 0.8 }));
   water.position.set((r.x0 + r.x1) / 2, MERE_WATER, (r.z0 + r.z1) / 2);
-  water.receiveShadow = true;
   return b.dynamic(water);
 }
 

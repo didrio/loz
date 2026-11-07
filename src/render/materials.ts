@@ -144,7 +144,7 @@ function isBakeable(m: THREE.Material): m is THREE.MeshLambertMaterial {
  */
 export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
   src.updateMatrixWorld(true);
-  const buckets = new Map<string, { material: THREE.Material; cast: boolean; geos: THREE.BufferGeometry[] }>();
+  const buckets = new Map<string, { material: THREE.Material; geos: THREE.BufferGeometry[] }>();
   const center = new THREE.Vector3();
   src.traverse((o) => {
     if (!(o instanceof THREE.Mesh) || o instanceof THREE.InstancedMesh) return;
@@ -161,9 +161,9 @@ export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
     const surface = material.userData.surface as SurfaceId | undefined;
     const emissive = bake ? material.emissive.getHex() : 0;
     const kind = bake ? `baked:${surface ?? ''}:${emissive}` : material.uuid;
-    const key = `${kind}:${o.castShadow}:${Math.floor(center.x / cellSize)}:${Math.floor(center.z / cellSize)}`;
+    const key = `${kind}:${Math.floor(center.x / cellSize)}:${Math.floor(center.z / cellSize)}`;
     let b = buckets.get(key);
-    if (!b) buckets.set(key, (b = { material: bake ? bakedMat(surface, emissive) : material, cast: o.castShadow, geos: [] }));
+    if (!b) buckets.set(key, (b = { material: bake ? bakedMat(surface, emissive) : material, geos: [] }));
     b.geos.push(g);
     g = null!;
   });
@@ -173,8 +173,6 @@ export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
     for (const g of b.geos) g.dispose();
     if (!merged) continue;
     const mesh = new THREE.Mesh(merged, b.material);
-    mesh.castShadow = b.cast;
-    mesh.receiveShadow = true;
     out.add(mesh);
   }
   return out;

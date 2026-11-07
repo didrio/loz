@@ -123,9 +123,10 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   `THORN_ATTACK` (2 half-hearts, unblockable, knockback 10) from there (a clump's middle; just inside a scar on her
   side), so she's shoved out; the usual 1.2 s of invulnerability stops repeat hits. A sword swing also calls
   `Area.hitThorns` (same reach and arc as cutting bushes, one hit per swing): 5 fell a clump. Details in [world.md](world.md), "The blight".
-  Every orb, and every Gloomwisp, casts a blob shadow (`GroundShadow` in `render/shapes.ts`):
-  a dark disc on the ground below, smaller and fainter the higher it flies, so its distance
-  reads at a glance. Give anything new that floats one too.
+  Every enemy and boss, every orb and Wren stand on a blob shadow (`GroundShadow` in `render/shapes.ts`; enemies get theirs from
+  `Enemy.placeShadow`, which the manager calls each frame, sized by `shadowSize`, default `radius × 1.1`): a dark disc on the ground
+  below, smaller and fainter the higher it flies, so a flier's distance reads at a glance. A new enemy needs nothing; give anything
+  else that floats one.
 
 ## Bosses (`game/boss.ts`, `game/bosses/`)
 

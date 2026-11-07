@@ -164,13 +164,13 @@ function support(b: AreaBuilder, k: Deck, beam: THREE.Material, fascia: THREE.Ma
       const [px, pz] = world(-k.hx + (j / nx) * k.hx * 2, -k.hz + (i / nz) * k.hz * 2);
       const floor = Math.min(terrainHeight(px, pz), MERE_WATER - 0.3);
       const top = DECK - THICK, len = top - floor + 0.5;
-      b.mesh(new THREE.CylinderGeometry(0.17, 0.2, len, 6), beam, px, floor + len / 2 - 0.1, pz, false);
+      b.mesh(new THREE.CylinderGeometry(0.17, 0.2, len, 6), beam, px, floor + len / 2 - 0.1, pz);
     }
   }
 }
 
 function lampPost(b: AreaBuilder, post: THREE.Material, lamp: THREE.Material, x: number, z: number) {
-  b.mesh(new THREE.BoxGeometry(0.16, 2.4, 0.16), post, x, DECK + 1.2, z, false);
+  b.mesh(new THREE.BoxGeometry(0.16, 2.4, 0.16), post, x, DECK + 1.2, z);
   b.dynamic(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.4, 0.34), lamp)).position.set(x, DECK + 2.55, z);
   b.cylinder(x, DECK + 1.2, z, 1.2, 0.15, Layer.Prop);
 }
@@ -195,7 +195,6 @@ export function buildStiltwick(b: AreaBuilder) {
     const part = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
       const me = new THREE.Mesh(geo, m);
       me.position.set(px, py, pz);
-      me.castShadow = me.receiveShadow = true;
       g.add(me);
       return me;
     };
@@ -245,7 +244,6 @@ export function buildStiltwick(b: AreaBuilder) {
   const sp = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
     const me = new THREE.Mesh(geo, m);
     me.position.set(px, py, pz);
-    me.castShadow = me.receiveShadow = true;
     stall.add(me);
     return me;
   };
@@ -274,7 +272,7 @@ export function buildStiltwick(b: AreaBuilder) {
     prow.rotation.set(Math.PI / 2, 0, Math.PI / 4);
     prow.position.set(0, 0.05, 2.9);
     prow.scale.set(1, 1, 0.5);
-    for (const m of [hull, inside, prow]) { m.castShadow = m.receiveShadow = true; g.add(m); }
+    for (const m of [hull, inside, prow]) g.add(m);
     b.staticGroup.add(g);
     b.box(x, MERE_WATER + 0.05, z, 0.85, 0.4, 2.3, yaw, Layer.Prop);
   };

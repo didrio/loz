@@ -1,4 +1,8 @@
 {
+  "atmosphere": {
+    "calls": 1600,
+    "triangles": 210000
+  },
   "bells": {
     "calls": 1500,
     "triangles": 265000
@@ -8,8 +12,8 @@
     "triangles": 44000
   },
   "blight": {
-    "calls": 840,
-    "triangles": 268000
+    "calls": 750,
+    "triangles": 222000
   },
   "boss": {
     "calls": 1500,
@@ -48,8 +52,8 @@
     "triangles": 210000
   },
   "dungeon": {
-    "calls": 1500,
-    "triangles": 80000
+    "calls": 1600,
+    "triangles": 81000
   },
   "emptyVillage": {
     "calls": 580,
@@ -64,8 +68,8 @@
     "triangles": 80000
   },
   "field": {
-    "calls": 800,
-    "triangles": 268000
+    "calls": 750,
+    "triangles": 222000
   },
   "gate": {
     "calls": 330,
@@ -96,8 +100,8 @@
     "triangles": 266000
   },
   "hollow": {
-    "calls": 150,
-    "triangles": 223000
+    "calls": 90,
+    "triangles": 180000
   },
   "hud": {
     "calls": 1080,
@@ -116,8 +120,8 @@
     "triangles": 266000
   },
   "night": {
-    "calls": 690,
-    "triangles": 269000
+    "calls": 420,
+    "triangles": 217000
   },
   "northpass": {
     "calls": 390,
@@ -152,8 +156,8 @@
     "triangles": 231000
   },
   "shrine": {
-    "calls": 120,
-    "triangles": 210000
+    "calls": 50,
+    "triangles": 172000
   },
   "stairs": {
     "calls": 280,
@@ -180,8 +184,8 @@
     "triangles": 289000
   },
   "village": {
-    "calls": 640,
-    "triangles": 268000
+    "calls": 350,
+    "triangles": 215000
   },
   "villageDetails": {
     "calls": 700,

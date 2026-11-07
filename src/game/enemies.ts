@@ -95,6 +95,30 @@ export abstract class Enemy {
 
   abstract update(dt: number, env: EnemyEnv): void;
 
+  /** Its blob on the ground, made on first use (the manager places it each frame). */
+  private blob: GroundShadow | null = null;
+  /** The blob's radius (m); characters stand on blobs, not shadow maps (docs/art.md). */
+  protected get shadowSize() {
+    return this.radius * 1.1;
+  }
+  /** 0–1: how dark the blob is (a fading enemy fades its blob). */
+  protected get shadowStrength() {
+    return 1;
+  }
+
+  /** Puts the blob under it, or hides it when dead; called by the manager after `update`. */
+  placeShadow(physics: Physics) {
+    const parent = this.root.parent;
+    if (!parent) return;
+    this.blob ??= new GroundShadow(parent, this.shadowSize);
+    if (!this.alive) {
+      this.blob.mesh.visible = false;
+      return;
+    }
+    const { x, y, z } = this.pos;
+    this.blob.place(x, y, z, physics.groundY(x, z, y + 0.5, Layer.World), this.shadowStrength);
+  }
+
   /** Whether lock-on may pick this enemy. */
   get targetable() {
     return this.alive;
@@ -134,6 +158,7 @@ export abstract class Enemy {
 
   /** Frees physics and GPU resources; called when the enemy is removed. */
   dispose() {
+    this.blob?.dispose();
     this.root.removeFromParent();
     // Every geometry and unshared material under the root: the checkpoint rule rebuilds
     // every enemy on each death, so anything left here leaks GPU memory per death.
@@ -304,7 +329,6 @@ export class Thornling extends GroundEnemy {
     this.flashMats.push(skin, thorn);
     this.body = new THREE.Group();
     const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.65, 0), skin);
-    ball.castShadow = true;
     this.body.add(ball);
     const dirs = new THREE.IcosahedronGeometry(1, 0).attributes.position;
     const seen = new Set<string>();
@@ -454,8 +478,6 @@ export class Gloomwisp extends Enemy {
   private readonly core: THREE.Mesh;
   private readonly halo: THREE.Mesh;
   private readonly coreMat: THREE.MeshLambertMaterial;
-  /** Its blob on the ground: a wisp hovering at night is hard to place without one. */
-  private readonly shadow: GroundShadow;
   readonly nocturnal: boolean;
   private readonly anchor: (() => THREE.Vector3 | null) | null;
   private readonly attackCooldown: number;
@@ -482,12 +504,15 @@ export class Gloomwisp extends Enemy {
     this.root.add(this.core, this.halo);
     this.root.scale.setScalar(0.01);
     parent.add(this.root);
-    this.shadow = new GroundShadow(parent, 0.75);
   }
 
-  dispose() {
-    super.dispose();
-    this.shadow.dispose();
+  /** A wisp hovering at night is hard to place without its blob. */
+  protected get shadowSize() {
+    return 0.75;
+  }
+
+  protected get shadowStrength() {
+    return this.fade;
   }
 
   protected applyFlash(dt: number) {
@@ -498,7 +523,6 @@ export class Gloomwisp extends Enemy {
   update(dt: number, env: EnemyEnv) {
     this.applyFlash(dt);
     if (!this.alive) {
-      this.shadow.mesh.visible = false;
       this.dying(dt);
       return;
     }
@@ -533,7 +557,6 @@ export class Gloomwisp extends Enemy {
     }
     this.root.position.copy(this.pos);
     this.root.scale.setScalar(Math.max(0.01, this.fade));
-    this.shadow.place(this.pos.x, this.pos.y, this.pos.z, env.physics.groundY(this.pos.x, this.pos.z, this.pos.y, Layer.World), this.fade);
     this.core.rotation.x += dt * 2;
     this.core.rotation.y += dt * 3;
     (this.halo.material as THREE.MeshBasicMaterial).opacity = 0.2 + Math.sin(this.t * 5) * 0.08;
@@ -584,6 +607,7 @@ export class EnemyManager {
   /** `cutscene`: only enemies that animate in cutscenes move, and nothing spawns. */
   update(dt: number, env: EnemyEnv, cutscene = false) {
     for (const e of this.list) if (!cutscene || e.animatesInCutscene()) e.update(dt, env);
+    for (const e of this.list) e.placeShadow(this.physics);
     if (cutscene) {
       this.removeGone();
       return;

@@ -94,7 +94,6 @@ export class WardenHearth {
         parent.add(back);
         const stone = new THREE.Group();
         const body = new THREE.Mesh(new THREE.BoxGeometry(SOCKET_SIZE, SOCKET_SIZE, SOCKET_SIZE), stoneMat);
-        body.castShadow = true;
         const ring = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.05, 5, 12), glyph);
         ring.position.z = SOCKET_SIZE / 2 + 0.01;
         stone.add(body, ring);
@@ -118,7 +117,6 @@ export class WardenHearth {
         const crack = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.08, 1.98), this.crackMat);
         crack.position.y = RING_HEIGHT / 2 - 0.3 - rand() * 0.6;
         mesh.add(crack);
-        mesh.castShadow = mesh.receiveShadow = true;
         parent.add(mesh);
         const collider = b.box(x, floorY - RING_HEIGHT / 2, z, 0.98, RING_HEIGHT / 2, 0.98, 0, Layer.Prop);
         collider.setEnabled(false);
@@ -140,7 +138,6 @@ export class WardenHearth {
         const strip = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.04, len - 0.4), edgeMat);
         strip.position.y = 0.51;
         mesh.add(strip);
-        mesh.castShadow = mesh.receiveShadow = true;
         mesh.position.set(sd.x, floorY - PIT_DEPTH - 2, sd.z + len * (CAUSEWAY_SLABS - i - 0.5));
         mesh.visible = false;
         parent.add(mesh);

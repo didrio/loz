@@ -156,7 +156,6 @@ export class Hazards {
   stone(from: THREE.Vector3, o: StoneOptions = {}) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), new THREE.MeshLambertMaterial({ color: 0x8f887c, emissive: 0x0d3a33 }));
     mesh.position.copy(from);
-    mesh.castShadow = true;
     this.scene.add(mesh);
     this.stones.push({
       pos: from.clone(), vel: new THREE.Vector3(), hold: o.delay ?? 0, launched: false, flightT: 0, homing: o.homing ?? 0, hoverAt: o.hoverAt?.clone() ?? null, t: 0, speed: o.speed ?? 14, life: o.life ?? 3.5,

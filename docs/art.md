@@ -24,14 +24,29 @@ extend the "today" look: build new work so it moves toward the target.
 | Colour | **Done (T30):** `mat`/`surf` colours (snapped to the palette, T29) are baked into **vertex colours** when static scenery is merged, by kind (plain, each surface, emissive; transparent and odd materials on their own), not by colour. Dynamic things keep a material per colour | Same |
 | Baked shade | **Done for merged scenery (T30):** undersides ×0.7, wall feet ×0.82 fading to full 1.5 m up (`BAKED_SHADE`) | Crevices and joints on models too, in the vertex colour, not by real-time effects (kit T35) |
 | Textures | **Done (T30):** grey detail tiles × colour, drawn at 32 texels/m and shown at a global **resolution** of 32/m, i.e. full detail, by default (owner's call; tunable 1–32 live in the Dev tab), with each tile's **scale** authored with it, **nearest** up close (bilinear was tried in T30: too blurry) | Intensity texture × colour is what N64 games did; ≤ 64 px tiles (the ground's 128 px stays). Untextured is fine for small props and simple creatures |
-| Fog | Follows the sky's horizon colour; indoor fog per room | Tinted per area to its mood; a core part of the look (T31) |
-| Sky | Painted gradient, global day keys | Gradient with simple cloud layers, tinted per area to match its fog, driven by the existing day/night cycle (T31) |
-| Shadows | Real sun shadow maps on characters and scenery; `GroundShadow` blobs for floating things | **Blob shadows** under characters and movable things; no shadow maps on characters. Scenery sun shadows decided by look shots in T31 |
+| Fog | **Done (T31):** the colour of the sky's horizon, tinted and reaching differently per place (`render/atmosphere.ts`, below); indoors one dark fog | Same. A core part of the look |
+| Sky | **Done (T31):** painted gradient, the day's keys per place, blended as Wren crosses (below). No cloud layers yet | Gradient with simple cloud layers, tinted per area to match its fog, driven by the existing day/night cycle |
+| Shadows | **Done (T31, owner's call: dropped, 2026-11-07):** no shadow maps at all (the renderer's is off; nothing sets `castShadow`/`receiveShadow`). `GroundShadow` blobs under Wren, NPCs, every enemy and boss (`Enemy.placeShadow`, set by the manager), wakestones, orbs and wisps. Scenery gets its darkening baked into vertex colours (`BAKED_SHADE`) | Same. Give anything new that stands or floats on the ground a blob |
 
 **Not allowed:** PBR materials, normal maps, high-resolution or photographic textures, cel/toon light bands, outlines,
 SSAO, depth of field, motion blur, heavy bloom.
 **Allowed, the modern layer:** fog, floating particles and motes, gentle colour grading, very subtle bloom on magical
 things, native resolution with antialiasing, widescreen, a smooth frame rate.
+
+## Atmosphere (T31)
+
+One file, `render/atmosphere.ts`, holds every place's look as data: **valley**, **village**, **hollow** (outdoors; the
+day's light as six moods laid on the clock by `lightKeys`, a fog reach) and **shrine** (indoors; one dark fog, a fixed dim
+fill). Each also names its sub-palette (`look`, from `AREA_PALETTES`) and a **mote preset** (specks in the air: the hollow's
+rising spirit lights, the shrine's dust; the valley and village have none). Fog is the colour of the horizon outdoors, so tint a
+place by tinting its `horizon`.
+
+`Area.atmosphereAt(x, z)` says which applies where (the overworld's `atmosphereAt` in `layout.ts`: the hollow from 4 m outside
+its rim, the village where its song plays, else the valley; dungeons default to the shrine). `Sky.setAtmosphere` eases the weights
+across over ~2 s as Wren walks (a new area snaps), and the light is the weighted blend. **The blight and a boss's gloom stay
+modifiers on top** (fog pulled in by a share of the place's reach, violet sky, dimmer sun). Mote presets cross-fade the same way,
+and the blight's ash (`BLIGHT_ASH`) wins while it lies on the valley. To add a place: an id and an entry in `ATMOSPHERES`, an
+`atmosphereAt`, a look shot (`npm run look -- atmosphere` shows dawn, noon, dusk and night in each).
 
 ## Display modes
 

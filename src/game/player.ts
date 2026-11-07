@@ -208,7 +208,6 @@ export class Player {
     guard.position.y = -0.22;
     const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.24, 6), grip);
     hilt.position.y = -0.08;
-    for (const m of [blade, tip, guard, hilt]) m.castShadow = true;
     this.sword.add(blade, tip, guard, hilt);
     this.sword.position.y = -0.62;
     this.sword.visible = false;
@@ -226,11 +225,6 @@ export class Player {
     );
     this.trailPivot.add(this.trail);
     scene.add(this.trailPivot);
-
-    // The blob shadow is Wren's only shadow: the sun's would double it outdoors (and not exist indoors).
-    this.h.root.traverse((m) => {
-      if (m instanceof THREE.Mesh) m.castShadow = false;
-    });
   }
 
   get hp() {

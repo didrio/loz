@@ -29,7 +29,6 @@ export class FallenColumn {
     const stone = surf('stone', 0x3a2f4f), bronze = surf('metal', 0x9a6a2e);
     const beam = new THREE.Mesh(new THREE.BoxGeometry(WIDE, THICK, length), stone);
     beam.position.set(0, THICK / 2, length / 2);
-    beam.castShadow = true;
     this.group.add(beam);
     // Bronze bands and the heavy stones' glowing spirals along both sides: unmistakably
     // one of the glove's stones.

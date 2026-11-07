@@ -1,4 +1,5 @@
 import { centerline, fbm, mix, mulberry32, smoothstep } from '../../core/math';
+import type { AtmosphereId } from '../../render/atmosphere';
 import { carveMere, mereNameAt } from './mere';
 
 /**
@@ -352,6 +353,16 @@ export function areaNameAt(x: number, z: number) {
   if (Math.hypot(x - PASS.camp.x, z - PASS.camp.z) < PASS.camp.r - 4) return 'Wayfarers\' Camp';
   if ((passFrame(x, z).d < PASS.wallTop && z < GATE.z) || beyondFrame(x, z).d < BEYOND.wallTop) return 'The Northpass';
   return 'Emberfield';
+}
+
+/**
+ * Which atmosphere (render/atmosphere.ts) lies on the ground at `x, z`: the hollow's gloaming from just outside its
+ * rim, Thistledown's warm haze where its song plays, the valley's everywhere else. The sky eases between them.
+ */
+export function atmosphereAt(x: number, z: number): AtmosphereId {
+  if (inHollow(x, z, 4)) return 'hollow';
+  if (inVillageMusic(x, z)) return 'village';
+  return 'valley';
 }
 
 /** Open land where scenery may go: not in water, on roads, at landmarks or near the start. */

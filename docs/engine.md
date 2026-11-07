@@ -202,8 +202,9 @@ the gems (or reports `short`): every shop uses it. The clock stands still indoor
 bed jumps to the next 06:00 / 18:00 (`wakeHour` in `content/village.ts`).
 
 **Indoor areas** (`Area.indoor`, the dungeons): the sky, sun disc and stars are hidden and
-the sun casts no shadows (every ceiling would shade everything); a cool hemisphere fill, a
-dim overhead light and one dark fog (`DUNGEON_FOG` in dungeons) take over (`Sky.setIndoor`), and each room's own
+there are no shadow maps anywhere (blob shadows only, docs/art.md); a cool hemisphere fill, a
+dim overhead light and one dark fog (`DUNGEON_FOG`, the shrine atmosphere's, in dungeons) take over (`Sky.setIndoor`; the fill and
+fog are `SHRINE` in `render/atmosphere.ts`, see art.md "Atmosphere"), and each room's own
 point light and sconces do the rest. The clock stands still indoors (genre convention), no
 night wisps or respawning thornlings appear, and the camera sits closer (7 m instead of 9).
 Anything that finds the ground with a ray from high up (`groundY` from 400 m) lands on the

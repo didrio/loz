@@ -20,7 +20,7 @@ when it's near.
 - **The N64 look rebuild** (owner, 2026-11-07; replaces the shelved PS2 "look pass", old T20–T26 in git history): the
   starter zone rebuilt on the new pipeline ([art.md](art.md), [pipeline.md](pipeline.md)) before any new area. Behaviour
   never changes. In order, each written as a ticket when it's near (at the previous one's `/wrap`):
-  1. **Foundations:** T31–T42 in [tickets.md](tickets.md) (T27–T30 are done: look loop, Display setting, palette, shading and textures; T40/T41 texture everything).
+  1. **Foundations:** T32–T42 in [tickets.md](tickets.md) (T27–T31 are done: look loop, Display setting, palette, shading and textures, atmosphere and blob shadows; T40/T41 texture everything).
   2. **The golden set**, one Final-pass ticket each, locked only when the owner approves (the first ones
      plan · opusplan · high, as they define the style): a Thornling → Wren with her full animation set → the starter-area
      entrance vignette (phone frame rate checked) → the prop set (chest from T35, door, jar, crate, sign) → Pip → the Hollow

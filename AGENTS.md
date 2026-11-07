@@ -22,9 +22,8 @@ As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
 after it only Lark and Pip remain in the village. Every gate is data (`content/progression.ts`, checked by a test). Everything is built in code; the
 look is flat-shaded and faceted (owner's call), colours snapped to one master palette and baked into vertices on merged scenery, generated crisp textures on terrain, buildings, dungeons, trees and
-props (one global resolution slider in the Dev tab, default 32; characters still plain), and a Display setting (Native / Performance / N64). NPCs talk in **blips**; **touch controls** are in a playtest on GitHub Pages; **Sallowmere** stands empty while the owner redesigns it.
-**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T31 (atmosphere, blob shadows),
-then T40/T41 (texture the rest of the world, then characters, enemies and bosses), T42 (a failing smoke step), T32–T39. Dev server: port 5273.
+props (one global resolution slider in the Dev tab, default 32; characters still plain), and a Display setting (Native / Performance / N64). There are no shadow maps (blob shadows only), and each place has its own atmosphere (`render/atmosphere.ts`). NPCs talk in **blips**; **touch controls** are in a playtest on GitHub Pages; **Sallowmere** stands empty while the owner redesigns it.
+**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T40/T41 (texture the rest of the world, then characters, enemies and bosses), T42 (a failing smoke step), T32–T39. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -120,7 +119,7 @@ src/
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
     blips.ts               talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
-  render/                  palette.ts (the master palette: `pal`, `snap`, area sub-palettes), materials (shared/unique, `surf` textured, snapped to the palette, static merging), textures.ts (generated detail tiles, the projection shader), shapes, characters, sky (incl. the blight look), particles, motes (ash),
+  render/                  palette.ts (the master palette: `pal`, `snap`, area sub-palettes), materials (shared/unique, `surf` textured, snapped to the palette, static merging), textures.ts (generated detail tiles, the projection shader), shapes, characters, atmosphere.ts (each place's sky, light, fog, motes and sub-palette as data), sky (blends them; the blight look), particles, motes,
                            retro.ts (the Display modes: N64's 240-row target, dither + colour crush; Native/Performance pixel ratio)
   world/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder

@@ -214,7 +214,6 @@ export class Gravelheart extends Boss {
     const mesh = new THREE.Mesh(this.rubbleGeo, this.rubbleMat);
     mesh.position.copy(at);
     mesh.rotation.y = this.rng() * 3;
-    mesh.castShadow = true;
     this.stage.add(mesh);
     this.rubble.push({ at: at.clone(), mesh, age: 0 });
     if (this.rubble.length > 8) this.stage.remove(this.rubble.shift()!.mesh);

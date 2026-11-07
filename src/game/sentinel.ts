@@ -65,7 +65,6 @@ export class DozingSentinel extends GroundEnemy {
     const box = (w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number, into: THREE.Object3D) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
       mesh.position.set(x, y, z);
-      mesh.castShadow = true;
       into.add(mesh);
       return mesh;
     };

@@ -71,3 +71,38 @@ describe('EnemyManager population', () => {
     expect(usual.list.length).toBeGreaterThan(0);
   });
 });
+
+describe('EnemyManager blob shadows', () => {
+  const blobs = (parent: THREE.Object3D) => parent.children.filter((c) => c instanceof THREE.Mesh && (c.geometry as THREE.CircleGeometry).type === 'CircleGeometry') as THREE.Mesh[];
+
+  it('stands each enemy on a blob at its feet, and hides it once the enemy is dead', () => {
+    const physics = flatGround();
+    const parent = new THREE.Group();
+    const m = new EnemyManager(parent, physics, field(0));
+    const { env } = enemyEnv(physics, new THREE.Vector3(30, 0, 30));
+    const t = new Thornling(parent, physics, 4, 5);
+    m.add(t);
+    m.update(1 / 60, env);
+    const [blob] = blobs(parent);
+    expect(blob.visible).toBe(true);
+    expect(blob.position.x).toBeCloseTo(4);
+    expect(blob.position.z).toBeCloseTo(5);
+    expect(blob.position.y).toBeCloseTo(0.04, 1);
+    t.alive = false;
+    m.update(1 / 60, env);
+    expect(blob.visible).toBe(false);
+  });
+
+  it('takes the blob away with the enemy', () => {
+    const physics = flatGround();
+    const parent = new THREE.Group();
+    const m = new EnemyManager(parent, physics, field(0));
+    const { env } = enemyEnv(physics, new THREE.Vector3(30, 0, 30));
+    const t = new Thornling(parent, physics, 4, 5);
+    m.add(t);
+    m.update(1 / 60, env);
+    expect(blobs(parent).length).toBe(1);
+    m.remove(t);
+    expect(blobs(parent).length).toBe(0);
+  });
+});

@@ -34,7 +34,6 @@ export function buildVillage(b: AreaBuilder) {
     const part = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
       const me = new THREE.Mesh(geo, m);
       me.position.set(px, py, pz);
-      me.castShadow = me.receiveShadow = true;
       g.add(me);
       return me;
     };
@@ -112,11 +111,11 @@ export function buildVillage(b: AreaBuilder) {
   // A stone ring over a shaft (terrain.ts opens the ground under it), dark water far down, on a
   // paved apron that hides the hole's edge. The ring's collider (and the ground's) is the lid, so
   // nobody falls in yet.
-  b.mesh(new THREE.RingGeometry(1.15, 3.1, 12).rotateX(-Math.PI / 2), surf('stone', 0x8a857c), cx, y0 + 0.05, cz, false);
+  b.mesh(new THREE.RingGeometry(1.15, 3.1, 12).rotateX(-Math.PI / 2), surf('stone', 0x8a857c), cx, y0 + 0.05, cz);
   b.mesh(new THREE.CylinderGeometry(1.4, 1.5, 1, 12, 1, true), stone, cx, y0 + 0.5, cz);
-  b.mesh(new THREE.RingGeometry(1.12, 1.42, 12).rotateX(-Math.PI / 2), stone, cx, y0 + 1, cz, false);
-  b.mesh(new THREE.CylinderGeometry(1.15, 1.15, 3.6, 12, 1, true), uniqueMat(0x4a4640, { side: THREE.BackSide }), cx, y0 - 0.8, cz, false);
-  b.mesh(new THREE.CircleGeometry(1.15, 12).rotateX(-Math.PI / 2), mat(0x0e1c26), cx, y0 - 2.5, cz, false);
+  b.mesh(new THREE.RingGeometry(1.12, 1.42, 12).rotateX(-Math.PI / 2), stone, cx, y0 + 1, cz);
+  b.mesh(new THREE.CylinderGeometry(1.15, 1.15, 3.6, 12, 1, true), uniqueMat(0x4a4640, { side: THREE.BackSide }), cx, y0 - 0.8, cz);
+  b.mesh(new THREE.CircleGeometry(1.15, 12).rotateX(-Math.PI / 2), mat(0x0e1c26), cx, y0 - 2.5, cz);
   for (const s of [-1, 1]) b.mesh(new THREE.BoxGeometry(0.2, 2.4, 0.2), wood, cx + s * 1.2, y0 + 1.7, cz);
   b.mesh(new THREE.ConeGeometry(2, 1.1, 4), surf('shingle', 0xa5452f), cx, y0 + 3.3, cz).rotation.y = Math.PI / 4;
   b.cylinder(cx, y0 + 0.5, cz, 0.6, 1.55);
@@ -137,8 +136,8 @@ export function buildVillage(b: AreaBuilder) {
   // Inside: the same cut, the wall up to the ceiling, plank floor and ceiling, two beams.
   b.mesh(new THREE.CylinderGeometry(RI, RI, DOOR_TOP, SIDES - 2, 1, true, ...around), inside, wx, wy + DOOR_TOP / 2, wz);
   b.mesh(new THREE.CylinderGeometry(RI, RI, CEIL - DOOR_TOP, SIDES, 1, true), inside, wx, wy + (DOOR_TOP + CEIL) / 2, wz);
-  b.mesh(new THREE.CircleGeometry(RI, 24).rotateX(-Math.PI / 2), surf('wood', 0x8a6a44), wx, wy + 0.03, wz, false);
-  b.mesh(new THREE.CircleGeometry(RI, 24).rotateX(Math.PI / 2), surf('wood', 0x6d5236), wx, wy + CEIL, wz, false);
+  b.mesh(new THREE.CircleGeometry(RI, 24).rotateX(-Math.PI / 2), surf('wood', 0x8a6a44), wx, wy + 0.03, wz);
+  b.mesh(new THREE.CircleGeometry(RI, 24).rotateX(Math.PI / 2), surf('wood', 0x6d5236), wx, wy + CEIL, wz);
   for (const dz of [-1.4, 1.4]) b.mesh(new THREE.BoxGeometry(RI * 2 - 0.6, 0.25, 0.3), surf('wood', 0x5e3d20), wx, wy + CEIL - 0.13, wz + dz);
   // The doorway's reveal (the wall's thickness each side and above), a stone frame outside and a doorstep.
   const depth = RO - RI + 0.1, mid = (RO + RI) / 2;
@@ -201,7 +200,6 @@ export function buildVillage(b: AreaBuilder) {
     spar.position.y = 3.5;
     const cloth = new THREE.Mesh(new THREE.BoxGeometry(0.06, 5.2, 1.6), sail);
     cloth.position.set(0, 4.1, 0.85);
-    spar.castShadow = cloth.castShadow = true;
     arm.add(spar, cloth);
     blades.add(arm);
   }

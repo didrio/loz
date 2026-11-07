@@ -62,7 +62,6 @@ function buildRuin(b: AreaBuilder, ruin: Ruin): JarSpot[] {
   const part = (geo: THREE.BufferGeometry, m: THREE.Material, lx: number, ly: number, lz: number) => {
     const me = new THREE.Mesh(geo, m);
     me.position.set(lx * f * s, ly, lz * s);
-    me.castShadow = me.receiveShadow = true;
     g.add(me);
     return me;
   };

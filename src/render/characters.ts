@@ -41,7 +41,6 @@ export function buildHumanoid(c: HumanoidColors, scale = 1): Humanoid {
   const mesh = (geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0, z = 0) => {
     const me = new THREE.Mesh(geo, mat);
     me.position.set(x, y, z);
-    me.castShadow = true;
     return me;
   };
 

@@ -220,7 +220,6 @@ export function buildCourse(b: AreaBuilder, course: Pick<CourseDef, 'platforms'>
       continue;
     }
     const mesh = b.dynamic(new THREE.Mesh(geo, material));
-    mesh.castShadow = mesh.receiveShadow = true;
     mesh.position.set(cx, cy, cz);
     const body: Mover = b.physics.kinematicCylinder(cx, cy, cz, th / 2, p.r, Layer.Prop);
     movers.push({ def: p, mesh, body, base: new THREE.Vector3(cx, cy, cz) });

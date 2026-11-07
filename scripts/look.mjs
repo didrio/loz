@@ -243,6 +243,36 @@ const SCENES = {
     await h.shot('field-start');
   },
   /**
+   * Each place's atmosphere (render/atmosphere.ts, T31) at dawn, noon, dusk and night, in the restored valley (the blight has
+   * its own scene): the open field, Thistledown, the rim of Gloaming Hollow (a step outside its Lamplighter trigger), and a
+   * shrine room (indoors there is no time of day).
+   */
+  async atmosphere(h) {
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.set('valleyOpen');
+      g.loadArea('overworld');
+    });
+    await h.wait(2500);
+    const places = [
+      ['valley', 0, 14, Math.PI],
+      ['village', -50, -42, Math.atan2(-12, -16)],
+      ['hollow', -23, 112.8, 0],
+    ];
+    for (const [name, x, z, facing] of places) {
+      for (const [when, hours] of [['dawn', 6.3], ['noon', 12], ['dusk', 18], ['night', 22.5]]) {
+        await h.game((hours) => (window.embervale.state.hours = hours), hours);
+        await h.teleport(x, z, facing);
+        await h.wait(3500); // the atmosphere eases across in ~2 s
+        await h.shot(`atmosphere-${name}-${when}`);
+      }
+    }
+    await h.game(() => window.embervale.loadArea('shrine'));
+    await h.wait(2000);
+    await h.shot('atmosphere-shrine');
+  },
+  /**
    * The new opening (S1): the field at the start (no shield), the crossroads sign, the ruined cottage
    * from the road in (hidden) and from the north gap (in view), the shield inside, and the scream line.
    */

@@ -1,55 +1,11 @@
 import * as THREE from 'three';
 import { smoothstep } from '../core/math';
+import { ATMOSPHERES, blendLight, easeWeights, isIndoor, moteLook, newSampled, type AtmosphereId, type FogLook, type IndoorAtmosphere, type MoteLook, type OutdoorId, type Weights } from './atmosphere';
 import { pal } from './palette';
 
-interface Key {
-  h: number;
-  top: number;
-  horizon: number;
-  sun: number;
-  sunI: number;
-  hemiI: number;
-}
+export type { FogLook };
 
-// The day's palette, hour by hour, from the master palette (render/palette.ts). Interpolated in between.
-const KEYS: Key[] = [
-  { h: 0, top: pal('night', 0), horizon: pal('night', 2), sun: pal('moon'), sunI: 0.8, hemiI: 0.95 },
-  { h: 4.8, top: pal('night', 1), horizon: pal('night', 3), sun: pal('moon'), sunI: 0.75, hemiI: 0.95 },
-  { h: 6, top: pal('moon', 0), horizon: pal('ember', 3), sun: pal('ember', 3), sunI: 1.3, hemiI: 0.8 },
-  { h: 8, top: pal('sky', 1), horizon: pal('sky', 3), sun: pal('chalk', 2), sunI: 2.6, hemiI: 1.12 },
-  { h: 16, top: pal('sky', 1), horizon: pal('sky', 3), sun: pal('chalk', 2), sunI: 2.6, hemiI: 1.12 },
-  { h: 18, top: pal('night', 3), horizon: pal('ember'), sun: pal('ember', 3), sunI: 1.3, hemiI: 0.8 },
-  { h: 19.3, top: pal('night', 1), horizon: pal('blight', 1), sun: pal('moon'), sunI: 0.8, hemiI: 0.95 },
-  { h: 24, top: pal('night', 0), horizon: pal('night', 2), sun: pal('moon'), sunI: 0.8, hemiI: 0.95 },
-];
-
-const tmpA = new THREE.Color(), tmpB = new THREE.Color();
-
-function sample(hours: number, field: 'top' | 'horizon' | 'sun', out: THREE.Color) {
-  for (let i = 0; i < KEYS.length - 1; i++) {
-    const a = KEYS[i], b = KEYS[i + 1];
-    if (hours >= a.h && hours <= b.h) {
-      const t = (hours - a.h) / (b.h - a.h);
-      return out.copy(tmpA.set(a[field])).lerp(tmpB.set(b[field]), t);
-    }
-  }
-  return out.set(KEYS[0][field]);
-}
-
-function sampleNum(hours: number, field: 'sunI' | 'hemiI') {
-  for (let i = 0; i < KEYS.length - 1; i++) {
-    const a = KEYS[i], b = KEYS[i + 1];
-    if (hours >= a.h && hours <= b.h) return a[field] + (b[field] - a[field]) * ((hours - a.h) / (b.h - a.h));
-  }
-  return KEYS[0][field];
-}
-
-/** Fog as data: a colour (hex) and where it starts and ends (meters). */
-export interface FogLook {
-  color: number;
-  near: number;
-  far: number;
-}
+const tmpA = new THREE.Color();
 
 export const DEFAULT_INDOOR_FOG: FogLook = { color: pal('ink', 1), near: 14, far: 60 };
 
@@ -84,8 +40,13 @@ export class Sky {
    * the same by day and by night. Outdoors only; boss gloom stacks on top of it.
    */
   blight = 0;
-  /** Indoors: no sky, no sun shadows, a dim warm fill and close dark fog (see `setIndoor`). */
+  /** Indoors: no sky, no sun, a dim fill and close dark fog (see `setIndoor`). */
   private indoor = false;
+  /** Which place's look the light follows, and how much of each while one gives way to the next (render/atmosphere.ts). */
+  private weights: Weights = { valley: 1 };
+  private indoorLook: IndoorAtmosphere = ATMOSPHERES.shrine as IndoorAtmosphere;
+  private target: OutdoorId = 'valley';
+  private readonly light = newSampled();
   /** The fog the area asks for indoors (a dungeon room's); the scene's fog eases toward it. */
   indoorFogTarget: FogLook = DEFAULT_INDOOR_FOG;
   /** Set by `setIndoor`: the next indoor update snaps to the target instead of easing from the outdoor fog. */
@@ -136,15 +97,6 @@ export class Sky {
     this.hemi = new THREE.HemisphereLight(pal('moon', 3), pal('olive', 1), 1);
     scene.add(this.hemi);
     this.sun = new THREE.DirectionalLight(pal('chalk', 3), 2);
-    this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
-    const s = this.sun.shadow.camera;
-    s.left = s.bottom = -55;
-    s.right = s.top = 55;
-    s.near = 1;
-    s.far = 260;
-    this.sun.shadow.bias = -0.0006;
-    this.sun.shadow.normalBias = 0.04;
     scene.add(this.sun, this.sun.target);
   }
 
@@ -152,8 +104,25 @@ export class Sky {
     this.indoor = on;
     this.snapFog = on;
     for (const o of [this.dome, this.stars, this.sunDisc, this.moonDisc]) o.visible = !on;
-    this.sun.castShadow = !on;
     this.night = 0;
+  }
+
+  /**
+   * Which place's atmosphere the light follows (render/atmosphere.ts). Outdoors, the look eases across to it
+   * over about two seconds; `snap` (a new area, a teleport) jumps. An indoor id turns the indoor look on.
+   */
+  setAtmosphere(id: AtmosphereId, snap = false) {
+    if (isIndoor(id)) {
+      this.indoorLook = ATMOSPHERES[id] as IndoorAtmosphere;
+      return;
+    }
+    this.target = id;
+    if (snap) this.weights = { [id]: 1 };
+  }
+
+  /** What drifts through the air now (the place's motes, or the blight's ash), for `Motes`. */
+  moteLook(): MoteLook | null {
+    return moteLook(this.weights, this.blight, this.indoor ? this.indoorLook : null);
   }
 
   update(hours: number, focus: THREE.Vector3, camPos: THREE.Vector3, dt = 1 / 60) {
@@ -161,6 +130,7 @@ export class Sky {
       const fog = this.scene.fog as THREE.Fog;
       const g = this.gloom;
       const t = this.indoorFogTarget;
+      const fill = this.indoorLook.fill;
       // Boss gloom pulls the room's fog in, as it does outdoors.
       const want = { color: t.color, near: t.near - (t.near * 0.57) * g, far: t.far - (t.far * 0.5) * g };
       if (this.snapFog) {
@@ -169,20 +139,22 @@ export class Sky {
         fog.far = want.far;
         this.snapFog = false;
       } else easeFog(fog, want, dt);
-      // A soft overhead fill (no shadows: every ceiling would shade everything) plus a
+      // A soft overhead fill (the sun's light would be wrong under every ceiling) plus a
       // warm/dark hemisphere; the rooms' own lights do the rest.
-      this.sun.color.set(pal('slate', 3));
-      this.sun.intensity = 0.45 * (1 - 0.6 * g);
+      this.sun.color.set(fill.sun);
+      this.sun.intensity = fill.sunI * (1 - 0.6 * g);
       this.sun.position.copy(focus).add(new THREE.Vector3(10, 60, 20));
       this.sun.target.position.copy(focus);
-      this.hemi.color.set(pal('slate', 2));
-      this.hemi.groundColor.set(pal('ink', 3));
-      this.hemi.intensity = 0.9 * (1 - 0.5 * g);
+      this.hemi.color.set(fill.hemi);
+      this.hemi.groundColor.set(fill.ground);
+      this.hemi.intensity = fill.hemiI * (1 - 0.5 * g);
       return;
     }
     this.hemi.groundColor.set(pal('olive', 1));
-    sample(hours, 'top', this.uniforms.top.value);
-    sample(hours, 'horizon', this.uniforms.horizon.value);
+    this.weights = easeWeights(this.weights, this.target, dt);
+    const light = blendLight(this.weights, hours, this.light);
+    this.uniforms.top.value.copy(light.top);
+    this.uniforms.horizon.value.copy(light.horizon);
     const fog = this.scene.fog as THREE.Fog;
     const g = this.gloom;
     const bl = this.blight;
@@ -198,13 +170,13 @@ export class Sky {
     this.uniforms.top.value.lerp(this.gloomFog, g * 0.8);
     this.uniforms.horizon.value.lerp(this.gloomFog, g * 0.85);
     fog.color.copy(this.uniforms.horizon.value);
-    // A close valley haze (owner's call, 2026-11-04); a boss fight and the blight pull it in further.
-    fog.near = 50 - 35 * g - 32 * bl * (1 - g);
-    fog.far = 215 - 145 * g - 105 * bl * (1 - g);
+    // The place's fog reach (a close valley haze, owner's call 2026-11-04); a boss fight and the blight pull it in further.
+    fog.near = light.near * (1 - 0.7 * g - 0.64 * bl * (1 - g));
+    fog.far = light.far * (1 - 0.6744 * g - 0.4884 * bl * (1 - g));
 
-    this.sun.color.copy(sample(hours, 'sun', new THREE.Color())).lerp(this.blightSun, bl * 0.85);
-    this.sun.intensity = sampleNum(hours, 'sunI') * (1 - 0.8 * g) * (1 - 0.5 * bl);
-    this.hemi.intensity = sampleNum(hours, 'hemiI') * (1 - 0.6 * g) * (1 - 0.3 * bl);
+    this.sun.color.copy(light.sun).lerp(this.blightSun, bl * 0.85);
+    this.sun.intensity = light.sunI * (1 - 0.8 * g) * (1 - 0.5 * bl);
+    this.hemi.intensity = light.hemiI * (1 - 0.6 * g) * (1 - 0.3 * bl);
     this.hemi.color.set(pal('moon', 3)).lerp(tmpA.set(pal('moon', 1)), this.night).lerp(tmpA.set(pal('blight', 3)), bl * 0.75);
     this.hemi.groundColor.lerp(this.blightGround, bl * 0.7);
     this.sun.position.copy(focus).addScaledVector(lightDir, 120);

@@ -7,7 +7,7 @@ import type { BrokenJar } from './jars';
 import type { ThornHit } from './overworld/blight';
 import type { MurmurbudLook } from './murmurbud';
 import { disposeTree, mergeStatic } from '../render/materials';
-import type { FogLook } from '../render/sky';
+import type { AtmosphereId, FogLook } from '../render/atmosphere';
 
 /**
  * An Area is one loadable place: the overworld, a dungeon, a house interior. It owns its
@@ -45,6 +45,11 @@ export interface Area {
   readonly indoor?: boolean;
   /** Indoors: the fog where `p` stands (a dungeon wing's, per room); the sky eases toward it. Default dark fog if omitted. */
   fogAt?(p: THREE.Vector3): FogLook;
+  /**
+   * Which atmosphere (render/atmosphere.ts) applies where `x, z` is: the sky, light, fog and motes follow it, easing
+   * across as Wren moves from one to the next. Omitted: the valley's outdoors, the shrine's indoors.
+   */
+  atmosphereAt?(x: number, z: number): AtmosphereId;
   /** This area's own theme (a dungeon's); the field's day/night themes if omitted. */
   readonly music?: MusicMood;
   /** A theme for a part of the area (the village by day), or undefined for the usual one. */
@@ -159,11 +164,9 @@ export class AreaBuilder {
   constructor(readonly physics: Physics, readonly rand: () => number) {}
 
   /** Adds a static mesh (merged later). */
-  mesh(geo: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number, shadow = true) {
+  mesh(geo: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number) {
     const m = new THREE.Mesh(geo, material);
     m.position.set(x, y, z);
-    m.castShadow = shadow;
-    m.receiveShadow = true;
     this.staticGroup.add(m);
     return m;
   }

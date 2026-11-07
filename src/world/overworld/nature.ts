@@ -6,12 +6,10 @@ import { faceted } from '../../render/textures';
 import type { AreaBuilder } from '../area';
 import { GROVE, LONE_OAK, inGate, inGorge, inRuin, inHollow, inPass, isOpen, onVillageStep, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
 
-export function instanced(b: AreaBuilder, geo: THREE.BufferGeometry, material: THREE.Material, ms: THREE.Matrix4[], colors?: THREE.Color[], shadow = true) {
+export function instanced(b: AreaBuilder, geo: THREE.BufferGeometry, material: THREE.Material, ms: THREE.Matrix4[], colors?: THREE.Color[]) {
   const im = new THREE.InstancedMesh(geo, material, ms.length);
   ms.forEach((m, i) => im.setMatrixAt(i, m));
   colors?.forEach((c, i) => im.setColorAt(i, c));
-  im.castShadow = shadow;
-  im.receiveShadow = true;
   b.dynamic(im);
   return im;
 }
@@ -127,8 +125,8 @@ export function buildGrass(b: AreaBuilder) {
       flowerC.push(new THREE.Color(petal));
     }
   }
-  instanced(b, new THREE.ConeGeometry(0.18, 0.6, 3), mat(0xffffff), tufts, tuftC, false);
-  instanced(b, new THREE.OctahedronGeometry(0.12), mat(0xffffff), flowers, flowerC, false);
+  instanced(b, new THREE.ConeGeometry(0.18, 0.6, 3), mat(0xffffff), tufts, tuftC);
+  instanced(b, new THREE.OctahedronGeometry(0.12), mat(0xffffff), flowers, flowerC);
 }
 
 /** Where cuttable bushes go: around the village fence and along the roads. */

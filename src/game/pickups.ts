@@ -30,7 +30,6 @@ export class Pickups {
   spawn(kind: PickupKind, at: THREE.Vector3) {
     const mesh = new THREE.Mesh(kind === 'heart' ? this.heartGeo : this.gemGeo, this.mats[kind]);
     mesh.scale.y = kind === 'heart' ? 1 : 1.5;
-    mesh.castShadow = true;
     this.scene.add(mesh);
     const vel = new THREE.Vector3((Math.random() - 0.5) * 3, 6, (Math.random() - 0.5) * 3);
     this.items.push({ mesh, kind, pos: at.clone().setY(at.y + 0.5), vel, t: 0 });

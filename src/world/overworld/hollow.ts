@@ -50,7 +50,6 @@ export function buildHollow(b: AreaBuilder) {
       bar.position.set(Math.cos(ka) * 0.15, 2.83, -0.8 + Math.sin(ka) * 0.15);
       post.add(bar);
     }
-    for (const m of post.children) m.castShadow = true;
     b.staticGroup.add(post);
     post.updateMatrixWorld(true);
     lamps.push(new THREE.Vector3(0, 2.83, -0.8).applyMatrix4(post.matrixWorld));
@@ -70,7 +69,6 @@ export function buildHollow(b: AreaBuilder) {
   const grass = new THREE.InstancedMesh(new THREE.ConeGeometry(0.16, 0.6, 3), mat(0xffffff), tufts.length);
   tufts.forEach((m, i) => grass.setMatrixAt(i, m));
   colors.forEach((c, i) => grass.setColorAt(i, c));
-  grass.receiveShadow = true;
   b.dynamic(grass);
   const stone = surf('stone', 0xb8b2a4);
   for (let i = 0; i < 16; i++) {
@@ -143,7 +141,6 @@ function deadTree(b: AreaBuilder, x: number, y: number, z: number, rand: () => n
     br.add(twig);
     g.add(br);
   }
-  for (const o of g.children) o.traverse((m) => (m.castShadow = true));
   b.staticGroup.add(g);
   b.cylinder(x, y + 1.5, z, 1.5, 0.4, Layer.Prop);
 }

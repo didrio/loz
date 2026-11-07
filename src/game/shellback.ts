@@ -53,7 +53,6 @@ export class Shellback extends GroundEnemy {
     const dome = new THREE.Mesh(new THREE.SphereGeometry(0.95, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2), shell);
     dome.scale.set(1, 0.7, 1.15);
     dome.position.y = 0.25;
-    dome.castShadow = true;
     this.body.add(dome);
     for (const [px, pz] of [[0, 0.45], [0, -0.1], [0, -0.6], [-0.5, 0.15], [0.5, 0.15]]) {
       const ridge = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), plate);
@@ -73,7 +72,6 @@ export class Shellback extends GroundEnemy {
     const visor = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.5, 0.3), plate);
     visor.position.set(0, 0.3, 0.92);
     visor.rotation.x = -0.25;
-    visor.castShadow = true;
     this.body.add(visor);
     const hole = new THREE.MeshBasicMaterial({ color: 0x0b0a09 }), eye = new THREE.MeshBasicMaterial({ color: 0xb08a2e });
     for (const s of [-1, 1]) {

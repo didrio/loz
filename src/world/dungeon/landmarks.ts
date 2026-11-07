@@ -31,7 +31,6 @@ export function buildLandmark(
     const m = emissive ? new THREE.Mesh(geo, mat(color, emissive)) : new THREE.Mesh(faceted(geo), surf('stone', color));
     m.position.set(...pos);
     m.rotation.set(...rot);
-    m.castShadow = true;
     g.add(m);
     return m;
   };
@@ -43,7 +42,6 @@ export function buildLandmark(
     const m = new THREE.Mesh(new THREE.BoxGeometry(wide, thick, len), surf('stone', color));
     m.position.copy(a).add(c).multiplyScalar(0.5);
     m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), c.clone().sub(a).normalize());
-    m.castShadow = true;
     g.add(m);
   };
 
@@ -67,7 +65,7 @@ export function buildLandmark(
     hood.rotation.y = Math.PI / 4;
     const nose = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.25), surf('stone', pal.trim));
     nose.position.set(0, -0.02, 0.42);
-    for (const m of [hb, hood, nose]) { m.castShadow = true; head.add(m); }
+    for (const m of [hb, hood, nose]) head.add(m);
     g.add(head);
     bar([-0.8, 3.5, -0.3], [-1.05, 4.05, 0.45], 0.32, pal.wall); // lantern arm: up and forward
     bar([-1.05, 4.05, 0.45], [-0.95, 4.55, 1.25], 0.28, pal.wall);

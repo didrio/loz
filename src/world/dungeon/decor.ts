@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
-import type { FogLook } from '../../render/sky';
+import { SHRINE, type FogLook } from '../../render/atmosphere';
 import { mat } from '../../render/materials';
 import { pal } from '../../render/palette';
 import type { AreaBuilder } from '../area';
@@ -40,7 +40,7 @@ export const THEMES: Record<RoomTheme, Palette> = {
  * per-room fog changes how a distant room looks as Wren crosses a doorway; one value never does.
  * Each wing's mood comes from its lights and decor instead.
  */
-export const DUNGEON_FOG: FogLook = { color: pal('ink', 1), near: 12, far: 52 };
+export const DUNGEON_FOG: FogLook = SHRINE.fog;
 
 export const themeOf = (r: RoomDef): RoomTheme => r.theme ?? 'sandstone';
 
@@ -55,7 +55,6 @@ const add = (g: THREE.Group, geo: THREE.BufferGeometry, color: number, x: number
   const m = new THREE.Mesh(geo, mat(color, emissive));
   m.position.set(x, y, z);
   m.rotation.y = yaw;
-  m.castShadow = true;
   g.add(m);
   return m;
 };

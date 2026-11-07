@@ -40,23 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T31: Atmosphere per area, and blob shadows
-**Run:** auto · sonnet · high
-**Why:** art.md: fog tinted to each area's mood is core to the look, and N64 characters stand on blob shadows, not
-shadow maps (also cheaper on phones).
-**Done when:**
-- An area's atmosphere is data in one place: fog colour and reach, sky tint, light keys at a few times of day, its
-  sub-palette, a mote preset. The day/night cycle blends between the area's keys; the blight and boss gloom stay as
-  modifiers on top. The valley, the village, the shrine and the hollow have one each.
-- Wren, NPCs, enemies, bosses and movable stones stand on blob shadows (`GroundShadow`); characters no longer cast
-  shadow-map shadows.
-- Look shots at dawn, noon, dusk and night in each defined area.
-**Read first:** art.md "Rendering rules"; engine.md "Indoor areas"; `render/sky.ts`; `render/shapes.ts`
-(`GroundShadow`); `render/motes.ts`; `world/dungeon/decor.ts` (room fog); `game/blight.ts` (Grep for the sky).
-**Verify:** `npm run check`; look `field village night hollow shrine blight dungeon` in Native and N64 mode.
-**Notes:** Ask the owner up front, with look shots of both: keep the sun's shadow map for scenery (shadows move with the
-day), or drop it entirely (N64-authentic, cheaper on phones, with baked darkening instead).
-
 ### T40: Texture the world: everything static
 **Run:** auto · sonnet · medium
 **Started (owner asked for more to compare, 2026-11-07):** the tiles `bark`, `foliage`, `metal`, `thatch`, `rock` exist; trees (trunks, canopies, pines, the lone oak), boulders, the gorge, ruins, camp, gate, overworld landmarks, the hollow's dead trees, chests, hinged and dungeon doors and frames, statues, plinths, the hearth, bridge and bell posts are textured. **Still to do:** Stiltwick and Sallowmere (waiting on its redesign), cloth/tents, signs and notice boards with emissive materials (`mat(color, emissive)`), small village props (barrels, crates, stumps), the village's plaster is faint, the dead hollow trunks and other very dark colours show almost no grain (the tile multiplies the colour: consider lighter base colours or a stronger tile), thatch isn't yet seen in a shot, the pink walls. Check the rest against this list, then the Done-when below.
