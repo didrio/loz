@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { easeInOut } from '../core/math';
 import { Layer } from '../core/physics';
-import { fadeInFog, mat, uniqueMat } from '../render/materials';
+import { fadeInFog, mat, uniqueMat, surf } from '../render/materials';
+import { faceted } from '../render/textures';
 import { glow } from '../render/shapes';
 import type { AreaBuilder } from './area';
 
@@ -115,7 +116,7 @@ export class BellPost {
   private t = 0;
 
   constructor(b: AreaBuilder, readonly bell: BellId, readonly x: number, readonly y: number, readonly z: number, readonly yaw: number) {
-    const wood = mat(0x5e4a36), dark = mat(0x3d3026), stone = mat(0x8d877c), iron = mat(0x34302c);
+    const wood = surf('wood', 0x5e4a36), dark = surf('wood', 0x3d3026), stone = surf('stone', 0x8d877c), iron = mat(0x34302c);
     const add = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number, rz = 0, rx = 0) => {
       const mesh = new THREE.Mesh(geo, m);
       mesh.position.set(px, py, pz);
@@ -124,7 +125,7 @@ export class BellPost {
       this.group.add(mesh);
       return mesh;
     };
-    add(new THREE.CylinderGeometry(0.4, 0.5, 0.3, 7), stone, 0, 0.15, 0);
+    add(faceted(new THREE.CylinderGeometry(0.4, 0.5, 0.3, 7)), stone, 0, 0.15, 0);
     // Crooked like a heron's leg: the lower post leans one way, the upper the other.
     add(new THREE.BoxGeometry(0.22, 1.5, 0.22), wood, 0.04, 1.02, 0, -0.06);
     add(new THREE.BoxGeometry(0.26, 0.16, 0.26), dark, 0.08, 1.78, 0, 0.1);
@@ -262,7 +263,7 @@ export class BellPickup {
     this.halo.position.y = ground ? 0.3 : 0.85;
     this.group.add(this.bellGroup, this.halo);
     if (!ground) {
-      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.8), mat(0x8d877c));
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.8), surf('stone', 0x8d877c));
       plinth.position.y = 0.35;
       plinth.castShadow = true;
       this.group.add(plinth);

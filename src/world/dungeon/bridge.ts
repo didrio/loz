@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Layer, type RAPIER } from '../../core/physics';
-import { mat } from '../../render/materials';
+import { mat, surf } from '../../render/materials';
 import type { AreaBuilder } from '../area';
 
 /** How thick the column is: lying across the pit, its top is flush with the floor. */
@@ -26,7 +26,7 @@ export class FallenColumn {
   private readonly across: RAPIER.Collider;
 
   constructor(b: AreaBuilder, parent: THREE.Object3D, readonly id: string, readonly x: number, readonly y: number, readonly z: number, readonly length: number, readonly side: 1 | -1, glowMat: THREE.Material) {
-    const stone = mat(0x3a2f4f), bronze = mat(0x9a6a2e);
+    const stone = surf('stone', 0x3a2f4f), bronze = surf('metal', 0x9a6a2e);
     const beam = new THREE.Mesh(new THREE.BoxGeometry(WIDE, THICK, length), stone);
     beam.position.set(0, THICK / 2, length / 2);
     beam.castShadow = true;

@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, type RAPIER } from '../core/physics';
 import { buildHumanoid, type Humanoid, type HumanoidColors } from '../render/characters';
-import { fadeInFog, mat, uniqueMat } from '../render/materials';
+import { fadeInFog, mat, uniqueMat, surf } from '../render/materials';
 import { glow, heartGeometry, shieldModel } from '../render/shapes';
+import { faceted } from '../render/textures';
 import type { AreaBuilder } from './area';
 
 /** A villager who stands in place, breathes, and turns to face you when you come close. */
@@ -58,7 +59,7 @@ export class Chest {
   private openT = 0;
 
   constructor(b: AreaBuilder, readonly x: number, readonly z: number, y: number, yaw: number, readonly locked = false) {
-    const wood = mat(0x7a4a24), trim = mat(0xc9a227), dark = mat(0x3a2412);
+    const wood = surf('wood', 0x7a4a24), trim = surf('metal', 0xc9a227), dark = mat(0x3a2412);
     const base = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.95), wood);
     base.position.y = 0.4;
     const band = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 1.0), trim);
@@ -66,7 +67,7 @@ export class Chest {
     this.lid.position.set(0, 0.8, -0.47);
     // A half cylinder lying along the chest's width (x), domed side up. (It used to also
     // be turned 90° about y, which stood the lid crosswise over the base.)
-    const lidMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 1.4, 8, 1, false, 0, Math.PI), wood);
+    const lidMesh = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.48, 0.48, 1.4, 8, 1, false, 0, Math.PI)), wood);
     lidMesh.rotation.z = Math.PI / 2;
     lidMesh.position.z = 0.47;
     const lock = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.28, 0.08), trim);
@@ -79,9 +80,9 @@ export class Chest {
     inside.position.y = 0.78;
     for (const me of [base, band, lidMesh, lock]) me.castShadow = true;
     // The padlock hangs from the clasp on the front.
-    const iron = mat(0x4a4d52);
+    const iron = surf('metal', 0x4a4d52);
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.12), iron);
-    const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.03, 4, 10, Math.PI), iron);
+    const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.03, 4, 10, Math.PI), mat(0x4a4d52));
     shackle.position.y = 0.13;
     const hole = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.02), dark);
     hole.position.set(0, -0.02, 0.065);
@@ -149,7 +150,7 @@ export class HingedDoor {
       me.castShadow = me.receiveShadow = true;
       this.pivot.add(me);
     };
-    part(new THREE.BoxGeometry(width, height, 0.14), mat(color), 0, height / 2, 0);
+    part(new THREE.BoxGeometry(width, height, 0.14), surf('wood', color), 0, height / 2, 0);
     for (const side of [-1, 1]) {
       for (const px of [-width / 4, 0, width / 4]) part(new THREE.BoxGeometry(0.04, height, 0.02), strap, px, height / 2, side * 0.08);
       for (const py of [0.45, height - 0.35]) part(new THREE.BoxGeometry(width - 0.24, 0.08, 0.03), strap, 0, py, side * 0.085);
@@ -191,7 +192,7 @@ export class StoneDoor {
     this.half = height / 2;
     this.drop = height + 0.1;
     // Its bottom edge starts a hair under the ground so no gap shows on a slope.
-    this.mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, height, width), mat(0x77736a));
+    this.mesh = new THREE.Mesh(new THREE.BoxGeometry(0.6, height, width), surf('stone', 0x77736a));
     this.mesh.position.set(x, baseY + this.half - 0.1, z);
     this.mesh.castShadow = true;
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.12, 6, 18), this.glyphMat);

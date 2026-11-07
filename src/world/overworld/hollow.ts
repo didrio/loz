@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { angleDiff } from '../../core/math';
 import { Layer } from '../../core/physics';
-import { mat } from '../../render/materials';
+import { mat, surf } from '../../render/materials';
 import type { AreaBuilder } from '../area';
 import { HOLLOW, HOLLOW_ENTRANCE, regionRng, terrainHeight } from './layout';
 
@@ -14,7 +14,7 @@ export function buildHollow(b: AreaBuilder) {
   const rand = regionRng('hollow');
   const { x: cx, z: cz, r: R, floor } = HOLLOW;
   const entrance = Math.atan2(HOLLOW_ENTRANCE.z - cz, HOLLOW_ENTRANCE.x - cx);
-  const bark = mat(0x2b2520), barkLight = mat(0x3a3029);
+  const bark = surf('bark', 0x2b2520), barkLight = surf('bark', 0x3a3029);
 
   // Bare, twisted trees around the rim, leaving the road's way in open.
   for (let i = 0; i < 18; i++) {
@@ -27,7 +27,7 @@ export function buildHollow(b: AreaBuilder) {
 
   // Iron lamp posts just outside the arena ring, each with a hanging cage lamp.
   const lamps: THREE.Vector3[] = [];
-  const iron = mat(0x23262b);
+  const iron = surf('metal', 0x23262b);
   for (let i = 0; i < 7; i++) {
     const a = entrance + Math.PI / 7 + (i / 7) * Math.PI * 2;
     const x = cx + Math.cos(a) * (R + 1.2), z = cz + Math.sin(a) * (R + 1.2), y = terrainHeight(x, z);
@@ -72,7 +72,7 @@ export function buildHollow(b: AreaBuilder) {
   colors.forEach((c, i) => grass.setColorAt(i, c));
   grass.receiveShadow = true;
   b.dynamic(grass);
-  const stone = mat(0xb8b2a4);
+  const stone = surf('stone', 0xb8b2a4);
   for (let i = 0; i < 16; i++) {
     const a = rand() * Math.PI * 2, r = 3 + rand() * (R - 2);
     const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;

@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
-import { mat } from '../../render/materials';
+import { mat, surf } from '../../render/materials';
 import type { AreaBuilder } from '../area';
 import { GreatLantern } from '../objects';
 import { BRIDGE, bridgeDeck, GATE, GROVE, HOLLOW_ENTRANCE, SHRINE, SPAWN, terrainHeight, VILLAGE } from './layout';
 
 /** The arched wooden bridge over the river: planks and rails, with a smooth deck collider. */
 export function buildBridge(b: AreaBuilder) {
-  const plank = mat(0x8b5e34), post = mat(0x5e3d20);
+  const plank = surf('wood', 0x8b5e34), post = surf('wood', 0x5e3d20);
   const n = 22;
   const zAt = (i: number) => BRIDGE.z - BRIDGE.halfLen + (i / n) * BRIDGE.halfLen * 2;
   for (let i = 0; i <= n; i++) {
@@ -49,14 +49,14 @@ export function buildBridge(b: AreaBuilder) {
 /** The grove clearing: a ring of stones and a fallen log around the chest. */
 export function buildGrove(b: AreaBuilder) {
   const { x, z } = GROVE;
-  const stone = mat(0x8a877e);
+  const stone = surf('stone', 0x8a877e);
   for (let i = 0; i < 7; i++) {
     const a = (i / 7) * Math.PI * 2 + 0.3;
     const sx = x + Math.cos(a) * 4.2, sz = z + Math.sin(a) * 4.2;
     b.mesh(new THREE.DodecahedronGeometry(0.45), stone, sx, terrainHeight(sx, sz) + 0.2, sz).scale.y = 0.6;
   }
   const lx = x + 6, lz = z - 3, ly = terrainHeight(lx, lz) + 0.4;
-  const log = b.mesh(new THREE.CylinderGeometry(0.45, 0.5, 5, 8), mat(0x5a3a1e), lx, ly, lz);
+  const log = b.mesh(new THREE.CylinderGeometry(0.45, 0.5, 5, 8), surf('bark', 0x5a3a1e), lx, ly, lz);
   log.rotation.z = Math.PI / 2;
   log.rotation.y = 0.6;
   b.box(lx, ly, lz, 2.5, 0.45, 0.45, 0.6, Layer.Prop);
@@ -66,7 +66,7 @@ export function buildGrove(b: AreaBuilder) {
 export function buildShrine(b: AreaBuilder) {
   const { x, z } = SHRINE;
   const y = 9;
-  const stone = mat(0x8f8a80), dark = mat(0x5e5a53), moss = mat(0x5d7d3c);
+  const stone = surf('stone', 0x8f8a80), dark = surf('stone', 0x5e5a53), moss = mat(0x5d7d3c);
   b.mesh(new THREE.BoxGeometry(7, 7, 10), stone, x + 0.5, y + 3.3, z);
   b.mesh(new THREE.BoxGeometry(8, 0.8, 11), dark, x + 0.5, y + 7.1, z);
   const roof = b.mesh(new THREE.ConeGeometry(5.4, 3.5, 4), dark, x + 0.5, y + 9.2, z);

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mat } from '../../render/materials';
+import { mat, surf } from '../../render/materials';
 import { Layer } from '../../core/physics';
 import type { AreaBuilder } from '../area';
 import { BellPickup } from '../bell';
@@ -71,7 +71,7 @@ export const onGorgeFloor = (p: { x: number; z: number }) => gorgeFrame(p.x, p.z
 
 export function buildGorge(b: AreaBuilder) {
   const rand = regionRng('gorge');
-  const rock = mat(0x8a8478), rockDark = mat(0x6e695f);
+  const rock = surf('rock', 0x8a8478), rockDark = surf('rock', 0x6e695f);
   // Boulders along the foot of the walls, and a few fallen at the mouth.
   for (let i = 0; i < 40; i++) {
     const s = rand() * (GORGE.pitAt - 6);
@@ -85,7 +85,7 @@ export function buildGorge(b: AreaBuilder) {
     if (size > 0.9) b.ball(x, y, z, size * 0.8, Layer.Prop);
   }
   // The broken plank bridge: two stubs of boards reaching out over the pit's rim.
-  const plank = mat(0x7a5a38);
+  const plank = surf('wood', 0x7a5a38);
   for (const side of [-1, 1]) {
     const { x, z } = gorgeAt(GORGE.pitAt - 2.5, side * 3.4);
     const p = gorgePoint(GORGE.pitAt - 2.5);

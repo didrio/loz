@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mat } from '../../render/materials';
+import { mat, surf } from '../../render/materials';
 import type { AreaBuilder } from '../area';
 import { JarField, type JarSpot } from '../jars';
 import { ShieldPickup } from '../objects';
@@ -57,7 +57,7 @@ function buildRuin(b: AreaBuilder, ruin: Ruin): JarSpot[] {
   const g = new THREE.Group();
   g.position.set(ruin.x, y, ruin.z);
   g.rotation.y = ruin.yaw;
-  const stone = mat(0x8f877a), plaster = mat(0xbfb399), thatch = mat(0x5a4632), char = mat(0x2e2620), plank = mat(0x6b4c30);
+  const stone = surf('stone', 0x8f877a), plaster = surf('plaster', 0xbfb399), thatch = surf('thatch', 0x5a4632), char = mat(0x2e2620), plank = surf('wood', 0x6b4c30);
   /** A piece at a local spot (scaled, mirrored). */
   const part = (geo: THREE.BufferGeometry, m: THREE.Material, lx: number, ly: number, lz: number) => {
     const me = new THREE.Mesh(geo, m);

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { isSharedMaterial, mat, mergeStatic, surf } from './materials';
-import { drawTile, faceNormals, SURFACES, TILE_SIZE, TILE_SPREAD, type TileId } from './textures';
+import { BAKED_SHADE, bakeColor, isSharedMaterial, mat, mergeStatic, surf, uniqueMat } from './materials';
+import { drawTile, faceNormals, SURFACES, DEFAULT_TEXTURE_RESOLUTION, downsampleTile, setTextureResolution, TILE_METRES, TILE_SIZE, textureResolution, tileSizeAt, TILE_SPREAD, tileTexture, type TileId } from './textures';
 
 const TILES = Object.keys(TILE_SIZE) as TileId[];
 
@@ -75,18 +75,20 @@ describe('surf()', () => {
     };
     surf('ground', 0x5d9c3a).onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
     expect(shader.vertexShader).toContain('vSurfPos = transformed;');
-    expect(shader.vertexShader).toContain('vSurfNormal = objectNormal;');
+    expect(shader.vertexShader).toContain('attribute vec3 surfNormal;');
+    expect(shader.vertexShader).toContain('? surfNormal : objectNormal;');
     expect(shader.fragmentShader).toContain('flat varying vec3 vSurfNormal;');
     expect(shader.fragmentShader).toContain('diffuseColor.rgb *= 1.0 + surfStrength');
     expect(shader.fragmentShader).toContain('#include <color_fragment>');
-    expect((shader.uniforms.surfTop.value as THREE.DataTexture).image.width).toBe(TILE_SIZE.ground);
-    expect((shader.uniforms.surfSide.value as THREE.DataTexture).image.width).toBe(TILE_SIZE.rock);
+    expect((shader.uniforms.surfTop.value as THREE.DataTexture).image.width).toBe(tileSizeAt('ground', DEFAULT_TEXTURE_RESOLUTION));
+    expect((shader.uniforms.surfSide.value as THREE.DataTexture).image.width).toBe(tileSizeAt('rock', DEFAULT_TEXTURE_RESOLUTION));
   });
 });
 
-/** Whether every triangle's three normals are its own face normal (what the projection needs). */
-function hasFaceNormals(g: THREE.BufferGeometry) {
-  const p = g.attributes.position, n = g.attributes.normal;
+/** Whether every triangle's three `attr` values are its own face normal (what the projection needs). */
+function hasFaceNormals(g: THREE.BufferGeometry, attr = 'surfNormal') {
+  const p = g.attributes.position, n = g.attributes[attr];
+  if (!n) return false;
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), m = new THREE.Vector3();
   for (let i = 0; i < p.count; i += 3) {
     a.fromBufferAttribute(p, i);
@@ -101,10 +103,13 @@ function hasFaceNormals(g: THREE.BufferGeometry) {
 }
 
 describe('face normals', () => {
-  it('gives every vertex its triangle\'s normal (a cone\'s own normals are smooth, tilted toward its corners)', () => {
+  it('gives every vertex its triangle\'s normal in surfNormal and leaves the smooth normal alone (T30)', () => {
     const cone = new THREE.ConeGeometry(2, 1.1, 4).toNonIndexed();
+    const smooth = Array.from(cone.attributes.normal.array);
     expect(hasFaceNormals(cone)).toBe(false);
     expect(hasFaceNormals(faceNormals(cone))).toBe(true);
+    expect(hasFaceNormals(cone, 'normal')).toBe(false);
+    expect(Array.from(cone.attributes.normal.array)).toEqual(smooth);
     expect(() => faceNormals(new THREE.BoxGeometry())).toThrow();
   });
 
@@ -116,9 +121,174 @@ describe('face normals', () => {
     const plain = new THREE.Mesh(new THREE.ConeGeometry(2, 1.1, 4), mat(0xa5452f));
     src.add(roof, plain);
     const out = mergeStatic(src).children as THREE.Mesh[];
-    const textured = out.find((m) => m.material === roof.material)!;
-    const untouched = out.find((m) => m.material === plain.material)!;
+    expect(out).toHaveLength(2);
+    const textured = out.find((m) => m.geometry.attributes.surfNormal)!;
+    const untouched = out.find((m) => !m.geometry.attributes.surfNormal)!;
     expect(hasFaceNormals(textured.geometry)).toBe(true);
     expect(hasFaceNormals(untouched.geometry)).toBe(false);
+    expect(hasFaceNormals(untouched.geometry, 'normal')).toBe(false); // the cone's smooth normals survive the merge
+  });
+});
+
+describe('faceted look (owner\'s call, 2026-11-07)', () => {
+  it('every kind of material is flat-shaded, merged scenery included', () => {
+    expect(mat(0x5d9c3a).flatShading).toBe(true);
+    expect(surf('stone', 0x5d9c3a).flatShading).toBe(true);
+    expect(uniqueMat(0x5d9c3a).flatShading).toBe(true);
+    const src = new THREE.Group();
+    src.add(new THREE.Mesh(new THREE.BoxGeometry(), mat(0x5d9c3a)), new THREE.Mesh(new THREE.BoxGeometry(), surf('stone', 0x5d9c3a)));
+    for (const m of mergeStatic(src).children as THREE.Mesh[]) expect((m.material as THREE.MeshLambertMaterial).flatShading).toBe(true);
+  });
+});
+
+describe('texture filtering and density (T30)', () => {
+  it('is crisp (nearest) up close, mipmapped far off', () => {
+    const t = tileTexture('plaster');
+    expect(t.magFilter).toBe(THREE.NearestFilter);
+    expect(t.minFilter).toBe(THREE.NearestMipmapLinearFilter);
+  });
+});
+
+describe('scale and resolution are separate (owner\'s call)', () => {
+  it('a tile\'s scale is its own: metres per repeat, set with the tile, and the pattern never rescales with resolution', () => {
+    const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+    surf('stone', 0x888888).onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
+    const before = shader.uniforms.surfTopRepeat.value;
+    expect(before).toBe(1 / TILE_METRES.stone);
+    setTextureResolution(4);
+    try {
+      expect(shader.uniforms.surfTopRepeat.value).toBe(before);
+    } finally {
+      setTextureResolution(DEFAULT_TEXTURE_RESOLUTION);
+    }
+  });
+
+  it('resolution is one global number of whole texels per metre, within 1..32, and a tile never gets more pixels than it was drawn with', () => {
+    try {
+      setTextureResolution(20.4);
+      expect(textureResolution()).toBe(20);
+      setTextureResolution(99);
+      expect(textureResolution()).toBe(32);
+      setTextureResolution(-3);
+      expect(textureResolution()).toBe(1);
+      for (const id of TILES) {
+        expect(tileSizeAt(id, 32)).toBe(TILE_SIZE[id]);
+        expect(tileSizeAt(id, 64)).toBe(TILE_SIZE[id]);
+        expect(tileSizeAt(id, 1)).toBe(Math.round(TILE_METRES[id]));
+      }
+    } finally {
+      setTextureResolution(DEFAULT_TEXTURE_RESOLUTION);
+    }
+  });
+
+  it('changing the resolution re-draws a texture already in use at the new size, same pattern', () => {
+    const t = tileTexture('stone');
+    const full = drawTile('stone');
+    try {
+      setTextureResolution(16);
+      expect(t.image.width).toBe(tileSizeAt('stone', 16));
+      expect(t.image.width).toBe(TILE_SIZE.stone / 2);
+      setTextureResolution(8);
+      expect(t.image.width).toBe(TILE_SIZE.stone / 4);
+      const small = t.image.data as Uint8Array;
+      expect(small).toEqual(downsampleTile(full, TILE_SIZE.stone, TILE_SIZE.stone / 4));
+    } finally {
+      setTextureResolution(DEFAULT_TEXTURE_RESOLUTION);
+    }
+  });
+
+  it('downsampling is crisp at every size: it never blends texels, so a two-tone tile stays two-tone, even at a ratio that isn\'t whole', () => {
+    const n = 64;
+    const twoTone = new Uint8Array(n * n);
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) twoTone[y * n + x] = (x % 7 === 0 || y % 5 === 0) ? 40 : 190; // mortar lines in blocks
+    for (const m of [62, 48, 31, 20, 16, 8, 3]) {
+      expect(new Set(downsampleTile(twoTone, n, m)).size, `${m} px`).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it('downsampling keeps the tile\'s mean and spread (so colour and strength never change with resolution), a flat tile flat, and same-size alone', () => {
+    const stats = (a: Uint8Array) => {
+      const mu = a.reduce((x, v) => x + v, 0) / a.length;
+      return { mu, sd: Math.sqrt(a.reduce((x, v) => x + (v - mu) ** 2, 0) / a.length) };
+    };
+    for (const id of TILES) {
+      const full = drawTile(id), n = TILE_SIZE[id], want = stats(full);
+      for (const m of [n - 2, n - 1, n / 2, n / 4]) {
+        const got = stats(downsampleTile(full, n, Math.round(m)));
+        expect(Math.abs(got.mu - want.mu), `${id} ${m} mean`).toBeLessThan(4); // clamping at 0/255 nudges it at tiny sizes
+        expect(Math.abs(got.sd - want.sd) / want.sd, `${id} ${m} spread`).toBeLessThan(0.25); // clamping at 0/255 trims some
+      }
+    }
+    const flat = new Uint8Array(16 * 16).fill(128);
+    expect([...new Set(downsampleTile(flat, 16, 5))]).toEqual([128]);
+    expect(downsampleTile(flat, 16, 16)).toBe(flat);
+  });
+
+  it('downsampling keeps a thin crack at full strength (it is picked, not averaged away)', () => {
+    const n = 16;
+    const line = new Uint8Array(n * n).fill(200);
+    for (let y = 0; y < n; y++) line[y * n + 5] = 0; // a one-texel crack down column 5
+    for (const m of [8, 4, 5]) {
+      const small = downsampleTile(line, n, m);
+      expect(Math.max(...small) - Math.min(...small), `${m} px`).toBeGreaterThan(100);
+    }
+  });
+});
+
+describe('mergeStatic bakes colour into vertices (T30)', () => {
+  const box = (m: THREE.Material, x = 0, y = 0) => {
+    const o = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), m);
+    o.position.set(x, y + 0.5, 0);
+    return o;
+  };
+
+  it('batches by kind, not by colour: many colours of plain boxes are one mesh', () => {
+    const src = new THREE.Group();
+    for (let i = 0; i < 6; i++) src.add(box(mat(0x100000 * (i + 1) + 0x808080), i * 2));
+    const out = mergeStatic(src).children as THREE.Mesh[];
+    expect(out).toHaveLength(1);
+    expect((out[0].material as THREE.MeshLambertMaterial).vertexColors).toBe(true);
+  });
+
+  it('keeps a mesh per surface, per emissive colour, and for transparent or odd materials', () => {
+    const src = new THREE.Group();
+    src.add(box(mat(0xaa8866)), box(surf('plaster', 0xaa8866)), box(surf('plaster', 0x886644)), box(surf('stone', 0xaa8866)));
+    src.add(box(mat(0xaa8866, 0x442200)), box(mat(0x112233, 0x442200)), box(mat(0x112233, 0x224400)));
+    const glass = uniqueMat(0x88aacc, { transparent: true, opacity: 0.5 });
+    src.add(box(glass), box(glass));
+    src.add(box(uniqueMat(0x88aacc, { side: THREE.BackSide })));
+    const out = mergeStatic(src).children as THREE.Mesh[];
+    // plain, plaster, stone, two emissives, the glass, the BackSide one
+    expect(out).toHaveLength(7);
+    expect(out.filter((m) => m.material === glass)).toHaveLength(1);
+  });
+
+  it('bakes the material colour (linear, as snapped to the palette) into the vertices, full on tops, darker below', () => {
+    const src = new THREE.Group();
+    const m = mat(0x5d9c3a);
+    src.add(box(m));
+    const g = (mergeStatic(src).children[0] as THREE.Mesh).geometry;
+    const col = g.attributes.color;
+    let max = 0, min = 1;
+    for (let i = 0; i < col.count; i++) {
+      max = Math.max(max, col.getX(i));
+      min = Math.min(min, col.getX(i));
+    }
+    expect(max).toBeCloseTo(m.color.r, 5);
+    expect(min).toBeLessThan(m.color.r * 0.9);
+  });
+
+  it('darkens undersides and the feet of walls, and nothing else', () => {
+    const g = new THREE.BoxGeometry(1, 3, 1).toNonIndexed();
+    g.translate(0, 1.5, 0);
+    bakeColor(g, new THREE.Color(1, 1, 1));
+    const pos = g.attributes.position, nor = g.attributes.normal, col = g.attributes.color;
+    for (let i = 0; i < pos.count; i++) {
+      const v = col.getX(i), ny = nor.getY(i), y = pos.getY(i);
+      if (ny > 0.5) expect(v).toBe(1); // the top
+      else if (ny < -0.5) expect(v).toBeCloseTo(BAKED_SHADE.underside, 5);
+      else if (y < 0.001) expect(v).toBeCloseTo(BAKED_SHADE.foot, 5); // wall foot
+      else if (y > BAKED_SHADE.footHeight) expect(v).toBeCloseTo(1, 5);
+    }
   });
 });

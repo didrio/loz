@@ -8,7 +8,8 @@ import { applySurface, faceNormals, type SurfaceId } from './textures';
  * detail texture (`surf`). Every colour given to `mat`, `surf` and `uniqueMat` is snapped to the
  * master palette (render/palette.ts), so the game stays on palette whatever a call site passes;
  * new code names its colours with `pal()`. Materials are shared per (snapped) color, which keeps
- * memory down and lets `mergeStatic` batch meshes by material.
+ * memory down. Static scenery is merged by `mergeStatic`, which reads each mesh's colour into a vertex
+ * colour and batches by kind of surface, not by colour.
  * Never mutate a material from `mat()`; use `uniqueMat()` for anything that animates.
  */
 const cache = new Map<string, THREE.MeshLambertMaterial>();
@@ -69,15 +70,77 @@ export function fadeInFog<T extends THREE.Material>(m: T): T {
   return m;
 }
 
+/** The merged scenery's materials: vertex-coloured, one per (surface, emissive) kind. Shared, so never disposed with a tree. */
+const baked = new Map<string, THREE.MeshLambertMaterial>();
+
+function bakedMat(surface: SurfaceId | undefined, emissive: number) {
+  const key = `${surface ?? 'plain'}:${emissive}`;
+  let m = baked.get(key);
+  if (!m) {
+    m = new THREE.MeshLambertMaterial({ vertexColors: true, emissive, flatShading: true });
+    if (surface) applySurface(m, surface);
+    baked.set(key, m);
+  }
+  return m;
+}
+
 export function isSharedMaterial(m: THREE.Material) {
   for (const v of cache.values()) if (v === m) return true;
+  for (const v of baked.values()) if (v === m) return true;
   return false;
 }
 
 /**
- * Bakes every plain mesh under `src` into a few big meshes, one per material per map cell,
- * so a village of hundreds of boxes costs a handful of draw calls. `src` must not be in
- * the scene (its transform is treated as the world). InstancedMeshes are skipped.
+ * The shade baked into merged scenery's vertex colours (T30), as multipliers: a face looking down is darkest
+ * (eaves, ceilings, the underside of a ledge), a wall is darker at its foot and fades to full by `FOOT_HEIGHT`
+ * above the mesh's lowest point. It stands in for the crevice shadow the N64 painted into its vertices.
+ */
+export const BAKED_SHADE = { underside: 0.7, foot: 0.82, footHeight: 1.5 };
+
+/**
+ * Writes `color` into `g`'s `color` attribute (linear, like a material's), darkened per `BAKED_SHADE`. `g` is
+ * non-indexed and in world space; each triangle's own normal decides which rule applies.
+ */
+export function bakeColor(g: THREE.BufferGeometry, color: THREE.Color) {
+  g.computeBoundingBox();
+  const minY = g.boundingBox!.min.y;
+  const pos = g.attributes.position;
+  const out = new Float32Array(pos.count * 3);
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  for (let i = 0; i + 2 < pos.count; i += 3) {
+    a.fromBufferAttribute(pos, i);
+    b.fromBufferAttribute(pos, i + 1).sub(a);
+    c.fromBufferAttribute(pos, i + 2).sub(a);
+    const ny = b.cross(c).normalize().y;
+    for (let k = 0; k < 3; k++) {
+      let f = 1;
+      if (ny < -0.5) f = BAKED_SHADE.underside;
+      else if (Math.abs(ny) < 0.5) {
+        const t = Math.min(1, Math.max(0, (pos.getY(i + k) - minY) / BAKED_SHADE.footHeight));
+        f = BAKED_SHADE.foot + (1 - BAKED_SHADE.foot) * t;
+      }
+      out.set([color.r * f, color.g * f, color.b * f], (i + k) * 3);
+    }
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(out, 3));
+}
+
+/**
+ * Whether a mesh's colour can move into its vertices: a plain opaque Lambert, optionally textured (`surf`) or
+ * emissive. Anything else (transparent, BackSide, a custom shader, its own vertex colours) keeps its material.
+ */
+function isBakeable(m: THREE.Material): m is THREE.MeshLambertMaterial {
+  if (!(m instanceof THREE.MeshLambertMaterial)) return false;
+  if (m.transparent || m.opacity !== 1 || m.side !== THREE.FrontSide || m.vertexColors || m.map || m.alphaTest > 0) return false;
+  if (!m.fog || !m.depthWrite || !m.depthTest || m.wireframe || m.emissiveIntensity !== 1) return false;
+  return !Object.prototype.hasOwnProperty.call(m, 'onBeforeCompile') || !!m.userData.surface;
+}
+
+/**
+ * Bakes every plain mesh under `src` into a few big meshes, one per kind of material per map cell
+ * (plain, each surface, emissive, plus each odd material on its own), so a village of hundreds of boxes
+ * costs a handful of draw calls. Each mesh's colour goes into a vertex colour with a little baked shade
+ * (`bakeColor`). `src` must not be in the scene (its transform is treated as the world). InstancedMeshes are skipped.
  */
 export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
   src.updateMatrixWorld(true);
@@ -86,15 +149,21 @@ export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
   src.traverse((o) => {
     if (!(o instanceof THREE.Mesh) || o instanceof THREE.InstancedMesh) return;
     const material = o.material as THREE.Material;
+    const bake = isBakeable(material);
     let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    if (!g.attributes.normal) g.computeVertexNormals();
     for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
     g.applyMatrix4(o.matrixWorld);
     if (material.userData.surface) faceNormals(g); // the texture's projection reads them (textures.ts)
+    if (bake) bakeColor(g, material.color);
     g.computeBoundingBox();
     g.boundingBox!.getCenter(center);
-    const key = `${material.uuid}:${o.castShadow}:${Math.floor(center.x / cellSize)}:${Math.floor(center.z / cellSize)}`;
+    const surface = material.userData.surface as SurfaceId | undefined;
+    const emissive = bake ? material.emissive.getHex() : 0;
+    const kind = bake ? `baked:${surface ?? ''}:${emissive}` : material.uuid;
+    const key = `${kind}:${o.castShadow}:${Math.floor(center.x / cellSize)}:${Math.floor(center.z / cellSize)}`;
     let b = buckets.get(key);
-    if (!b) buckets.set(key, (b = { material, cast: o.castShadow, geos: [] }));
+    if (!b) buckets.set(key, (b = { material: bake ? bakedMat(surface, emissive) : material, cast: o.castShadow, geos: [] }));
     b.geos.push(g);
     g = null!;
   });

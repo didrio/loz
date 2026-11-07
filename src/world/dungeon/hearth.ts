@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { easeInOut, mulberry32 } from '../../core/math';
 import { Layer, type RAPIER } from '../../core/physics';
-import { mat, uniqueMat } from '../../render/materials';
+import { mat, uniqueMat, surf } from '../../render/materials';
 import type { AreaBuilder } from '../area';
 import { HeartVessel } from '../objects';
 import { PIT_DEPTH, type RoomDef } from './format';
@@ -71,7 +71,7 @@ export class WardenHearth {
     this.platform = { x0: room.x + W, x1: room.x + room.w - E, z0: room.z + N, z1: room.z + room.d - S };
 
     // Spare stones, half sunk into the walls every few meters (none over the door).
-    const stoneMat = mat(0x8f887c), glyph = mat(0x4fb8a4), niche = mat(0x0e0c0b);
+    const stoneMat = surf('stone', 0x8f887c), glyph = mat(0x4fb8a4), niche = mat(0x0e0c0b);
     const along = (len: number) => {
       const n = Math.floor(len / 8);
       return Array.from({ length: n }, (_, i) => (i + 0.5) * (len / n));
@@ -107,7 +107,7 @@ export class WardenHearth {
 
     // The ring: 2 m tiles all round the edge, sunk flush with the floor until phase two.
     // Prop layer, so they block Wren and the boss but the camera passes through them.
-    const tileMat = mat(0x34302d);
+    const tileMat = surf('stone', 0x34302d);
     const pf = this.platform;
     for (let cx = pf.x0; cx < pf.x1; cx += 2) {
       for (let cz = pf.z0; cz < pf.z1; cz += 2) {
@@ -132,7 +132,7 @@ export class WardenHearth {
     // The causeway: stones that rise out of the north pit, from the ledge to the hidden door in the north wall.
     if (this.sealDoor) {
       const sd = this.sealDoor, depth = pits.length ? Math.max(0, ...pits.filter((f) => f.z === 0 && f.x <= sd.x - room.x - CAUSEWAY_WIDTH / 2 && f.x + f.w >= sd.x - room.x + CAUSEWAY_WIDTH / 2).map((f) => f.d)) : 0;
-      const slabMat = mat(0x6b625a), edgeMat = mat(0x4fb8a4);
+      const slabMat = surf('stone', 0x6b625a), edgeMat = mat(0x4fb8a4);
       const len = depth / CAUSEWAY_SLABS;
       for (let i = 0; i < CAUSEWAY_SLABS; i++) {
         const mesh = new THREE.Mesh(new THREE.BoxGeometry(CAUSEWAY_WIDTH, 1, len - 0.06), slabMat);

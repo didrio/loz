@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { easeInOut, mulberry32 } from '../../core/math';
 import { Layer, type RAPIER } from '../../core/physics';
-import { fadeInFog, mat, uniqueMat } from '../../render/materials';
+import { fadeInFog, mat, uniqueMat, surf } from '../../render/materials';
 import { glow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
 import { GATE, terrainHeight } from './layout';
@@ -52,7 +52,7 @@ export class Gate {
     const rand = mulberry32(88);
     const gy = (this.groundY = Math.max(terrainHeight(x - h, z), terrainHeight(x + h, z), terrainHeight(x, z)));
     this.center = new THREE.Vector3(x, gy + 4.2, z);
-    const stone = mat(0x8a8478), dark = mat(0x5e5a52);
+    const stone = surf('stone', 0x8a8478), dark = surf('stone', 0x5e5a52);
     // Two squat pillars (solid) with carved caps, set into the ground.
     for (const side of [-1, 1]) {
       const px = x + side * (h + 0.8);

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../../core/math';
 import { Layer, type Physics } from '../../core/physics';
-import { disposeTree, mat, mergeStatic } from '../../render/materials';
+import { disposeTree, mat, mergeStatic, surf } from '../../render/materials';
 import { buildCourse } from '../platforming';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Spot, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
@@ -176,9 +176,9 @@ export class DungeonArea implements Area {
       }
       return { ...p, src: src.get(floor)! };
     };
-    /** A static box (merged later), with an optional collider. */
+    /** A static box (merged later; stone-textured), with an optional collider. */
     const box = (group: THREE.Group, color: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, layer: number | null = Layer.World) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat(color));
+      const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), surf('stone', color));
       m.position.set(x, y, z);
       m.castShadow = m.receiveShadow = true;
       group.add(m);
@@ -248,7 +248,7 @@ export class DungeonArea implements Area {
       for (const f of r.features ?? []) {
         if (f.kind === 'pillar') {
           const rad = f.r ?? 0.7;
-          const m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 1.1, h, 8), mat(pal.pillar));
+          const m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 1.1, h, 8), surf('stone', pal.pillar));
           m.position.set(r.x + f.x, fy + h / 2, r.z + f.z);
           m.castShadow = m.receiveShadow = true;
           p.src.solid.add(m);

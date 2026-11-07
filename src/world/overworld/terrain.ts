@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { fbm } from '../../core/math';
 import { Layer } from '../../core/physics';
-import { applySurface } from '../../render/textures';
+import { applySurface, faceNormals } from '../../render/textures';
 import { pal } from '../../render/palette';
 import type { AreaBuilder } from '../area';
 import { GROVE, HOLLOW, passFrame, pathDist, PASS, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
@@ -38,7 +38,7 @@ export const valleyPaint: TerrainPaint = (c, x, y, z, ny, n) => {
   if (dh < HOLLOW.r + 10) c.lerp(d.set(n > 0.5 ? pal('slate', 1) : pal('stone', 1)), Math.min(1, (HOLLOW.r + 10 - dh) / 6) * 0.85);
 };
 
-/** The ground of `rect`: a flat-shaded, vertex-colored heightfield plus a matching physics trimesh. */
+/** The ground of `rect`: a flat-shaded, face-colored heightfield plus a matching physics trimesh. */
 export function buildTerrain(b: AreaBuilder, rect: TerrainRect = VALLEY_RECT, paint: TerrainPaint = valleyPaint) {
   const width = rect.x1 - rect.x0, depth = rect.z1 - rect.z0;
   const grid = new THREE.PlaneGeometry(width, depth, width / CELL, depth / CELL);
@@ -51,8 +51,9 @@ export function buildTerrain(b: AreaBuilder, rect: TerrainRect = VALLEY_RECT, pa
   const geo = grid.toNonIndexed();
   grid.dispose();
   wellHole(geo);
-  geo.computeVertexNormals();
-  const pos = geo.attributes.position, nor = geo.attributes.normal;
+  faceNormals(geo); // the texture's projection and the paint read the faces' own normals
+  // Painted per face, not per vertex: a road is about one grid cell wide, so per-vertex colours would blur it away.
+  const pos = geo.attributes.position, nor = geo.attributes.surfNormal;
   const colors = new Float32Array(pos.count * 3);
   const c = new THREE.Color();
   for (let f = 0; f < pos.count; f += 3) {

@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T40**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T43**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -40,27 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T30: N64 shading: vertex colours, smooth normals, soft textures
-**Run:** auto · sonnet · high
-**Why:** art.md "Rendering rules". Flat shading reads as modern low-poly indie, and one material per colour costs a draw
-call per colour per cell (600–970 per scene today, far too many for phones).
-**Done when:**
-- `mergeStatic` bakes each mesh's palette colour into a vertex colour and buckets by kind (plain, each surface,
-  emissive, transparent) instead of by colour. Draw calls before and after are in the report (village, shrine, field).
-- Smooth shading by default (`flatShading` off); box corners and cylinder caps keep their hard edges; terrain gets smooth
-  normals.
-- Textures still sit right: the projection's per-face axis is its own attribute, no longer written into `normal`
-  (`faceNormals`), so lighting can be smooth. Filtering is bilinear up close; density drops toward ~16 texels/m (judged
-  by eye with `looker`; `TEXELS_PER_METRE`).
-- A simple baked darkening at merge time: undersides and wall feet a shade darker.
-- Budgets re-approved; engine.md "Textures" and the materials notes in "Conventions" rewritten.
-**Read first:** art.md "Rendering rules", "Palette" and "Budgets"; engine.md "Textures" and "Conventions"; `render/materials.ts`
-(colours arrive already snapped); `render/palette.ts` (`pal`, `snap`, shades 0–3); `render/textures.ts` (`applySurface`, `faceNormals`); Grep `world/overworld/terrain.ts` for its material and normals.
-**Verify:** `npm run check`; look `village field shrine night hollow` before/after in Native and N64 mode; the budgets go
-down, not up.
-**Notes:** Dynamic objects (characters, doors) keep their own materials until their final passes (`bakeRig`, T35).
-Hit-flash materials (`uniqueMat`) must keep working. If the shader fights twice, hand it to `architect` with the repro.
-
 ### T31: Atmosphere per area, and blob shadows
 **Run:** auto · sonnet · high
 **Why:** art.md: fog tinted to each area's mood is core to the look, and N64 characters stand on blob shadows, not
@@ -77,6 +56,67 @@ shadow maps (also cheaper on phones).
 **Verify:** `npm run check`; look `field village night hollow shrine blight dungeon` in Native and N64 mode.
 **Notes:** Ask the owner up front, with look shots of both: keep the sun's shadow map for scenery (shadows move with the
 day), or drop it entirely (N64-authentic, cheaper on phones, with baked darkening instead).
+
+### T40: Texture the world: everything static
+**Run:** auto · sonnet · medium
+**Started (owner asked for more to compare, 2026-11-07):** the tiles `bark`, `foliage`, `metal`, `thatch`, `rock` exist; trees (trunks, canopies, pines, the lone oak), boulders, the gorge, ruins, camp, gate, overworld landmarks, the hollow's dead trees, chests, hinged and dungeon doors and frames, statues, plinths, the hearth, bridge and bell posts are textured. **Still to do:** Stiltwick and Sallowmere (waiting on its redesign), cloth/tents, signs and notice boards with emissive materials (`mat(color, emissive)`), small village props (barrels, crates, stumps), the village's plaster is faint, the dead hollow trunks and other very dark colours show almost no grain (the tile multiplies the colour: consider lighter base colours or a stronger tile), thatch isn't yet seen in a shot, the pink walls. Check the rest against this list, then the Done-when below.
+**Why:** the owner (2026-11-07): textured things look much better than plain ones, and **everything should be textured**
+unless it makes no sense. The dungeons' floors, walls, ceilings, stairs and pillars are done (`surf('stone', …)` in
+`world/dungeon/build.ts`); this is the rest of the places: trees, rocks, signs, doors and frames, props, buildings.
+**Done when:**
+- Every static mesh with a visible face wider than ~0.3 m uses `surf()` or `applySurface` with a fitting tile: **trees**
+  (trunks: bark; canopies: foliage), **rocks** (rock/stone), signs and posts (wood), door frames and doors (wood, iron
+  bands: metal), chests, crates, barrels, bridges, Stiltwick's stilts and planks (wood), statues, plinths, hearth,
+  wakestones, ruins, camp walls, the well (stone), plaster, shingle, thatch. What stays plain, on purpose: glows, gems,
+  windows, flowers, flame, water, and anything the game flashes or fades (`uniqueMat`: those are T41).
+- New tiles where a surface has none: **bark**, **metal**, **foliage** (a soft blotch with a few darker leaf clumps,
+  strength low so it doesn't turn noisy), **thatch**. Each is a drawing in `textures.ts` (engine.md "Textures", "A new
+  tile"); the tile tests cover it. Keep tiles ≤ 64 px; no `strength` above 0.6.
+- Each new tile sets its own scale (`TILE_METRES`: small red bricks and big stone blocks are different tiles) and is drawn at full detail (32 texels/m); the one global resolution slider (default 32 = full detail, Dev tab) shrinks them all. Tile features should read well from ~8 to 32.
+- A short list in the report of anything left plain and why.
+- Look scenes before/after for each area touched, in Native and N64; baselines and budgets re-approved.
+**Read first:** engine.md "Textures"; art.md "Rendering rules"; Grep `mat(` in `src/world/dungeon/{pieces,landmarks,hearth}.ts`,
+`src/world/{objects,bell,jars,murmurbud}.ts`, `src/world/overworld/{nature,village,stiltwick,sallowmere,camp,ruins,hollow,gorge,landmarks,gate}.ts`.
+**Verify:** `npm run check`; look `village field grove ruins camp gorge hollow dungeon chest door stairs shrine bells`.
+**Notes:** Behaviour never changes. A textured cone, cylinder or sphere that is *dynamic* (not merged) needs
+`faceNormals(geo)` on a non-indexed geometry (engine.md "Textures"); merged statics get it from `mergeStatic`. Sallowmere
+waits for its redesign: texture only what's already there, don't extend it. Tree canopies are the likeliest place to need
+a look-and-adjust round: if the foliage tile reads as noise, make it gentler rather than dropping it.
+
+### T41: Texture the living: characters, enemies, bosses
+**Run:** auto · sonnet · high
+**Why:** same owner call as T40, for everything that moves. Clothes, skin, hair, enemy hides, boss armour. These use
+`uniqueMat` (hit flashes, fades), so they need textures on materials of their own, not the shared `surf()` ones.
+**Done when:**
+- Wren, every NPC (`buildHumanoid`, `render/characters.ts`), every enemy (`game/enemies.ts`, `sentinel.ts`, `shellback.ts`,
+  `cragstalker.ts`, Gloomwisp, Thornling) and both bosses (`game/bosses/`) wear fitting textures: cloth/weave (clothes, cloaks),
+  leather, hide or scales, rough stone or metal for armoured things, fur or none where it doesn't suit. Faces and small
+  bits (eyes, glows, teeth) stay plain.
+- Hit flashes, fades (`alphaHash`), the guard's look and the blight's tint all still work (smoke: `shrine-enemies`'s hit
+  steps are known-failing on `main` since before T30; compare against that, don't chase it here).
+- Characters scale and move, so tiles are placed in the mesh's own space (they already are: `vSurfPos = transformed`); check a
+  walking and a hit pose, nothing swims.
+- New tiles as needed (`cloth`, `leather`, `scales`, `hide`), same rules as T40.
+**Read first:** engine.md "Textures"; combat.md "Enemies" (flash rules); `render/characters.ts`; `applySurface` in `render/textures.ts`;
+Grep `uniqueMat` in `src/game`.
+**Verify:** `npm run check`; smoke `shrine-enemies` (compare with `main`), `enemies`; look `enemies boss boss-moves gravelheart pip guard shield`.
+**Notes:** `applySurface(uniqueMat(color), 'cloth')` is the pattern (the mill's inside does it). The player's fade clones shared
+materials (`player.ts`); a clone of a textured material keeps its shader (`onBeforeCompile` is copied), verify. If hit flashes
+break, hand it to `architect` with the repro. T35's modelling kit will rebuild characters later: keep the texturing in
+a function of the material setup, so it moves with the models.
+
+### T42: Fix the `shrine-enemies` smoke step
+**Run:** auto · opus · high
+**Why:** `npm run smoke -- shrine-enemies` fails on step "a Dozing Sentinel sleeps, wakes as Wren comes close, swings, and falls to
+hits in its recovery: no sword hit landed in its recovery". It fails the same on `main` before T30 (checked with a stash), so it is
+not the look work; the other steps and "no errors in the console" pass. Either the scenario's timing drifted or the Sentinel's
+recovery window or Wren's reach changed.
+**Done when:** the scenario passes twice in a row (and alone after the retry), with the cause named in the report: a test fixed
+(headless timing) or a real bug fixed behind a failing unit test first (AGENTS.md Definition of done 5).
+**Read first:** docs/combat.md "Enemies" (the Sentinel); docs/testing.md (the `shrine-enemies` row); `scripts/smoke/` (Grep
+`shrine-enemies`); `game/sentinel.ts`; `game/player.ts` (Grep the sword's reach and hit window).
+**Verify:** `npm run check`; smoke `shrine-enemies`, then `enemies`.
+**Notes:** If one fix attempt fails, write the repro and hand it to `architect`.
 
 ### T32: Effects presets
 **Run:** auto · sonnet · medium

@@ -8,7 +8,7 @@ file layout changes, update the matching doc in the same change.
 
 **Embervale: Song of the Waking Shrine**: an original 3D action-adventure in the spirit of late-90s console adventures.
 An open field around a village hub, dungeons with keys, switches and bosses, lock-on sword combat and a day/night cycle.
-**N64 assets, modern presentation** (owner's call, 2026-11-07; [docs/art.md](docs/art.md)): chunky low-poly, smooth-shaded,
+**N64 assets, modern presentation** (owner's call, 2026-11-07; [docs/art.md](docs/art.md)): chunky low-poly, flat-shaded and faceted (owner's call: not rounded),
 small soft textures, fog, shown sharp and smooth; a little wistful. There is deliberately **no instrument/song-playing
 mechanic** (removed as too close to a famous game; don't bring it back).
 
@@ -21,10 +21,10 @@ built almost entirely by AI agents. Build everything as if it will ship.
 As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
 after it only Lark and Pip remain in the village. Every gate is data (`content/progression.ts`, checked by a test). Everything is built in code; the
-look today is flat-shaded, a colour per material snapped to one master palette (`render/palette.ts`), generated textures on the village and ground, a Display setting (Native / Performance / N64). NPCs talk in **blips**;
-**touch controls** are in a playtest on GitHub Pages. **Sallowmere**'s map and Stiltwick stand, empty, while the owner redesigns its story.
-**Next:** the **N64 look rebuild** of the starter zone before any new area ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)): foundations
-T30–T39 in [docs/tickets.md](docs/tickets.md), T30 first (T27 look loop, T28 Display setting, T29 the **palette** are done). Dev server: port 5273.
+look is flat-shaded and faceted (owner's call), colours snapped to one master palette and baked into vertices on merged scenery, generated crisp textures on terrain, buildings, dungeons, trees and
+props (one global resolution slider in the Dev tab, default 32; characters still plain), and a Display setting (Native / Performance / N64). NPCs talk in **blips**; **touch controls** are in a playtest on GitHub Pages; **Sallowmere** stands empty while the owner redesigns it.
+**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T31 (atmosphere, blob shadows),
+then T40/T41 (texture the rest of the world, then characters, enemies and bosses), T42 (a failing smoke step), T32–T39. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 

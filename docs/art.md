@@ -7,25 +7,23 @@ and a smooth frame rate. The goal is that players feel the way they did playing 
 that looks the way people *remember* the N64, not the way it literally looked.
 
 - **Reference:** OoT and MM, upscaled. Modern indie benchmarks: *Corn Kidz 64*, *Cavern of Dreams*.
-- **Not:** the 3DS remake's busier detail, Wind Waker (cel bands), Twilight Princess, or the generic flat-shaded
-  low-poly indie look. (Genre feel only: never a specific game's designs, AGENTS.md "Hard rules".)
+- **Not:** the 3DS remake's busier detail, Wind Waker (cel bands), Twilight Princess, or a glossy, over-polished low-poly indie look. (Genre feel only: never a specific game's designs, AGENTS.md "Hard rules".)
 - **How we build it:** [pipeline.md](pipeline.md) (Rough and Final passes, the registry, the checks). The rebuild of
-  everything that exists is tickets T27–T39 (T27 done) ([tickets.md](tickets.md)), then the golden set and the rest
+  everything that exists is tickets T27–T42 (T27–T30 done) ([tickets.md](tickets.md)), then the golden set and the rest
   ([roadmap.md](roadmap.md) "The N64 look rebuild").
 
 Each section says **today** (what the code does now) and **target**. Until a ticket moves a section to the target, don't
-extend the "today" look (flat shading, colour-per-material): build new work so it moves
-toward the target.
+extend the "today" look: build new work so it moves toward the target.
 
 ## Rendering rules
 
 | Rule | Today | Target (ticket) |
 |---|---|---|
 | Lighting | Lambert, per pixel | Same: soft diffuse Lambert. Per pixel is fine; the look matters, not the method |
-| Shading | `flatShading: true` everywhere | **Smooth by default**, hard edges only at real creases (box corners, caps, blade edges). three.js primitives already split normals there (T30) |
-| Colour | One shared material per colour (`mat(0x...)`), snapped to the palette (T29) | Palette colours baked into **vertex colours** on a few shared materials; static scenery merged by kind, not colour (T29, T30) |
-| Baked shade | None | Crevices, undersides, wall feet and joints darkened in the vertex colour, not by real-time effects (T30, kit T35) |
-| Textures | Grey detail tiles × colour, 64 px, 32 texels/m, nearest up close | Same method (intensity texture × colour is what N64 games did). **Bilinear** filtering, ~16 texels/m, ≤ 64 px tiles (the ground's 128 px stays) (T30). Untextured is fine for small props and simple creatures |
+| Shading | **Flat, faceted** (owner's call, 2026-11-07, after trying smooth in T30: rounded cones and cylinders lost the polygonal look): `flatShading: true` on every material, terrain included | Same. Faces read as faces; don't smooth normals to hide low polygon counts |
+| Colour | **Done (T30):** `mat`/`surf` colours (snapped to the palette, T29) are baked into **vertex colours** when static scenery is merged, by kind (plain, each surface, emissive; transparent and odd materials on their own), not by colour. Dynamic things keep a material per colour | Same |
+| Baked shade | **Done for merged scenery (T30):** undersides ×0.7, wall feet ×0.82 fading to full 1.5 m up (`BAKED_SHADE`) | Crevices and joints on models too, in the vertex colour, not by real-time effects (kit T35) |
+| Textures | **Done (T30):** grey detail tiles × colour, drawn at 32 texels/m and shown at a global **resolution** of 32/m, i.e. full detail, by default (owner's call; tunable 1–32 live in the Dev tab), with each tile's **scale** authored with it, **nearest** up close (bilinear was tried in T30: too blurry) | Intensity texture × colour is what N64 games did; ≤ 64 px tiles (the ground's 128 px stays). Untextured is fine for small props and simple creatures |
 | Fog | Follows the sky's horizon colour; indoor fog per room | Tinted per area to its mood; a core part of the look (T31) |
 | Sky | Painted gradient, global day keys | Gradient with simple cloud layers, tinted per area to match its fog, driven by the existing day/night cycle (T31) |
 | Shadows | Real sun shadow maps on characters and scenery; `GroundShadow` blobs for floating things | **Blob shadows** under characters and movable things; no shadow maps on characters. Scenery sun shadows decided by look shots in T31 |
@@ -89,7 +87,7 @@ performance pass and go here.
 | Environment | big simple shapes | the area's shared tile set |
 
 On phones, **draw calls and transparent overdraw** (particles, glows, fog planes) matter more than triangles. Today's
-scenes run 600–970 draw calls (`scripts/look-budgets.json`); T30's vertex-colour merge is the main fix. Habits: build a
+scenes run about 90–700 draw calls, the dungeons about 1,200 (`scripts/look-budgets.json`; T30's vertex-colour merge took the village from 720 to 490); dungeons and dynamic objects are the next to trim. Habits: build a
 model type once and reuse its geometry, instance repeated props, merge static geometry per area, cap particles, keep
 transparent layers few.
 

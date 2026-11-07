@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
-import { mat } from '../../render/materials';
+import { mat, surf } from '../../render/materials';
 import { glow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
 import { BellPickup, BellPost } from '../bell';
@@ -85,7 +85,7 @@ export const inCrossing = (x: number, z: number) => {
 };
 
 export function buildCamp(b: AreaBuilder) {
-  const stone = mat(0x8a8478), stoneDark = mat(0x6e695f), wood = mat(0x6b4c30), woodDark = mat(0x4a3322);
+  const stone = surf('stone', 0x8a8478), stoneDark = surf('stone', 0x6e695f), wood = surf('wood', 0x6b4c30), woodDark = surf('wood', 0x4a3322);
   const at = (x: number, z: number) => terrainHeight(x, z);
 
   // The fire: a ring of stones, crossed logs, a low flame (it burns by night and day: the camp is lived in).

@@ -3,10 +3,14 @@ import { foundHints } from '../content/hints';
 import { foundSigils } from '../content/sigils';
 import { SENSITIVITY_RANGE, type Settings } from '../core/save';
 import { DISPLAY_NAMES } from '../render/retro';
+import { setTextureResolution, TEXTURE_RESOLUTION_RANGE, textureResolution } from '../render/textures';
 import type { Game } from './game';
 import type { Menu, MenuRow } from './menu';
 import { MenuDriver } from './menuDriver';
 import { TRIAL_RULES } from './trialFalls';
+
+/** Where the Dev tab's texture-resolution try-out is remembered (a tuning aid, not a setting). */
+const RESOLUTION_KEY = 'embervale:dev:textureResolution';
 
 type TabId = 'settings' | 'hints' | 'messages' | 'dev';
 
@@ -27,6 +31,10 @@ export class PauseMenu {
   constructor(private readonly game: Game) {
     this.menu = new MenuDriver(game);
     this.menu.onTab = (dir) => this.step(dir);
+    try {
+      const saved = Number(localStorage.getItem(RESOLUTION_KEY));
+      if (saved) setTextureResolution(saved);
+    } catch { /* no storage (tests, private windows): keep the default */ }
   }
 
   get isOpen() {
@@ -125,6 +133,13 @@ export class PauseMenu {
     return [
       { kind: 'toggle', label: 'Dev sprint (x5)', get: () => player.devSpeed !== 1, set: (on) => (player.devSpeed = on ? 5 : 1) },
       { kind: 'toggle', label: 'Invincible', get: () => state.invincible, set: (on) => (state.invincible = on) },
+      {
+        kind: 'slider', label: 'Texture resolution', ...TEXTURE_RESOLUTION_RANGE, step: 1, get: textureResolution, format: (v) => `${v} / m`,
+        set: (v) => {
+          setTextureResolution(v);
+          try { localStorage.setItem(RESOLUTION_KEY, String(textureResolution())); } catch { /* not remembered */ }
+        },
+      },
       { kind: 'toggle', label: 'Trial falls cost a half heart', get: () => TRIAL_RULES.fallDamage > 0, set: (on) => (TRIAL_RULES.fallDamage = on ? 1 : 0) },
       ...states,
     ];

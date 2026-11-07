@@ -10,13 +10,38 @@ import { mulberry32 } from '../core/math';
  */
 
 /** The tiles. Each is `size × size`, one byte a texel, mean about 128, and wraps seamlessly. */
-export type TileId = 'plaster' | 'stone' | 'planks' | 'shingle' | 'ground' | 'rock';
+export type TileId = 'plaster' | 'stone' | 'planks' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch';
 
 /** What a material can be made of: which tile on its tops and walls, and how hard it shows. */
-export type SurfaceId = 'plaster' | 'stone' | 'wood' | 'shingle' | 'ground';
+export type SurfaceId = 'plaster' | 'stone' | 'wood' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch';
 
-/** Texels per metre on every surface (owner's call: ~3 cm, a PS2-ish density). */
-export const TEXELS_PER_METRE = 32;
+/**
+ * Two separate ideas (owner's call, 2026-11-07):
+ * - **Scale** is how big a tile's pattern is in the world (`TILE_METRES`): a brick course, a crack, a plank. It's authored with
+ *   the tile, so a dungeon of small red bricks and one of big stone blocks are just two tiles; nothing global scales them.
+ * - **Resolution** is how many pixels draw that pattern: one global setting, texels per metre. Lowering it makes every
+ *   texture blockier and softer, with the same bricks in the same places. It can't exceed what a tile was drawn with.
+ * Each tile is drawn once at full detail (`TILE_SIZE` px over `TILE_METRES`), then shrunk to the current resolution.
+ */
+export const DEFAULT_TEXTURE_RESOLUTION = 32;
+
+/** The Dev tab slider's range, in whole texels per metre. The tiles are drawn at 32 per metre, so 32 is full detail. */
+export const TEXTURE_RESOLUTION_RANGE = { min: 1, max: 32 };
+
+let resolution = DEFAULT_TEXTURE_RESOLUTION;
+
+export const textureResolution = () => resolution;
+
+/** Sets every texture's resolution, now (rounded to a whole number, clamped to the range): rebuilds the tiles already on the GPU. */
+export function setTextureResolution(v: number) {
+  resolution = Math.min(TEXTURE_RESOLUTION_RANGE.max, Math.max(TEXTURE_RESOLUTION_RANGE.min, Math.round(v)));
+  for (const [id, t] of textures) {
+    const n = tileSizeAt(id, resolution);
+    t.dispose(); // a different size needs a new GPU texture
+    t.image = { data: tileBytes(id, n), width: n, height: n };
+    t.needsUpdate = true;
+  }
+}
 
 interface SurfaceDef {
   top: TileId;
@@ -31,9 +56,23 @@ export const SURFACES: Record<SurfaceId, SurfaceDef> = {
   wood: { top: 'planks', side: 'planks', strength: 0.6 },
   shingle: { top: 'shingle', side: 'shingle', strength: 0.6 },
   ground: { top: 'ground', side: 'rock', strength: 0.5 },
+  rock: { top: 'rock', side: 'rock', strength: 0.5 },
+  bark: { top: 'bark', side: 'bark', strength: 0.6 },
+  foliage: { top: 'foliage', side: 'foliage', strength: 0.35 },
+  metal: { top: 'metal', side: 'metal', strength: 0.4 },
+  thatch: { top: 'thatch', side: 'thatch', strength: 0.5 },
 };
 
-export const TILE_SIZE: Record<TileId, number> = { plaster: 64, stone: 64, planks: 64, shingle: 64, ground: 128, rock: 64 };
+/** The size a tile is drawn at, in pixels: the most detail it has. */
+export const TILE_SIZE: Record<TileId, number> = { plaster: 64, stone: 64, planks: 64, shingle: 64, ground: 128, rock: 64, bark: 64, foliage: 64, metal: 64, thatch: 64 };
+
+/** How many metres of world one repeat of a tile covers: its authored scale. (Every tile is 32 texels a metre at full detail so far.) */
+export const TILE_METRES: Record<TileId, number> = { plaster: 2, stone: 2, planks: 2, shingle: 2, ground: 4, rock: 2, bark: 2, foliage: 2, metal: 2, thatch: 2 };
+
+/** A tile's pixel size at `texelsPerMetre`: never more than it was drawn with, never less than 1. */
+export function tileSizeAt(id: TileId, texelsPerMetre: number) {
+  return Math.max(1, Math.min(TILE_SIZE[id], Math.round(TILE_METRES[id] * texelsPerMetre)));
+}
 
 /** The spread every tile is normalized to (its standard deviation, on 0–1), so surfaces differ only by `strength`. */
 export const TILE_SPREAD = 0.16;
@@ -121,7 +160,7 @@ function plaster(n: number, rnd: () => number) {
   return f;
 }
 
-/** Coursed stone: rows of blocks (0.25–0.4 m tall), staggered, each its own tone, in dark mortar. */
+/** Coursed stone: rows of blocks (0.25–0.4 m tall at 32 texels/m), staggered, each its own tone, in dark mortar. */
 function stone(n: number, rnd: () => number) {
   const grain = fbmTile(n, 8, 8, 2, rnd);
   const f = new Float32Array(n * n);
@@ -146,7 +185,7 @@ function stone(n: number, rnd: () => number) {
   return f;
 }
 
-/** Planks running up the tile (v): ~0.2 m wide, dark seams, a grain streak along each, the odd butt joint and knot. */
+/** Planks running up the tile (v): ~0.2 m wide at 32 texels/m, dark seams, a grain streak along each, the odd butt joint and knot. */
 function planks(n: number, rnd: () => number) {
   const grain = fbmTile(n, 16, 2, 2, rnd);
   const f = new Float32Array(n * n);
@@ -224,23 +263,150 @@ function rock(n: number, rnd: () => number) {
   return f;
 }
 
-const DRAW: Record<TileId, (n: number, rnd: () => number) => Float32Array> = { plaster, stone, planks, shingle, ground, rock };
+/** Bark: deep vertical furrows (v runs up the trunk) with ridges between, and a few knots. */
+function bark(n: number, rnd: () => number) {
+  const grain = fbmTile(n, 12, 3, 3, rnd);
+  const f = new Float32Array(n * n);
+  let x0 = 0;
+  for (const w of cuts(n, 5, 9, rnd)) {
+    const tone = 0.4 + rnd() * 0.35;
+    for (let y = 0; y < n; y++) {
+      const wobble = Math.round(Math.sin((y / n) * Math.PI * 2 * 2 + x0) * 1);
+      for (let x = 0; x < w; x++) {
+        const i = y * n + wrap(x0 + x + wobble, n);
+        const ridge = Math.sin((x / w) * Math.PI);
+        f[i] = tone + grain[i] * 0.4 + ridge * 0.2 - (x < 2 ? 0.5 : 0);
+      }
+    }
+    x0 += w;
+  }
+  for (let k = 0; k < 2; k++) {
+    const cx = Math.floor(rnd() * n), cy = Math.floor(rnd() * n);
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) f[wrap(cy + dy, n) * n + wrap(cx + dx, n)] -= 0.4;
+  }
+  return f;
+}
+
+/** Foliage: soft blotches of light and shade with scattered leaf clumps, 2–4 texels across. Gentle: it must never read as noise. */
+function foliage(n: number, rnd: () => number) {
+  const f = fbmTile(n, 4, 4, 2, rnd);
+  for (let i = 0; i < f.length; i++) f[i] = f[i] * 0.8 + rnd() * 0.08;
+  for (let c = 0; c < n * 0.9; c++) {
+    const cx = Math.floor(rnd() * n), cy = Math.floor(rnd() * n);
+    const v = rnd() < 0.5 ? 0.3 : -0.3, r = 1 + Math.floor(rnd() * 2);
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy <= r * r + 1) f[wrap(cy + dy, n) * n + wrap(cx + dx, n)] += v;
+    }
+  }
+  return f;
+}
+
+/** Worked metal: fine brushed streaks along u, plate seams every 1 m with a rivet at each corner, and a few scuffs. */
+function metal(n: number, rnd: () => number) {
+  const streak = fbmTile(n, 2, 24, 2, rnd);
+  const f = new Float32Array(n * n);
+  for (let i = 0; i < f.length; i++) f[i] = 0.45 + streak[i] * 0.4 + rnd() * 0.05;
+  const plate = n / 2;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if (x % plate === 0 || y % plate === 0) f[y * n + x] = -0.2;
+    else if (x % plate === 1 || y % plate === 1) f[y * n + x] += 0.15; // the lit edge of a plate
+  }
+  for (let py = 0; py < 2; py++) for (let px = 0; px < 2; px++) {
+    const cx = px * plate + 4, cy = py * plate + 4;
+    for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) f[(cy + dy) * n + cx + dx] += dx + dy === 0 ? 0.5 : -0.3;
+  }
+  for (let s = 0; s < 6; s++) {
+    const sx = Math.floor(rnd() * n), sy = Math.floor(rnd() * n);
+    for (let k = 0; k < 6; k++) f[wrap(sy + k, n) * n + wrap(sx + k, n)] -= 0.3;
+  }
+  return f;
+}
+
+/** Thatch: straw strands running downhill (v), bundled in bands across the slope, ragged at each band's lower edge. */
+function thatch(n: number, rnd: () => number) {
+  const strands = fbmTile(n, 28, 3, 2, rnd);
+  const f = new Float32Array(n * n);
+  const band = 16;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const inBand = y % band;
+    const ragged = (rnd() - 0.5) * 2.4;
+    const edge = inBand + ragged > band - 2 ? -0.35 : inBand < 2 ? 0.2 : 0;
+    f[y * n + x] = 0.4 + strands[y * n + x] * 0.6 + (inBand / band) * 0.15 + edge;
+  }
+  return f;
+}
+
+const DRAW: Record<TileId, (n: number, rnd: () => number) => Float32Array> = { plaster, stone, planks, shingle, ground, rock, bark, foliage, metal, thatch };
 
 /** A tile's bytes: the same for the same id and seed, on every load. */
 export function drawTile(id: TileId, seed = 1) {
   return finishTile(DRAW[id](TILE_SIZE[id], mulberry32(seed)));
 }
 
+/**
+ * Shrinks an `n × n` tile to `m × m` (m ≤ n) without ever blending texels, so the result is crisp at every size. (Averaging was
+ * tried first: at a ratio that isn't whole, a one-texel crack or mortar line falls across two new texels and smears.) Each
+ * source texel belongs to exactly one new texel (the one its centre falls in); the new texel takes the texel of its cell that
+ * differs most from the whole tile's mean, so cracks, seams and pebbles survive at full strength (a crack sharing a cell with a
+ * flat texel wins, being the farther from the mean). The result is then shifted and
+ * stretched back to the source's mean and spread, so the colour and the strength never change with the resolution.
+ */
+export function downsampleTile(src: Uint8Array, n: number, m: number) {
+  if (m >= n) return src;
+  const s = n / m;
+  const picked = new Float32Array(m * m);
+  let tileMean = 0;
+  for (let i = 0; i < src.length; i++) tileMean += src[i];
+  tileMean /= src.length;
+  const cell = (o: number) => [Math.ceil(o * s - 0.5), Math.ceil((o + 1) * s - 0.5)] as const;
+  for (let oy = 0; oy < m; oy++) {
+    const [y0, y1] = cell(oy);
+    for (let ox = 0; ox < m; ox++) {
+      const [x0, x1] = cell(ox);
+      let best = src[y0 * n + x0], dev = -1;
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          const d = Math.abs(src[y * n + x] - tileMean);
+          if (d > dev) { dev = d; best = src[y * n + x]; }
+        }
+      }
+      picked[oy * m + ox] = best;
+    }
+  }
+  const stats = (a: ArrayLike<number>) => {
+    let mu = 0;
+    for (let i = 0; i < a.length; i++) mu += a[i];
+    mu /= a.length;
+    let v = 0;
+    for (let i = 0; i < a.length; i++) v += (a[i] - mu) ** 2;
+    return { mu, sd: Math.sqrt(v / a.length) };
+  };
+  const from = stats(src), to = stats(picked);
+  const gain = to.sd > 1e-6 ? from.sd / to.sd : 1;
+  const out = new Uint8Array(m * m);
+  for (let i = 0; i < out.length; i++) out[i] = Math.round(Math.min(255, Math.max(0, from.mu + (picked[i] - to.mu) * gain)));
+  return out;
+}
+
+const drawn = new Map<TileId, Uint8Array>();
+
+/** The tile's bytes at `size` px: drawn once at full detail, then shrunk. */
+function tileBytes(id: TileId, size: number) {
+  let full = drawn.get(id);
+  if (!full) drawn.set(id, (full = drawTile(id)));
+  return downsampleTile(full, TILE_SIZE[id], size);
+}
+
 // ---- The GPU side ----
 
 const textures = new Map<TileId, THREE.DataTexture>();
 
-/** The tile as a texture: one channel, repeating, nearest up close (chunky texels), mipmapped far off (no sparkle). */
+/** The tile as a texture: one channel, repeating, nearest up close (crisp chunky texels: the owner found bilinear too blurry), mipmapped far off (no sparkle). */
 export function tileTexture(id: TileId) {
   let t = textures.get(id);
   if (!t) {
-    const n = TILE_SIZE[id];
-    t = new THREE.DataTexture(drawTile(id), n, n, THREE.RedFormat, THREE.UnsignedByteType);
+    const n = tileSizeAt(id, resolution);
+    t = new THREE.DataTexture(tileBytes(id, n), n, n, THREE.RedFormat, THREE.UnsignedByteType);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.magFilter = THREE.NearestFilter;
     t.minFilter = THREE.NearestMipmapLinearFilter;
@@ -253,9 +419,9 @@ export function tileTexture(id: TileId) {
 }
 
 /**
- * Sets a non-indexed geometry's normals to its faces' own (every vertex of a triangle gets the triangle's
- * normal). The projection reads the normal as a `flat` value, so it must be the face's: a cone's smooth
- * normals would tilt it. Free for flat-shaded materials, whose lighting never reads the attribute.
+ * Gives a non-indexed geometry a `surfNormal` attribute: every vertex of a triangle gets the triangle's own
+ * normal. The projection reads it as a `flat` value, so it must be the face's, while the ordinary `normal`
+ * stays free for smooth lighting (a cone's smooth normals would tilt the tile). Plain meshes don't need it.
  * (Not the screen derivatives of the position: at world coordinates of ~150 m their float error, times
  * the position, shifts the tile by tens of cm from pixel to pixel; it smeared the well's roof.)
  */
@@ -271,15 +437,24 @@ export function faceNormals(geo: THREE.BufferGeometry) {
     b.cross(c).normalize();
     for (let k = 0; k < 3; k++) normals.set([b.x, b.y, b.z], (i + k) * 3);
   }
-  geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  geo.setAttribute('surfNormal', new THREE.BufferAttribute(normals, 3));
   return geo;
 }
 
 /**
+ * A geometry ready for a textured *dynamic* mesh: non-indexed, with its faces' own normals in `surfNormal`.
+ * Use it on a cone, cylinder or sphere that isn't merged (instanced trees, a rig's limb); boxes and flat-shaded
+ * polyhedra already work without it.
+ */
+export function faceted<T extends THREE.BufferGeometry>(geo: T): THREE.BufferGeometry {
+  return faceNormals(geo.index ? geo.toNonIndexed() : geo);
+}
+
+/**
  * Projects a tile onto a face by its object-space position (merged statics are in world space; moving
- * things keep their tile), along the face's normal (`faceNormals`; `mergeStatic` sets them for textured
- * meshes). Walls: u along the wall, v up. Slopes: v runs downhill (stretched by the slope, so a texel
- * stays ~3 cm along it). Flat tops: x and z.
+ * things keep their tile), along the face's own normal (the `surfNormal` attribute, `faceNormals`; `mergeStatic` sets it for
+ * textured meshes; a mesh without one falls back to its `normal`, right for boxes). Walls: u along the wall, v up. Slopes: v runs downhill (stretched by the slope, so a texel
+ * stays the same size along it). Flat tops: x and z.
  */
 const SURFACE_FRAGMENT = /* glsl */ `
 #include <color_fragment>
@@ -313,12 +488,12 @@ export function applySurface<T extends THREE.MeshLambertMaterial>(m: T, surface:
   m.onBeforeCompile = (shader) => {
     shader.uniforms.surfTop = { value: tileTexture(def.top) };
     shader.uniforms.surfSide = { value: tileTexture(def.side) };
-    shader.uniforms.surfTopRepeat = { value: TEXELS_PER_METRE / TILE_SIZE[def.top] };
-    shader.uniforms.surfSideRepeat = { value: TEXELS_PER_METRE / TILE_SIZE[def.side] };
+    shader.uniforms.surfTopRepeat = { value: 1 / TILE_METRES[def.top] }; // the tile's authored scale; resolution never changes it
+    shader.uniforms.surfSideRepeat = { value: 1 / TILE_METRES[def.side] };
     shader.uniforms.surfStrength = { value: def.strength };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vSurfPos;\nflat varying vec3 vSurfNormal;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSurfPos = transformed;\nvSurfNormal = objectNormal;');
+      .replace('#include <common>', '#include <common>\nattribute vec3 surfNormal;\nvarying vec3 vSurfPos;\nflat varying vec3 vSurfNormal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSurfPos = transformed;\nvSurfNormal = dot(surfNormal, surfNormal) > 0.5 ? surfNormal : objectNormal;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vSurfPos;\nflat varying vec3 vSurfNormal;\nuniform sampler2D surfTop;\nuniform sampler2D surfSide;\nuniform float surfTopRepeat;\nuniform float surfSideRepeat;\nuniform float surfStrength;')
       .replace('#include <color_fragment>', SURFACE_FRAGMENT);

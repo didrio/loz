@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Layer, type RAPIER } from '../../core/physics';
-import { mat, uniqueMat } from '../../render/materials';
+import { mat, surf, uniqueMat } from '../../render/materials';
+import { faceted } from '../../render/textures';
 import { glow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
 import { Prism } from './prism';
@@ -66,7 +67,7 @@ export class DungeonDoor {
     parent.add(this.group);
 
     // The frame: two posts and a lintel, a little proud of the wall on both sides.
-    const frame = mat(STONE.trim);
+    const frame = surf('stone', STONE.trim);
     for (const side of [-1, 1]) {
       const post = new THREE.Mesh(new THREE.BoxGeometry(0.35, DOOR_HEIGHT + 0.3, 0.8), frame);
       post.position.set(side * (width / 2 + 0.17), (DOOR_HEIGHT + 0.3) / 2, 0);
@@ -84,10 +85,10 @@ export class DungeonDoor {
     this.group.add(leaf);
     this.leaf = leaf;
     if (style === 'bars') {
-      const iron = mat(STONE.iron);
+      const iron = surf('metal', STONE.iron);
       const n = Math.max(3, Math.round(width / 0.45));
       for (let i = 0; i < n; i++) {
-        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, DOOR_HEIGHT, 6), iron);
+        const bar = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.06, 0.06, DOOR_HEIGHT, 6)), iron);
         bar.position.set(-width / 2 + (i + 0.5) * (width / n), DOOR_HEIGHT / 2, 0);
         leaf.add(bar);
       }
@@ -98,13 +99,13 @@ export class DungeonDoor {
       }
     } else {
       const color = style === 'boss' ? 0x4a4440 : style === 'hidden' ? 0x34302d : 0x847d70;
-      const slab = new THREE.Mesh(new THREE.BoxGeometry(width, DOOR_HEIGHT, 0.4), mat(color));
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(width, DOOR_HEIGHT, 0.4), surf('stone', color));
       slab.position.y = DOOR_HEIGHT / 2;
       slab.castShadow = true;
       leaf.add(slab);
       for (const face of [-1, 1]) {
         if (style === 'key') {
-          const tint = mat(KEY_HEX[keyColor!]);
+          const tint = surf('metal', KEY_HEX[keyColor!]);
           const band = new THREE.Mesh(new THREE.BoxGeometry(width, 0.35, 0.06), tint);
           band.position.set(0, DOOR_HEIGHT - 0.7, face * 0.21);
           leaf.add(band);
@@ -206,7 +207,7 @@ export class Wakestone {
   constructor(b: AreaBuilder, parent: THREE.Object3D, readonly id: string, x: number, y: number, z: number, readonly heavy: boolean, glowMat?: THREE.Material) {
     const size = heavy ? 1.96 : 1.84;
     this.size = size;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat(heavy ? 0x3a2f4f : 0x9b9486));
+    const body = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), surf('stone', heavy ? 0x3a2f4f : 0x9b9486));
     body.position.y = size / 2;
     body.castShadow = true;
     this.group.add(body);
@@ -221,7 +222,7 @@ export class Wakestone {
     if (heavy) {
       // Bronze bands round the top and bottom.
       for (const by of [0.18, size - 0.18]) {
-        const band = new THREE.Mesh(new THREE.BoxGeometry(size + 0.06, 0.16, size + 0.06), mat(0x9a6a2e));
+        const band = new THREE.Mesh(new THREE.BoxGeometry(size + 0.06, 0.16, size + 0.06), surf('metal', 0x9a6a2e));
         band.position.y = by;
         this.group.add(band);
       }
@@ -293,13 +294,13 @@ export class DungeonSwitch {
       return;
     }
     if (style === 'plate') {
-      const rim = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.06, 1.9), mat(STONE.trim));
+      const rim = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.06, 1.9), surf('stone', STONE.trim));
       rim.position.y = 0.03;
       this.top = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.14, 1.5), this.glowMat);
       this.top.position.y = 0.09;
       this.group.add(rim, this.top);
     } else {
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.9, 8), mat(STONE.trim));
+      const base = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.45, 0.55, 0.9, 8)), surf('stone', STONE.trim));
       base.position.y = 0.45;
       this.top = new THREE.Mesh(new THREE.OctahedronGeometry(0.42), this.glowMat);
       this.top.position.y = 1.45;
@@ -332,9 +333,9 @@ export class DungeonSwitch {
 /** A carved stone tablet on a plinth, for dungeon signs. */
 export function buildTablet(b: AreaBuilder, parent: THREE.Object3D, x: number, y: number, z: number, yaw: number) {
   const g = new THREE.Group();
-  const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.3, 0.6), mat(STONE.trim));
+  const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.3, 0.6), surf('stone', STONE.trim));
   plinth.position.y = 0.15;
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.2), mat(0xa29b8d));
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.2), surf('stone', 0xa29b8d));
   slab.position.y = 0.9;
   slab.castShadow = true;
   const lines = mat(0x4a463f);

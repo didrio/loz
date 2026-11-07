@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
-import { mat } from '../../render/materials';
+import { mat, surf } from '../../render/materials';
+import { faceted } from '../../render/textures';
 import type { AreaBuilder } from '../area';
 import { THEMES } from './decor';
 import { LANDMARK_SIZE, type LandmarkStyle, type RoomTheme } from './format';
@@ -27,7 +28,7 @@ export function buildLandmark(
   g.rotation.y = yaw;
   const pal = THEMES[theme];
   const add = (geo: THREE.BufferGeometry, color: number, pos: V3, rot: V3 = [0, 0, 0], emissive = 0) => {
-    const m = new THREE.Mesh(geo, mat(color, emissive));
+    const m = emissive ? new THREE.Mesh(geo, mat(color, emissive)) : new THREE.Mesh(faceted(geo), surf('stone', color));
     m.position.set(...pos);
     m.rotation.set(...rot);
     m.castShadow = true;
@@ -39,7 +40,7 @@ export function buildLandmark(
   const bar = (from: V3, to: V3, thick: number, color: number, wide = thick) => {
     const a = new THREE.Vector3(...from), c = new THREE.Vector3(...to);
     const len = a.distanceTo(c);
-    const m = new THREE.Mesh(new THREE.BoxGeometry(wide, thick, len), mat(color));
+    const m = new THREE.Mesh(new THREE.BoxGeometry(wide, thick, len), surf('stone', color));
     m.position.copy(a).add(c).multiplyScalar(0.5);
     m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), c.clone().sub(a).normalize());
     m.castShadow = true;
@@ -60,11 +61,11 @@ export function buildLandmark(
     const head = new THREE.Group();
     head.position.set(0.05, 4.05, -0.2);
     head.rotation.y = 0.95; // turned to look off to the staff side
-    const hb = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.7, 0.65), mat(pal.pillar));
-    const hood = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.7, 4), mat(pal.trim));
+    const hb = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.7, 0.65), surf('stone', pal.pillar));
+    const hood = new THREE.Mesh(faceted(new THREE.ConeGeometry(0.5, 0.7, 4)), surf('stone', pal.trim));
     hood.position.y = 0.55;
     hood.rotation.y = Math.PI / 4;
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.25), mat(pal.trim));
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.25), surf('stone', pal.trim));
     nose.position.set(0, -0.02, 0.42);
     for (const m of [hb, hood, nose]) { m.castShadow = true; head.add(m); }
     g.add(head);

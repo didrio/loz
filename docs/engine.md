@@ -56,33 +56,36 @@ One **Display** setting (Settings, `Settings.display`): **Native** (0, the defau
 
 ## Textures (`render/textures.ts`, T19)
 
-**Changing** for the N64 look (T30, [art.md](art.md) "Rendering rules"): the method stays; filtering becomes bilinear, the
-density drops toward ~16 texels/m, and the projection axis moves out of `normal` so lighting can be smooth.
-
 Generated in code, never imported (owner's call, 2026-11-06). A texture is a small grey **detail tile**: a single channel with
 mean ~128. It only brightens or darkens the material's own colour (`colour × (1 + strength·(t − 0.5)·2)`), so one tile
 serves every colour of that surface, and the palette, the blight and the N64 crush behave as before. Think of it as a
 send effect on a channel, not a new instrument.
 - **Placed by position, not UVs** (`mergeStatic` drops UVs). The patched Lambert shader projects along each face's own normal,
-  read as a `flat` value: `mergeStatic` rewrites textured meshes' normals to face normals (`faceNormals`; free, flat shading
-  never reads them), and the terrain's are already. A dynamic textured cone or cylinder needs `faceNormals` too (or its tile
-  tilts). Not screen derivatives: their float error times world coordinates (~150 m) smeared the tile. **Walls**: u runs along the
+  read as a `flat` value from its own attribute, `surfNormal` (`faceNormals(geo)` writes it; lighting is flat, but the attribute keeps the projection independent of `normal`). `mergeStatic` adds it to textured meshes and `buildTerrain` to the ground. A mesh without the attribute
+  falls back to its `normal` (right for boxes); a dynamic textured cone or cylinder needs `faceNormals` too (or its tile tilts). Not screen derivatives: their float error times world coordinates (~150 m) smeared the tile. **Walls**: u runs along the
   wall and v up, so turned houses don't stretch and courses stay level. **Slopes** (roofs, hills): v runs downhill.
   **Flat tops**: x and z. Merged statics are in world space; a moving mesh keeps its tile. Corners don't line up (fine at this
   resolution).
-- **Density**: 32 texels per metre everywhere (~3 cm, `TEXELS_PER_METRE`). Tiles are 64 px (2 m); the ground's is 128 px (4 m),
-  to hide the repeat. Up close the filter is nearest (chunky texels); at a distance it's mipmapped (no sparkle).
+- **Scale and resolution are separate** (owner's call, 2026-11-07). **Scale** is how big a tile's pattern is in the world, authored with the
+  tile (`TILE_METRES`: metres per repeat; every tile is 2 m, the ground's 4 m, so far): a dungeon of small red bricks and one of big
+  stone blocks are two tiles, and nothing global rescales them. **Resolution** is how many pixels draw the pattern, one global number
+  of whole texels per metre (`textureResolution`, default 32 = full detail, owner's pick, range 1–32; the tiles are drawn at 32/m, so more
+  can't add anything). Each tile is drawn once at full detail (`TILE_SIZE` px) and shrunk to the current resolution by `downsampleTile`, which
+  never blends texels (each new texel takes the most distinctive source texel in its cell, then mean and spread are restored), so every
+  value is crisp, not only 32 (averaging smeared one-texel lines at ratios that aren't whole). Lowering it makes everything blockier with
+  the same bricks, cracks and planks in the same places; at big reductions a very thin line can drop out. The Dev tab's slider calls `setTextureResolution`, which rebuilds the GPU textures live. Up close the filter is nearest
+  (crisp chunky texels; the owner tried bilinear in T30 and found it too blurry); far off it's mipmapped (no sparkle).
 - **Surfaces** (`SURFACES`): `plaster`, `stone` (courses and mortar), `wood` (planks running along v), `shingle` (rows across a
-  slope), `ground` (a clumpy ground tile on tops, a rock tile on steep faces). Each sets a top tile, a side tile and a `strength`.
+  slope), `ground` (a clumpy ground tile on tops, a rock tile on steep faces), `rock`, `bark` (furrows up the trunk), `foliage` (soft
+  blotches and leaf clumps, low strength), `metal` (brushed plates with rivets), `thatch` (straw bands). `faceted(geo)` readies a dynamic cone/cylinder/sphere for a tile. Each sets a top tile, a side tile and a `strength`.
   Tiles are pure `(size, seed) → Uint8Array` drawings (`drawTile`), unit-tested for determinism, mean (no colour shift),
   spread and seamless wrap.
 - **Use**: `surf('plaster', 0xeadcbc)` instead of `mat(0xeadcbc)`. It's shared and cached like `mat`, so never mutate it.
   `applySurface(material, kind)` is for materials of your own: the terrain's vertex-colour material (so **all terrain**,
   valley and regions, is textured) and the mill's BackSide inside. Small bits stay plain: cloth, flowers, knobs, glows, windows.
 - **Cost**: six tiles under 100 KB with mips, and one shader program shared by every textured material (`customProgramCacheKey
-  'surface'`). Draw calls only rise when the same colour is used both plain and textured (two merge buckets): the village went
-  585 → 632 because its stone and wood colours are still plain in the ruins and the rest of the valley (T21 removes most of
-  that). Done: the village and all terrain. To do: tickets T21–T24.
+  'surface'`). Since T30 merged scenery batches by kind (plain / each surface / emissive), not by colour, so using a colour both
+  plain and textured no longer costs a draw call. Done: the village, all terrain and the dungeons' structure (floors, walls, ceilings, stairs, pillars). To do: T40 (the rest of the world), T41 (characters, enemies, bosses).
 - **Look baselines barely see a texture**: they're shrunk 4× by averaging, and a tile averages to grey. Judge a texture
   change on the full-size shots in `look-output/`, by eye.
 - **A new tile**: a drawing function in `DRAW` (periodic noise via `periodicNoise`/`fbmTile`; structure like `cuts` for courses
@@ -102,7 +105,7 @@ panel of options resolving with the index or null (backed out), shown during a c
 of the dialog box (the bells' travel menu). `choose(title, options, exit?)` and `ask(pages, options, exit?)` share one look: a small centered
 window, rows stacked, ▸ and a bar on the selected one, mouse hover/click; `exit` is the index of the back-out row (Not now, Stay), drawn red,
 and Cancel picks it (`ask` has no cancel without one). Always pass it for a back-out option. The pause menu's **Dev tab** holds Dev sprint,
-Invincible (`GameState.invincible`, never saved), trial falls, and Save states (`content/devStates.ts`, in play order: a new game, the gorge, the
+**Texture resolution** (a 1–32 slider in whole texels per metre, live on every textured surface and remembered in `localStorage` under `embervale:dev:textureResolution`; the remembered value beats the default, so clear it to see the default again), Invincible (`GameState.invincible`, never saved), trial falls, and Save states (`content/devStates.ts`, in play order: a new game, the gorge, the
 Morrowbell, the night before the Lamplighter, the shrine's stages, the opened gate; loading one
 replaces the current save, via `Game.loadDevState`). Every state is run through `withNotes`: it gets all the keepers' notes once Wren has
 the sword, the hollow's message after the Lamplighter, and each shrine message whose room is cleared, so Hints and Messages match. While the menu is open `Game.frame` runs
@@ -344,6 +347,11 @@ desktop build can write real files.
 - A full day is about 10 minutes (`HOURS_PER_SECOND = 1/24`, owner's call 2026-11-04); night is 18:00–6:00. Crossing
   6:00 or 18:00 shows a one-word card, "Dawn" / "Nightfall" (`dayTurn` in `game/state.ts`, on the HUD's area-name card).
   The HUD clock shows only the time (no day number).
+- **Merging** (`mergeStatic`, `render/materials.ts`, T30): a static mesh's `mat`/`surf` colour is baked into a vertex colour
+  (linear, with the baked shade of art.md "Rendering rules": `bakeColor`, `BAKED_SHADE`) and meshes batch by kind on a few shared
+  vertex-coloured materials; transparent, BackSide, custom-shader or vertex-coloured materials keep their own bucket. Lighting is
+  flat (`flatShading: true` on every material, owner's call: faceted, not rounded). Normals don't matter for lighting, but `surfNormal` still carries the faces' own for textures.
+  Dynamic things (characters, doors) keep a material per colour until their final passes.
 - Materials from `mat(color)` are shared: **never mutate them**; use `uniqueMat` for
   anything that flashes or glows. `mat`, `surf` and `uniqueMat` **snap every colour to the master palette**
   (`render/palette.ts`, art.md "Palette"); name new colours with `pal('hue', shade)`. Colours set on a material later

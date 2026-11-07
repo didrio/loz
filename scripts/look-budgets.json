@@ -1,6 +1,6 @@
 {
   "bells": {
-    "calls": 1600,
+    "calls": 1500,
     "triangles": 265000
   },
   "bellShaft": {
@@ -28,12 +28,12 @@
     "triangles": 49000
   },
   "camp": {
-    "calls": 950,
+    "calls": 870,
     "triangles": 337000
   },
   "chest": {
     "calls": 130,
-    "triangles": 234000
+    "triangles": 236000
   },
   "chestOpen": {
     "calls": 120,
@@ -48,7 +48,7 @@
     "triangles": 210000
   },
   "dungeon": {
-    "calls": 1600,
+    "calls": 1500,
     "triangles": 80000
   },
   "emptyVillage": {
@@ -60,24 +60,24 @@
     "triangles": 68000
   },
   "entrance": {
-    "calls": 1600,
+    "calls": 1500,
     "triangles": 80000
   },
   "field": {
-    "calls": 890,
-    "triangles": 266000
+    "calls": 800,
+    "triangles": 268000
   },
   "gate": {
-    "calls": 350,
-    "triangles": 242000
+    "calls": 330,
+    "triangles": 244000
   },
   "glove": {
     "calls": 750,
     "triangles": 60000
   },
   "gorge": {
-    "calls": 660,
-    "triangles": 260000
+    "calls": 590,
+    "triangles": 261000
   },
   "gravelheart": {
     "calls": 1600,
@@ -89,14 +89,14 @@
   },
   "grove": {
     "calls": 140,
-    "triangles": 234000
+    "triangles": 236000
   },
   "guard": {
     "calls": 930,
     "triangles": 266000
   },
   "hollow": {
-    "calls": 160,
+    "calls": 150,
     "triangles": 223000
   },
   "hud": {
@@ -104,7 +104,7 @@
     "triangles": 274000
   },
   "landmarks": {
-    "calls": 570,
+    "calls": 540,
     "triangles": 57000
   },
   "lostBell": {
@@ -116,8 +116,8 @@
     "triangles": 266000
   },
   "night": {
-    "calls": 790,
-    "triangles": 268000
+    "calls": 690,
+    "triangles": 269000
   },
   "northpass": {
     "calls": 390,
@@ -136,8 +136,8 @@
     "triangles": 267000
   },
   "ruins": {
-    "calls": 900,
-    "triangles": 267000
+    "calls": 780,
+    "triangles": 268000
   },
   "sallowmere": {
     "calls": 950,
@@ -152,12 +152,12 @@
     "triangles": 231000
   },
   "shrine": {
-    "calls": 140,
-    "triangles": 211000
+    "calls": 120,
+    "triangles": 210000
   },
   "stairs": {
-    "calls": 310,
-    "triangles": 48000
+    "calls": 280,
+    "triangles": 49000
   },
   "surf": {
     "calls": 820,
@@ -180,8 +180,8 @@
     "triangles": 289000
   },
   "village": {
-    "calls": 720,
-    "triangles": 266000
+    "calls": 640,
+    "triangles": 268000
   },
   "villageDetails": {
     "calls": 700,

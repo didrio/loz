@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { fbm } from '../../core/math';
 import { Layer } from '../../core/physics';
-import { mat } from '../../render/materials';
+import { mat, surf } from '../../render/materials';
+import { faceted } from '../../render/textures';
 import type { AreaBuilder } from '../area';
 import { GROVE, LONE_OAK, inGate, inGorge, inRuin, inHollow, inPass, isOpen, onVillageStep, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
 
@@ -66,18 +67,18 @@ export function buildTrees(b: AreaBuilder) {
     place(x, z, 'pine');
     hill++;
   }
-  instanced(b, new THREE.CylinderGeometry(0.22, 0.35, 2.4, 6), mat(0x6b4423), trunks);
-  instanced(b, new THREE.IcosahedronGeometry(1, 0), mat(0xffffff), round, roundC);
-  instanced(b, new THREE.ConeGeometry(1.6, 5, 7), mat(0xffffff), pine, pineC);
+  instanced(b, faceted(new THREE.CylinderGeometry(0.22, 0.35, 2.4, 6)), surf('bark', 0x6b4423), trunks);
+  instanced(b, new THREE.IcosahedronGeometry(1, 0), surf('foliage', 0xffffff), round, roundC);
+  instanced(b, faceted(new THREE.ConeGeometry(1.6, 5, 7)), surf('foliage', 0xffffff), pine, pineC);
 }
 
 /** The lone oak at the grove road's bend: twice a field tree's size, broad and dark, so it reads from the crossroads. */
 export function buildLoneOak(b: AreaBuilder) {
   const { x, z } = LONE_OAK;
   const y = terrainHeight(x, z);
-  b.mesh(new THREE.CylinderGeometry(0.55, 0.9, 6, 7), mat(0x5a3a1e), x, y + 3, z);
+  b.mesh(new THREE.CylinderGeometry(0.55, 0.9, 6, 7), surf('bark', 0x5a3a1e), x, y + 3, z);
   for (const [dx, dy, dz, r, c] of [[0, 7.6, 0, 3.6, 0x2f5a26], [2.4, 6.6, 1, 2.6, 0x37662c], [-2.2, 6.9, -0.8, 2.8, 0x2a5222], [0.4, 9.4, -0.4, 2.4, 0x3b6e30]] as const) {
-    b.mesh(new THREE.IcosahedronGeometry(r, 0), mat(c), x + dx, y + dy, z + dz);
+    b.mesh(new THREE.IcosahedronGeometry(r, 0), surf('foliage', c), x + dx, y + dy, z + dz);
   }
   b.cylinder(x, y + 3, z, 3, 0.8, Layer.Prop);
 }
@@ -97,7 +98,7 @@ export function buildRocks(b: AreaBuilder) {
     ms.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(s, s * 0.75, s)));
     if (s > 0.9) b.ball(x, y, z, s * 0.8, s > 1.6 ? Layer.World : Layer.Prop);
   }
-  instanced(b, new THREE.DodecahedronGeometry(1, 0), mat(0x8e8a82), ms);
+  instanced(b, new THREE.DodecahedronGeometry(1, 0), surf('rock', 0x8e8a82), ms);
 }
 
 /** Grass tufts and flowers: pure decoration, no collision. */
