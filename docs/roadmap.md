@@ -17,15 +17,34 @@ when it's near.
 
 - **Next region:** Sallowmere's map and Stiltwick are built and empty; its story and mechanics are being redesigned by
   the owner (2026-11-06: the old design in [sallowmere.md](sallowmere.md) is shelved, not the plan).
-- **The look pass, deferred** (owner, 2026-11-06: not sure about the retro look; it stays an opt-in Setting): de-uniforming
-  props and buildings (a seeded jitter helper), textures for the rest of the valley, Sallowmere and the shrine, a water
-  ripple and shore band, an accurate "demastered" picture and UI. The specs were tickets T20–T26 (git history of tickets.md).
+- **The N64 look rebuild** (owner, 2026-11-07; replaces the shelved PS2 "look pass", old T20–T26 in git history): the
+  starter zone rebuilt on the new pipeline ([art.md](art.md), [pipeline.md](pipeline.md)) before any new area. Behaviour
+  never changes. In order, each written as a ticket when it's near (at the previous one's `/wrap`):
+  1. **Foundations:** T27–T39 in [tickets.md](tickets.md).
+  2. **The golden set**, one Final-pass ticket each, locked only when the owner approves (the first ones
+     plan · opusplan · high, as they define the style): a Thornling → Wren with her full animation set → the starter-area
+     entrance vignette (phone frame rate checked) → the prop set (chest from T35, door, jar, crate, sign) → Pip → the Hollow
+     Lamplighter → Gravelheart → one shrine room (puzzles unchanged). Each captures its reference renders (art.md
+     "The golden set"). After the second final pass, write a `/final-pass` skill (CLAUDE.md: recipes the second time).
+  3. **Everything else, final passes** (auto · sonnet, following the golden set): each remaining enemy (Gloomwisp, Dozing
+     Sentinel, Shellback, Cragstalker, the blight's strays, Murmurbuds); the NPCs, grouped (they share `buildHumanoid`);
+     props, interactables and pickups (doors, wakestones, switches, plates, jars, signs, keys, hearts, gems, the bells and
+     posts, the doll, the glove, the shield, the Heart Vessel, the prism); each valley sub-region with its atmosphere
+     (Thistledown and the mill, the ruins, the grove and bridge, the hollow, the gorge, the camp and the Northpass, the
+     blight's thorns), texturing what isn't yet (old T21/T23) and the de-uniforming jitter (old T20); the shrine's rooms
+     in groups; water with a ripple and shore band (old T24); the UI on every screen (HUD, pause, title, file select).
+  4. **The phone performance pass:** the owner reads `?debug` (fps, draw calls) on a real mid-range phone at set spots;
+     merging and instancing fixes; scene budgets written into art.md; the Performance cap tuned from the numbers.
+  5. **The parity sweep:** the registry shows no `rough` assets, nothing uses the old materials, UI or unprocessed audio,
+     the full smoke and look suites pass, and a complete playthrough (start to the Waybell, every quest, puzzle, enemy and
+     boss) behaves as before. Then the starter zone is a candidate for the public demo.
+  Sallowmere and Stiltwick get the global changes for free and their final passes after the owner's redesign.
 - **Optional, any time:** the Glimmer Lake grotto (the glove pulls a half-sunk wakestone; shrine.md).
 - **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
   quests out in the world, Odo back at his stall, the kids' lines changing with them;
   [world.md](world.md) "The empty village").
-- **Touch controls:** tune by the friend's reports: camera drag (`TOUCH_LOOK`), button sizes; phones draw at Native
-  resolution by default like everything else: if they run slow, default touch to Balanced (`pixelRatioFor`).
+- **Touch controls:** tune by the friend's reports: camera drag (`TOUCH_LOOK`), button sizes. The layout's refinement is
+  T37; touch devices default to the Performance display from T28.
 - **Gem economy** (for balancing): 95 in the shrine plus bushes, against the 50-gem tunic and 20
   per flask refill.
 - **Pause menu:** Settings, Hints, Messages ([engine.md](engine.md) "The pause menu"). A new tab
@@ -78,8 +97,12 @@ enemy randomness.
 - [x] **World progression solver**: done lean (`content/progression.ts`, [dungeons.md](dungeons.md) "World progression"):
   every gate as data, a walk from a new save to the Waybell. Each Sallowmere ticket adds its gates. Not yet: gates by
   time of day, or a bell lifted off its post. *Trigger to extend: a gate that depends on either.*
-- [ ] **An item selector**: the glove owns `item`; the Ember Lantern is passive (Interact) on purpose. *Trigger: a third
-  item that needs its own button.*
+- [ ] **An item selector**: the glove owns `item`; the Ember Lantern is passive (Interact) on purpose. *Trigger: a second
+  equippable item that needs the item button.* The design (art.md "Items and the pause screen", from the 2026-11-07
+  proposal): an **item wheel** that pauses the game, hidden until two items are owned, radial for up to ~8. Touch: tap
+  the item button to use, drag outward from it to open the wheel, release on an item to equip. Pad: hold a dedicated
+  button (a shoulder or the d-pad). Keyboard: hold a key, plus number keys. Not hold-the-item-button: some items will be
+  held to use (aiming, charging).
 - [ ] **A test that plays the whole game** (owner noted, 2026-11-05): a scripted run from a new
   game to the current end, nightly in CI, with smoke fixtures exported from it instead of written
   by hand. *Trigger: a second region's quest chain exists, or a fixture turns out not to match
@@ -94,9 +117,8 @@ enemy randomness.
 - **The `ruins` look scene's last two shots are black** (`ruins-ring-north`, `ruins-ring-south`, at (-62, -50) and (-62, -66)),
   from before the textures: find out why (the camera inside something? the teleport?) before approving that scene's baselines.
 
-- **Look baselines don't exist yet**: after the polygon-count increase lands (it changes every shot), run
-  `npm run look -- --approve` (full, ~16 min, in the background) and commit `scripts/baselines/` (~7.5 MB) and
-  `scripts/look-budgets.json`; budgets then show what the new models cost. Each later full re-approve adds that much to git history.
+- **Look baselines don't exist yet** (only `sallowmere`): T27 makes the run fast, then approves every scene as the
+  rebuild's "before" and decides how baselines are stored (each full re-approve adds ~7.5 MB to git history).
 - **Village homes are shells**: the two standing cottages have locked doors (`door.home0/1`, "The door is locked.") and no
   interior. When they become enterable, follow the mill: a `HingedDoor` (`world/objects.ts`), a room inside the walls
   (the camera's doorway pane is `Layer.CameraOnly`), a bed or story beat. Outside the square the road-gate lanterns have glow but no real light
@@ -125,8 +147,8 @@ enemy randomness.
 - Variable time step. If we add dynamic bodies (pushable blocks, physics props), move to a
   fixed 60 Hz physics step with interpolation. (Pushable blocks are a classic dungeon
   puzzle: this may come up with the first dungeon.)
-- Characters are ~20 small meshes each (many draw calls), and the Lamplighter ~150; merge
-  rigid parts per bone if enemy counts grow. Bosses carry a PointLight; adding/removing
+- Characters are ~20 small meshes each (many draw calls), and the Lamplighter ~150: the kit's `bakeRig` (T35) merges
+  rigid parts per joint, and each model adopts it in its final pass. Bosses carry a PointLight; adding/removing
   lights recompiles shaders once (a small hitch at spawn and death, hidden by cutscenes).
 - Sword hits, lock-on and interact ranges are distance/angle checks, not physics shapes.
 - One save slot; position isn't saved.

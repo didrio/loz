@@ -8,8 +8,9 @@ file layout changes, update the matching doc in the same change.
 
 **Embervale: Song of the Waking Shrine**: an original 3D action-adventure in the spirit of late-90s console adventures.
 An open field around a village hub, dungeons with keys, switches and bosses, lock-on sword combat and a day/night cycle.
-Low-poly, flat-shaded, a little wistful. There is deliberately **no instrument/song-playing mechanic** (removed as too
-close to a famous game; don't bring it back).
+**N64 assets, modern presentation** (owner's call, 2026-11-07; [docs/art.md](docs/art.md)): chunky low-poly, smooth-shaded,
+small soft textures, fog, shown sharp and smooth; a little wistful. There is deliberately **no instrument/song-playing
+mechanic** (removed as too close to a famous game; don't bring it back).
 
 The goal is a **real, full-length game (10–15 hours, 50–100× today's content)**, sold for
 $5–10 **on Steam** (desktop build via Electron) with a **free browser demo on itch.io**,
@@ -19,11 +20,11 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
-after it only Lark and Pip remain in the village. Everything is built in code (imported models were tried and shelved). The picture draws at **native resolution** (Settings: Resolution; the **retro look** is opt-in), the
-village and all ground have **generated textures**, text is terse and tagged, NPCs talk in **blips**, and **touch controls** are in a playtest on
-GitHub Pages. Past the Waybell the road goes down into **Sallowmere**: its map and Stiltwick stand, empty; the owner is redesigning its story.
-**Next:** the owner picks the next direction; no tickets are open ([docs/tickets.md](docs/tickets.md)). Every gate from a new game to the descent
-is data (`content/progression.ts`, checked by a test). Dev server: port 5273.
+after it only Lark and Pip remain in the village. Every gate is data (`content/progression.ts`, checked by a test). Everything is built in code; the
+look today is flat-shaded, a colour per material, generated textures on the village and ground, an opt-in retro look. NPCs talk in **blips**;
+**touch controls** are in a playtest on GitHub Pages. **Sallowmere**'s map and Stiltwick stand, empty, while the owner redesigns its story.
+**Next:** the **N64 look rebuild** of the starter zone before any new area ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)): foundations
+T27–T39 in [docs/tickets.md](docs/tickets.md), T27 first. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -31,6 +32,8 @@ is data (`content/progression.ts`, checked by a test). Dev server: port 5273.
 |---|---|
 | [docs/tickets.md](docs/tickets.md) | **starting work**: the open tickets in order, each with its Run line; how to write one |
 | [docs/roadmap.md](docs/roadmap.md) | **writing a ticket**: the longer view, the scaling checklist, tech debt |
+| [docs/art.md](docs/art.md) | making or changing **anything visible or audible**: the style bible (rendering rules, palette, budgets, display modes, UI, controls, golden set) |
+| [docs/pipeline.md](docs/pipeline.md) | **adding or finishing any asset, room or area**: the Rough and Final passes, trigger phrases, the registry, viewer and kit |
 | [docs/engine.md](docs/engine.md) | touching the frame loop, modes, areas, physics, input, scripts/cutscenes, saves; conventions |
 | [docs/combat.md](docs/combat.md) | touching the sword, shield/guard, enemies, hazards or bosses (incl. boss fairness rules) |
 | [docs/dungeons.md](docs/dungeons.md) | designing or building a dungeon (the data format, solver, text map) |
@@ -51,6 +54,9 @@ is data (`content/progression.ts`, checked by a test). Dev server: port 5273.
 - **Art is built in code**: primitives (boxes, cylinders, cones, spheres) with textures **generated in code** (`render/textures.ts`, engine.md "Textures").
   No imported models, images or sprites (owner's call, 2026-11-07, after a shelved experiment: [models.md](docs/models.md)).
   **Audio is synthesized in code** (no samples; all melodies original). The owner discloses the AI-generated code and writing on Steam.
+- **Every new asset, room or area runs Rough → Final without being asked** ([pipeline.md](docs/pipeline.md)), and **a final pass
+  never changes gameplay** (behaviour, hurtboxes, timings, layout, puzzles; ask first). Colours from the palette, models registered
+  and in budget (from T29, T33); check visuals in Native and N64 mode (from T28) and on the contact sheet (from T34).
 
 ## Working with the owner
 
@@ -76,10 +82,8 @@ Dialog, signs, item messages and toasts are designed, not filler: follow "Writin
 
 ## Tickets
 
-Work comes in **tickets** ([docs/tickets.md](docs/tickets.md)): one per session, a clear spec with a Run line
-(mode · model · effort) and a Read-first list. The writer had the context, so trust it: read what it names, not
-the whole repo. Whoever writes a ticket checks the **scaling checklist** ([docs/roadmap.md](docs/roadmap.md)) and
-puts any fired item in it. Done tickets are deleted; their lasting facts go to the topic docs.
+Work comes in **tickets** ([docs/tickets.md](docs/tickets.md), which says how to write one): one per session, with a Run
+line and a Read-first list. The writer had the context, so trust it: read what it names, not the whole repo.
 
 ## Definition of done
 

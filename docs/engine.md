@@ -39,6 +39,8 @@ fed the render camera's look direction every frame (`Hud.setHeading`), so it is 
 
 ## The retro look (`render/retro.ts`, T18)
 
+**Being replaced** by one Display setting, Native / Performance / N64 (T28, [art.md](art.md) "Display modes"): don't extend it.
+
 A "PS2, a bit demastered" picture, and it hides the clean edges of primitives. Think of it as a bitcrusher on the image: the internal height
 is the sample rate, the colour levels the bit depth. With the look on, `Game.frame` calls `RetroPipeline.render` instead of rendering to the canvas:
 the scene goes to a small, **nearest-filtered, un-antialiased render target** (`internalSize(look, w, h)` with the window in device pixels, canvas ratio cap 2: the setting's rows, the window's aspect,
@@ -51,6 +53,9 @@ so the sky meets it. The pure parts (`bayerOffset`, `crushChannel`, `internalSiz
 The sun's shadow map and the bloom threshold are tuned by eye; if a scene blooms too hard, lower `BLOOM_STRENGTH`.
 
 ## Textures (`render/textures.ts`, T19)
+
+**Changing** for the N64 look (T30, [art.md](art.md) "Rendering rules"): the method stays; filtering becomes bilinear, the
+density drops toward ~16 texels/m, and the projection axis moves out of `normal` so lighting can be smooth.
 
 Generated in code, never imported (owner's call, 2026-11-06). A texture is a small grey **detail tile**: a single channel with
 mean ~128. It only brightens or darkens the material's own colour (`colour × (1 + strength·(t − 0.5)·2)`), so one tile
