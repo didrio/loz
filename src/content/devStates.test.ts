@@ -25,8 +25,6 @@ describe('dev save states', () => {
   it('lists the states in the order the game is played, with a place and a moment in each name', () => {
     expect(DEV_STATES.map((s) => s.name)).toEqual([
       'A new game',
-      'Emberfield: Grist, after the prism',
-      'Emberfield: Grist, before the prism',
       'Hushing Gorge: the mouth',
       'Hushing Gorge: the climb',
       'Thistledown: Morrowbell in hand',

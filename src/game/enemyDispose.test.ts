@@ -3,7 +3,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics } from '../core/physics';
 import { isSharedMaterial } from '../render/materials';
 import { Cragstalker } from './cragstalker';
-import { Grist } from './grist';
 import { Gloomwisp, Thornling, type Enemy } from './enemies';
 import { flatGround } from './enemyTestEnv';
 import { DozingSentinel } from './sentinel';
@@ -25,7 +24,6 @@ describe('Enemy.dispose', () => {
     ['sentinel', (p, ph) => new DozingSentinel(p, ph, 0, 0)],
     ['shellback', (p, ph) => new Shellback(p, ph, 0, 0)],
     ['cragstalker', (p, ph) => new Cragstalker(p, ph, 0, 0)],
-    ['grist', (p, ph) => new Grist(p, ph, 0, 0, 400, true)],
     ['gloomwisp', (p, ph) => new Gloomwisp(p, ph, 0, 0)],
   ];
 

@@ -11,7 +11,6 @@ import { HOLLOW, HOLLOW_ENTRANCE, SPAWN, terrainHeight, VILLAGE } from '../world
 import { bellContent } from './bells';
 import { northpassContent } from './northpass';
 import { gorgeContent } from './gorge';
-import { gristContent } from './grist';
 import { hintContent } from './hints';
 import { sigilContent } from './sigils';
 import { O } from './text/overworld';
@@ -75,7 +74,6 @@ export function overworldContent(ow: Overworld): AreaContent {
   let lamplighter: HollowLamplighter | null = null;
   const gorge = gorgeContent(ow);
   const northpass = northpassContent(ow);
-  const grist = gristContent(ow);
   /** Deep water is a fall (game/water.ts): back to the last dry ground Wren stood on. */
   const waterFalls = new WaterFalls(new THREE.Vector3(SPAWN.x, terrainHeight(SPAWN.x, SPAWN.z), SPAWN.z));
   const hints = hintContent(ow.buds);
@@ -242,7 +240,6 @@ export function overworldContent(ow: Overworld): AreaContent {
 
     ...bells.scripts,
     ...hints.scripts,
-    ...grist.scripts,
     ...sigilContent(new Map([['sigil.hollow', ow.sigil]])),
     'sign.crossroads': say(crossroads()),
     'sign.gorge': say(O.signs.gorge),
@@ -300,7 +297,6 @@ export function overworldContent(ow: Overworld): AreaContent {
     onRespawn(api) {
       gorge.onRespawn(api);
       northpass.onRespawn(api);
-      grist.onRespawn(api);
       waterFalls.reset();
     },
 
@@ -308,7 +304,6 @@ export function overworldContent(ow: Overworld): AreaContent {
       watchTheHollow(api);
       gorge.update(api);
       northpass.update(api);
-      grist.update(api);
       const { pos, grounded } = api.player;
       if (waterFalls.check(pos, grounded, ow.waterLevelAt(pos.x, pos.z))) api.run((a) => waterFalls.recover(a));
     },

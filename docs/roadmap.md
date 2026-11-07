@@ -20,7 +20,6 @@ when it's near.
 - **The look pass, deferred** (owner, 2026-11-06: not sure about the retro look; it stays an opt-in Setting): de-uniforming
   props and buildings (a seeded jitter helper), textures for the rest of the valley, Sallowmere and the shrine, a water
   ripple and shore band, an accurate "demastered" picture and UI. The specs were tickets T20–T26 (git history of tickets.md).
-- **Characters as imported models** ([models.md](models.md)): Grist is the first; more NPCs or enemies the same way.
 - **Optional, any time:** the Glimmer Lake grotto (the glove pulls a half-sunk wakestone; shrine.md).
 - **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
   quests out in the world, Odo back at his stall, the kids' lines changing with them;

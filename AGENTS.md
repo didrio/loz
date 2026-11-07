@@ -1,17 +1,15 @@
 # AGENTS.md
 
-Context for AI agents (and humans) working on this repo. This file is loaded into every
-session, so it stays **short**: rules, where things are, and pointers. Details live in
-`docs/`. **Keep both current**: when behavior, a decision or the file layout changes,
-update the matching doc in the same change.
+Context for AI agents (and humans) working on this repo. This file is loaded into every session, so it stays **short**:
+rules, where things are, and pointers. Details live in `docs/`. **Keep both current**: when behavior, a decision or the
+file layout changes, update the matching doc in the same change.
 
 ## What we're building
 
-**Embervale: Song of the Waking Shrine**: an original 3D action-adventure in the spirit of
-late-90s console adventures. An open field around a village hub, dungeons with keys,
-switches and bosses, lock-on sword combat and a day/night cycle. Low-poly, flat-shaded, a
-little wistful. There is deliberately **no instrument/song-playing mechanic** (removed as
-too close to a famous game; don't bring it back).
+**Embervale: Song of the Waking Shrine**: an original 3D action-adventure in the spirit of late-90s console adventures.
+An open field around a village hub, dungeons with keys, switches and bosses, lock-on sword combat and a day/night cycle.
+Low-poly, flat-shaded, a little wistful. There is deliberately **no instrument/song-playing mechanic** (removed as too
+close to a famous game; don't bring it back).
 
 The goal is a **real, full-length game (10–15 hours, 50–100× today's content)**, sold for
 $5–10 **on Steam** (desktop build via Electron) with a **free browser demo on itch.io**,
@@ -19,10 +17,9 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
-As of 2026-11-06: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
+As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
-after it only Lark and Pip remain in the village. **Grist**, the first imported, rigged character ([models.md](docs/models.md)), wanders near the
-spawn: talk to him, offend him, fight him. The picture draws at **native resolution** (Settings: Resolution; the **retro look** is opt-in), the
+after it only Lark and Pip remain in the village. Everything is built in code (imported models were tried and shelved). The picture draws at **native resolution** (Settings: Resolution; the **retro look** is opt-in), the
 village and all ground have **generated textures**, text is terse and tagged, NPCs talk in **blips**, and **touch controls** are in a playtest on
 GitHub Pages. Past the Waybell the road goes down into **Sallowmere**: its map and Stiltwick stand, empty; the owner is redesigning its story.
 **Next:** the owner picks the next direction; no tickets are open ([docs/tickets.md](docs/tickets.md)). Every gate from a new game to the descent
@@ -39,7 +36,7 @@ is data (`content/progression.ts`, checked by a test). Dev server: port 5273.
 | [docs/dungeons.md](docs/dungeons.md) | designing or building a dungeon (the data format, solver, text map) |
 | [docs/shrine.md](docs/shrine.md) | working on the first dungeon: its design, item, enemies, boss, the Northpass gate, build plan |
 | [docs/sallowmere.md](docs/sallowmere.md) | working on the second region (drowned lowlands, Stiltwick) or its dungeon, the Old Weir (the Ember Lantern, the Lurelight) |
-| [docs/models.md](docs/models.md) | adding or animating an imported character model (rigging, Mixamo clips, retargeting); Grist |
+| [docs/models.md](docs/models.md) | thinking about imported, rigged character models (shelved; the kept tooling in `labs/rigged/`) |
 | [docs/bells.md](docs/bells.md) | bell posts (bonfires), fast travel, bell trials and platforming: lore, rules, the recipe for a new bell site, build plan |
 | [docs/world.md](docs/world.md) | writing dialog, quests, places, characters (world bible and the quest thread) |
 | [docs/audio.md](docs/audio.md) | touching sound effects or music |
@@ -47,13 +44,12 @@ is data (`content/progression.ts`, checked by a test). Dev server: port 5273.
 
 ## Hard rules
 
-- **Original IP only.** Genre conventions are fine (lock-on targeting, hearts, gems,
-  dungeons, small keys, a field hub, day/night). Never recreate a specific existing game's
-  names, characters, story, map layout, music, sound effects, logos or UI design, and never
-  use another franchise's names in code, text or marketing. If a request would recreate a
-  specific game's content, do the original version and say so.
-- **Scenery is primitives** (boxes, cylinders, cones, spheres) with textures **generated in code** (`render/textures.ts`, engine.md "Textures"); imported images and sprites never.
-  **Characters may be imported rigged models** with Mixamo clips (owner's call, 2026-11-06; [models.md](docs/models.md): the pipeline, provenance per model).
+- **Original IP only.** Genre conventions are fine (lock-on targeting, hearts, gems, dungeons, small keys, a field hub,
+  day/night). Never recreate a specific existing game's names, characters, story, map layout, music, sound effects,
+  logos or UI design, and never use another franchise's names in code, text or marketing. If a request would recreate
+  a specific game's content, do the original version and say so.
+- **Art is built in code**: primitives (boxes, cylinders, cones, spheres) with textures **generated in code** (`render/textures.ts`, engine.md "Textures").
+  No imported models, images or sprites (owner's call, 2026-11-07, after a shelved experiment: [models.md](docs/models.md)).
   **Audio is synthesized in code** (no samples; all melodies original). The owner discloses the AI-generated code and writing on Steam.
 
 ## Working with the owner
@@ -68,11 +64,10 @@ is data (`content/progression.ts`, checked by a test). Dev server: port 5273.
   them to test, don't wait for results, don't mark work "unplayed". You still can't hear audio or judge feel: name
   what you couldn't verify in one line of the report (Definition of done 7), then move on.
 - Commit or push only when asked, with one standing exception (owner's call, 2026-11-04): **`/wrap` commits and pushes to `main`** (see the wrap skill).
-- **Guide them; they follow your lead on process.** End every reply that finishes a step
-  with a short **Next for you** line saying exactly what to do: a command to type (`/wrap`,
-  `/clear`, `/start T<n>`), a question to answer, or "nothing, I'm continuing". When the next
-  step is a new ticket, give its **Run line** (mode · model · effort) as settings to switch to. Say so when a
-  session has run long enough that `/clear` would save money.
+- **Guide them; they follow your lead on process.** End every reply that finishes a step with a short **Next for you**
+  line saying exactly what to do: a command to type (`/wrap`, `/clear`, `/start T<n>`), a question to answer, or "nothing,
+  I'm continuing". When the next step is a new ticket, give its **Run line** (mode · model · effort) as settings to
+  switch to. Say so when a session has run long enough that `/clear` would save money.
 
 ## Text the player reads
 
@@ -90,25 +85,25 @@ puts any fired item in it. Done tickets are deleted; their lasting facts go to t
 
 Every change, even a "small" one (these caught a camera inside a tree, a frozen boss, Wren under the floor):
 
-1. **Rules get tests.** A logic change gets a unit test next to its module that would fail
-   without it. A bug gets **reproduced in a failing test first**, then fixed.
+1. **Rules get tests.** A logic change gets a unit test next to its module that would fail without it. A bug gets
+   **reproduced in a failing test first**, then fixed.
 2. **`npm run check`** passes (lint, unit tests, typecheck, build).
 3. **Gameplay or content changes: the smoke scenarios that cover it** pass (`npm run smoke -- <scenarios>`, 1–2 min);
    a new quest beat, boss or system gets a smoke step. The **full suite** (~3–6 min) only at a milestone's end or after
    touching shared systems (player, physics, camera, saves, game.ts), and **ask the owner first** (owner's call,
    2026-11-02; CI runs it on every push). [docs/testing.md](docs/testing.md) says which scenario covers what.
-4. **Anything visible: look at it.** `npm run look -- <scenes>` (or a scratch Playwright script on
-   `scripts/browser.mjs`), then check the screenshots; refactors: before and after. Dungeons: `npm run map -- <id>`.
-5. **When a check fails, find out why before touching game code.** It may be the test
-   (headless timing, knockback still settling) or a real bug.
+4. **Anything visible: look at it.** `npm run look -- <scenes>` (or a scratch Playwright script on `scripts/browser.mjs`),
+   then check the screenshots; refactors: before and after. Dungeons: `npm run map -- <id>`.
+5. **When a check fails, find out why before touching game code.** It may be the test (headless timing, knockback
+   still settling) or a real bug.
 6. **Update the docs** in the same change (this file: layout/rules; topic doc: details; roadmap: scaling items).
 7. **Report plainly**: what you verified, what you couldn't (audio, feel, real GPU/gamepad), where you deviated.
 
 ## Architecture
 
-Dependencies point one way: `core` ← `render` ← `world` ← `game` ← `content`.
-`core` knows nothing about the game; `world` builds places but never decides what happens
-in them; `content` (story, dialog, quest logic) binds behavior to world objects by id.
+Dependencies point one way: `core` ← `render` ← `world` ← `game` ← `content`. `core` knows nothing about the game;
+`world` builds places but never decides what happens in them; `content` (story, dialog, quest logic) binds behavior
+to world objects by id.
 
 ```
 src/
@@ -122,8 +117,7 @@ src/
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
     blips.ts               talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
   render/                  materials (shared/unique, `surf` textured, static merging), textures.ts (generated detail tiles, the projection shader), shapes, characters, sky (incl. the blight look), particles, motes (ash),
-                           retro.ts (the retro look: low-res target, bloom, dither + colour crush; Settings' Retro look and Resolution),
-                           rigged.ts (imported rigged models: load, retarget Mixamo clips, play, head-look)
+                           retro.ts (the retro look: low-res target, bloom, dither + colour crush; Settings' Retro look and Resolution)
   world/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern
@@ -142,7 +136,6 @@ src/
     player.ts, guard.ts, surf.ts, lunge.ts   Wren (movement, sword, shield, stagger); the guard; surfing; whether a swing may step forward
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
     sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
-    grist.ts               Grist: an imported, rigged NPC who turns enemy (three moves; docs/models.md)
     blight.ts              the blight's rules (where it lies, the lift, the strays, its songs, THORN_ATTACK)
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss); dungeonQuiet.ts (no music once beaten)
     lockon.ts, trialFalls.ts, flasks.ts, water.ts   lock-on's pick; trials' fall rule; the two flasks; dry/shallow/deep at Wren's feet (WaterFalls)
@@ -157,7 +150,6 @@ src/
     gorge.ts, northpass.ts the Hushing Gorge (monsters, fall rule); the canyon past the camp (Cragstalkers, fall rule)
     shrine.ts, gravelheart.ts  the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
     progression.ts         the world progression solver: every gate as data, a walk from a new save to the end (dungeons.md)
-    grist.ts               Grist's placement and talk (text/grist.ts): offended, he fights
     devStates.ts, fakeApi.ts   the Dev tab's save states; the fake ScriptApi content tests run against
   ui/  hud.ts, style.css, richText.ts   DOM HUD (hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title); text tags `[gear]…[/]`
        touch.ts, skyDial.ts, compass.ts   on-screen controls (phones/tablets); the clock's sky dial; the compass strip
@@ -165,8 +157,8 @@ scripts/
   smoke.mjs, look.mjs, browser.mjs   smoke runner (smoke/, fixtures/); look scenes (baselines + budgets: lookCompare.mjs); shared helpers, the look stepped clock
   map.mjs, midi-import.mjs a dungeon's text map + problems (npm run map -- <id>); assets/music-src/<folder>/*.mid → src/core/imported/ (npm run midi)
   flags.mjs, lexicon.mjs   who sets/reads each quest flag (npm run flags; flags.test.ts); the game's words → labs/speech/lexicon.ts (npm run lexicon)
-src/dev/ the blips test bench (/blips.html, dev only) · src/labs/ the shelved speech synth (nothing imports it)
-CREDITS.md third-party credits · assets/music-src/ the owner's MIDI exports, one folder per song (docs/audio.md) · assets/models/<name>/ character models + clips/
+src/dev/ the blips test bench (/blips.html, dev only) · src/labs/ shelved, nothing imports it: speech/ (a speech synth), rigged/ (imported rigged models, docs/models.md)
+CREDITS.md third-party credits · assets/music-src/ the owner's MIDI exports, one folder per song (docs/audio.md)
 docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, agents/, skills/ /start and /wrap)
 ```
 

@@ -5,7 +5,8 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 /**
  * Rigged, imported humanoids (a GLB with a Mixamo-named skeleton) and their animation clips, from the GLB itself or
- * from Mixamo FBX downloads (owner's call, 2026-11-06: characters may be imported models; docs/models.md).
+ * from Mixamo FBX downloads. Shelved (owner's call, 2026-11-07: no imported models for now); nothing imports it.
+ * docs/models.md says how to bring it back.
  *
  * Mixamo's skeleton and an auto-rigger's skeleton share bone *names* but not each bone's rest orientation, so FBX
  * clips are retargeted (`retargetClip`): each bone keeps the clip's world-space rotation *relative to the T-pose*.
