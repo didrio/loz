@@ -2,7 +2,7 @@ import { SAVE_VERSION, type DungeonSave, type SaveData } from '../core/save';
 import { HINTS, hintFlag } from './hints';
 import { floorY, worldPos, type DungeonDef } from '../world/dungeon/format';
 import { SHRINE } from '../world/dungeon/defs/shrine';
-import { GATE, GORGE, gorgePoint, MORROW_POST, VILLAGE } from '../world/overworld/layout';
+import { GATE, GORGE, gorgePoint, MORROW_POST, SPAWN, VILLAGE } from '../world/overworld/layout';
 import { OVERLOOK } from '../world/overworld/mere';
 
 /**
@@ -182,6 +182,9 @@ const [morrowInHand, lullInHand, bellShaft, bothHung] = bellStates();
 /** In the order the game is played; the pause menu's Dev tab lists them as they are here. */
 const STATES: DevState[] = [
   { name: 'A new game', save: null },
+  // EXPERIMENT (experiment/tripo): Grist, sword and shield in hand, the sky back; at the spawn, he's ahead on the left.
+  { name: 'Grist (experiment): after the prism', save: { ...atTheGate().save!, flags: atTheGate().save!.flags.filter((f) => !f.startsWith('grist.')) }, at: { x: SPAWN.x, z: SPAWN.z, facing: SPAWN.facing } },
+  { name: 'Grist (experiment): before the prism', save: base({ flags: SWORD_AND_BED }), at: { x: SPAWN.x, z: SPAWN.z, facing: SPAWN.facing } },
   { name: 'Hushing Gorge: the mouth', ...gorgeState(atGorgeMouth()) },
   { name: 'Hushing Gorge: the climb', ...gorgeState(atGorgeClimb()) },
   morrowInHand,
