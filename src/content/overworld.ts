@@ -75,7 +75,7 @@ export function overworldContent(ow: Overworld): AreaContent {
   let lamplighter: HollowLamplighter | null = null;
   const gorge = gorgeContent(ow);
   const northpass = northpassContent(ow);
-  const grist = gristContent(ow); // EXPERIMENT (experiment/tripo)
+  const grist = gristContent(ow);
   /** Deep water is a fall (game/water.ts): back to the last dry ground Wren stood on. */
   const waterFalls = new WaterFalls(new THREE.Vector3(SPAWN.x, terrainHeight(SPAWN.x, SPAWN.z), SPAWN.z));
   const hints = hintContent(ow.buds);

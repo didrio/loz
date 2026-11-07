@@ -19,7 +19,7 @@ function setup(wren: THREE.Vector3, hostile = false, result?: () => HitResult) {
   return { g, hits, env, run: (sec: number, until?: () => boolean) => runEnemy(g, physics, env, sec, until) };
 }
 
-describe('Grist (experiment): the NPC', () => {
+describe('Grist: the NPC', () => {
   it('peaceable: never attacks, lock-on skips him; he moves in his own dialog, not in other cutscenes', () => {
     const { g, hits, run } = setup(new THREE.Vector3(0, 0, 2.5));
     run(6);
@@ -61,7 +61,7 @@ describe('Grist (experiment): the NPC', () => {
   });
 });
 
-describe('Grist (experiment): the fight', () => {
+describe('Grist: the fight', () => {
   it('every move has a tell of at least half a second, and ends after its blow (the opening)', () => {
     for (const m of Object.keys(GRIST_TIMING) as GristMove[]) {
       const t = GRIST_TIMING[m];
@@ -114,7 +114,7 @@ describe('Grist (experiment): the fight', () => {
   });
 });
 
-describe('pickMove / inBlow (experiment)', () => {
+describe('pickMove / inBlow', () => {
   it('closes in when out of reach', () => {
     expect(pickMove(6, 0, null, 0.1)).toBeNull();
   });

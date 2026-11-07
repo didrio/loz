@@ -1,5 +1,5 @@
 /**
- * EXPERIMENT (branch experiment/tripo): the words of Grist, the Stonesick (content/grist.ts). A wanderer whose flesh
+ * The words of Grist, the Stonesick (content/grist.ts). A wanderer whose flesh
  * is turning to stone: the blight's dark held the stone in him asleep, and since the prism broke he crumbles. He is
  * courteous until he learns who lifted it. Voice: slow, polite, grinding; never explains more than that.
  * Rules: docs/world.md, "Writing for the player".

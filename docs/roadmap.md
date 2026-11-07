@@ -15,15 +15,18 @@ early unless the owner asks: they're best designed against the real use case.
 What's next is in [tickets.md](tickets.md). This is the longer view; an idea becomes a ticket
 when it's near.
 
-- **Next region:** Sallowmere and the Old Weir ([sallowmere.md](sallowmere.md), tickets T8–T16). Region 3 lies past
-  the Lightless Cut; plan it as we go (owner's call, 2026-11-05).
-- **The look pass** (owner's idea, 2026-11-06): T18 retro post-processing is in (2026-11-06); T19 procedural textures and T20 de-uniforming are open; independent of Sallowmere.
+- **Next region:** Sallowmere's map and Stiltwick are built and empty; its story and mechanics are being redesigned by
+  the owner (2026-11-06: the old design in [sallowmere.md](sallowmere.md) is shelved, not the plan).
+- **The look pass, deferred** (owner, 2026-11-06: not sure about the retro look; it stays an opt-in Setting): de-uniforming
+  props and buildings (a seeded jitter helper), textures for the rest of the valley, Sallowmere and the shrine, a water
+  ripple and shore band, an accurate "demastered" picture and UI. The specs were tickets T20–T26 (git history of tickets.md).
+- **Characters as imported models** ([models.md](models.md)): Grist is the first; more NPCs or enemies the same way.
 - **Optional, any time:** the Glimmer Lake grotto (the glove pulls a half-sunk wakestone; shrine.md).
 - **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
   quests out in the world, Odo back at his stall, the kids' lines changing with them;
   [world.md](world.md) "The empty village").
-- **Touch controls:** tune by the friend's reports: camera drag (`TOUCH_LOOK`), button sizes,
-  the touch default is the Crunchy look (360 rows, `TOUCH_DEFAULT_LOOK`); lower it further if phones run slow.
+- **Touch controls:** tune by the friend's reports: camera drag (`TOUCH_LOOK`), button sizes; phones draw at Native
+  resolution by default like everything else: if they run slow, default touch to Balanced (`pixelRatioFor`).
 - **Gem economy** (for balancing): 95 in the shrine plus bushes, against the 50-gem tunic and 20
   per flask refill.
 - **Pause menu:** Settings, Hints, Messages ([engine.md](engine.md) "The pause menu"). A new tab
@@ -88,6 +91,9 @@ enemy randomness.
   real ticket.*
 
 ## Known quirks and tech debt
+
+- **The `ruins` look scene's last two shots are black** (`ruins-ring-north`, `ruins-ring-south`, at (-62, -50) and (-62, -66)),
+  from before the textures: find out why (the camera inside something? the teleport?) before approving that scene's baselines.
 
 - **Look baselines don't exist yet**: after the polygon-count increase lands (it changes every shot), run
   `npm run look -- --approve` (full, ~16 min, in the background) and commit `scripts/baselines/` (~7.5 MB) and

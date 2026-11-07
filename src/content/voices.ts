@@ -13,7 +13,7 @@ export const SPEAKERS: Record<string, BlipVoice> = {
   Pip: BLIP_PRESETS.boy,
   Lark: BLIP_PRESETS.girl,
   // Jovial: a bright mid voice that wanders.
-  // Grist (experiment): low and grinding, slow, a stone voice.
+  // Grist: low and grinding, slow, a stone voice.
   Grist: { ...BLIP_PRESETS.oldMan, pitch: 80, range: 0.3, cutoff: 500, wobble: 0.1 },
   Odo: { ...BLIP_PRESETS.man, pitch: 175, range: 0.9, wave: 'triangle', cutoff: 1500, every: 2 },
 };

@@ -1,6 +1,9 @@
 # Sallowmere (the second region) and the Old Weir (its dungeon): design
 
-Status: **design approved by the owner** (2026-11-06, T5). **The map is built** (T8: ground, water, causeways, scenery, the
+**Shelved (owner, 2026-11-06):** the story, people, item, dungeon and boss below are no longer the plan; the owner is
+redesigning them. **The map is built** and stays (what's under "The map" and Stiltwick's sites describe the world as it is).
+
+Old status: **design approved by the owner** (2026-11-06, T5). **The map is built** (T8: ground, water, causeways, scenery, the
 Weir's wall; the sites are empty footprints). All names are working names. The
 build is tickets T8–T16 in [tickets.md](tickets.md). This doc holds what the data and code won't: the place, the item, the
 dungeon's idea, the enemies, the boss, and the story beats. Keep it current as the tickets land, and move details into

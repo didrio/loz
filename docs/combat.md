@@ -91,6 +91,9 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   charges ~5 m (`SHELLBACK_CHARGE`: 1, guard 1). After a charge it skids 1.3 s unable to
   turn; 1.9 s if the shield stopped it. Running into another enemy stops the charge dead (it skids
   in place; no damage to the other, no shoving; `Character.blockedBy`). 4 HP.
+- **Grist** (`game/grist.ts`, an imported rigged model: [models.md](models.md)): a peaceable NPC until offended, then a
+  heavy field enemy: jab (2, guard 1), haymaker (4, guard 3, red glow + inhale tell), sweep (2, guard 2, wide, ground-only),
+  all stone; a blow doesn't interrupt his own swing; a blocked blow dazes him; 10 hp.
 - **Cragstalker** (`game/cragstalker.ts`): a lean hide-and-stone hunter that guards the Waybell across the Northpass's
   canyon. Very aggressive (owner's call, 2026-11-03: the first tuning was far too easy): it notices Wren from 22 m, closes at
   8 m/s, circles at ~4 m, waits only 0.15-0.5 s, then drops into a **crouch** (0.55 s, belly low, eyes bright amber: the tell) and

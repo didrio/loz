@@ -19,7 +19,6 @@ export const NAMES: Record<string, string> = {
   antebell: 'AE1 N T IY0 B EH2 L',
   gravelheart: 'G R AE1 V AH0 L HH AA2 R T',
   grist: 'G R IH1 S T',
-  experiment: 'IH0 K S P EH1 R AH0 M AH0 N T',
   // people
   wren: 'R EH1 N',
   odo: 'OW1 D OW0',

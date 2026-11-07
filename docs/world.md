@@ -258,6 +258,9 @@ vanished adults, the Lightless Cut ([sallowmere.md](sallowmere.md)).
   She left Button in a jar at her old house by Glimmer Lake (`lakeHome`, far southwest). She only asks once Wren has the sword (before it she couldn't break the jar), and every ask says where; before the sword she's just scared of the thorns and the night. Breaking
   that jar finds the doll (`village.dollFound`; nothing in the HUD); taking it back earns **20 gems** (`village.dollReturned`).
   Her lines change by night, the sword and the lifted blight; she has her own sigil and relief news. Optional side errand.
+- **Grist, the Stonesick** *(fill-in, owner may change)*: a courteous wanderer near the crossroads whose flesh is turning to
+  stone. The blight's dark kept the stone in him asleep; since the prism broke he crumbles, and he wants to know who broke
+  it. Any answer about the shrine offends him and he fights; unarmed, Wren is only sent home. Lines: `content/text/grist.ts`.
 - **The Hollow Lamplighter**, Keeper of a Stolen Flame (mini-boss, Gloaming Hollow): a
   4.4 m gaunt figure in a tattered lamplighter's coat, bone legs and arms, a hooked pole
   with a snuffer bell, candles on one shoulder, caged wisps on its belt, and an iron

@@ -24,7 +24,7 @@ const worldQ = (o: THREE.Object3D) => {
   return o.getWorldQuaternion(new THREE.Quaternion());
 };
 
-describe('retargetClip (experiment)', () => {
+describe('retargetClip', () => {
   // Source: Mixamo-like, hips at 100 (cm), its own odd rest axes. Target: 1 m hips, different axes.
   const src = skeleton(q(1, 0, 0, 0.3), q(0, 0, 1, 1.4), 100);
   const dst = skeleton(q(0, 1, 0, 2.0), q(1, 1, 0, -0.9), 1);
@@ -68,7 +68,7 @@ describe('retargetClip (experiment)', () => {
   });
 });
 
-describe('stripRootMotion (experiment)', () => {
+describe('stripRootMotion', () => {
   it('pins the hips horizontally and keeps their bob', () => {
     const clip = new THREE.AnimationClip('run', 1, [new THREE.VectorKeyframeTrack('mixamorigHips.position', [0, 1], [0, 1, 0, 3, 1.1, 9])]);
     stripRootMotion(clip, new THREE.Vector3(0.1, 1, 0.2));

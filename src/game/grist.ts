@@ -3,15 +3,15 @@ import { damp, lerpAngle } from '../core/math';
 import type { Physics } from '../core/physics';
 import { loadRig, RiggedModel } from '../render/rigged';
 import { GroundEnemy, type Attack, type EnemyEnv, type HurtResult, type Hurtbox } from './enemies';
-import modelUrl from '../../assets/experiments/meshy-enemy-latest.glb?url';
-import talk1Url from '../../assets/experiments/mixamo-animations/Talking 1.fbx?url';
-import talk2Url from '../../assets/experiments/mixamo-animations/Talking 2.fbx?url';
-import jabUrl from '../../assets/experiments/mixamo-animations/Attack Normal Punch.fbx?url';
-import haymakerUrl from '../../assets/experiments/mixamo-animations/Attack Big Punch.fbx?url';
-import sweepUrl from '../../assets/experiments/mixamo-animations/Attack Sweep.fbx?url';
+import modelUrl from '../../assets/models/grist/grist.glb?url';
+import talk1Url from '../../assets/models/grist/clips/Talking 1.fbx?url';
+import talk2Url from '../../assets/models/grist/clips/Talking 2.fbx?url';
+import jabUrl from '../../assets/models/grist/clips/Attack Normal Punch.fbx?url';
+import haymakerUrl from '../../assets/models/grist/clips/Attack Big Punch.fbx?url';
+import sweepUrl from '../../assets/models/grist/clips/Attack Sweep.fbx?url';
 
 /**
- * EXPERIMENT (branch experiment/tripo): Grist, the Stonesick. An imported, rigged model (Meshy, Mixamo skeleton) that
+ * Grist, the Stonesick. An imported, rigged model (Meshy, Mixamo skeleton) that
  * is first a wandering NPC (talk to him: content/grist.ts) and, once offended, a field enemy with three moves.
  * The first character on `render/rigged.ts`: clips from the GLB (idle, walk, run) and Mixamo (talk, attacks).
  */

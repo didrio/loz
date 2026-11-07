@@ -182,9 +182,9 @@ const [morrowInHand, lullInHand, bellShaft, bothHung] = bellStates();
 /** In the order the game is played; the pause menu's Dev tab lists them as they are here. */
 const STATES: DevState[] = [
   { name: 'A new game', save: null },
-  // EXPERIMENT (experiment/tripo): Grist, sword and shield in hand, the sky back; at the spawn, he's ahead on the left.
-  { name: 'Grist (experiment): after the prism', save: { ...atTheGate().save!, flags: atTheGate().save!.flags.filter((f) => !f.startsWith('grist.')) }, at: { x: SPAWN.x, z: SPAWN.z, facing: SPAWN.facing } },
-  { name: 'Grist (experiment): before the prism', save: base({ flags: SWORD_AND_BED }), at: { x: SPAWN.x, z: SPAWN.z, facing: SPAWN.facing } },
+  // Grist (content/grist.ts), sword and shield in hand; at the spawn, he's ahead on the left.
+  { name: 'Emberfield: Grist, after the prism', save: { ...atTheGate().save!, flags: atTheGate().save!.flags.filter((f) => !f.startsWith('grist.')) }, at: { x: SPAWN.x, z: SPAWN.z, facing: SPAWN.facing } },
+  { name: 'Emberfield: Grist, before the prism', save: base({ flags: SWORD_AND_BED }), at: { x: SPAWN.x, z: SPAWN.z, facing: SPAWN.facing } },
   { name: 'Hushing Gorge: the mouth', ...gorgeState(atGorgeMouth()) },
   { name: 'Hushing Gorge: the climb', ...gorgeState(atGorgeClimb()) },
   morrowInHand,

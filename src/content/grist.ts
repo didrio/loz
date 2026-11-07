@@ -6,7 +6,7 @@ import { SPAWN, terrainHeight } from '../world/overworld/layout';
 import { G } from './text/grist';
 
 /**
- * EXPERIMENT (branch experiment/tripo): Grist, the Stonesick (game/grist.ts). For now he wanders a few meters
+ * Grist, the Stonesick (game/grist.ts). For now he wanders a few meters
  * ahead and left of the new game's spawn, so he's the first thing to walk up to. Talk to him: a couple of questions,
  * and whichever way Wren answers about the shrine, he takes offence and the fight starts (`grist.hostile`, saved).
  * "Leave" parts on good terms. Without a sword he only sends Wren home (the Lamplighter's rule: no fight unarmed).
