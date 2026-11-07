@@ -53,6 +53,8 @@ export interface Settings {
   invertY: boolean;
   /** The retro look (render/retro.ts): 0 off, then 1-4 by internal height (1080, 720, 540, 360). Replaced the old Sharpness. */
   look: 0 | 1 | 2 | 3 | 4;
+  /** With the look off: 0 Native (the screen's full density), 1 Balanced, 2 Performance (render/retro.ts `pixelRatioFor`). */
+  resolution: 0 | 1 | 2;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -63,7 +65,8 @@ export const DEFAULT_SETTINGS: Settings = {
   mouseSensitivity: 1,
   stickSensitivity: 1,
   invertY: false,
-  look: 2,
+  look: 0,
+  resolution: 0,
 };
 
 export const SENSITIVITY_RANGE = { min: 0.2, max: 2 };
@@ -200,8 +203,10 @@ function decodeDungeons(v: unknown): Record<string, DungeonSave> {
   return out;
 }
 
-/** The old Sharpness setting (0 performance, 1 standard, 2 sharp) as a look: sharp stays crisp, performance goes cheapest. */
-const OLD_QUALITY_TO_LOOK = [4, 2, 0] as const;
+/** The old Sharpness setting (0 performance, 1 standard, 2 sharp) as a Resolution, with the look off. */
+const OLD_QUALITY_TO_RESOLUTION = [2, 1, 0] as const;
+/** The retro look's old default (Soft, 720): settings saved before Resolution existed had it without choosing it. */
+const OLD_DEFAULT_LOOK = 2;
 
 /** `defaults` is what a fresh install gets (touch devices pass a cheaper look). */
 export function decodeSettings(raw: string | null, defaults: Settings = DEFAULT_SETTINGS): Settings {
@@ -210,7 +215,11 @@ export function decodeSettings(raw: string | null, defaults: Settings = DEFAULT_
     const num = (v: unknown, fallback: number, min: number, max: number) =>
       typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
     const d = defaults;
-    const oldQuality = o.quality === 0 || o.quality === 1 || o.quality === 2 ? OLD_QUALITY_TO_LOOK[o.quality] : d.look;
+    const oldQuality = o.quality === 0 || o.quality === 1 || o.quality === 2 ? o.quality : null;
+    const savedLook = o.look === 0 || o.look === 1 || o.look === 2 || o.look === 3 || o.look === 4 ? o.look : null;
+    const savedRes = o.resolution === 0 || o.resolution === 1 || o.resolution === 2 ? o.resolution : null;
+    // Saved before Resolution existed with the old default look: the new default (look off) applies (owner's call, 2026-11-06).
+    const look = savedLook === null || (savedRes === null && savedLook === OLD_DEFAULT_LOOK) ? d.look : savedLook;
     return {
       masterVolume: num(o.masterVolume, d.masterVolume, 0, 1),
       // The first settings were just `music: boolean`; an old "off" stays silent.
@@ -220,7 +229,8 @@ export function decodeSettings(raw: string | null, defaults: Settings = DEFAULT_
       mouseSensitivity: num(o.mouseSensitivity, d.mouseSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
       stickSensitivity: num(o.stickSensitivity, d.stickSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
       invertY: typeof o.invertY === 'boolean' ? o.invertY : d.invertY,
-      look: o.look === 0 || o.look === 1 || o.look === 2 || o.look === 3 || o.look === 4 ? o.look : oldQuality,
+      look,
+      resolution: savedRes ?? (oldQuality !== null ? OLD_QUALITY_TO_RESOLUTION[oldQuality] : d.resolution),
     };
   } catch {
     return { ...defaults };

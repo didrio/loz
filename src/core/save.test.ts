@@ -165,12 +165,20 @@ describe('save files', () => {
     expect(decodeSettings('{"look":7}').look).toBe(DEFAULT_SETTINGS.look);
   });
 
-  it('turns the old Sharpness setting into a look: sharp stays crisp, performance goes cheapest, standard gets the default', () => {
-    expect(decodeSettings('{"quality":2}').look).toBe(0);
-    expect(decodeSettings('{"quality":0}').look).toBe(4);
-    expect(decodeSettings('{"quality":1}').look).toBe(DEFAULT_SETTINGS.look);
-    expect(decodeSettings('{"quality":7}').look).toBe(DEFAULT_SETTINGS.look);
+  it('turns the old Sharpness setting into a Resolution with the look off: sharp is Native, performance the cheapest', () => {
+    expect(decodeSettings('{"quality":2}')).toMatchObject({ look: 0, resolution: 0 });
+    expect(decodeSettings('{"quality":1}')).toMatchObject({ look: 0, resolution: 1 });
+    expect(decodeSettings('{"quality":0}')).toMatchObject({ look: 0, resolution: 2 });
+    expect(decodeSettings('{"quality":7}').resolution).toBe(DEFAULT_SETTINGS.resolution);
     expect(decodeSettings('{"quality":2,"look":1}').look).toBe(1); // a saved look wins
+  });
+
+  it('defaults to Native with the retro look off; settings from before Resolution lose the old default look only', () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({ look: 0, resolution: 0 });
+    expect(decodeSettings('{"look":2}').look).toBe(0); // the old default, never chosen
+    expect(decodeSettings('{"look":3}').look).toBe(3); // a look someone picked stays
+    expect(decodeSettings('{"look":2,"resolution":1}')).toMatchObject({ look: 2, resolution: 1 }); // chosen after the change
+    expect(decodeSettings('{"resolution":9}').resolution).toBe(0);
   });
 
   it('gives a fresh install the caller\'s defaults (touch passes a cheaper look)', () => {

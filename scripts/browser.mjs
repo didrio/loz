@@ -97,6 +97,13 @@ export async function openGame(env, outDir, { fixture, touch = false, stepped = 
     }, ['embervale:save:0', save]);
   }
   if (stepped) await page.addInitScript(steppedClock, STEP_MS);
+  // Look scenes (stepped): their baselines were approved with the retro look on (Soft, 720), which was the default
+  // until 2026-11-06. Keep it for them until the baselines are re-approved with the look off.
+  if (stepped) {
+    await page.addInitScript(([key, raw]) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, raw);
+    }, ['embervale:settings', JSON.stringify({ look: 2, resolution: 0 })]);
+  }
   const errors = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));

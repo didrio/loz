@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAYER4, bayerOffset, COLOR_LEVELS, crushChannel, DEFAULT_LOOK, internalSize, LOOK_HEIGHTS, LOOK_NAMES, TOUCH_DEFAULT_LOOK } from './retro';
+import { BAYER4, bayerOffset, COLOR_LEVELS, crushChannel, DEFAULT_LOOK, internalSize, LOOK_HEIGHTS, LOOK_NAMES, pixelRatioFor, RESOLUTION_NAMES } from './retro';
 
 describe('the dither matrix', () => {
   it('holds each of 0..15 once, so every threshold is used evenly', () => {
@@ -63,8 +63,27 @@ describe('internalSize', () => {
 });
 
 describe('the look settings', () => {
-  it('have a name for every height, and cheaper defaults on touch', () => {
+  it('have a name for every height, and the look is off by default', () => {
     expect(LOOK_NAMES).toHaveLength(LOOK_HEIGHTS.length);
-    expect(LOOK_HEIGHTS[TOUCH_DEFAULT_LOOK]).toBeLessThan(LOOK_HEIGHTS[DEFAULT_LOOK]);
+    expect(DEFAULT_LOOK).toBe(0);
+  });
+});
+
+describe('pixelRatioFor (Resolution)', () => {
+  it('Native is the screen\'s own density: 2 on a retina laptop, 1 on a plain monitor', () => {
+    expect(pixelRatioFor(0, 2)).toBe(2);
+    expect(pixelRatioFor(0, 1)).toBe(1);
+  });
+  it('Balanced and Performance draw 75% and 50% of it', () => {
+    expect(pixelRatioFor(1, 2)).toBe(1.5);
+    expect(pixelRatioFor(2, 2)).toBe(1);
+    expect(pixelRatioFor(2, 1)).toBe(0.5);
+  });
+  it('caps very dense screens and survives a missing ratio', () => {
+    expect(pixelRatioFor(0, 4)).toBe(3);
+    expect(pixelRatioFor(0, 0)).toBe(1);
+  });
+  it('has a name per setting', () => {
+    expect(RESOLUTION_NAMES).toHaveLength(3);
   });
 });

@@ -21,7 +21,7 @@ built almost entirely by AI agents. Build everything as if it will ship.
 
 As of 2026-11-06: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
-after it only Lark and Pip remain in the village. The picture has a **retro look** (720 rows, dithered, bloomed; a Setting), and the village and all ground have **generated textures**. Text is terse and tagged (`textRules.test.ts`); NPCs talk in **blips**. **Touch controls** are
+after it only Lark and Pip remain in the village. The picture draws at the screen's **native resolution** by default (Settings: Resolution); the **retro look** (dithered, bloomed) is an opt-in Setting, and the village and all ground have **generated textures**. Text is terse and tagged (`textRules.test.ts`); NPCs talk in **blips**. **Touch controls** are
 in a friend's playtest on GitHub Pages. Past the Waybell the road goes down into **Sallowmere** ([sallowmere.md](docs/sallowmere.md) "The map"):
 the mere, its water (shallow wades, deep is a fall), causeways, the Weir's wall and **Stiltwick** (the town on stilts, still empty of people) stand, streamed a step a frame.
 **Next:** the town's people, enemy, bell, ferry, lantern and dungeon, and the look pass (de-uniforming, a demastered picture and UI, textures for the rest), through the open tickets in [docs/tickets.md](docs/tickets.md). Every gate
@@ -119,7 +119,7 @@ src/
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
     blips.ts               talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
   render/                  materials (shared/unique, `surf` textured, static merging), textures.ts (generated detail tiles, the projection shader), shapes, characters, sky (incl. the blight look), particles, motes (ash),
-                           retro.ts (the retro look: low-res target, bloom, dither + colour crush; Settings' Retro look)
+                           retro.ts (the retro look: low-res target, bloom, dither + colour crush; Settings' Retro look and Resolution)
   world/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern
