@@ -40,23 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T28: One Display setting: Native, Performance, N64
-**Run:** auto · sonnet · medium
-**Why:** art.md "Display modes": the two settings (Resolution, Retro look) become one with three options, and every later
-visual ticket gets checked in Native and N64 mode.
-**Done when:**
-- Settings shows **Display**: Native (today's Native), Performance (pixel ratio capped around 1), N64 (the scene 240 rows
-  tall, width from the window's aspect, upscaled with linear filtering, the 5-bit colour crush and Bayer dither kept,
-  no bloom). Resolution and Retro look are gone; so are Balanced and `Sky.retro`'s warm haze.
-- Default Native on desktop, Performance on touch devices. Old settings migrate (a retro look on → N64; Balanced or
-  Performance → Performance; else Native), unit-tested next to the old migrations.
-- The look runner can capture a scene in N64 mode (e.g. `--display n64`); `looker` compares Native and N64 on village,
-  field and a dungeon scene.
-- engine.md "The retro look" and "The pause menu" (Settings) rewritten; art.md "Display modes" moved to today.
-**Read first:** art.md "Display modes"; engine.md "The retro look" and "The pause menu"; `render/retro.ts` and its test;
-`core/save.ts` (`Settings`, the settings migration); `game/pauseMenu.ts`; Grep `game/game.ts` for `applySettings`.
-**Verify:** `npm run check`; smoke `hints` (it changes a setting); look `title village dungeon touch` in both modes.
-
 ### T29: The palette
 **Run:** plan · opusplan · high
 **Why:** art.md "Palette": one master palette is what keeps everything one game, and the validator, vertex colours and

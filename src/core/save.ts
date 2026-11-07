@@ -51,10 +51,8 @@ export interface Settings {
   mouseSensitivity: number;
   stickSensitivity: number;
   invertY: boolean;
-  /** The retro look (render/retro.ts): 0 off, then 1-4 by internal height (1080, 720, 540, 360). Replaced the old Sharpness. */
-  look: 0 | 1 | 2 | 3 | 4;
-  /** With the look off: 0 Native (the screen's full density), 1 Balanced, 2 Performance (render/retro.ts `pixelRatioFor`). */
-  resolution: 0 | 1 | 2;
+  /** Display (render/retro.ts): 0 Native, 1 Performance (pixel ratio ~1), 2 N64 (240 rows, colour crush). Replaced Resolution + Retro look. */
+  display: 0 | 1 | 2;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -65,8 +63,7 @@ export const DEFAULT_SETTINGS: Settings = {
   mouseSensitivity: 1,
   stickSensitivity: 1,
   invertY: false,
-  look: 0,
-  resolution: 0,
+  display: 0,
 };
 
 export const SENSITIVITY_RANGE = { min: 0.2, max: 2 };
@@ -203,23 +200,37 @@ function decodeDungeons(v: unknown): Record<string, DungeonSave> {
   return out;
 }
 
-/** The old Sharpness setting (0 performance, 1 standard, 2 sharp) as a Resolution, with the look off. */
-const OLD_QUALITY_TO_RESOLUTION = [2, 1, 0] as const;
+/** The old Sharpness setting (0 performance, 1 standard, 2 sharp) as a Display. */
+const OLD_QUALITY_TO_DISPLAY = [1, 1, 0] as const;
 /** The retro look's old default (Soft, 720): settings saved before Resolution existed had it without choosing it. */
 const OLD_DEFAULT_LOOK = 2;
 
-/** `defaults` is what a fresh install gets (touch devices pass a cheaper look). */
+/**
+ * Settings saved before Display: a retro look on (1-4) becomes N64, else Balanced or Performance (resolution 1, 2) becomes
+ * Performance, else Native. The oldest Sharpness (`quality`) maps the same way, and the retro look's old default (Soft, 720,
+ * saved before Resolution existed and never chosen) counts as off.
+ */
+function migrateDisplay(o: Record<string, unknown>, fallback: Settings['display']): Settings['display'] {
+  const look = typeof o.look === 'number' ? o.look : null;
+  const res = typeof o.resolution === 'number' ? o.resolution : null;
+  const quality = o.quality === 0 || o.quality === 1 || o.quality === 2 ? o.quality : null;
+  const chosenLook = look !== null && look >= 1 && look <= 4 && !(res === null && look === OLD_DEFAULT_LOOK);
+  if (chosenLook) return 2;
+  if (res === 1 || res === 2) return 1;
+  if (res === 0) return 0;
+  if (quality !== null) return OLD_QUALITY_TO_DISPLAY[quality];
+  return look !== null && look >= 0 && look <= 4 ? 0 : fallback;
+}
+
+/** `defaults` is what a fresh install gets (touch devices pass Performance). */
 export function decodeSettings(raw: string | null, defaults: Settings = DEFAULT_SETTINGS): Settings {
   try {
     const o = JSON.parse(raw ?? '{}') as Record<string, unknown>;
     const num = (v: unknown, fallback: number, min: number, max: number) =>
       typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
     const d = defaults;
-    const oldQuality = o.quality === 0 || o.quality === 1 || o.quality === 2 ? o.quality : null;
-    const savedLook = o.look === 0 || o.look === 1 || o.look === 2 || o.look === 3 || o.look === 4 ? o.look : null;
-    const savedRes = o.resolution === 0 || o.resolution === 1 || o.resolution === 2 ? o.resolution : null;
-    // Saved before Resolution existed with the old default look: the new default (look off) applies (owner's call, 2026-11-06).
-    const look = savedLook === null || (savedRes === null && savedLook === OLD_DEFAULT_LOOK) ? d.look : savedLook;
+    const savedDisplay = o.display === 0 || o.display === 1 || o.display === 2 ? o.display : null;
+    const display = savedDisplay ?? migrateDisplay(o, d.display);
     return {
       masterVolume: num(o.masterVolume, d.masterVolume, 0, 1),
       // The first settings were just `music: boolean`; an old "off" stays silent.
@@ -229,8 +240,7 @@ export function decodeSettings(raw: string | null, defaults: Settings = DEFAULT_
       mouseSensitivity: num(o.mouseSensitivity, d.mouseSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
       stickSensitivity: num(o.stickSensitivity, d.stickSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
       invertY: typeof o.invertY === 'boolean' ? o.invertY : d.invertY,
-      look,
-      resolution: savedRes ?? (oldQuality !== null ? OLD_QUALITY_TO_RESOLUTION[oldQuality] : d.resolution),
+      display,
     };
   } catch {
     return { ...defaults };

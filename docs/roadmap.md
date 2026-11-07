@@ -44,7 +44,7 @@ when it's near.
   quests out in the world, Odo back at his stall, the kids' lines changing with them;
   [world.md](world.md) "The empty village").
 - **Touch controls:** tune by the friend's reports: camera drag (`TOUCH_LOOK`), button sizes. The layout's refinement is
-  T37; touch devices default to the Performance display from T28.
+  T37; touch devices default to the Performance display.
 - **Gem economy** (for balancing): 95 in the shrine plus bushes, against the 50-gem tunic and 20
   per flask refill.
 - **Pause menu:** Settings, Hints, Messages ([engine.md](engine.md) "The pause menu"). A new tab

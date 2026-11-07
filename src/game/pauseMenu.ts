@@ -2,7 +2,7 @@ import { DEV_STATES } from '../content/devStates';
 import { foundHints } from '../content/hints';
 import { foundSigils } from '../content/sigils';
 import { SENSITIVITY_RANGE, type Settings } from '../core/save';
-import { LOOK_NAMES, RESOLUTION_NAMES } from '../render/retro';
+import { DISPLAY_NAMES } from '../render/retro';
 import type { Game } from './game';
 import type { Menu, MenuRow } from './menu';
 import { MenuDriver } from './menuDriver';
@@ -100,8 +100,7 @@ export class PauseMenu {
       sensitivity('Mouse sensitivity', 'mouseSensitivity', true),
       sensitivity('Stick sensitivity', 'stickSensitivity'),
       { kind: 'toggle', label: 'Invert camera up/down', get: () => s.invertY, set: (on) => this.change({ invertY: on }) },
-      { kind: 'choice', label: 'Resolution', space: true, options: RESOLUTION_NAMES, get: () => s.resolution, set: (i) => this.change({ resolution: i as Settings['resolution'] }) },
-      { kind: 'choice', label: 'Retro look', options: LOOK_NAMES, get: () => s.look, set: (i) => this.change({ look: i as Settings['look'] }) },
+      { kind: 'choice', label: 'Display', space: true, options: DISPLAY_NAMES, get: () => s.display, set: (i) => this.change({ display: i as Settings['display'] }) },
     ];
     if (game.canFullscreen) {
       rows.push({ kind: 'toggle', label: 'Fullscreen', get: () => game.isFullscreen, set: (on) => game.setFullscreen(on) });

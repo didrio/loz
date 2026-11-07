@@ -14,7 +14,7 @@ that looks the way people *remember* the N64, not the way it literally looked.
   ([roadmap.md](roadmap.md) "The N64 look rebuild").
 
 Each section says **today** (what the code does now) and **target**. Until a ticket moves a section to the target, don't
-extend the "today" look (the PS2-ish retro pipeline, flat shading, colour-per-material): build new work so it moves
+extend the "today" look (flat shading, colour-per-material): build new work so it moves
 toward the target.
 
 ## Rendering rules
@@ -37,15 +37,13 @@ things, native resolution with antialiasing, widescreen, a smooth frame rate.
 
 ## Display modes
 
-**Today:** Settings has Resolution (Native / Balanced / Performance) and Retro look (Off / 1080 / 720 / 540 / 360 rows:
-low-res, nearest, bloom, colour crush, dither; engine.md "The retro look").
-**Target (T28):** one **Display** setting with three options, replacing both:
+**Today (T28 done):** one **Display** setting with three options (engine.md "Display modes"):
 - **Native**: full device resolution (cap 3×), antialiased. Default on desktop and Steam.
 - **Performance**: the same look with the render resolution capped (pixel ratio ~1). Default on touch devices.
 - **N64**: the 3D scene drawn 240 rows tall, width from the screen's aspect (no black bars), upscaled with soft
   (linear) filtering; the 5-bit colour crush and ordered dither stay (the N64's 16-bit framebuffer did both); no bloom.
 
-The UI is drawn at screen resolution in every mode. Check visual work in **Native and N64** both.
+The UI is drawn at screen resolution in every mode. Check visual work in **Native and N64** both (`npm run look -- <scenes> --display n64`).
 
 ## Shape language
 

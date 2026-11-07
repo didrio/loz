@@ -21,10 +21,10 @@ built almost entirely by AI agents. Build everything as if it will ship.
 As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
 after it only Lark and Pip remain in the village. Every gate is data (`content/progression.ts`, checked by a test). Everything is built in code; the
-look today is flat-shaded, a colour per material, generated textures on the village and ground, an opt-in retro look. NPCs talk in **blips**;
+look today is flat-shaded, a colour per material, generated textures on the village and ground, a Display setting (Native / Performance / N64). NPCs talk in **blips**;
 **touch controls** are in a playtest on GitHub Pages. **Sallowmere**'s map and Stiltwick stand, empty, while the owner redesigns its story.
 **Next:** the **N64 look rebuild** of the starter zone before any new area ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)): foundations
-T28–T39 in [docs/tickets.md](docs/tickets.md), T28 first (T27, the fast look loop and the approved "before" baselines, is done). Dev server: port 5273.
+T29–T39 in [docs/tickets.md](docs/tickets.md), T29 first (T27, the fast look loop and baselines, and T28, the Display setting, are done). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -56,7 +56,7 @@ T28–T39 in [docs/tickets.md](docs/tickets.md), T28 first (T27, the fast look l
   **Audio is synthesized in code** (no samples; all melodies original). The owner discloses the AI-generated code and writing on Steam.
 - **Every new asset, room or area runs Rough → Final without being asked** ([pipeline.md](docs/pipeline.md)), and **a final pass
   never changes gameplay** (behaviour, hurtboxes, timings, layout, puzzles; ask first). Colours from the palette, models registered
-  and in budget (from T29, T33); check visuals in Native and N64 mode (from T28) and on the contact sheet (from T34).
+  and in budget (from T29, T33); check visuals in Native and N64 mode and on the contact sheet (from T34).
 
 ## Working with the owner
 
@@ -121,7 +121,7 @@ src/
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
     blips.ts               talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
   render/                  materials (shared/unique, `surf` textured, static merging), textures.ts (generated detail tiles, the projection shader), shapes, characters, sky (incl. the blight look), particles, motes (ash),
-                           retro.ts (the retro look: low-res target, bloom, dither + colour crush; Settings' Retro look and Resolution)
+                           retro.ts (the Display modes: N64's 240-row target, dither + colour crush; Native/Performance pixel ratio)
   world/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern

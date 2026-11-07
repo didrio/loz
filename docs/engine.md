@@ -37,20 +37,22 @@ and has sunk out of sight by 18:00, and the moon does the same overnight, so the
 fed the render camera's look direction every frame (`Hud.setHeading`), so it is right in cutscene shots too;
 `bearing(dx, dz)` maps +x east, −z north, the same in the field and in dungeons.
 
-## The retro look (`render/retro.ts`, T18)
+## Display modes (`render/retro.ts`, T28)
 
-**Being replaced** by one Display setting, Native / Performance / N64 (T28, [art.md](art.md) "Display modes"): don't extend it.
-
-A "PS2, a bit demastered" picture, and it hides the clean edges of primitives. Think of it as a bitcrusher on the image: the internal height
-is the sample rate, the colour levels the bit depth. With the look on, `Game.frame` calls `RetroPipeline.render` instead of rendering to the canvas:
-the scene goes to a small, **nearest-filtered, un-antialiased render target** (`internalSize(look, w, h)` with the window in device pixels, canvas ratio cap 2: the setting's rows, the window's aspect,
-never more rows than the canvas has); a bright-pass → separable Gaussian blur at ¼ size gives the **bloom** (`BLOOM_THRESHOLD`, `BLOOM_STRENGTH`);
-a composite pass adds it, converts to sRGB (`<colorspace_fragment>`), and **crushes each channel to `COLOR_LEVELS` (32) with a 4×4 Bayer dither**
-laid on the *internal* pixel grid, so the dither is as chunky as the picture. The canvas is at the device pixel ratio (cap 2) so the upscale is one clean nearest step.
-The HUD is DOM and unaffected. Off draws straight to the canvas, antialiased, at the **Resolution** setting's pixel ratio (`pixelRatioFor`: Native = the screen's own `devicePixelRatio`, cap 3, so 2 on a retina laptop; Balanced 75%; Performance 50%; no sharpening filter; a `matchMedia` watch resizes when the window moves to a screen of another density). **Off is the default** (owner's call, 2026-11-06: the full-resolution picture first, the look kept as a Setting). `Sky.retro` (1 while on) makes the fog **warmer**
-(horizon pulled toward amber, less at night, none in the blight; `retroHaze`) and **thicker** (reach ×0.7). The fog colour is still the horizon colour,
-so the sky meets it. The pure parts (`bayerOffset`, `crushChannel`, `internalSize`, the settings migration) are unit-tested; the shaders are not (no GL in tests): look at them.
-The sun's shadow map and the bloom threshold are tuned by eye; if a scene blooms too hard, lower `BLOOM_STRENGTH`.
+One **Display** setting (Settings, `Settings.display`): **Native** (0, the default on desktop), **Performance** (1, the default on touch devices) and
+**N64** (2). See [art.md](art.md) "Display modes" for the target look. Think of N64 as a bitcrusher on the image: the internal height is the sample rate,
+`COLOR_LEVELS` the bit depth.
+- **Native / Performance** draw straight to the canvas, antialiased, at `pixelRatioFor(display, devicePixelRatio)`: Native = the screen's own ratio (cap 3,
+  so 2 on a retina laptop); Performance caps it at 1. No sharpening filter. A `matchMedia` watch resizes when the window moves to a screen of another density.
+- **N64** makes `Game.frame` call `RetroPipeline.render`: the scene goes to a **linear-filtered, un-antialiased** target `N64_ROWS` (240) tall, width from the
+  window's aspect (`internalSize(display, w, h)`, with the window in device pixels at the canvas ratio, cap 2; never more rows than the canvas has). A
+  composite pass converts to sRGB (`<colorspace_fragment>`) and **crushes each channel to `COLOR_LEVELS` (32) with a 4×4 Bayer dither** on the *internal* pixel
+  grid, then the canvas upscales it softly. **No bloom.** The HUD is DOM and unaffected. `RetroPipeline` turns `renderer.info.autoReset` off (two draws a frame),
+  and `Game.resize` turns it back on for the other modes.
+- The pure parts (`bayerOffset`, `crushChannel`, `internalSize`, `pixelRatioFor`, the settings migration in `core/save.ts`) are unit-tested; the shaders are
+  not (no GL in tests): look at them. The look runner captures a mode with `--display n64` ([testing.md](testing.md)).
+- Settings saved before Display migrate: a retro look on → N64; Balanced or Performance resolution → Performance; else Native (the oldest Sharpness:
+  sharp → Native, else Performance; the retro look's old default Soft 720, never chosen, counts as off). Gone: Resolution, Retro look, Balanced, `Sky.retro`'s warm haze.
 
 ## Textures (`render/textures.ts`, T19)
 
@@ -59,7 +61,7 @@ density drops toward ~16 texels/m, and the projection axis moves out of `normal`
 
 Generated in code, never imported (owner's call, 2026-11-06). A texture is a small grey **detail tile**: a single channel with
 mean ~128. It only brightens or darkens the material's own colour (`colour × (1 + strength·(t − 0.5)·2)`), so one tile
-serves every colour of that surface, and the palette, the blight and the retro crush behave as before. Think of it as a
+serves every colour of that surface, and the palette, the blight and the N64 crush behave as before. Think of it as a
 send effect on a channel, not a new instrument.
 - **Placed by position, not UVs** (`mergeStatic` drops UVs). The patched Lambert shader projects along each face's own normal,
   read as a `flat` value: `mergeStatic` rewrites textured meshes' normals to face normals (`faceNormals`; free, flat shading
@@ -119,7 +121,7 @@ Row kinds in `menu.ts`: action, toggle, submenu, **slider** (left/right or click
 choose to cycle), **entry**. `MenuDriver.onTab` is how a tabbed menu hears Q/E (they win over confirm, which E also is).
 **Settings** (`Settings` in `core/save.ts`, saved at once under `embervale:settings`, applied by `Game.changeSettings`/`applySettings`):
 master/music/effects volume (0..1; 0.8 is the original loudness; `Sfx.setVolumes`), mouse and stick sensitivity (0.2..2×, one number
-scaling both axes: `Input.mouseSensitivity/stickSensitivity`), invert camera up/down (`Input.invertY`), **Resolution** (Native / Balanced / Performance, default Native, with the look off), the **Retro look** (Off / Fine 1080 / Soft 720 / Retro 540 / Crunchy 360 rows; default Off on every device since 2026-11-06; settings saved before Resolution existed with the old default Soft 720 get Off, a look someone picked stays; the older Sharpness migrates to Resolution: sharp → Native, standard → Balanced, performance → Performance; see "The retro look") and Fullscreen
+scaling both axes: `Input.mouseSensitivity/stickSensitivity`), invert camera up/down (`Input.invertY`), **Display** (Native / Performance / N64, default Native on desktop and Performance on touch devices; see "Display modes") and Fullscreen
 (browser Fullscreen API, hidden if unsupported, not saved; a gamepad button may be refused by the browser, which toasts). There is no music hotkey:
 the music slider at 0 is mute. Old `music: false` saves load as music volume 0.
 
@@ -333,7 +335,7 @@ as none and the shrine's `restore` re-derives held keys from opened key chests w
 held flute songs) load with the songs dropped and 0 keys; v1/v2 load in the overworld with
 no items or dungeon progress. Saved: flags, keys, area, items, dungeons, flasks, bells, gems, hearts, clock. Not saved: position (continue starts at the saved area's spawn, e.g. a dungeon's
 entrance, with at least 3 hearts), enemies, cut bushes, where stones were pushed. Autosave: after every script, every 30 s of play, and on page
-hide. Settings (`embervale:settings`): volumes, sensitivities, invert Y, the retro look (see "The pause menu"). Storage goes through `KeyValueStore` so the
+hide. Settings (`embervale:settings`): volumes, sensitivities, invert Y, the display mode (see "The pause menu"). Storage goes through `KeyValueStore` so the
 desktop build can write real files.
 
 ## Conventions

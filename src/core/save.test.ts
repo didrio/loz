@@ -160,31 +160,44 @@ describe('save files', () => {
   });
 
   it('keeps saved settings and clamps or drops nonsense', () => {
-    const s = decodeSettings('{"masterVolume":0.3,"mouseSensitivity":9,"stickSensitivity":"fast","invertY":true,"look":4,"sfxVolume":-1}');
-    expect(s).toMatchObject({ masterVolume: 0.3, mouseSensitivity: 2, stickSensitivity: 1, invertY: true, look: 4, sfxVolume: 0 });
-    expect(decodeSettings('{"look":7}').look).toBe(DEFAULT_SETTINGS.look);
+    const s = decodeSettings('{"masterVolume":0.3,"mouseSensitivity":9,"stickSensitivity":"fast","invertY":true,"display":2,"sfxVolume":-1}');
+    expect(s).toMatchObject({ masterVolume: 0.3, mouseSensitivity: 2, stickSensitivity: 1, invertY: true, display: 2, sfxVolume: 0 });
+    expect(decodeSettings('{"display":7}').display).toBe(DEFAULT_SETTINGS.display);
   });
 
-  it('turns the old Sharpness setting into a Resolution with the look off: sharp is Native, performance the cheapest', () => {
-    expect(decodeSettings('{"quality":2}')).toMatchObject({ look: 0, resolution: 0 });
-    expect(decodeSettings('{"quality":1}')).toMatchObject({ look: 0, resolution: 1 });
-    expect(decodeSettings('{"quality":0}')).toMatchObject({ look: 0, resolution: 2 });
-    expect(decodeSettings('{"quality":7}').resolution).toBe(DEFAULT_SETTINGS.resolution);
-    expect(decodeSettings('{"quality":2,"look":1}').look).toBe(1); // a saved look wins
+  it('migrates the old Retro look and Resolution into Display: a look on is N64, Balanced or Performance is Performance, else Native', () => {
+    expect(decodeSettings('{"look":3,"resolution":0}').display).toBe(2);
+    expect(decodeSettings('{"look":1,"resolution":2}').display).toBe(2); // a look wins over a resolution
+    expect(decodeSettings('{"look":0,"resolution":1}').display).toBe(1);
+    expect(decodeSettings('{"look":0,"resolution":2}').display).toBe(1);
+    expect(decodeSettings('{"look":0,"resolution":0}').display).toBe(0);
+    expect(decodeSettings('{"look":9}').display).toBe(DEFAULT_SETTINGS.display);
   });
 
-  it('defaults to Native with the retro look off; settings from before Resolution lose the old default look only', () => {
-    expect(DEFAULT_SETTINGS).toMatchObject({ look: 0, resolution: 0 });
-    expect(decodeSettings('{"look":2}').look).toBe(0); // the old default, never chosen
-    expect(decodeSettings('{"look":3}').look).toBe(3); // a look someone picked stays
-    expect(decodeSettings('{"look":2,"resolution":1}')).toMatchObject({ look: 2, resolution: 1 }); // chosen after the change
-    expect(decodeSettings('{"resolution":9}').resolution).toBe(0);
+  it('migrates the oldest Sharpness setting: sharp is Native, standard and performance are Performance', () => {
+    expect(decodeSettings('{"quality":2}').display).toBe(0);
+    expect(decodeSettings('{"quality":1}').display).toBe(1);
+    expect(decodeSettings('{"quality":0}').display).toBe(1);
+    expect(decodeSettings('{"quality":7}').display).toBe(DEFAULT_SETTINGS.display);
+    expect(decodeSettings('{"quality":2,"look":1}').display).toBe(2); // a saved look wins
   });
 
-  it('gives a fresh install the caller\'s defaults (touch passes a cheaper look)', () => {
-    const touch = { ...DEFAULT_SETTINGS, look: 4 as const };
-    expect(decodeSettings(null, touch).look).toBe(4);
-    expect(decodeSettings('not json', touch).look).toBe(4);
-    expect(decodeSettings('{"look":1}', touch).look).toBe(1);
+  it('counts the retro look\'s old default (Soft, saved before Resolution existed) as never chosen', () => {
+    expect(decodeSettings('{"look":2}').display).toBe(0);
+    expect(decodeSettings('{"look":3}').display).toBe(2);
+    expect(decodeSettings('{"look":2,"resolution":0}').display).toBe(2); // chosen after the change
+  });
+
+  it('defaults to Native', () => {
+    expect(DEFAULT_SETTINGS.display).toBe(0);
+  });
+
+  it('gives a fresh install the caller\'s defaults (touch passes Performance), and saved settings keep theirs', () => {
+    const touch = { ...DEFAULT_SETTINGS, display: 1 as const };
+    expect(decodeSettings(null, touch).display).toBe(1);
+    expect(decodeSettings('not json', touch).display).toBe(1);
+    expect(decodeSettings('{"masterVolume":0.5}', touch).display).toBe(1);
+    expect(decodeSettings('{"display":0}', touch).display).toBe(0);
+    expect(decodeSettings('{"display":2}', touch).display).toBe(2);
   });
 });

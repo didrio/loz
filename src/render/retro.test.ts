@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAYER4, bayerOffset, COLOR_LEVELS, crushChannel, DEFAULT_LOOK, internalSize, LOOK_HEIGHTS, LOOK_NAMES, pixelRatioFor, RESOLUTION_NAMES } from './retro';
+import { BAYER4, bayerOffset, COLOR_LEVELS, crushChannel, DISPLAY_NAMES, internalSize, N64_ROWS, pixelRatioFor } from './retro';
 
 describe('the dither matrix', () => {
   it('holds each of 0..15 once, so every threshold is used evenly', () => {
@@ -41,20 +41,20 @@ describe('the colour crush', () => {
 });
 
 describe('internalSize', () => {
-  it('is null for Off', () => {
+  it('is null for Native and Performance: they draw straight to the canvas', () => {
     expect(internalSize(0, 1920, 1080)).toBeNull();
+    expect(internalSize(1, 1920, 1080)).toBeNull();
   });
 
-  it('keeps the window aspect at the look\'s height', () => {
-    expect(internalSize(1, 3840, 2160)).toEqual({ w: 1920, h: 1080 });
-    expect(internalSize(2, 1920, 1080)).toEqual({ w: 1280, h: 720 });
-    expect(internalSize(3, 1920, 1080)).toEqual({ w: 960, h: 540 });
-    expect(internalSize(4, 1920, 1080)).toEqual({ w: 640, h: 360 });
-    expect(internalSize(3, 844, 390)).toEqual({ w: 844, h: 390 }); // a phone's own 390 rows are fewer than 540
+  it('N64 is 240 rows tall at the window\'s aspect, with no bars', () => {
+    expect(N64_ROWS).toBe(240);
+    expect(internalSize(2, 1920, 1080)).toEqual({ w: 427, h: 240 });
+    expect(internalSize(2, 2560, 1080)).toEqual({ w: 569, h: 240 });
+    expect(internalSize(2, 800, 800)).toEqual({ w: 240, h: 240 });
   });
 
   it('never draws more rows than the window has', () => {
-    expect(internalSize(2, 800, 400)).toEqual({ w: 800, h: 400 });
+    expect(internalSize(2, 600, 200)).toEqual({ w: 600, h: 200 });
   });
 
   it('handles an empty window without dividing by zero', () => {
@@ -62,28 +62,23 @@ describe('internalSize', () => {
   });
 });
 
-describe('the look settings', () => {
-  it('have a name for every height, and the look is off by default', () => {
-    expect(LOOK_NAMES).toHaveLength(LOOK_HEIGHTS.length);
-    expect(DEFAULT_LOOK).toBe(0);
-  });
-});
-
-describe('pixelRatioFor (Resolution)', () => {
-  it('Native is the screen\'s own density: 2 on a retina laptop, 1 on a plain monitor', () => {
+describe('pixelRatioFor (Display)', () => {
+  it('Native is the screen\'s own density: 2 on a retina laptop, 1 on a plain monitor, capped at 3', () => {
     expect(pixelRatioFor(0, 2)).toBe(2);
     expect(pixelRatioFor(0, 1)).toBe(1);
-  });
-  it('Balanced and Performance draw 75% and 50% of it', () => {
-    expect(pixelRatioFor(1, 2)).toBe(1.5);
-    expect(pixelRatioFor(2, 2)).toBe(1);
-    expect(pixelRatioFor(2, 1)).toBe(0.5);
-  });
-  it('caps very dense screens and survives a missing ratio', () => {
     expect(pixelRatioFor(0, 4)).toBe(3);
     expect(pixelRatioFor(0, 0)).toBe(1);
   });
-  it('has a name per setting', () => {
-    expect(RESOLUTION_NAMES).toHaveLength(3);
+  it('Performance caps the ratio at 1 and keeps a low screen as it is', () => {
+    expect(pixelRatioFor(1, 3)).toBe(1);
+    expect(pixelRatioFor(1, 2)).toBe(1);
+    expect(pixelRatioFor(1, 0.75)).toBe(0.75);
+  });
+  it('N64 keeps the canvas at the screen\'s density (cap 2) for the soft upscale', () => {
+    expect(pixelRatioFor(2, 3)).toBe(2);
+    expect(pixelRatioFor(2, 1)).toBe(1);
+  });
+  it('has a name per mode', () => {
+    expect(DISPLAY_NAMES).toEqual(['Native', 'Performance', 'N64']);
   });
 });

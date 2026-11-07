@@ -10,7 +10,7 @@ import type { Physics } from '../core/physics';
 import { DEFAULT_SETTINGS, decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings } from '../core/save';
 import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
-import { RetroPipeline, internalSize, pixelRatioFor } from '../render/retro';
+import { RetroPipeline, internalSize, pixelRatioFor, DISPLAY_NATIVE, DISPLAY_PERFORMANCE } from '../render/retro';
 import { Sky } from '../render/sky';
 import { Hud } from '../ui/hud';
 import { nearestInteractable, sameLevel, type Area } from '../world/area';
@@ -32,7 +32,7 @@ import { NO_CONTROLS, Player, type Controls } from './player';
 import type { Page, Script, ScriptApi } from './script';
 import { GameState, dayTurn } from './state';
 import { TitleMenu } from './title';
-import { TouchControls, type TouchContext } from '../ui/touch';
+import { TouchControls, wantsTouch, type TouchContext } from '../ui/touch';
 
 /**
  * - title: the menu over a slow camera orbit
@@ -42,8 +42,6 @@ import { TouchControls, type TouchContext } from '../ui/touch';
 export type Mode = 'title' | 'play' | 'cutscene';
 
 const SETTINGS_KEY = 'embervale:settings';
-/** The most device pixels per CSS pixel the canvas has: with the retro look on it only holds the nearest-neighbour upscale. */
-const LOOK_CANVAS_RATIO = 2;
 const AUTOSAVE_SECONDS = 30;
 /** A full day passes in about five minutes. */
 const HOURS_PER_SECOND = 1 / 24; // a day and night take 10 minutes
@@ -106,7 +104,7 @@ export class Game implements ScriptApi {
 
   constructor(canvas: HTMLCanvasElement, readonly physics: Physics, private readonly store: KeyValueStore = localStore) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    this.renderer.setPixelRatio(pixelRatioFor(0, window.devicePixelRatio));
+    this.renderer.setPixelRatio(pixelRatioFor(DISPLAY_NATIVE, window.devicePixelRatio));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene.fog = new THREE.Fog(0xbfe0f2, 50, 215);
@@ -126,7 +124,7 @@ export class Game implements ScriptApi {
     this.combat = new Combat(this);
 
     this.saveSlot = new SaveSlot(store);
-    this.settings = decodeSettings(store.get(SETTINGS_KEY), DEFAULT_SETTINGS);
+    this.settings = decodeSettings(store.get(SETTINGS_KEY), { ...DEFAULT_SETTINGS, display: wantsTouch() ? DISPLAY_PERFORMANCE : DISPLAY_NATIVE });
     this.applySettings();
     this.loadArea('overworld');
 
@@ -703,15 +701,14 @@ export class Game implements ScriptApi {
   }
 
   private resize() {
-    // The look's rows are counted in device pixels (up to the canvas's own), so 1080 is a true 1080 on a retina screen.
-    const dpr = Math.min(window.devicePixelRatio, LOOK_CANVAS_RATIO);
-    const size = internalSize(this.settings.look, window.innerWidth * dpr, window.innerHeight * dpr);
-    // Look off: the scene at the Resolution setting's share of the screen's own density (Native: every device pixel).
-    this.renderer.setPixelRatio(size ? Math.min(window.devicePixelRatio, LOOK_CANVAS_RATIO) : pixelRatioFor(this.settings.resolution, window.devicePixelRatio));
+    const { display } = this.settings;
+    const ratio = pixelRatioFor(display, window.devicePixelRatio);
+    // N64: the scene's rows are counted in device pixels (up to the canvas's own), then scaled up softly.
+    const size = internalSize(display, window.innerWidth * ratio, window.innerHeight * ratio);
+    this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.retro.setSize(size);
     this.renderer.info.autoReset = !size;
-    this.sky.retro = size ? 1 : 0;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
   }

@@ -84,5 +84,5 @@ writes their reference here.
 
 ## Visual checks
 
-Every visual change: `looker` on the look scenes it touches ([testing.md](testing.md)), in Native and (from T28) N64 mode.
+Every visual change: `looker` on the look scenes it touches ([testing.md](testing.md)), in Native and N64 mode.
 Iterate on the scenes that changed; the full run at milestones.

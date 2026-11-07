@@ -5,6 +5,7 @@
 //   npm run look                    every scene
 //   npm run look -- boss village    just these
 //   npm run look -- --list          scene names
+//   npm run look -- village --display n64   capture in N64 mode (or performance); shots get a -n64 suffix
 //   npm run look -- village --approve   accept what the scenes show now as the baselines and budgets
 //
 // Every shot is compared with its approved baseline (scripts/baselines/look/, shrunk 4x) and reported
@@ -1522,7 +1523,18 @@ if (args.includes('--list')) {
   process.exit(0);
 }
 const approve = args.includes('--approve');
-const requested = args.filter((a) => !a.startsWith('--'));
+// --display n64 (or performance): capture in that Display mode. Shots are named <shot>-n64, so they never meet the Native
+// baselines; draw-call budgets only apply to Native.
+const displayArg = args.indexOf('--display');
+const DISPLAYS = ['native', 'performance', 'n64'];
+const displayName = displayArg >= 0 ? String(args[displayArg + 1]).toLowerCase() : 'native';
+if (!DISPLAYS.includes(displayName)) {
+  console.error(`--display takes one of: ${DISPLAYS.join(', ')}.`);
+  process.exit(1);
+}
+const display = DISPLAYS.indexOf(displayName);
+const suffix = display === 0 ? '' : `-${displayName}`;
+const requested = args.filter((a, i) => !a.startsWith('--') && !(displayArg >= 0 && i === displayArg + 1));
 const names = requested.length ? requested : Object.keys(SCENES);
 const unknown = names.filter((n) => !SCENES[n]);
 if (unknown.length) {
@@ -1547,8 +1559,8 @@ const JOBS = Math.max(1, Number(process.env.JOBS) || (env.gl === 'gpu' ? 4 : 3))
 async function runScene(name) {
   const t0 = Date.now();
   const log = [];
-  const h = await openGame(env, OUT, { stepped: true });
-  const prefixed = (n) => (n.startsWith(name) ? n : `${name}-${n}`);
+  const h = await openGame(env, OUT, { stepped: true, display: display === 0 ? undefined : display });
+  const prefixed = (n) => (n.startsWith(name) ? n : `${name}-${n}`) + suffix;
   const shots = []; // { name, status, share }
   const peak = { calls: 0, triangles: 0 };
 
@@ -1599,7 +1611,7 @@ async function runScene(name) {
   const count = (status) => shots.filter((x) => x.status === status).length;
   const secs = ((Date.now() - t0) / 1000).toFixed(0);
   if (ok) {
-    const over = overBudget(budgets, name, peak);
+    const over = display === 0 ? overBudget(budgets, name, peak) : [];
     overBudgets.push(...over);
     if (over.length) failed = true;
     const mark = over.length ? '✗' : '✓';
@@ -1615,7 +1627,7 @@ async function runScene(name) {
   }
   if (approve && ok) {
     for (const x of shots) if (x.pending) await writeBaseline(x.name, x.pending);
-    budgets[name] = budgetFor(peak);
+    if (display === 0) budgets[name] = budgetFor(peak);
   }
   await h.page.close();
   console.log(log.join('\n'));
