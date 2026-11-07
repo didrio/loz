@@ -144,7 +144,7 @@ indie games actually do, and which of those we have.
   count), and it's built as Settings next to Retro look, with look shots before and after.
 **Read first:** engine.md "The retro look" and "Textures"; `render/retro.ts` (and its test); `game/pauseMenu.ts` (Settings).
 **Verify:** `npm run check` (pure parts tested like `retro.test.ts`); `looker` before/after on village, field and a dungeon scene.
-**Notes:** A full-screen signal pass would also soften the DOM HUD only if the HUD is drawn into it; that is T26, so design the
+**Notes:** Since 2026-11-06 the look is **Off by default** (owner: the native-resolution picture looked better on a retina laptop); ask up front whether T25/T26 are still wanted as opt-in looks, or shelved. A full-screen signal pass would also soften the DOM HUD only if the HUD is drawn into it; that is T26, so design the
 pass so T26 can feed it. Ask the owner up front: PS2 only, or PS1 tricks too (wobble, warp)? Keep everything in Settings.
 
 ### T26: A demastered UI

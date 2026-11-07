@@ -37,7 +37,7 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   **Only the `sallowmere` scene has committed baselines** (owner's call, 2026-11-06: a big visual overhaul, the polygon-count increase, is coming and
   would change every shot, so the rest wait for a full `npm run look -- --approve`); other shots print "new" and have no budgets. T18's retro look
   (on by default) changed every shot; the Sallowmere baselines were re-approved with it. Since the look moves `renderer.info`, `RetroPipeline`
-  turns `autoReset` off so the budgets still count the whole frame.
+  turns `autoReset` off so the budgets still count the whole frame. **Look scenes pin the retro look to Soft (720)** (`openGame`'s `stepped` option plants the settings), because their baselines were approved with it on; the game's default became Off on 2026-11-06. Re-approving every baseline with the look off is a full `npm run look -- --approve` (ask the owner), then drop the pin.
   Look runs on a **stepped clock** (`openGame(..., { stepped: true })` in `browser.mjs`): the page's frames only run when the
   script steps them (50 ms of game time each), `h.wait(ms)` runs frames instead of sleeping, `h.until` checks after every
   frame (its timeout is game time), `Math.random` is seeded and CSS animations are finished before a shot. Two runs on

@@ -10,7 +10,7 @@ import type { Physics } from '../core/physics';
 import { DEFAULT_SETTINGS, decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings } from '../core/save';
 import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
-import { RetroPipeline, TOUCH_DEFAULT_LOOK, internalSize } from '../render/retro';
+import { RetroPipeline, internalSize, pixelRatioFor } from '../render/retro';
 import { Sky } from '../render/sky';
 import { Hud } from '../ui/hud';
 import { nearestInteractable, sameLevel, type Area } from '../world/area';
@@ -32,7 +32,7 @@ import { NO_CONTROLS, Player, type Controls } from './player';
 import type { Page, Script, ScriptApi } from './script';
 import { GameState, dayTurn } from './state';
 import { TitleMenu } from './title';
-import { TouchControls, wantsTouch, type TouchContext } from '../ui/touch';
+import { TouchControls, type TouchContext } from '../ui/touch';
 
 /**
  * - title: the menu over a slow camera orbit
@@ -44,8 +44,6 @@ export type Mode = 'title' | 'play' | 'cutscene';
 const SETTINGS_KEY = 'embervale:settings';
 /** The most device pixels per CSS pixel the canvas has: with the retro look on it only holds the nearest-neighbour upscale. */
 const LOOK_CANVAS_RATIO = 2;
-/** With the look off the scene is drawn at the canvas's own size (antialiased), as before the look existed. */
-const CRISP_PIXEL_RATIO = 1.5;
 const AUTOSAVE_SECONDS = 30;
 /** A full day passes in about five minutes. */
 const HOURS_PER_SECOND = 1 / 24; // a day and night take 10 minutes
@@ -108,11 +106,12 @@ export class Game implements ScriptApi {
 
   constructor(canvas: HTMLCanvasElement, readonly physics: Physics, private readonly store: KeyValueStore = localStore) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, CRISP_PIXEL_RATIO));
+    this.renderer.setPixelRatio(pixelRatioFor(0, window.devicePixelRatio));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.scene.fog = new THREE.Fog(0xbfe0f2, 50, 215);
     window.addEventListener('resize', () => this.resize()); // sized for real by applySettings, once the settings are read
+    this.watchPixelRatio();
 
     this.input = new Input(canvas);
     this.touch = new TouchControls(this.input, document.getElementById('hud')!, () => this.sfx.init());
@@ -127,7 +126,7 @@ export class Game implements ScriptApi {
     this.combat = new Combat(this);
 
     this.saveSlot = new SaveSlot(store);
-    this.settings = decodeSettings(store.get(SETTINGS_KEY), wantsTouch() ? { ...DEFAULT_SETTINGS, look: TOUCH_DEFAULT_LOOK } : DEFAULT_SETTINGS);
+    this.settings = decodeSettings(store.get(SETTINGS_KEY), DEFAULT_SETTINGS);
     this.applySettings();
     this.loadArea('overworld');
 
@@ -694,11 +693,21 @@ export class Game implements ScriptApi {
     done.catch(() => this.hud.showToast('The browser refused fullscreen (press F11, or click the toggle)'));
   }
 
+  /** Moving the window to a screen of another density (or zooming the page) changes the ratio: resize to match. */
+  private watchPixelRatio() {
+    if (typeof matchMedia !== 'function') return;
+    matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener('change', () => {
+      this.resize();
+      this.watchPixelRatio();
+    }, { once: true });
+  }
+
   private resize() {
     // The look's rows are counted in device pixels (up to the canvas's own), so 1080 is a true 1080 on a retina screen.
     const dpr = Math.min(window.devicePixelRatio, LOOK_CANVAS_RATIO);
     const size = internalSize(this.settings.look, window.innerWidth * dpr, window.innerHeight * dpr);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, size ? LOOK_CANVAS_RATIO : CRISP_PIXEL_RATIO));
+    // Look off: the scene at the Resolution setting's share of the screen's own density (Native: every device pixel).
+    this.renderer.setPixelRatio(size ? Math.min(window.devicePixelRatio, LOOK_CANVAS_RATIO) : pixelRatioFor(this.settings.resolution, window.devicePixelRatio));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.retro.setSize(size);
     this.renderer.info.autoReset = !size;

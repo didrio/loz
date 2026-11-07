@@ -12,9 +12,25 @@ import * as THREE from 'three';
 export const LOOK_NAMES = ['Off', 'Fine (1080)', 'Soft (720)', 'Retro (540)', 'Crunchy (360)'];
 export const LOOK_HEIGHTS = [0, 1080, 720, 540, 360] as const;
 export type Look = 0 | 1 | 2 | 3 | 4;
-/** The default on desktop (the owner's pick, 2026-11-06), and the lower default on touch (cheaper for phones). */
-export const DEFAULT_LOOK: Look = 2;
-export const TOUCH_DEFAULT_LOOK: Look = 4;
+/** Off by default everywhere (owner's call, 2026-11-06: the full-resolution picture first; the look stays a Setting). */
+export const DEFAULT_LOOK: Look = 0;
+
+/**
+ * Settings' "Resolution" (with the retro look off): how many device pixels the scene is drawn with, as a share of the
+ * screen's own (`devicePixelRatio`). Native is the screen's full density (2 on a retina laptop), antialiased, with no
+ * sharpening filter. The browser scales the lower ones up.
+ */
+export const RESOLUTION_NAMES = ['Native', 'Balanced', 'Performance'];
+export type Resolution = 0 | 1 | 2;
+const RESOLUTION_SHARE = [1, 0.75, 0.5] as const;
+/** No screen is drawn denser than this (3× phones would cost 2.25× a 2× screen for little visible gain). */
+const MAX_PIXEL_RATIO = 3;
+
+/** The renderer's pixel ratio for a Resolution setting on a screen of `dpr` device pixels per CSS pixel. */
+export function pixelRatioFor(res: Resolution, dpr: number): number {
+  const native = Math.min(Math.max(dpr || 1, 0.5), MAX_PIXEL_RATIO);
+  return Math.max(0.5, native * RESOLUTION_SHARE[res]);
+}
 
 /** Colour levels per channel after the crush (32 = 5 bits, like a 16-bit framebuffer). */
 export const COLOR_LEVELS = 32;

@@ -45,7 +45,7 @@ the scene goes to a small, **nearest-filtered, un-antialiased render target** (`
 never more rows than the canvas has); a bright-pass → separable Gaussian blur at ¼ size gives the **bloom** (`BLOOM_THRESHOLD`, `BLOOM_STRENGTH`);
 a composite pass adds it, converts to sRGB (`<colorspace_fragment>`), and **crushes each channel to `COLOR_LEVELS` (32) with a 4×4 Bayer dither**
 laid on the *internal* pixel grid, so the dither is as chunky as the picture. The canvas is at the device pixel ratio (cap 2) so the upscale is one clean nearest step.
-The HUD is DOM and unaffected. Off draws straight to the canvas as before (antialiased, pixel ratio cap 1.5). `Sky.retro` (1 while on) makes the fog **warmer**
+The HUD is DOM and unaffected. Off draws straight to the canvas, antialiased, at the **Resolution** setting's pixel ratio (`pixelRatioFor`: Native = the screen's own `devicePixelRatio`, cap 3, so 2 on a retina laptop; Balanced 75%; Performance 50%; no sharpening filter; a `matchMedia` watch resizes when the window moves to a screen of another density). **Off is the default** (owner's call, 2026-11-06: the full-resolution picture first, the look kept as a Setting). `Sky.retro` (1 while on) makes the fog **warmer**
 (horizon pulled toward amber, less at night, none in the blight; `retroHaze`) and **thicker** (reach ×0.7). The fog colour is still the horizon colour,
 so the sky meets it. The pure parts (`bayerOffset`, `crushChannel`, `internalSize`, the settings migration) are unit-tested; the shaders are not (no GL in tests): look at them.
 The sun's shadow map and the bloom threshold are tuned by eye; if a scene blooms too hard, lower `BLOOM_STRENGTH`.
@@ -114,7 +114,7 @@ Row kinds in `menu.ts`: action, toggle, submenu, **slider** (left/right or click
 choose to cycle), **entry**. `MenuDriver.onTab` is how a tabbed menu hears Q/E (they win over confirm, which E also is).
 **Settings** (`Settings` in `core/save.ts`, saved at once under `embervale:settings`, applied by `Game.changeSettings`/`applySettings`):
 master/music/effects volume (0..1; 0.8 is the original loudness; `Sfx.setVolumes`), mouse and stick sensitivity (0.2..2×, one number
-scaling both axes: `Input.mouseSensitivity/stickSensitivity`), invert camera up/down (`Input.invertY`), the **Retro look** (Off / Fine 1080 / Soft 720 / Retro 540 / Crunchy 360 rows; default Soft 720 (owner's pick), Crunchy on touch; replaced Sharpness, whose old values migrate: sharp → Off, performance → Crunchy; see "The retro look") and Fullscreen
+scaling both axes: `Input.mouseSensitivity/stickSensitivity`), invert camera up/down (`Input.invertY`), **Resolution** (Native / Balanced / Performance, default Native, with the look off), the **Retro look** (Off / Fine 1080 / Soft 720 / Retro 540 / Crunchy 360 rows; default Off on every device since 2026-11-06; settings saved before Resolution existed with the old default Soft 720 get Off, a look someone picked stays; the older Sharpness migrates to Resolution: sharp → Native, standard → Balanced, performance → Performance; see "The retro look") and Fullscreen
 (browser Fullscreen API, hidden if unsupported, not saved; a gamepad button may be refused by the browser, which toasts). There is no music hotkey:
 the music slider at 0 is mute. Old `music: false` saves load as music volume 0.
 
