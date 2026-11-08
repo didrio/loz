@@ -40,19 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T57: Make the northpass smoke pass again at Stiltwick's shallows
-**Run:** auto · sonnet · medium
-**Why:** `npm run smoke -- northpass` fails at "the town's shallows wade": teleported to (-60, -425), Wren stands at y 0.91
-instead of wading (expected -1.2 < y < 0). It failed the same way before T48 (checked 2026-11-08 on 2ea78c5), so it's
-drift between Sallowmere's ground and the step, and CI's full suite fails on every push until it's fixed.
-**Done when:** the step checks a spot that really is shallow water in today's Sallowmere (or the ground is back where
-sallowmere.md says), and `npm run smoke -- northpass` passes.
-**Read first:** `scripts/smoke/northpass.mjs` (~line 111); sallowmere.md "The map"; `world/overworld/mere.ts` (`carveMere`,
-`MERE_WATER`); `game/water.ts`.
-**Verify:** `npm run check`; smoke `northpass water`.
-**Notes:** Sallowmere is waiting for the owner's redesign: fix the test's spot, don't reshape the land (ask first if the
-land looks wrong).
-
 **The golden set** (owner, 2026-11-08; [roadmap.md](roadmap.md) "The N64 look rebuild" step 2): each is a Final pass, in this order, locked only when the owner approves. Written ahead at the owner's request: when starting one, re-read it against what the previous one taught.
 
 ### T49: Final pass: the Thornling (golden set 1)

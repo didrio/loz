@@ -108,10 +108,10 @@ export default async function run(t) {
     await wait(900);
     p = await pos();
     check(p.y > 0.5 && p.hp === hp, `the descent's foot at y ${p.y.toFixed(2)}, hp ${p.hp}`);
-    await teleport(-60, -425, Math.PI);
+    await teleport(-74, -425, Math.PI); // open water west of the plaza (the plaza itself is a dry deck)
     await wait(1500);
     p = await pos();
-    check(p.y < 0 && p.y > -1.2 && p.hp === hp && (await game(() => window.embervale.mode)) === 'play', `Stiltwick's shallows: y ${p.y.toFixed(2)}, hp ${p.hp}`);
+    check(p.y < 0 && p.y > -1.2 && p.hp === hp && (await game(() => window.embervale.mode)) === 'play', `Stiltwick's shallows (off the decks): y ${p.y.toFixed(2)}, hp ${p.hp}`);
     await teleport(70, -450, Math.PI); // the east island: dry ground
     await wait(900);
     await teleport(22, -486, Math.PI); // the channel before the Weir
