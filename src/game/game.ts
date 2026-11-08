@@ -251,6 +251,7 @@ export class Game implements ScriptApi {
   // ---------------------------------------------------------------------------
 
   private frame = (now: number) => {
+    this.resizeIfChanged();
     this.timer.update(now);
     const rawDt = Math.min(this.timer.getDelta(), 0.05);
     const frozen = this.combat.hitStop > 0;
@@ -778,7 +779,21 @@ export class Game implements ScriptApi {
     }, { once: true });
   }
 
+  /** The window size and density the canvas was last sized for (`frame` compares them every frame). */
+  private sizedFor = { w: 0, h: 0, dpr: 0 };
+
+  /**
+   * Phones (iOS Safari especially) fire `resize` before a rotation's new size is known, or not at all: the canvas kept
+   * its old size and the game showed on half the screen, black beside it. So every frame checks the size too (two
+   * comparisons), and the event is only the fast path.
+   */
+  private resizeIfChanged() {
+    const s = this.sizedFor;
+    if (s.w !== window.innerWidth || s.h !== window.innerHeight || s.dpr !== window.devicePixelRatio) this.resize();
+  }
+
   private resize() {
+    this.sizedFor = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio };
     const { display } = this.settings;
     const ratio = pixelRatioFor(display, window.devicePixelRatio);
     // N64: the scene's rows are counted in device pixels (up to the canvas's own), then scaled up softly.

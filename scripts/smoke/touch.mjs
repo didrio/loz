@@ -145,4 +145,26 @@ export default async function run(t) {
     await page.touchscreen.tap(600, 150);
     await until(() => !document.querySelector('.touch').classList.contains('hidden'), 5000);
   });
+
+  await step('a rotation the browser reports late still fills the screen', async () => {
+    // Phones (iOS Safari especially) fire `resize` before the new size is known: the canvas once kept its old size and
+    // the game showed on the left half, black beside it. Turn the phone while the window still reports the old size,
+    // then let it report the real one, with no event after.
+    await game(() => {
+      window.__stale = { w: innerWidth, h: innerHeight };
+      const el = document.documentElement;
+      Object.defineProperty(window, 'innerWidth', { configurable: true, get: () => window.__stale?.w ?? el.clientWidth });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, get: () => window.__stale?.h ?? el.clientHeight });
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(300); // the resize events, on the old size
+    await game(() => (window.__stale = null));
+    await wait(300);
+    const fit = await game(() => {
+      const c = document.querySelector('#game'), r = c.getBoundingClientRect();
+      return { w: r.width, h: r.height, vw: innerWidth, vh: innerHeight, aspect: c.width / c.height };
+    });
+    check(Math.abs(fit.w - fit.vw) < 2 && Math.abs(fit.h - fit.vh) < 2, `the canvas covers ${fit.w}×${fit.h} of ${fit.vw}×${fit.vh}`);
+    check(Math.abs(fit.aspect - fit.vw / fit.vh) < 0.02, `the picture's shape ${fit.aspect.toFixed(3)}, the screen's ${(fit.vw / fit.vh).toFixed(3)}`);
+  });
 }
