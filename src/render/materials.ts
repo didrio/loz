@@ -128,6 +128,7 @@ export function bakeColor(g: THREE.BufferGeometry, color: THREE.Color) {
   const minY = g.boundingBox!.min.y;
   const pos = g.attributes.position;
   const out = new Float32Array(pos.count * 3);
+  const shade = new Float32Array(pos.count);
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
   for (let i = 0; i + 2 < pos.count; i += 3) {
     a.fromBufferAttribute(pos, i);
@@ -142,9 +143,12 @@ export function bakeColor(g: THREE.BufferGeometry, color: THREE.Color) {
         f = BAKED_SHADE.foot + (1 - BAKED_SHADE.foot) * t;
       }
       out.set([color.r * f, color.g * f, color.b * f], (i + k) * 3);
+      shade[i + k] = f;
     }
   }
   g.setAttribute('color', new THREE.BufferAttribute(out, 3));
+  // The factor itself, so the light bake (render/bakeLight.ts) can replace it; `mergeStatic` drops it unless asked.
+  g.setAttribute('shade', new THREE.BufferAttribute(shade, 1));
 }
 
 /**
@@ -180,7 +184,8 @@ export interface PlainStatic {
  */
 export const mergeAudit = { on: false, plain: [] as PlainStatic[] };
 
-export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
+/** `keepShade` keeps `bakeColor`'s `shade` attribute on the merged meshes, for the light bake to read and remove. */
+export function mergeStatic(src: THREE.Object3D, cellSize = 80, keepShade = false) {
   src.updateMatrixWorld(true);
   const buckets = new Map<string, { material: THREE.Material; geos: THREE.BufferGeometry[] }>();
   const center = new THREE.Vector3();
@@ -213,6 +218,7 @@ export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
     const merged = mergeGeometries(b.geos);
     for (const g of b.geos) g.dispose();
     if (!merged) continue;
+    if (!keepShade && merged.attributes.shade) merged.deleteAttribute('shade');
     const mesh = new THREE.Mesh(merged, b.material);
     out.add(mesh);
   }

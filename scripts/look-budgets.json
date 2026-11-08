@@ -116,8 +116,8 @@
     "triangles": 260000
   },
   "mill": {
-    "calls": 720,
-    "triangles": 266000
+    "calls": 360,
+    "triangles": 221000
   },
   "night": {
     "calls": 420,
@@ -185,11 +185,11 @@
   },
   "village": {
     "calls": 360,
-    "triangles": 215000
+    "triangles": 222000
   },
   "villageDetails": {
-    "calls": 350,
-    "triangles": 211000
+    "calls": 390,
+    "triangles": 218000
   },
   "wardenIntro": {
     "calls": 930,

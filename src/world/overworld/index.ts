@@ -219,6 +219,10 @@ export class Overworld implements Area {
       { id: 'trigger.heartVessel', x: this.vessel.x, z: this.vessel.z, r: 1.3, enabled: () => this.vessel.visible },
     ];
 
+    // Baked bounce light (render/bakeLight.ts), the village only for now: a test of the look before the rest of the valley.
+    // The mill's room is left alone (lamp-lit); the cut runs mid-wall, so the tower's outside still gets it.
+    const millRoom = { x: MILL.x, z: MILL.z, r: (MILL_TOWER.inner + MILL_TOWER.outer) / 2 };
+    b.bakeLight({ x: VILLAGE.x, z: VILLAGE.z, r: VILLAGE.r + 8, feather: 8, except: [millRoom] });
     const done = b.finish();
     this.root = done.root;
     this.disposer = done.dispose;

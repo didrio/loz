@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",
-    "three": "^0.187.0"
+    "three": "^0.187.0",
+    "three-mesh-bvh": "^0.9.18"
   },
   "devDependencies": {
     "@types/three": "^0.187.0",

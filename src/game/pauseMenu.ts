@@ -2,6 +2,7 @@ import { DEV_STATES } from '../content/devStates';
 import { foundHints } from '../content/hints';
 import { foundSigils } from '../content/sigils';
 import { SENSITIVITY_RANGE, type Settings } from '../core/save';
+import { bakedLightOn, setBakedLight } from '../render/bakeLight';
 import { DISPLAY_NAMES } from '../render/retro';
 import { setTextureResolution, TEXTURE_RESOLUTION_RANGE, textureResolution } from '../render/textures';
 import type { Game } from './game';
@@ -140,6 +141,7 @@ export class PauseMenu {
           try { localStorage.setItem(RESOLUTION_KEY, String(textureResolution())); } catch { /* not remembered */ }
         },
       },
+      { kind: 'toggle', label: 'Baked light (village test)', get: bakedLightOn, set: setBakedLight },
       { kind: 'toggle', label: 'Trial falls cost a half heart', get: () => TRIAL_RULES.fallDamage > 0, set: (on) => (TRIAL_RULES.fallDamage = on ? 1 : 0) },
       ...states,
     ];

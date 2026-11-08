@@ -69,6 +69,7 @@ export function buildTerrain(b: AreaBuilder, rect: TerrainRect = VALLEY_RECT, pa
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   // The ground tile on flat ground, the rock tile on steep faces (render/textures.ts), tinted by the paint.
   const mesh = new THREE.Mesh(geo, applySurface(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }), 'ground'));
+  mesh.userData.bakeLight = 'receive'; // takes baked light where an area asks for it (render/bakeLight.ts)
   b.dynamic(mesh); // already one draw call; keep its vertex colors out of the merge
 }
 

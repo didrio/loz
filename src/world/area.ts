@@ -6,6 +6,7 @@ import type { BellId, BellPost } from './bell';
 import type { BrokenJar } from './jars';
 import type { ThornHit } from './overworld/blight';
 import type { MurmurbudLook } from './murmurbud';
+import { BAKE, bakeLight, type LightRegion } from '../render/bakeLight';
 import { disposeTree, mergeStatic } from '../render/materials';
 import type { AtmosphereId, FogLook } from '../render/atmosphere';
 
@@ -198,10 +199,23 @@ export class AreaBuilder {
     return this.track(this.physics.ball(x, y, z, r, member));
   }
 
+  private readonly lightRegions: LightRegion[] = [];
+
+  /**
+   * Asks for baked bounce light (render/bakeLight.ts) in a round region, done at `finish`. Merged scenery there
+   * gets it; mark a dynamic mesh `userData.bakeLight = 'receive'` (the terrain) or `'occlude'` (trees) to take part.
+   */
+  bakeLight(region: LightRegion) {
+    this.lightRegions.push(region);
+  }
+
   /** Merges the static meshes and returns the finished area root plus a disposer. */
   finish() {
     const root = new THREE.Group();
-    root.add(mergeStatic(this.staticGroup), this.dynamicGroup);
+    const bake = this.lightRegions.length > 0 && BAKE.atBuild;
+    const merged = mergeStatic(this.staticGroup, 80, bake);
+    if (bake) bakeLight(merged, this.dynamicGroup, this.lightRegions);
+    root.add(merged, this.dynamicGroup);
     disposeTree(this.staticGroup);
     const colliders = this.colliders;
     const physics = this.physics;

@@ -65,9 +65,10 @@ export function buildTrees(b: AreaBuilder) {
     place(x, z, 'pine');
     hill++;
   }
-  instanced(b, faceted(new THREE.CylinderGeometry(0.22, 0.35, 2.4, 6)), surf('bark', 0x6b4423), trunks);
-  instanced(b, new THREE.IcosahedronGeometry(1, 0), surf('foliage', 0xffffff), round, roundC);
-  instanced(b, faceted(new THREE.ConeGeometry(1.6, 5, 7)), surf('foliage', 0xffffff), pine, pineC);
+  // Trees block the baked light (render/bakeLight.ts): soft shade under their crowns where a region is baked.
+  instanced(b, faceted(new THREE.CylinderGeometry(0.22, 0.35, 2.4, 6)), surf('bark', 0x6b4423), trunks).userData.bakeLight = 'occlude';
+  instanced(b, new THREE.IcosahedronGeometry(1, 0), surf('foliage', 0xffffff), round, roundC).userData.bakeLight = 'occlude';
+  instanced(b, faceted(new THREE.ConeGeometry(1.6, 5, 7)), surf('foliage', 0xffffff), pine, pineC).userData.bakeLight = 'occlude';
 }
 
 /** The lone oak at the grove road's bend: twice a field tree's size, broad and dark, so it reads from the crossroads. */
@@ -96,7 +97,7 @@ export function buildRocks(b: AreaBuilder) {
     ms.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(s, s * 0.75, s)));
     if (s > 0.9) b.ball(x, y, z, s * 0.8, s > 1.6 ? Layer.World : Layer.Prop);
   }
-  instanced(b, new THREE.DodecahedronGeometry(1, 0), surf('rock', 0x8e8a82), ms);
+  instanced(b, new THREE.DodecahedronGeometry(1, 0), surf('rock', 0x8e8a82), ms).userData.bakeLight = 'occlude';
 }
 
 /** Grass tufts and flowers: pure decoration, no collision. */

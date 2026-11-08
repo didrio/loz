@@ -360,6 +360,15 @@ desktop build can write real files.
   vertex-coloured materials; transparent, BackSide, custom-shader or vertex-coloured materials keep their own bucket. Lighting is
   flat (`flatShading: true` on every material, owner's call: faceted, not rounded). Normals don't matter for lighting, but `surfNormal` still carries the faces' own for textures.
   Dynamic things (characters, doors) keep a material per colour until their final passes.
+- **Baked light** (`render/bakeLight.ts`, a trial in the village): `b.bakeLight({ x, z, r, feather })` asks for it; at `finish`
+  the merged scenery and dynamic meshes marked `userData.bakeLight = 'receive'` (the terrain) get 32 cosine-weighted rays per
+  unique vertex against one `three-mesh-bvh` tree of everything near the region,
+  `'occlude'` meshes (instanced trees, rocks) included. Open sky counts 1, a blocked ray brings back its hit's albedo; the result
+  multiplies the vertex colour (`BAKE`: reach 8 m, occlusion 1, bleed 0.6, floor 0.3), replacing `BAKED_SHADE` (the merge keeps a `shade` attribute for this, then drops it). Both colour
+  arrays are kept, so `setBakedLight(on)` swaps them live (Dev tab). A region's `except` circles are left alone: rooms, lit by their lamps, not the sky (the mill's). Big faces in a region are first split to ~2 m (`subdivide`,
+  `BAKE.cell`) so a wall can hold a gradient. Occlusion and bleed are kept apart: a physical bounce (tried first) added back most
+  of what occlusion took, and the village barely changed. Cost: ~1 s at load for the village (parked: roadmap.md "Known quirks"; a worker or a cache if revived). Only in
+  a browser (`BAKE.atBuild`): unit tests that build areas skip it.
 - Materials from `mat(color)` are shared: **never mutate them**; use `uniqueMat` for
   anything that flashes or glows. `mat`, `surf` and `uniqueMat` **snap every colour to the master palette**
   (`render/palette.ts`, art.md "Palette"); name new colours with `pal('hue', shade)`. Colours set on a material later

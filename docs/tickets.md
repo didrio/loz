@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T45**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T48**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -48,6 +48,46 @@ and weren't approved.
 **Done when:** `boss-howl` shows the howl again, and `npm run look -- boss --approve` goes in the commit.
 **Read first:** `scripts/look.mjs` (the `boss` scene), `game/bosses/lamplighter.ts` (the howl, Grep `howl`).
 **Verify:** `npm run check`; look `boss`.
+
+### T47: The HUD's top-right corner: the place's name, and a picture of the dungeon instead of the clock
+**Run:** auto · sonnet · medium
+**Why:** owner, 2026-11-07: time doesn't move in a dungeon, so the day/night dial and the time say nothing there. And the HUD
+never says where Wren is once the area-name card has faded.
+**Done when:**
+- The current place's name sits under the clock text (above the "[P] Menu" hint) everywhere: the overworld's zone as Wren walks
+  ("Thistledown Village", the field, the Northpass...), the dungeon's name inside one. It changes when the area-name card would
+  show, quietly (no animation fighting the card), and short enough not to wrap at phone width.
+- Inside a dungeon, the dial's circle shows a still picture of the dungeon's most iconic spot instead of the sky, and the time
+  text is gone; outside, the dial and time are as today. The mill and other house rooms keep the dial (owner said dungeons).
+- **The picture is rendered by the game, not an image file** (Hard rules: no imported images): each `DungeonDef` names a camera
+  pose (its iconic view; for the Waking Shrine, propose one to the owner up front: the Nave or Gravelheart's hearth), and the
+  game renders that view once into a small square texture when the dungeon loads, through the same Display look (N64 mode:
+  crushed and dithered), cached for the visit. No enemies or Wren in the shot.
+- A unit test for "which corner shows what" (dial vs picture, the name per place) if it's logic; testing.md/art.md "UI" updated.
+**Read first:** art.md "UI"; `ui/skyDial.ts`; `ui/hud.ts` (Grep `clock`, `dial`, `menuHint`); `game/game.ts` (Grep
+`areaName`, `showAreaName`: how the name is tracked and when the card shows); `world/dungeon/defs/shrine.ts` (the def's
+top, `name`); `world/dungeon/format.ts` (`DungeonDef`); `render/retro.ts`.
+**Verify:** `npm run check`; look `village` and a shrine scene (the corner in both), Native and N64, plus a phone-sized capture.
+**Notes:** T38 (the period UI) restyles this corner later; build it plainly in today's style. Sallowmere has no dungeon yet,
+so only the shrine gets a picture; the format makes the next dungeon's one line of data.
+
+### T46: Sun shadows, a Display toggle
+**Run:** auto · sonnet · high
+**Why:** the owner (2026-11-07) wants nicer lighting while keeping the N64 look: real sun shadows on top of the baked light,
+reversing T31's "no shadow maps" as an option. Houses, trees and Wren cast shadows that turn with the time of day.
+**Done when:**
+- A Settings row "Shadows: Off / On" (saved with the other settings; default On on desktop, Off on touch devices).
+- On: the sun (and the moon at night, dimmer) casts one shadow map that follows Wren; static scenery, trees, characters,
+  enemies and bosses cast; the ground and scenery receive. No shadow acne or floating shadows on the faceted surfaces.
+- With shadows on, the blob shadows are hidden where a real shadow does their job (characters in the sun), kept indoors and in
+  dungeons. Off: everything exactly as today.
+- N64 mode looks right: the shadow's edge is crisp and a little blocky, like the rest of the frame, not soft-blurred.
+- Within the draw-call and frame budgets (art.md "Budgets"); the cost of On is noted in art.md.
+**Read first:** art.md "Rendering rules" (the Shadows row) and "Budgets"; `render/sky.ts` (the sun, `DirectionalLight`);
+`render/retro.ts`; `game/game.ts` (Grep `renderer` for setup); `core/save.ts` (Settings); `game/pauseMenu.ts` (settingsRows);
+`render/shapes.ts` (Grep `GroundShadow`).
+**Verify:** `npm run check`; look `village` and a dungeon scene with shadows on and off, Native and N64; draw calls in budget.
+**Notes:** Update art.md's Shadows row (owner's call, 2026-11-07: shadows are back as an option).
 
 ### T33: Asset registry, pure model builders, validator
 **Run:** auto · sonnet · high
