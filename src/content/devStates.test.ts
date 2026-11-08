@@ -22,6 +22,10 @@ describe('dev save states', () => {
     });
   }
 
+  it('has taught every state past the new game to surf (Lark\'s talk is done)', () => {
+    for (const s of DEV_STATES.filter((d) => d.save)) expect(s.save!.flags, s.name).toContain('village.surfIdea');
+  });
+
   it('lists the states in the order the game is played, with a place and a moment in each name', () => {
     expect(DEV_STATES.map((s) => s.name)).toEqual([
       'A new game',

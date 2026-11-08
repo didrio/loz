@@ -295,6 +295,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .gmenu-row.selected span:first-child::before { content: '▸ '; color: var(--ui-gear); }
 .gmenu-value { color: var(--ui-gear); white-space: nowrap; }
 .gmenu-row.space { margin-top: 14px; }
+.gmenu-group { margin: 18px 14px 4px; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ui-gear); opacity: 0.8; }
 .gmenu-list { overflow-y: auto; }
 .gmenu-panel.wide { width: min(900px, 94vw); height: min(560px, 88vh); display: flex; flex-direction: column; box-sizing: border-box; }
 .gmenu-panel.wide .gmenu-list { flex: 1; min-height: 0; padding-right: 4px; }
@@ -387,9 +388,11 @@ html.touch-device #hud { padding: env(safe-area-inset-top) env(safe-area-inset-r
 .tb-interact {
   width: 70px; height: 70px; right: calc(115px + env(safe-area-inset-right)); bottom: calc(95px + env(safe-area-inset-bottom));
   border-color: var(--ui-gold); color: var(--ui-gear); text-align: center; line-height: 1.1; padding: 0 5px; overflow: visible; overflow-wrap: anywhere;
-  opacity: 0; transform: scale(0.5); pointer-events: none; transition: opacity 0.15s, transform 0.18s cubic-bezier(0.3, 1.5, 0.5, 1);
+  /* Fades in at full size: a scale-in would leave a half-size hit area for the first moments, when a thumb is already on its way. */
+  opacity: 0; pointer-events: none; transition: opacity 0.15s;
 }
-.tb-interact.show { opacity: 1; transform: none; pointer-events: auto; }
+.tb-interact::before { inset: -12px; }
+.tb-interact.show { opacity: 1; pointer-events: auto; }
 .tb-interact.long { font-size: 11px; letter-spacing: 0; }
 /* Outer ring: Jump up-left of the cluster, the glove on its upper part. */
 .tb-jump { width: 66px; height: 66px; right: calc(202px + env(safe-area-inset-right)); bottom: calc(142px + env(safe-area-inset-bottom)); }

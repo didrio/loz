@@ -166,7 +166,7 @@ plays a move on demand, `embervale.setTimeScale(0.05)` slows everything to inspe
 `embervale.rig.frozen = true` set up a top-down view (see the `dungeon` look scene).
 Indoors, call the `teleport` helper with a `fromY` just above the floor.
 **Dev tab**: the last tab of the pause menu (**P**, then Q/E): dev sprint (5× run
-speed, `Player.devSpeed`), invincibility, and **save states** (in play order; each has the hints and messages Wren could have by then) that jump to a ready-made point
+speed, `Player.devSpeed`), invincibility, and **save states** (in play order; each has the hints and messages Wren could have by then, and shield surfing, Lark's lesson, for every state past the new game) that jump to a ready-made point
 and replace the current save (see "Menus" in [engine.md](engine.md)). Off in builds with `VITE_DISABLE_DEV_TAB=1`.
 With `?debug`, **\** toggles the collider wireframe and red rings round enemies' hurtboxes.
 `?state=<id or number>` boots straight into a Dev tab state (skips the title); `embervale.spawn('shellback', x, z)` puts a registered enemy in the world

@@ -48,6 +48,8 @@ export type Mode = 'title' | 'play' | 'cutscene';
 
 const SETTINGS_KEY = 'embervale:settings';
 const AUTOSAVE_SECONDS = 30;
+/** Touch: how long an Interact tap waits for something to come into reach. */
+const INTERACT_BUFFER = 0.25;
 /** A full day passes in about five minutes. */
 const HOURS_PER_SECOND = 1 / 24; // a day and night take 10 minutes
 const WARP_HOURS_PER_SECOND = 6;
@@ -106,6 +108,7 @@ export class Game implements ScriptApi {
   private readonly choice: ChoiceMenu;
   /** Slow motion for cutscenes (1 = normal). */
   private timeScale = 1;
+  private interactBuffer = 0;
   /** The music is off (Wren just died). */
   private musicSilenced = false;
   /** Wren is hidden (a vision) while this area is loaded; leaving it shows her again. */
@@ -114,8 +117,8 @@ export class Game implements ScriptApi {
   private pendingScripts: Script[] = [];
 
   constructor(canvas: HTMLCanvasElement, readonly physics: Physics, private readonly store: KeyValueStore = localStore) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    this.renderer.setPixelRatio(pixelRatioFor(DISPLAY_NATIVE, window.devicePixelRatio));
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !(wantsTouch() && window.devicePixelRatio >= 2) }); // multisampling on a dense phone screen costs a lot and shows nothing
+    this.renderer.setPixelRatio(pixelRatioFor(DISPLAY_NATIVE, window.devicePixelRatio, wantsTouch()));
     this.scene.fog = new THREE.Fog(0xbfe0f2, 50, 215);
     window.addEventListener('resize', () => this.resize()); // sized for real by applySettings, once the settings are read
     this.watchPixelRatio();
@@ -331,7 +334,11 @@ export class Game implements ScriptApi {
 
     // "Interact" comes before "jump" because they share a gamepad button (touch has a button of its own).
     const near = this.nearInteractable();
-    if (near && this.input.pressed('interact')) {
+    const used = this.input.pressed('interact');
+    // On touch a tap that lands a frame after the thing left reach (a thumb is slower than the stick) still counts for a moment.
+    this.interactBuffer = used ? (touch && !near ? INTERACT_BUFFER : 0) : Math.max(0, this.interactBuffer - dt);
+    if (near && (used || this.interactBuffer > 0)) {
+      this.interactBuffer = 0;
       const script = this.content.scripts[near.id];
       if (script) this.run(script);
       return;
@@ -748,7 +755,7 @@ export class Game implements ScriptApi {
     this.input.mouseSensitivity = s.mouseSensitivity;
     this.input.stickSensitivity = s.stickSensitivity;
     this.input.invertY = s.invertY;
-    this.shadows.configure(s.shadows, s.display);
+    this.shadows.configure(s.shadows, s.display, wantsTouch());
     this.resize();
   }
 
@@ -795,7 +802,7 @@ export class Game implements ScriptApi {
   private resize() {
     this.sizedFor = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio };
     const { display } = this.settings;
-    const ratio = pixelRatioFor(display, window.devicePixelRatio);
+    const ratio = pixelRatioFor(display, window.devicePixelRatio, wantsTouch());
     // N64: the scene's rows are counted in device pixels (up to the canvas's own), then scaled up softly.
     const size = internalSize(display, window.innerWidth * ratio, window.innerHeight * ratio);
     this.renderer.setPixelRatio(ratio);

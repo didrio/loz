@@ -9,7 +9,7 @@ import { Boss } from './boss';
 import type { CameraRig } from './camera';
 import type { Enemy, EnemyEnv, EnemyManager, HurtResult } from './enemies';
 import type { HazardEnv, Hazards } from './hazards';
-import { autoAimYaw, nextLockTarget, pickLockTarget, type LockTarget } from './lockon';
+import { autoAimYaw, LOCK_RELEASE, nextLockTarget, pickLockTarget, type LockTarget } from './lockon';
 import { BLUEGEM_GEMS, type Pickups } from './pickups';
 import type { Player, PlayerEnv } from './player';
 import type { GameState } from './state';
@@ -70,7 +70,7 @@ export class Combat {
   updateLock(pressed: boolean, touch = false) {
     const { player } = this.g;
     const l = this.lock;
-    if (l && (!l.alive || l.pos.distanceTo(player.pos) > 25 || Math.abs(l.pos.y - player.pos.y) > 4)) {
+    if (l && (!l.alive || l.pos.distanceTo(player.pos) > LOCK_RELEASE || Math.abs(l.pos.y - player.pos.y) > 4)) {
       this.lock = touch && !l.alive ? nextLockTarget(player.pos, player.facing, this.lockables(), l, this.g.physics) : null;
       if (this.lock) this.g.sfx.lockOn();
     }

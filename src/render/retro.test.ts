@@ -69,6 +69,11 @@ describe('pixelRatioFor (Display)', () => {
     expect(pixelRatioFor(0, 4)).toBe(3);
     expect(pixelRatioFor(0, 0)).toBe(1);
   });
+  it('on a touch screen Native stops at 2: a 3× phone costs 2.25× a 2× one', () => {
+    expect(pixelRatioFor(0, 3, true)).toBe(2);
+    expect(pixelRatioFor(0, 2, true)).toBe(2);
+    expect(pixelRatioFor(0, 1.5, true)).toBe(1.5);
+  });
   it('Performance caps the ratio at 1 and keeps a low screen as it is', () => {
     expect(pixelRatioFor(1, 3)).toBe(1);
     expect(pixelRatioFor(1, 2)).toBe(1);

@@ -23,7 +23,7 @@ snapping, what casts), `particles.ts`, `motes.ts`, `icons.ts` (`Icons`: a regist
 - **Casting** (`castsShadow`/`receivesShadow`): every solid lit mesh; not glows, glass, trails, blobs, the sky or anything transparent (those may still
   receive). `userData.noShadow` opts out. `mark()` flags the scene on area load and every 0.25 s, so spawned enemies join in with no constructor changes.
 - **Blobs.** `GroundShadow(..., 'character')` hides while `blobConfig.realShadows`; `'marker'` blobs (orbs, wisps, stones) always stay.
-- **Display modes.** `shadowMapSize`/`shadowMapType`: N64 a small unfiltered map (hard, blocky edge), Performance 1024, Native 2048, filtered.
+- **Display modes.** `shadowMapSize`/`shadowMapType`: N64 a small unfiltered map (hard, blocky edge), Performance 1024, Native 2048 (1024 on touch), filtered.
 - Look and smoke runs plant Shadows **off**; `npm run look -- <scenes> --shadows` captures with it on ([testing.md](testing.md)).
 
 ## Display modes (`render/retro.ts`, T28)
@@ -31,7 +31,7 @@ snapping, what casts), `particles.ts`, `motes.ts`, `icons.ts` (`Icons`: a regist
 One **Display** setting (Settings, `Settings.display`): **Native** (0, the default on desktop), **Performance** (1, the default on touch devices) and
 **N64** (2). See [art.md](art.md) "Display modes" for the target look. Think of N64 as a bitcrusher on the image: the internal height is the sample rate,
 `COLOR_LEVELS` the bit depth.
-- **Native / Performance** draw straight to the canvas, antialiased, at `pixelRatioFor(display, devicePixelRatio)`: Native = the screen's own ratio (cap 3,
+- **Native / Performance** draw straight to the canvas, antialiased, at `pixelRatioFor(display, devicePixelRatio)`: Native = the screen's own ratio (cap 3, on touch 2,
   so 2 on a retina laptop); Performance caps it at 1. No sharpening filter. A `matchMedia` watch resizes when the window moves to a screen of another density.
 - **N64** makes `Game.frame` call `RetroPipeline.render`: the scene goes to a **linear-filtered, un-antialiased** target `N64_ROWS` (240) tall, width from the
   window's aspect (`internalSize(display, w, h)`, with the window in device pixels at the canvas ratio, cap 2; never more rows than the canvas has). A

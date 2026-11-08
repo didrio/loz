@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Physics } from '../core/physics';
 import { Thornling } from './enemies';
-import { AIM_RANGE, autoAimYaw, nextLockTarget, pickLockTarget } from './lockon';
+import { AIM_RANGE, autoAimYaw, LOCK_CLOSE, LOCK_RANGE, nextLockTarget, pickLockTarget } from './lockon';
 
 beforeAll(async () => {
   await initPhysics();
@@ -23,6 +23,33 @@ describe('lock-on targets', () => {
     expect(pickLockTarget(wren, north, [below, behindWall], physics)).toBeNull();
     const inSight = new Thornling(new THREE.Group(), physics, 3, -3, 1);
     expect(pickLockTarget(wren, north, [below, behindWall, inSight], physics)).toBe(inSight);
+  });
+});
+
+describe('lock-on reach', () => {
+  let physics: Physics;
+  beforeAll(() => {
+    physics = new Physics();
+    physics.box(0, -0.5, 0, 80, 0.5, 80);
+    physics.refreshQueries();
+  });
+  const wren = new THREE.Vector3(0, 0, 0);
+  const north = new THREE.Vector3(0, 0, -1);
+  const foe = (x: number, z: number) => ({ pos: new THREE.Vector3(x, 0, z), alive: true, lockHeight: 1, targetable: true });
+
+  it('ignores enemies beyond LOCK_RANGE, even dead ahead', () => {
+    expect(pickLockTarget(wren, north, [foe(0, -(LOCK_RANGE + 1))], physics)).toBeNull();
+    const near = foe(0, -(LOCK_RANGE - 1));
+    expect(pickLockTarget(wren, north, [near], physics)).toBe(near);
+  });
+
+  it('ignores enemies off to the side or behind, unless they are right next to Wren', () => {
+    expect(pickLockTarget(wren, north, [foe(8, 0)], physics)).toBeNull(); // 90° off
+    expect(pickLockTarget(wren, north, [foe(0, 8)], physics)).toBeNull(); // behind
+    const beside = foe(LOCK_CLOSE - 0.5, 0);
+    expect(pickLockTarget(wren, north, [beside], physics)).toBe(beside);
+    const ahead = foe(3, -8); // about 20° off
+    expect(pickLockTarget(wren, north, [ahead], physics)).toBe(ahead);
   });
 });
 

@@ -15,9 +15,9 @@ export const SHADOW_RADIUS = 24;
 const SHADOW_FAR = 260;
 
 /** The map's side in texels for a Display mode: N64's is coarse on purpose (about two of its pixels per texel). */
-export function shadowMapSize(display: Display): number {
+export function shadowMapSize(display: Display, touch = false): number {
   if (display === DISPLAY_N64) return 512;
-  return display === DISPLAY_PERFORMANCE ? 1024 : 2048;
+  return display === DISPLAY_PERFORMANCE || touch ? 1024 : 2048; // a phone's GPU fills the map every frame: half the side, a quarter of the work
 }
 
 /** N64: a hard, blocky edge (no filtering); the others filter it a little. */
@@ -78,6 +78,7 @@ const dir = new THREE.Vector3();
 export class ShadowRig {
   private on = false;
   private display: Display = 0;
+  private touch = false;
   private sinceMark = 0;
   /** True while the shadow map is drawing this frame (on, and outdoors). */
   active = false;
@@ -95,8 +96,9 @@ export class ShadowRig {
   }
 
   /** The Settings row and the Display mode; cheap to call again with the same values. */
-  configure(on: boolean, display: Display) {
-    const size = shadowMapSize(display);
+  configure(on: boolean, display: Display, touch = false) {
+    this.touch = touch;
+    const size = shadowMapSize(display, touch);
     const type = shadowMapType(display);
     const typeChanged = this.renderer.shadowMap.type !== type;
     if (size !== this.sun.shadow.mapSize.x) {
@@ -144,7 +146,7 @@ export class ShadowRig {
     const length = dir.length();
     if (length < 1e-3) return;
     dir.divideScalar(length);
-    const texel = (SHADOW_RADIUS * 2) / shadowMapSize(this.display);
+    const texel = (SHADOW_RADIUS * 2) / shadowMapSize(this.display, this.touch);
     snapToTexel(sun.target.position, dir, texel, shift);
     sun.target.position.add(shift);
     sun.position.add(shift);

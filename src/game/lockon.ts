@@ -13,8 +13,14 @@ export interface LockTarget {
   readonly targetable: boolean;
 }
 
-/** Farther than this, lock-on won't pick an enemy (and lets go of one). */
-export const LOCK_RANGE = 20;
+/** Farther than this, lock-on won't pick an enemy… */
+export const LOCK_RANGE = 12;
+/** …and lets go of one this far away (longer, so backing off from a fight doesn't drop it). */
+export const LOCK_RELEASE = 18;
+/** Pickable only within this cone of where the camera looks (the dot product of the directions: 0.5 is 60° either side)… */
+export const LOCK_CONE = 0.5;
+/** …except anything this close, which counts even behind Wren. */
+export const LOCK_CLOSE = 3;
 /** More height difference than this (feet to feet) means another floor: not targetable. */
 const LEVEL = 4;
 
@@ -32,8 +38,8 @@ export function canTarget(from: THREE.Vector3, e: LockTarget, physics: Physics) 
 }
 
 /**
- * The enemy (or bud) to lock onto: close, roughly where the camera looks (anything right next to
- * Wren counts even behind), and targetable. Null if there's none.
+ * The enemy (or bud) to lock onto: close (`LOCK_RANGE`), inside the cone the camera looks along
+ * (anything within `LOCK_CLOSE` counts even behind), and targetable. Null if there's none.
  */
 export function pickLockTarget(from: THREE.Vector3, camFwd: THREE.Vector3, enemies: readonly LockTarget[], physics: Physics) {
   let best: LockTarget | null = null, bestScore = Infinity;
@@ -42,7 +48,7 @@ export function pickLockTarget(from: THREE.Vector3, camFwd: THREE.Vector3, enemi
     const d = to.length();
     if (d > LOCK_RANGE) continue;
     const dot = d > 0 ? to.normalize().dot(camFwd) : 1;
-    if (dot < 0 && d > 5) continue;
+    if (dot < LOCK_CONE && d > LOCK_CLOSE) continue;
     const score = d - dot * 8;
     if (score >= bestScore || !canTarget(from, e, physics)) continue;
     best = e;

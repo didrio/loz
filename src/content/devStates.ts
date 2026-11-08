@@ -204,7 +204,12 @@ const STATES: DevState[] = [
   atTheDescent(),
 ];
 
-export const DEV_STATES: DevState[] = STATES.map((s) => (s.save ? { ...s, save: withNotes(s.save) } : s));
+/** Shield surfing is taught by Lark (`village.surfIdea`); every state past the new game has had that talk, so a tester never repeats it. */
+export function withSurf(save: SaveData): SaveData {
+  return save.flags.includes('village.surfIdea') ? save : { ...save, flags: [...save.flags, 'village.surfIdea'] };
+}
+
+export const DEV_STATES: DevState[] = STATES.map((s) => (s.save ? { ...s, save: withSurf(withNotes(s.save)) } : s));
 
 /** A state's id for `?state=<id>`: its name in lowercase letters and hyphens ("Waking Shrine: at the boss door" → "waking-shrine-at-the-boss-door"). */
 export const devStateId = (s: DevState) => s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

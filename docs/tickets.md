@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T58**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T59**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -126,3 +126,14 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 **Read first:** pipeline.md "Rooms and areas"; shrine.md; dungeons.md; world/dungeon/decor.ts, build.ts (Grep, then ranges)
 **Verify:** `npm run check`; smoke `shrine-keys shrine-glove`; `npm run map -- shrine`; look scenes before and after.
 **Notes:** Ask the owner up front which room.
+
+### T58: Measure and cut the phone's frame cost (Native, shadows, baked light)
+**Run:** auto · opus · high
+**Why:** On the owner's phone, Native with Shadows and baked light on plays poorly, and Performance (pixel ratio 1) looks noticeably worse, so most players will want Native. A first blind pass cut Native to 2× on touch, no multisampling there and a 1024 shadow map; nobody has measured what it bought or where the rest goes.
+**Done when:**
+- A dev-only frame readout (`?debug` or the Dev tab): ms per frame, draw calls and triangles (`renderer.info`), the pixel ratio and shadow map in use, so the owner can read real numbers off the phone.
+- With it, Native + Shadows + baked light on a phone-sized viewport is profiled; the top costs are named (shadow pass over the merged static chunks, fill rate, overdraw from fog/transparent layers, baked-light shader work, anything per-frame in JS).
+- The biggest cheap wins are done, with before/after numbers, and the look unchanged (looker, Native and N64); what's left is a line in roadmap.md.
+**Read first:** render.md "Display modes" and shadows; `render/shadows.ts`, `render/retro.ts`; `game/game.ts` (`frame`, `resize`; Grep, then ranges)
+**Verify:** `npm run check`; smoke `touch`; look scenes before and after.
+**Notes:** Already done: Native on touch capped at 2× (`pixelRatioFor`), antialias off on dense touch screens (`Game` constructor), shadow map 1024 on touch (`shadowMapSize`). Undecided: a "Resolution scale" slider between Performance (1) and Native, so the owner picks the trade.

@@ -8,7 +8,7 @@ import * as THREE from 'three';
  */
 
 /**
- * Settings' "Display" (art.md "Display modes"). Native: the screen's full density (cap 3), antialiased. Performance: the
+ * Settings' "Display" (art.md "Display modes"). Native: the screen's full density (cap 3, on touch 2), antialiased (not on a dense touch screen, where it can't be seen). Performance: the
  * same look at a pixel ratio of about 1. N64: the scene drawn 240 rows tall, soft-filtered up, colour crush + dither.
  */
 export const DISPLAY_NAMES = ['Native', 'Performance', 'N64'];
@@ -18,16 +18,18 @@ export const DISPLAY_PERFORMANCE: Display = 1;
 export const DISPLAY_N64: Display = 2;
 /** The N64 mode's height in rows. */
 export const N64_ROWS = 240;
-/** No screen is drawn denser than this (3× phones would cost 2.25× a 2× screen for little visible gain). */
+/** No screen is drawn denser than this. */
 const MAX_PIXEL_RATIO = 3;
+/** …and a phone or tablet no denser than this: at 3× a 6-inch screen costs 2.25× a 2× one, for detail a thumb-held screen can't show. */
+const MAX_TOUCH_PIXEL_RATIO = 2;
 /** Performance mode's pixel ratio cap. */
 const PERFORMANCE_PIXEL_RATIO = 1;
 /** The canvas's pixel ratio in N64 mode: it only holds the upscale, so the screen's own density (cap 2) keeps the filter smooth. */
 const N64_CANVAS_RATIO = 2;
 
 /** The renderer's pixel ratio for a Display mode on a screen of `dpr` device pixels per CSS pixel. */
-export function pixelRatioFor(display: Display, dpr: number): number {
-  const native = Math.min(Math.max(dpr || 1, 0.5), MAX_PIXEL_RATIO);
+export function pixelRatioFor(display: Display, dpr: number, touch = false): number {
+  const native = Math.min(Math.max(dpr || 1, 0.5), touch ? MAX_TOUCH_PIXEL_RATIO : MAX_PIXEL_RATIO);
   if (display === DISPLAY_PERFORMANCE) return Math.min(native, PERFORMANCE_PIXEL_RATIO);
   if (display === DISPLAY_N64) return Math.min(native, N64_CANVAS_RATIO);
   return native;

@@ -56,7 +56,7 @@ Morrowbell, the night before the Lamplighter, the shrine's stages, the opened ga
 replaces the current save, via `Game.loadDevState`). Every state is run through `withNotes`: it gets all the keepers' notes once Wren has
 the sword, the hollow's message after the Lamplighter, and each shrine message whose room is cleared, so Hints and Messages match. While the menu is open `Game.frame` runs
 no mode update and `dt` is 0; the frame a menu closes also counts as paused, so the press
-that chose a row (Enter = also "interact") doesn't leak into the game. To add a state, add an entry to `STATES` in the right place (the unit test
+that chose a row (Enter = also "interact") doesn't leak into the game. The states sit under a "Save states" heading (`MenuRow.group`). To add a state, add an entry to `STATES` in the right place (the unit test
 checks it decodes, uses known ids and that the order is progress); `completedDungeon(def)` builds "all done" progress
 from a dungeon's data.
 

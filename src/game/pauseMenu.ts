@@ -154,7 +154,7 @@ export class PauseMenu {
     const states: MenuRow[] = DEV_STATES.map((s, i) => ({
       kind: 'action' as const,
       label: s.name,
-      space: i === 0,
+      group: i === 0 ? 'Save states' : undefined,
       run: () => {
         this.menu.close();
         game.loadDevState(s);

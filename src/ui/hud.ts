@@ -300,7 +300,8 @@ export class Hud {
     this.gmenu.classList.toggle('hidden', !view);
     let html = '';
     if (view) {
-      const row = (r: MenuView['rows'][number], i: number) => {
+      const row = (r: MenuView['rows'][number], i: number) => (r.group ? `<div class="gmenu-group">${escape(r.group)}</div>` : '') + rowHtml(r, i);
+      const rowHtml = (r: MenuView['rows'][number], i: number) => {
         const cls = `gmenu-row${r.selected ? ' selected' : ''}${r.space ? ' space' : ''}${r.exit ? ' exit' : ''}`;
         if (r.kind === 'slider') {
           const pct = Math.round((r.fill ?? 0) * 100);

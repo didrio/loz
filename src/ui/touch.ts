@@ -91,7 +91,7 @@ export class TouchControls {
     this.el.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       this.input.device = 'touch';
-      this.el.setPointerCapture(e.pointerId);
+      try { this.el.setPointerCapture(e.pointerId); } catch { /* a finger that already lifted: still count its tap */ }
       const role = this.roleAt(e);
       if (role) this.pad.down(e.pointerId, e.clientX, e.clientY, role);
     });

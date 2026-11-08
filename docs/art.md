@@ -51,7 +51,7 @@ and the blight's ash (`BLIGHT_ASH`) wins while it lies on the valley. To add a p
 ## Display modes
 
 **Today (T28 done):** one **Display** setting with three options (render.md "Display modes"):
-- **Native**: full device resolution (cap 3×), antialiased. Default on desktop and Steam.
+- **Native**: full device resolution (cap 3×; 2× on touch screens, and no multisampling there), antialiased. Default on desktop and Steam.
 - **Performance**: the same look with the render resolution capped (pixel ratio ~1). Default on touch devices.
 - **N64**: the 3D scene drawn 240 rows tall, width from the screen's aspect (no black bars), upscaled with soft
   (linear) filtering; the 5-bit colour crush and ordered dither stay (the N64's 16-bit framebuffer did both); no bloom.

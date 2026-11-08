@@ -35,6 +35,7 @@ describe('the map', () => {
   it('is coarse and unfiltered in N64, finer and filtered elsewhere', () => {
     expect(shadowMapSize(DISPLAY_N64)).toBeLessThan(shadowMapSize(DISPLAY_PERFORMANCE));
     expect(shadowMapSize(DISPLAY_PERFORMANCE)).toBeLessThan(shadowMapSize(DISPLAY_NATIVE));
+    expect(shadowMapSize(DISPLAY_NATIVE, true)).toBe(shadowMapSize(DISPLAY_PERFORMANCE)); // a phone's native map is the smaller one
     expect(shadowMapType(DISPLAY_N64)).toBe(THREE.BasicShadowMap);
     expect(shadowMapType(DISPLAY_NATIVE)).toBe(THREE.PCFShadowMap);
   });

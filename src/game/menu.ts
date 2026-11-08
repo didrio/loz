@@ -20,6 +20,8 @@ export type MenuRow = (
 ) & {
   /** Leaves a gap above the row, to group settings. */
   space?: boolean;
+  /** A small heading over this row, naming the group of rows from here on. */
+  group?: string;
 };
 
 export interface Menu {
@@ -38,7 +40,7 @@ export interface MenuView {
   compact?: boolean;
   title: string;
   body?: string;
-  rows: { label: string; icon?: string; value?: string; selected: boolean; kind: MenuRow['kind']; space?: boolean; exit?: boolean; /** 0..1 along a slider. */ fill?: number }[];
+  rows: { label: string; icon?: string; value?: string; selected: boolean; kind: MenuRow['kind']; space?: boolean; group?: string; exit?: boolean; /** 0..1 along a slider. */ fill?: number }[];
   tabs?: { labels: string[]; active: number };
   /** The selected entry's text, for the pane beside the list. */
   detail?: { title: string; text: string; icon?: string };
@@ -163,6 +165,7 @@ export class MenuStack {
         icon: r.kind === 'entry' ? r.icon : undefined,
         kind: r.kind,
         space: r.space,
+        group: r.group,
         exit: r.kind === 'action' ? r.exit : undefined,
         fill: r.kind === 'slider' ? (r.get() - r.min) / (r.max - r.min) : undefined,
         value:

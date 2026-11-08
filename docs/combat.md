@@ -102,8 +102,8 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   them never push each other. The pass has two (`CRAGSTALKERS_AT`, owner's call: one was too easy). It stays on the canyon's far side (`setWalkable`) and gives up like any ground
   enemy (leash, lost sight). Not yet judged in play (owner).
 - **Lock-on** (`game/lockon.ts`) picks only enemies (and closed Murmurbuds: anything that is a
-  `LockTarget`) within 20 m, roughly where the camera looks, on the same level and in plain sight;
-  it lets go when the target dies (a bud opens), gets 25 m away or ends up on another floor.
+  `LockTarget`) within 12 m and 60° either side of where the camera looks (anything within 3 m counts even behind), on the same level and in plain sight
+  (owner's call, 2026-11-08: it had picked far and sideways targets); it lets go when the target dies (a bud opens), gets 18 m away or ends up on another floor.
 - Attacks on Wren go through `hitPlayer(from, attack)`: the shield stops frontal hits
   unless `unblockable`; `groundOnly` attacks (shockwaves) miss while airborne; the 1.2 s
   after a hit is untouchable. Results: `hit` / `blocked` / `broken` / `miss`.
