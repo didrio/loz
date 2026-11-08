@@ -383,6 +383,60 @@ const SCENES = {
     await h.wait(1500);
     await h.shot('village');
   },
+  /**
+   * The baked light (render/bakeLight.ts, T48) on and off in each kind of place, the restored valley at noon: Thistledown,
+   * the open field, a ruin, the grove, the gorge, the camp and a shrine room (the indoor profile). Prints each bake's cost.
+   */
+  async bake(h) {
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.set('valleyOpen');
+      g.state.hours = 12;
+      g.loadArea('overworld');
+    });
+    await h.wait(2500);
+    const both = async (name) => {
+      await h.game(() => window.embervaleBake.set(true));
+      await h.shot(`bake-${name}-on`);
+      await h.game(() => window.embervaleBake.set(false));
+      await h.shot(`bake-${name}-off`);
+      await h.game(() => window.embervaleBake.set(true));
+    };
+    const stand = async (name, x, z, facing) => {
+      await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+      await h.teleport(x, z, facing);
+      await h.wait(1500);
+      await both(name);
+    };
+    await stand('village', -50, -42, Math.atan2(-12, -16));
+    await stand('valley', 0, 14, Math.PI);
+    const ruin = await h.game(async () => (await import('/src/world/overworld/layout.ts')).RUINS.map((r) => ({ x: r.x, z: r.z, yaw: r.yaw, r: r.r }))[0]);
+    await stand('ruin', ruin.x + Math.sin(ruin.yaw) * (ruin.r + 3), ruin.z + Math.cos(ruin.yaw) * (ruin.r + 3), ruin.yaw + Math.PI);
+    await stand('grove', 74, -70, Math.atan2(8, -8));
+    const gorge = await h.game(() => window.embervale.area.gorgeAt(24, 0));
+    await stand('gorge', gorge.x, gorge.z, Math.atan2(-14, -4));
+    // The camp from a free camera (the Northpass streams in around it; Wren parks on the pass below, out of the shot).
+    await h.game(() => window.embervale.area.streamAt(-10, -245));
+    await h.teleport(-10, -226, Math.PI);
+    await h.wait(1500);
+    await h.game(() => {
+      const g = window.embervale;
+      g.rig.frozen = true;
+      g.camera.position.set(-14, 16.5, -243);
+      g.camera.lookAt(-10, 12.5, -258);
+    });
+    await h.wait(700);
+    await both('camp');
+    await h.game(() => {
+      window.embervale.rig.frozen = false;
+      window.embervale.loadArea('shrine');
+    });
+    await h.wait(2000);
+    await both('shrine');
+    const stats = await h.game(() => window.embervaleBake.stats);
+    for (const s of stats) console.log(`      bake ${s.label}: ${s.points} points, ${s.occluderTris} occluder tris, prep ${s.prepMs} ms (main thread), done in ${s.totalMs} ms`);
+  },
   /** After the prism: the blight gone and Thistledown with only Lark and Pip; Odo's stall unattended. */
   async emptyVillage(h) {
     await h.newGame();
@@ -1665,11 +1719,21 @@ async function runScene(name) {
       const i = window.embervale.renderer.info.render;
       return { calls: i.calls, triangles: i.triangles };
     });
+  /**
+   * The light bake runs in background workers (render/bakeLight.ts), so its colours land at a real-time moment: wait
+   * for every bake out, then always step one frame (always, so the frame count doesn't depend on the machine).
+   */
+  const settle = async () => {
+    await h.game(() => window.embervaleBake?.settled());
+    await h.wait(50);
+  };
   h.shot = async (n) => {
+    await settle();
     const s = await stats();
     await record(prefixed(n), await h.page.screenshot({ animations: 'disabled', caret: 'hide' }), s);
   };
   h.shotOf = async (locator, n) => {
+    await settle();
     const s = await stats();
     await record(prefixed(n), await locator.screenshot({ animations: 'disabled', caret: 'hide' }), s);
   };

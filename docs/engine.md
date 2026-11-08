@@ -310,15 +310,35 @@ desktop build can write real files.
   vertex-coloured materials; transparent, BackSide, custom-shader or vertex-coloured materials keep their own bucket. Lighting is
   flat (`flatShading: true` on every material, owner's call: faceted, not rounded). Normals don't matter for lighting, but `surfNormal` still carries the faces' own for textures.
   Dynamic things (characters, doors) keep a material per colour until their final passes.
-- **Baked light** (`render/bakeLight.ts`, a trial in the village): `b.bakeLight({ x, z, r, feather })` asks for it; at `finish`
-  the merged scenery and dynamic meshes marked `userData.bakeLight = 'receive'` (the terrain) get 32 cosine-weighted rays per
-  unique vertex against one `three-mesh-bvh` tree of everything near the region,
-  `'occlude'` meshes (instanced trees, rocks) included. Open sky counts 1, a blocked ray brings back its hit's albedo; the result
-  multiplies the vertex colour (`BAKE`: reach 8 m, occlusion 1, bleed 0.6, floor 0.3), replacing `BAKED_SHADE` (the merge keeps a `shade` attribute for this, then drops it). Both colour
-  arrays are kept, so `setBakedLight(on)` swaps them live (Dev tab). A region's `except` circles are left alone: rooms, lit by their lamps, not the sky (the mill's). Big faces in a region are first split to ~2 m (`subdivide`,
-  `BAKE.cell`) so a wall can hold a gradient. Occlusion and bleed are kept apart: a physical bounce (tried first) added back most
-  of what occlusion took, and the village barely changed. Cost: ~1 s at load for the village (parked: roadmap.md "Known quirks"; a worker or a cache if revived). Only in
-  a browser (`BAKE.atBuild`): unit tests that build areas skip it.
+- **Baked light** (`render/bakeLight.ts`; on across the whole world to be judged, T48): every place asks for it. The valley
+  and each region ask with `b.bakeLight(rectBakeRegion(rect), label)`, a circle round their rectangle. Sallowmere's strip
+  builders `keepShadeForBake()`, and the region bakes its assembled root once (`finish().bakeSet()`, `queueBake`) so the
+  willows shade the strips. Dungeons queue one job per floor themselves, on the floor's merged solid with the ceilings left out.
+  The bake runs in **three stages**:
+  1. **Prep, main thread:** the merged scenery and dynamic meshes marked `userData.bakeLight = 'receive'` (the terrain) are
+     receivers. Their big faces are split to ~4 m (`subdivide`, `BAKE.cell`) so a wall can hold a gradient (2 m, the village
+     trial's, doubled the valley's triangles and took a dungeon from ~80k to ~450k), and their unique
+     points (position and face normal) are listed. Everything near the region is the occluder soup, `'occlude'` meshes
+     (instanced trees, rocks) included.
+  2. **Gather, background workers** (`bakeGather.ts` run by `bakeWorker.ts`; `bakePool.ts` keeps up to 4 and deals the
+     points out round-robin): 32 cosine-weighted rays per point against a `three-mesh-bvh` tree. The result is **raw terms**:
+     the open-sky share, the blocked share and the blocked rays' average hue.
+  3. **Compose, main thread:** the terms times the strength numbers multiply the vertex colour, replacing `BAKED_SHADE` (the
+     merge keeps a `shade` for this, moved into `userData` at prep).
+
+  The world shows at once with the plain shade, and the baked colours land when the workers finish (`bakeStats` has each
+  job's cost; `bakeSettled()` is what look shots wait on).
+  - **Strength, live:** two profiles of `BAKE` (occlusion, floor, bleed). `sky` is outdoors (1, 0.3, 0.6). `indoor` is the
+    dungeons' corner shade (0.7, 0.5, 0.3): their ceilings don't block, so the open top counts as sky (owner's call,
+    2026-11-08). `setBakeStrength(profile, …)` recomposes everything baked with that profile, and `setBakedLight(on)` swaps
+    the plain and lit colour arrays. The Dev tab drives both and remembers them (`embervale:dev:bakedLight`). Reach and rays
+    need a re-bake, so they are not live.
+  - **Rooms:** a region's `except` circles are left alone, because they are lit by their lamps, not the sky (the mill's room).
+  - **Occlusion and bleed are kept apart:** a physical bounce (tried first) added back most of what occlusion took, and the
+    village barely changed.
+  - **Known seam:** the valley and the Northpass bake separately, so neither sees the other's cliffs at z = −210.
+  - **Only in a browser** (`BAKE.atBuild`): unit tests that build areas skip it, and tests call `bakeLight()` to bake on the
+    spot.
 - Materials from `mat(color)` are shared: **never mutate them**; use `uniqueMat` for
   anything that flashes or glows. `mat`, `surf` and `uniqueMat` **snap every colour to the master palette**
   (`render/palette.ts`, art.md "Palette"); name new colours with `pal('hue', shade)`. Colours set on a material later

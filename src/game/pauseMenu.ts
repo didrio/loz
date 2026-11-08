@@ -3,7 +3,7 @@ import { DEV_STATES } from '../content/devStates';
 import { foundHints } from '../content/hints';
 import { foundSigils } from '../content/sigils';
 import { SENSITIVITY_RANGE, type Settings } from '../core/save';
-import { bakedLightOn, setBakedLight } from '../render/bakeLight';
+import { BAKE, bakedLightOn, setBakedLight, setBakeStrength, type BakeProfile, type BakeStrength } from '../render/bakeLight';
 import { DISPLAY_NAMES } from '../render/retro';
 import { setTextureResolution, TEXTURE_RESOLUTION_RANGE, textureResolution } from '../render/textures';
 import { gearRows } from './gearRows';
@@ -14,6 +14,32 @@ import { TRIAL_RULES } from './trialFalls';
 
 /** Where the Dev tab's texture-resolution try-out is remembered (a tuning aid, not a setting). */
 const RESOLUTION_KEY = 'embervale:dev:textureResolution';
+/** Where the Dev tab's baked-light try-out (on/off and both profiles' strength) is remembered, the same way. */
+const BAKE_KEY = 'embervale:dev:bakedLight';
+
+function saveBake() {
+  try { localStorage.setItem(BAKE_KEY, JSON.stringify({ on: bakedLightOn(), sky: BAKE.sky, indoor: BAKE.indoor })); } catch { /* not remembered */ }
+}
+
+function loadBake() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(BAKE_KEY) ?? 'null') as { on?: boolean; sky?: Partial<BakeStrength>; indoor?: Partial<BakeStrength> } | null;
+    if (!saved) return;
+    if (saved.sky) setBakeStrength('sky', saved.sky);
+    if (saved.indoor) setBakeStrength('indoor', saved.indoor);
+    if (saved.on === false) setBakedLight(false);
+  } catch { /* no storage or a bad entry: keep the defaults */ }
+}
+
+/** The Dev tab's live strength sliders for one bake profile (render/bakeLight.ts): no rebuild, the colours recompose. */
+function bakeSliders(profile: BakeProfile, name: string): MenuRow[] {
+  const row = (key: keyof BakeStrength, label: string, max: number): MenuRow => ({
+    kind: 'slider', label: `${name} ${label}`, min: 0, max, step: 0.05, format: (v) => v.toFixed(2),
+    get: () => BAKE[profile][key],
+    set: (v) => { setBakeStrength(profile, { [key]: v }); saveBake(); },
+  });
+  return [row('occlusion', 'occlusion', 2), row('floor', 'floor', 1), row('bleed', 'bleed', 1)];
+}
 
 type TabId = 'settings' | 'gear' | 'hints' | 'messages' | 'dev';
 
@@ -38,6 +64,7 @@ export class PauseMenu {
       const saved = Number(localStorage.getItem(RESOLUTION_KEY));
       if (saved) setTextureResolution(saved);
     } catch { /* no storage (tests, private windows): keep the default */ }
+    loadBake();
   }
 
   get isOpen() {
@@ -144,7 +171,9 @@ export class PauseMenu {
           try { localStorage.setItem(RESOLUTION_KEY, String(textureResolution())); } catch { /* not remembered */ }
         },
       },
-      { kind: 'toggle', label: 'Baked light (village test)', get: bakedLightOn, set: setBakedLight },
+      { kind: 'toggle', label: 'Baked light', get: bakedLightOn, set: (on) => { setBakedLight(on); saveBake(); } },
+      ...bakeSliders('sky', 'Outdoor'),
+      ...bakeSliders('indoor', 'Indoor'),
       { kind: 'toggle', label: 'Trial falls cost a half heart', get: () => TRIAL_RULES.fallDamage > 0, set: (on) => (TRIAL_RULES.fallDamage = on ? 1 : 0) },
       ...states,
     ];

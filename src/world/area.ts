@@ -6,7 +6,7 @@ import type { BellId, BellPost } from './bell';
 import type { BrokenJar } from './jars';
 import type { ThornHit } from './overworld/blight';
 import type { MurmurbudLook } from './murmurbud';
-import { BAKE, bakeLight, type LightRegion } from '../render/bakeLight';
+import { BAKE, collectBakeSet, queueBake, type LightRegion } from '../render/bakeLight';
 import { disposeTree, mergeStatic } from '../render/materials';
 import type { AtmosphereId, FogLook } from '../render/atmosphere';
 
@@ -210,22 +210,35 @@ export class AreaBuilder {
   }
 
   private readonly lightRegions: LightRegion[] = [];
+  private bakeLabel = 'area';
+  private shadeKept = false;
 
   /**
-   * Asks for baked bounce light (render/bakeLight.ts) in a round region, done at `finish`. Merged scenery there
-   * gets it; mark a dynamic mesh `userData.bakeLight = 'receive'` (the terrain) or `'occlude'` (trees) to take part.
+   * Asks for baked bounce light (render/bakeLight.ts) in a round region, queued at `finish` (background workers:
+   * the colours land a few seconds later). Merged scenery there gets it; mark a dynamic mesh
+   * `userData.bakeLight = 'receive'` (the terrain) or `'occlude'` (trees) to take part. `label` names it in `bakeStats`.
    */
-  bakeLight(region: LightRegion) {
+  bakeLight(region: LightRegion, label?: string) {
     this.lightRegions.push(region);
+    if (label) this.bakeLabel = label;
+  }
+
+  /**
+   * For a builder whose output is baked later as part of something bigger (Sallowmere's strips, baked once as a
+   * region): keeps the merge's `shade` for that bake instead of baking here.
+   */
+  keepShadeForBake() {
+    this.shadeKept = true;
   }
 
   /** Merges the static meshes and returns the finished area root plus a disposer. */
   finish() {
     const root = new THREE.Group();
     const bake = this.lightRegions.length > 0 && BAKE.atBuild;
-    const merged = mergeStatic(this.staticGroup, 80, bake);
-    if (bake) bakeLight(merged, this.dynamicGroup, this.lightRegions);
+    const merged = mergeStatic(this.staticGroup, 80, bake || (this.shadeKept && BAKE.atBuild));
+    if (bake) queueBake(this.bakeLabel, collectBakeSet(merged, this.dynamicGroup), this.lightRegions);
     root.add(merged, this.dynamicGroup);
+    const dynamic = this.dynamicGroup;
     disposeTree(this.staticGroup);
     const colliders = this.colliders;
     const physics = this.physics;
@@ -235,6 +248,8 @@ export class AreaBuilder {
       root.removeFromParent();
       disposeTree(root);
     };
-    return { root, dispose };
+    /** The merged scenery and the dynamic objects, for a bake done later over several builders (`keepShadeForBake`). */
+    const bakeSet = () => collectBakeSet(merged, dynamic);
+    return { root, dispose, bakeSet };
   }
 }

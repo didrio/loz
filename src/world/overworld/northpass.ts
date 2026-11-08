@@ -4,7 +4,7 @@ import { surf } from '../../render/materials';
 import { AreaBuilder } from '../area';
 import { BEYOND, PASS, passFrame, passPoint, PASS_LENGTH, regionRng, terrainHeight } from './layout';
 import type { BuiltRegion, RegionDef } from './region';
-import { buildTerrain, type TerrainRect } from './terrain';
+import { buildTerrain, rectBakeRegion, type TerrainRect } from './terrain';
 
 /** Past the valley's square (which ends at z = -210), covering the camp and the mountains around it. */
 export const NORTHPASS_RECT: TerrainRect = { x0: -150, x1: 150, z0: -330, z1: -210 };
@@ -52,6 +52,7 @@ export const NORTHPASS: RegionDef = {
     buildTerrain(b, NORTHPASS_RECT);
     buildRocks(b);
     buildEnd(b);
+    b.bakeLight(rectBakeRegion(NORTHPASS_RECT), 'northpass');
     const { root, dispose } = b.finish();
     return { root, dispose };
   },

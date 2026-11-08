@@ -4,6 +4,7 @@ import { Layer } from '../../core/physics';
 import { applySurface, faceNormals } from '../../render/textures';
 import { pal } from '../../render/palette';
 import type { AreaBuilder } from '../area';
+import type { LightRegion } from '../../render/bakeLight';
 import { GROVE, HOLLOW, passFrame, pathDist, PASS, terrainHeight, VILLAGE, WATER_Y, WORLD_RADIUS } from './layout';
 
 const SIZE = 420;
@@ -15,6 +16,12 @@ export interface TerrainRect { x0: number; x1: number; z0: number; z1: number }
 
 /** The valley's chunk: the square the overworld has always had. */
 export const VALLEY_RECT: TerrainRect = { x0: -SIZE / 2, x1: SIZE / 2, z0: -SIZE / 2, z1: SIZE / 2 };
+
+/** A light-bake region (render/bakeLight.ts) covering a whole rectangle: a circle round it, its feather outside the rect. */
+export function rectBakeRegion(r: TerrainRect, except?: LightRegion['except']): LightRegion {
+  const feather = 8;
+  return { x: (r.x0 + r.x1) / 2, z: (r.z0 + r.z1) / 2, r: Math.hypot(r.x1 - r.x0, r.z1 - r.z0) / 2 + feather, feather, except };
+}
 
 /** Sets `c` to the color of a ground face at (x, y, z) whose normal's up part is `ny`, with `n` a little noise (0–1). */
 export type TerrainPaint = (c: THREE.Color, x: number, y: number, z: number, ny: number, n: number) => void;

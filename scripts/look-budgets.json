@@ -1,206 +1,210 @@
 {
   "atmosphere": {
     "calls": 1600,
-    "triangles": 210000
+    "triangles": 258000
+  },
+  "bake": {
+    "calls": 1600,
+    "triangles": 299000
   },
   "bells": {
-    "calls": 1500,
-    "triangles": 265000
+    "calls": 1600,
+    "triangles": 259000
   },
   "bellShaft": {
-    "calls": 330,
-    "triangles": 44000
+    "calls": 310,
+    "triangles": 168000
   },
   "blight": {
-    "calls": 750,
-    "triangles": 222000
+    "calls": 700,
+    "triangles": 270000
   },
   "boss": {
-    "calls": 1160,
-    "triangles": 231000
+    "calls": 1180,
+    "triangles": 268000
   },
   "boss-moves": {
-    "calls": 460,
-    "triangles": 234000
+    "calls": 250,
+    "triangles": 228000
   },
   "buds": {
-    "calls": 480,
-    "triangles": 200000
+    "calls": 510,
+    "triangles": 242000
   },
   "camera": {
-    "calls": 360,
-    "triangles": 49000
+    "calls": 320,
+    "triangles": 164000
   },
   "camp": {
-    "calls": 860,
-    "triangles": 305000
+    "calls": 850,
+    "triangles": 360000
   },
   "chest": {
     "calls": 60,
-    "triangles": 195000
+    "triangles": 239000
   },
   "chestOpen": {
     "calls": 60,
-    "triangles": 195000
+    "triangles": 239000
   },
   "choice": {
     "calls": 700,
-    "triangles": 228000
+    "triangles": 269000
   },
   "contact": {
     "calls": 490,
     "triangles": 18000
   },
   "door": {
-    "calls": 120,
-    "triangles": 210000
+    "calls": 60,
+    "triangles": 214000
   },
   "dungeon": {
     "calls": 1600,
-    "triangles": 81000
+    "triangles": 198000
   },
   "emptyVillage": {
-    "calls": 580,
-    "triangles": 245000
+    "calls": 290,
+    "triangles": 252000
   },
   "enemies": {
-    "calls": 680,
-    "triangles": 64000
+    "calls": 730,
+    "triangles": 193000
   },
   "entrance": {
-    "calls": 1500,
-    "triangles": 80000
+    "calls": 1600,
+    "triangles": 198000
   },
   "field": {
-    "calls": 750,
-    "triangles": 222000
+    "calls": 700,
+    "triangles": 269000
   },
   "gate": {
-    "calls": 330,
-    "triangles": 244000
+    "calls": 230,
+    "triangles": 245000
   },
   "gear": {
     "calls": 700,
-    "triangles": 228000
+    "triangles": 270000
   },
   "glove": {
-    "calls": 750,
-    "triangles": 60000
+    "calls": 710,
+    "triangles": 177000
   },
   "gorge": {
-    "calls": 590,
-    "triangles": 261000
+    "calls": 560,
+    "triangles": 267000
   },
   "gravelheart": {
     "calls": 1600,
-    "triangles": 82000
+    "triangles": 205000
   },
   "gravelheart2": {
-    "calls": 410,
-    "triangles": 49000
+    "calls": 420,
+    "triangles": 174000
   },
   "grove": {
-    "calls": 90,
-    "triangles": 195000
+    "calls": 60,
+    "triangles": 240000
   },
   "guard": {
-    "calls": 810,
-    "triangles": 223000
+    "calls": 730,
+    "triangles": 270000
   },
   "hollow": {
     "calls": 90,
-    "triangles": 180000
+    "triangles": 221000
   },
   "hud": {
     "calls": 700,
-    "triangles": 228000
+    "triangles": 270000
   },
   "landmarks": {
-    "calls": 540,
-    "triangles": 57000
+    "calls": 530,
+    "triangles": 183000
   },
   "lostBell": {
-    "calls": 1080,
-    "triangles": 260000
+    "calls": 730,
+    "triangles": 256000
   },
   "mill": {
     "calls": 360,
-    "triangles": 221000
+    "triangles": 261000
   },
   "night": {
-    "calls": 420,
-    "triangles": 217000
+    "calls": 450,
+    "triangles": 265000
   },
   "northpass": {
     "calls": 250,
-    "triangles": 286000
+    "triangles": 362000
   },
   "opening": {
-    "calls": 890,
-    "triangles": 268000
+    "calls": 700,
+    "triangles": 270000
   },
   "orbs": {
-    "calls": 650,
-    "triangles": 217000
+    "calls": 560,
+    "triangles": 261000
   },
   "pip": {
-    "calls": 850,
-    "triangles": 267000
+    "calls": 530,
+    "triangles": 261000
   },
   "ruins": {
-    "calls": 570,
-    "triangles": 216000
+    "calls": 540,
+    "triangles": 263000
   },
   "sallowmere": {
-    "calls": 950,
-    "triangles": 344000
+    "calls": 820,
+    "triangles": 381000
   },
   "seal": {
     "calls": 2000,
-    "triangles": 96000
+    "triangles": 223000
   },
   "shield": {
-    "calls": 390,
-    "triangles": 231000
+    "calls": 250,
+    "triangles": 227000
   },
   "shrine": {
     "calls": 50,
-    "triangles": 172000
+    "triangles": 213000
   },
   "stairs": {
     "calls": 280,
-    "triangles": 49000
+    "triangles": 173000
   },
   "surf": {
-    "calls": 820,
-    "triangles": 269000
+    "calls": 440,
+    "triangles": 264000
   },
   "text": {
     "calls": 700,
-    "triangles": 228000
+    "triangles": 270000
   },
   "thorns": {
-    "calls": 750,
-    "triangles": 260000
+    "calls": 630,
+    "triangles": 264000
   },
   "title": {
     "calls": 760,
-    "triangles": 236000
+    "triangles": 276000
   },
   "touch": {
     "calls": 790,
-    "triangles": 241000
+    "triangles": 281000
   },
   "village": {
-    "calls": 360,
-    "triangles": 222000
+    "calls": 380,
+    "triangles": 263000
   },
   "villageDetails": {
-    "calls": 390,
-    "triangles": 218000
+    "calls": 350,
+    "triangles": 258000
   },
   "wardenIntro": {
-    "calls": 930,
-    "triangles": 68000
+    "calls": 940,
+    "triangles": 195000
   }
 }

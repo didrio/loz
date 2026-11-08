@@ -12,7 +12,8 @@ import {
 import { instanced } from './nature';
 import { buildStiltwick, lightStiltwick } from './stiltwick';
 import type { BuiltRegion, RegionDef } from './region';
-import { buildTerrain, type TerrainPaint, type TerrainRect } from './terrain';
+import { buildTerrain, rectBakeRegion, type TerrainPaint, type TerrainRect } from './terrain';
+import { BAKE, queueBake, type BakeSet } from '../../render/bakeLight';
 
 /**
  * Sallowmere, the third region of the overworld (docs/sallowmere.md): its ground, water, scenery and rim. The map
@@ -210,10 +211,18 @@ function* build(physics: Physics): Generator<void, BuiltRegion, void> {
   const rand = regionRng('sallowmere');
   const root = new THREE.Group();
   const disposers: (() => void)[] = [];
+  // Baked once over the whole region at the end, so the willows and Stiltwick shade the terrain strips.
+  const bakeSet: BakeSet = { receivers: [], occluders: [] };
   const add = (b: AreaBuilder) => {
+    b.keepShadeForBake();
     const done = b.finish();
     root.add(done.root);
     disposers.push(done.dispose);
+    if (BAKE.atBuild) {
+      const set = done.bakeSet();
+      bakeSet.receivers.push(...set.receivers);
+      bakeSet.occluders.push(...set.occluders);
+    }
   };
   const r = SALLOWMERE_RECT;
   for (let z1 = r.z1; z1 > r.z0; z1 -= STRIP) {
@@ -231,6 +240,7 @@ function* build(physics: Physics): Generator<void, BuiltRegion, void> {
     add(b);
     yield;
   }
+  if (BAKE.atBuild) queueBake('sallowmere', bakeSet, [rectBakeRegion(SALLOWMERE_RECT)]);
   let t = 0;
   return {
     root,

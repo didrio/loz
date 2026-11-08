@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T57**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T58**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -40,25 +40,18 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T48: Bake the light across the whole world, to judge it area by area
-**Run:** plan · opusplan · high
-**Why:** the village trial ([engine.md](engine.md) "Baked light") was parked because the owner couldn't tell the difference
-in one place. They want it everywhere (valley, regions, dungeons, interiors) with the Dev toggle, to judge it in each
-look, then decide: keep, strengthen or drop (art.md "Rendering rules", Baked shade).
-**Done when:**
-- Every area asks for the bake: the whole valley and the streamed regions (Northpass, Sallowmere), the shrine and its
-  rooms, Gravelheart's hall, interiors. Rooms lit by their own lamps keep `except` circles as the mill does.
-- The Dev tab's **Baked light** toggle flips the whole world live (rename it, drop "village test"), and its strength (the
-  `BAKE` numbers: occlusion, floor, bleed) is adjustable there so the owner can compare looks without a rebuild.
-- The load cost is measured per area and kept sane: if the valley takes more than ~2 s on the main thread, move the bake
-  to a worker or cache the result (plan the choice with the owner first; the trial's note says "a worker or a cache").
-- look scenes for the village, the valley, a ruin, the grove, the gorge, the camp and the shrine in both states (on/off)
-  so the owner can compare; engine.md "Baked light", art.md and the roadmap's "Baked light is parked" note updated to match.
-**Read first:** engine.md "Baked light" (and "Regions" for streamed ones); art.md Baked shade row; `render/bakeLight.ts`;
-`world/area.ts` (`bakeLight`, `finish`); `world/overworld/index.ts` (the village call at ~225).
-**Verify:** `npm run check`; smoke `village shrine-enemies`; look the new scenes; load times printed in the report.
-**Notes:** Behaviour never changes (lighting is a colour multiplier). Unit tests skip the bake (`BAKE.atBuild`). Questions for
-the owner, asked up front: worker vs cache if it's slow; whether dungeons should bake at all (they are lamp-lit).
+### T57: Make the northpass smoke pass again at Stiltwick's shallows
+**Run:** auto · sonnet · medium
+**Why:** `npm run smoke -- northpass` fails at "the town's shallows wade": teleported to (-60, -425), Wren stands at y 0.91
+instead of wading (expected -1.2 < y < 0). It failed the same way before T48 (checked 2026-11-08 on 2ea78c5), so it's
+drift between Sallowmere's ground and the step, and CI's full suite fails on every push until it's fixed.
+**Done when:** the step checks a spot that really is shallow water in today's Sallowmere (or the ground is back where
+sallowmere.md says), and `npm run smoke -- northpass` passes.
+**Read first:** `scripts/smoke/northpass.mjs` (~line 111); sallowmere.md "The map"; `world/overworld/mere.ts` (`carveMere`,
+`MERE_WATER`); `game/water.ts`.
+**Verify:** `npm run check`; smoke `northpass water`.
+**Notes:** Sallowmere is waiting for the owner's redesign: fix the test's spot, don't reshape the land (ask first if the
+land looks wrong).
 
 **The golden set** (owner, 2026-11-08; [roadmap.md](roadmap.md) "The N64 look rebuild" step 2): each is a Final pass, in this order, locked only when the owner approves. Written ahead at the owner's request: when starting one, re-read it against what the previous one taught.
 

@@ -115,10 +115,19 @@ enemy randomness.
 
 ## Known quirks and tech debt
 
-- **Baked light** (T48 bakes it everywhere to be judged; before that it was parked, owner, 2026-11-07: "I don't really see a difference; revisit later"). The village trial stays as
-  built (`render/bakeLight.ts`, engine.md "Baked light", Dev toggle) and costs ~1 s at load. On revisit: stronger settings
-  (`BAKE.occlusion` above 1, a lower floor) or drop it; if kept, the whole valley, baked in a worker or cached, not on the main
-  thread. Sun shadows (done, a Settings option) are the bigger visible change and may be what the owner was missing.
+- **Baked light: awaiting the owner's verdict.** Before T48 it was parked (owner, 2026-11-07: "I don't really see a difference;
+  revisit later"). T48 (2026-11-08) turned it on across the whole world in background workers, with live strength sliders in
+  the Dev tab (engine.md "Baked light"). Next is the owner's call: keep (and fix the defaults to the slider values they like),
+  strengthen, or drop it. If it's kept:
+  - **Load cost:** the valley's main-thread prep is ~0.3–0.5 s at load, and its colours land ~5–8 s later. Sallowmere's
+    ~0.12 s prep runs in one streaming step mid-play (split it across steps if it hitches). A dropped job (an area left
+    before its bake came back) still occupies the workers until it ends.
+  - **Repeat loads:** a geometry-hashed IndexedDB cache would make them instant.
+  - **The valley/Northpass seam** (they bake separately).
+  - **Triangles:** splitting big faces (`BAKE.cell` 4 m) adds about a third outdoors and doubles a dungeon's (~80k →
+    ~160k). Draw calls are unchanged. A smarter split (only near edges, where the gradient is) would win most of it back.
+
+  Sun shadows (done, a Settings option) are the bigger visible change and may be what the owner was missing.
 
 - **Village homes are shells**: the two standing cottages have locked doors (`door.home0/1`, "The door is locked.") and no
   interior. When they become enterable, follow the mill: a `HingedDoor` (`world/objects.ts`), a room inside the walls

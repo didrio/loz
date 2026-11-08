@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mulberry32 } from '../../core/math';
 import { Layer, type Physics } from '../../core/physics';
 import { disposeTree, mat, mergeStatic, surf } from '../../render/materials';
+import { BAKE, collectBakeSet, EVERYWHERE, queueBake } from '../../render/bakeLight';
 import { buildCourse } from '../platforming';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Spot, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
@@ -488,10 +489,13 @@ export class DungeonArea implements Area {
     this.root = done.root;
     for (const [floor, p] of this.floors) {
       const s = src.get(floor)!;
-      p.solid = mergeStatic(s.solid);
+      p.solid = mergeStatic(s.solid, 80, BAKE.atBuild);
       p.ceiling = mergeStatic(s.ceiling);
       disposeTree(s.solid);
       disposeTree(s.ceiling);
+      // Corner shade (render/bakeLight.ts, the indoor profile): each floor alone, its ceilings left out so the open top
+      // counts as sky; the lamps still do the lighting.
+      if (BAKE.atBuild) queueBake(`${def.id} floor ${floor}`, collectBakeSet(p.solid), [EVERYWHERE], 'indoor');
       this.root.add(p.solid, p.ceiling, p.dynamic);
     }
     this.disposer = done.dispose;
