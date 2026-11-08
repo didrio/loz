@@ -16,7 +16,7 @@ export type MenuRow = (
   /** One of several named options; left/right step through them (choosing it cycles). */
   | { kind: 'choice'; label: string; options: string[]; get: () => number; set: (i: number) => void }
   /** Does nothing when chosen; the right-hand pane shows its `detail` while it is selected (a note, a message). */
-  | { kind: 'entry'; label: string; detail: string }
+  | { kind: 'entry'; label: string; detail: string; /** A picture beside the label and over the text (a PNG data URL, '' for none). */ icon?: string }
 ) & {
   /** Leaves a gap above the row, to group settings. */
   space?: boolean;
@@ -38,10 +38,10 @@ export interface MenuView {
   compact?: boolean;
   title: string;
   body?: string;
-  rows: { label: string; value?: string; selected: boolean; kind: MenuRow['kind']; space?: boolean; exit?: boolean; /** 0..1 along a slider. */ fill?: number }[];
+  rows: { label: string; icon?: string; value?: string; selected: boolean; kind: MenuRow['kind']; space?: boolean; exit?: boolean; /** 0..1 along a slider. */ fill?: number }[];
   tabs?: { labels: string[]; active: number };
   /** The selected entry's text, for the pane beside the list. */
-  detail?: { title: string; text: string };
+  detail?: { title: string; text: string; icon?: string };
   /** True when left/right do something on the selected row. */
   adjustable: boolean;
 }
@@ -156,10 +156,11 @@ export class MenuStack {
       body: top.menu.body,
       tabs: top.menu.tabs,
       compact: top.menu.compact,
-      detail: sel?.kind === 'entry' ? { title: sel.label, text: sel.detail } : undefined,
+      detail: sel?.kind === 'entry' ? { title: sel.label, text: sel.detail, icon: sel.icon } : undefined,
       adjustable: sel?.kind === 'slider' || sel?.kind === 'choice' || sel?.kind === 'toggle',
       rows: top.menu.rows.map((r, i) => ({
         label: r.label,
+        icon: r.kind === 'entry' ? r.icon : undefined,
         kind: r.kind,
         space: r.space,
         exit: r.kind === 'action' ? r.exit : undefined,

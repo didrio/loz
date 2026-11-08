@@ -33,8 +33,11 @@ export default async function run(t) {
     check(after < before, `left should lower the master volume (${before} -> ${after})`);
     check(JSON.parse(await game(() => localStorage.getItem('embervale:settings'))).masterVolume === after, 'setting not saved');
     await press('ArrowRight');
-    await press('KeyE'); // on to the Dev tab
-    check((await menu()).open && /Dev sprint/.test((await menu()).text), 'E should go to the Dev tab');
+    await press('KeyE'); // on to the Gear tab
+    check((await menu()).open && (await game(() => document.querySelector('.gmenu-tab.active')?.textContent)) === 'Gear', 'E should go to the Gear tab');
+    await press('KeyE'); // and the Dev tab
+    check((await menu()).open && /Dev sprint/.test((await menu()).text), 'E should go on to the Dev tab');
+    await press('KeyQ');
     await press('KeyQ');
     await shot('hints-00-settings');
     await press('KeyP');

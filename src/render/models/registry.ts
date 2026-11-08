@@ -1,8 +1,10 @@
 import { buildCragstalker } from './cragstalker';
 import { buildGloomwisp } from './gloomwisp';
+import { buildBellItem, buildDoll, buildFlask, buildKeyItem, buildShieldItem, buildSwordItem, buildTetherGlove, buildTunicItem } from './gear';
 import { buildGravelheart } from './gravelheart';
 import { buildLamplighter } from './lamplighter';
 import { buildBush, buildChest, buildGreatLantern, buildHeartVessel, buildHingedDoor, buildShieldPickup, buildStoneDoor } from './props';
+import { pal } from '../palette';
 import { buildSentinel } from './sentinel';
 import { buildShellback } from './shellback';
 import { buildThornling } from './thornling';
@@ -50,6 +52,19 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'shield-pickup', kind: 'prop', tier: 'rough', build: buildShieldPickup },
   { id: 'great-lantern', kind: 'prop', tier: 'rough', build: buildGreatLantern },
   { id: 'bush', kind: 'prop', tier: 'rough', build: buildBush },
+  // The gear (the Gear tab and the HUD's icons: render/icons.ts).
+  { id: 'gear-sword', kind: 'prop', tier: 'rough', build: buildSwordItem, note: 'icon' },
+  { id: 'gear-shield', kind: 'prop', tier: 'rough', build: buildShieldItem, note: 'icon' },
+  { id: 'gear-tunic', kind: 'prop', tier: 'rough', build: buildTunicItem, note: 'icon' },
+  { id: 'gear-glove', kind: 'prop', tier: 'rough', build: buildTetherGlove, note: 'icon' },
+  { id: 'gear-flask', kind: 'prop', tier: 'rough', build: () => buildFlask(null), note: 'icon, empty' },
+  { id: 'gear-flask-life', kind: 'prop', tier: 'rough', build: () => buildFlask(pal('crimson')), note: 'icon' },
+  { id: 'gear-flask-attack', kind: 'prop', tier: 'rough', build: () => buildFlask(pal('amber')), note: 'icon' },
+  { id: 'gear-bell', kind: 'prop', tier: 'rough', build: buildBellItem, note: 'icon' },
+  { id: 'gear-key', kind: 'prop', tier: 'rough', build: () => buildKeyItem(), note: 'icon' },
+  // One per dungeon key colour (the same five hues as world/dungeon/format.ts KEY_HEX).
+  ...(['crimson', 'azure', 'jade', 'violet', 'amber'] as const).map((c): AssetEntry => ({ id: `gear-key-${c}`, kind: 'prop', tier: 'rough', build: () => buildKeyItem(pal(c)), note: 'icon' })),
+  { id: 'gear-doll', kind: 'prop', tier: 'rough', build: buildDoll, note: 'icon' },
 ];
 
 export function assetById(id: string): AssetEntry | undefined {

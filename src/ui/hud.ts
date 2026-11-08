@@ -67,6 +67,8 @@ export class Hud {
   private heldKeys = '';
   private drinks: HTMLElement;
   private drinksHtml = '';
+  /** The icon (a PNG data URL) for a registry id, from the game's `Icons`; blank before it is set. */
+  icon: (id: string) => string = () => '';
   private prompt: HTMLElement;
   private promptLabel = '';
   private clock: HTMLElement;
@@ -305,7 +307,8 @@ export class Hud {
           return `<div class="${cls}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-slider"><i class="gmenu-arrow" data-dir="-1">◂</i><b class="gmenu-track" data-track><b class="gmenu-fill" style="width:${pct}%"></b><b class="gmenu-knob" style="left:${pct}%"></b></b><i class="gmenu-arrow" data-dir="1">▸</i></span><span class="gmenu-value">${escape(r.value ?? '')}</span></div>`;
         }
         const value = r.kind === 'choice' ? `<i class="gmenu-arrow" data-dir="-1">◂</i> ${escape(r.value ?? '')} <i class="gmenu-arrow" data-dir="1">▸</i>` : escape(r.value ?? '');
-        return `<div class="${cls}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-value">${value}</span></div>`;
+        const icon = r.icon ? `<img class="gmenu-icon" src="${r.icon}" alt="" draggable="false">` : '';
+        return `<div class="${cls}" data-row="${i}"><span>${icon}${escape(r.label)}</span><span class="gmenu-value">${value}</span></div>`;
       };
       const tabs = view.tabs
         ? `<div class="gmenu-tabs"><span class="gmenu-tabkey">${this.key('tabPrev')}</span>${view.tabs.labels
@@ -317,7 +320,7 @@ export class Hud {
       const body = view.body ? `<div class="gmenu-body">${escape(view.body)}</div>` : '';
       const content = split
         ? `<div class="gmenu-split"><div class="gmenu-list">${list}</div><div class="gmenu-detail">${
-            view.detail ? `<div class="gmenu-detail-title">${escape(view.detail.title)}</div><div class="gmenu-detail-text">${escape(view.detail.text)}</div>` : ''
+            view.detail ? `${view.detail.icon ? `<img class="gmenu-detail-icon" src="${view.detail.icon}" alt="" draggable="false">` : ''}<div class="gmenu-detail-title">${escape(view.detail.title)}</div><div class="gmenu-detail-text">${escape(view.detail.text)}</div>` : ''
           }</div></div>`
         : `${body}<div class="gmenu-list">${list}</div>`;
       const help = `${view.tabs && view.tabs.labels.length > 1 ? `${this.key('tabPrev')}${this.key('tabNext')} tabs · ` : ''}${this.key('menuUp')}${this.key('menuDown')} move · ${
@@ -422,18 +425,24 @@ export class Hud {
     this.keys.querySelector('.boss-key')!.classList.toggle('hidden', !bossKey);
   }
 
+  /** An icon as an <img>; `fallback` (the old drawing) if it could not be rendered. */
+  private img(id: string, cls: string, fallback: string) {
+    const url = this.icon(id);
+    return url ? `<img class="${cls}" src="${url}" width="28" height="28" alt="" draggable="false">` : fallback;
+  }
+
   /**
    * The glove (once held) and the flasks Wren owns: a bottle each in its potion's color, or
    * an empty one, with its button. `boost`: how much of an attack potion is left (0–1),
    * shown under the item row while it lasts.
    */
   setFlasks(slots: readonly (Potion | null)[], boost: number, glove = false) {
-    const item = glove ? `<div class="drink" data-action="item" title="Tether Glove">${gloveIcon}${this.key('item')}</div>` : '';
+    const item = glove ? `<div class="drink" data-action="item" title="Tether Glove">${this.img('gear-glove', 'glove', gloveIcon)}${this.key('item')}</div>` : '';
     const bar = boost > 0 ? `<span class="boost"><span style="width:${Math.round(boost * 100)}%"></span></span>` : '';
     const html = item + slots.map((p, i) => {
       const action: Action = i === 0 ? 'flask1' : 'flask2';
       const title = p ? POTIONS[p].name : 'Empty flask';
-      return `<div class="drink${p ? '' : ' empty'}" data-action="${action}" title="${escape(title)}">${bottle(p ? POTIONS[p].color : 'rgba(205, 230, 238, 0.35)')}${this.key(action)}</div>`;
+      return `<div class="drink${p ? '' : ' empty'}" data-action="${action}" title="${escape(title)}">${this.img(p ? `gear-flask-${p}` : 'gear-flask', 'bottle', bottle(p ? POTIONS[p].color : 'rgba(205, 230, 238, 0.35)'))}${this.key(action)}</div>`;
     }).join('') + bar;
     if (html === this.drinksHtml) return;
     this.drinksHtml = html;

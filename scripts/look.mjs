@@ -205,6 +205,38 @@ const SCENES = {
       for (let i = 0; i < 30 && (await h.game(() => window.embervale.mode === 'cutscene')); i++) await h.wait(150);
     }
   },
+  /** The pause menu's Gear tab (T39): icons drawn from the models, the HUD's flask and glove icons; first a bare new game, then a full kit. */
+  async gear(h) {
+    await h.newGame();
+    await h.wait(800);
+    /** Opens the pause menu on the Gear tab, whichever tab it was left on. */
+    const openGear = async () => {
+      await h.press('KeyP');
+      for (let i = 0; i < 4 && (await h.game(() => document.querySelector('.gmenu-tab.active')?.textContent)) !== 'Gear'; i++) await h.press('KeyE');
+      await h.wait(300);
+    };
+    await openGear();
+    await h.shot('gear-first');
+    await h.press('KeyP');
+    await h.game(() => {
+      const g = window.embervale;
+      ['hasSword', 'hasShield', 'village.stonewardTunic', 'village.dollFound'].forEach((f) => g.state.set(f));
+      g.state.items.add('tether');
+      g.state.flasks.add('life');
+      g.state.flasks.add('attack');
+      g.state.flasks.drink(1);
+      g.state.bells.hung.add('morrow');
+      g.state.bells.carried.add('way');
+      g.state.keys = 2;
+    });
+    await h.wait(600);
+    await h.shotOf(h.page.locator('.drinks'), 'gear-hud-drinks');
+    await openGear();
+    await h.shot('gear-list');
+    for (let i = 0; i < 3; i++) await h.press('ArrowDown');
+    await h.wait(200);
+    await h.shot('gear-glove');
+  },
   /** The HUD's sky dial (ui/skyDial.ts) through the day, and the compass strip (ui/compass.ts) at two headings. */
   async hud(h) {
     await h.newGame();

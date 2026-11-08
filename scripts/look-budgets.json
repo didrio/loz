@@ -48,8 +48,8 @@
     "triangles": 228000
   },
   "contact": {
-    "calls": 390,
-    "triangles": 14000
+    "calls": 490,
+    "triangles": 18000
   },
   "door": {
     "calls": 120,
@@ -78,6 +78,10 @@
   "gate": {
     "calls": 330,
     "triangles": 244000
+  },
+  "gear": {
+    "calls": 700,
+    "triangles": 228000
   },
   "glove": {
     "calls": 750,

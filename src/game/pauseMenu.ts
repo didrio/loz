@@ -1,3 +1,4 @@
+import { G } from '../content/text/gear';
 import { DEV_STATES } from '../content/devStates';
 import { foundHints } from '../content/hints';
 import { foundSigils } from '../content/sigils';
@@ -5,6 +6,7 @@ import { SENSITIVITY_RANGE, type Settings } from '../core/save';
 import { bakedLightOn, setBakedLight } from '../render/bakeLight';
 import { DISPLAY_NAMES } from '../render/retro';
 import { setTextureResolution, TEXTURE_RESOLUTION_RANGE, textureResolution } from '../render/textures';
+import { gearRows } from './gearRows';
 import type { Game } from './game';
 import type { Menu, MenuRow } from './menu';
 import { MenuDriver } from './menuDriver';
@@ -13,12 +15,12 @@ import { TRIAL_RULES } from './trialFalls';
 /** Where the Dev tab's texture-resolution try-out is remembered (a tuning aid, not a setting). */
 const RESOLUTION_KEY = 'embervale:dev:textureResolution';
 
-type TabId = 'settings' | 'hints' | 'messages' | 'dev';
+type TabId = 'settings' | 'gear' | 'hints' | 'messages' | 'dev';
 
-const TAB_LABEL: Record<TabId, string> = { settings: 'Settings', hints: 'Hints', messages: 'Messages', dev: 'Dev' };
+const TAB_LABEL: Record<TabId, string> = { settings: 'Settings', gear: G.tab, hints: 'Hints', messages: 'Messages', dev: 'Dev' };
 
 /**
- * The pause menu (P / Start): the one menu, a row of tabs. Settings is always first; Hints
+ * The pause menu (P / Start): the one menu, a row of tabs. Settings is always first, Gear second (read-only: what Wren carries); Hints
  * appears once Wren has found a keepers' note, Messages once she has read a sigil. More tabs
  * (gear, ...) are added to `tabs()` the same way, when there is something to look at. **Dev** is last (sprint, invincible, save states;
  * `Game.devTab`, which the Steam build turns off).
@@ -45,7 +47,7 @@ export class PauseMenu {
   /** The tabs that exist right now, in order. */
   tabs(): TabId[] {
     const { state } = this.game;
-    const tabs: TabId[] = ['settings'];
+    const tabs: TabId[] = ['settings', 'gear'];
     if (foundHints(state).length) tabs.push('hints');
     if (foundSigils(state).length) tabs.push('messages');
     if (this.game.devTab) tabs.push('dev');
@@ -86,7 +88,7 @@ export class PauseMenu {
 
   private page(id: TabId): Menu {
     const tabs = this.tabs();
-    const rows = id === 'settings' ? this.settingsRows() : id === 'hints' ? this.hintRows() : id === 'dev' ? this.devRows() : this.messageRows();
+    const rows = id === 'settings' ? this.settingsRows() : id === 'gear' ? this.gearTab() : id === 'hints' ? this.hintRows() : id === 'dev' ? this.devRows() : this.messageRows();
     return { title: 'Paused', rows, tabs: { labels: tabs.map((t) => TAB_LABEL[t]), active: tabs.indexOf(id) } };
   }
 
@@ -146,6 +148,11 @@ export class PauseMenu {
       { kind: 'toggle', label: 'Trial falls cost a half heart', get: () => TRIAL_RULES.fallDamage > 0, set: (on) => (TRIAL_RULES.fallDamage = on ? 1 : 0) },
       ...states,
     ];
+  }
+
+  private gearTab(): MenuRow[] {
+    const rows = gearRows(this.game.state, (id) => this.game.icons.get(id));
+    return rows.length ? rows : [{ kind: 'entry', label: G.empty, detail: '' }];
   }
 
   private change(patch: Partial<Settings>) {

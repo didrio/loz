@@ -127,7 +127,7 @@ readable and easy to use.
   `--ui-small-size` 14 px; display text like the area name is the bold at a larger size). CSS names a system font after it,
   so a failed load still reads. A test fails if any character in `content/text/` or a button label lacks a glyph: a new
   character means a new skeleton (check it on the bench's specimen).
-- **Icons:** rendered from the real 3D models into small images (T39).
+- **Icons:** rendered from the real 3D models into small images (`render/icons.ts`, the `gear-*` models).
 - **Era habits:** text typed letter by letter with a sound (have it: blips), coloured keywords (have it: `[gear]` tags),
   a big item-get moment (have it), button prompts for the active device (have it). Our own icon designs only.
 - **Modern conveniences:** clear structure, big touch targets, text speed and size options.
@@ -179,7 +179,7 @@ Lock if jump matters more in combat); the styling is in (T38); only the later it
 ## Items and the pause screen
 
 No inventory to manage: sword and shield upgrades are automatic, there's no crafting or stat gear, keys show on the HUD.
-- **Gear tab** (T39) in the pause menu, read-only: sword and shield, tunic, items, quest items (Pip's doll), bells, the
+- **Gear tab** in the pause menu, read-only: sword and shield, tunic, items, quest items (Pip's doll), bells, the
   current dungeon's keys. No dungeon map (the "no map or compass" rule; a map would be a new owner's call).
 - **Item wheel:** deferred until there's a second equippable item (roadmap.md "An item selector" has its design).
 

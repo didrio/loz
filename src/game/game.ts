@@ -9,6 +9,7 @@ import { Director } from '../core/director';
 import { Input, type Action } from '../core/input';
 import type { Physics } from '../core/physics';
 import { DEFAULT_SETTINGS, decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings } from '../core/save';
+import { Icons } from '../render/icons';
 import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
 import { ShadowRig } from '../render/shadows';
@@ -98,6 +99,8 @@ export class Game implements ScriptApi {
   /** The on-screen controls (phones and tablets only; ui/touch.ts). */
   private readonly touch: TouchControls;
   readonly pauseMenu: PauseMenu;
+  /** Icons drawn from the registered models (the Gear tab, the HUD's flasks and glove). */
+  readonly icons: Icons;
   readonly buds: BudSystem;
   /** Script menus (`choose`): the bells' travel menu. */
   private readonly choice: ChoiceMenu;
@@ -140,6 +143,9 @@ export class Game implements ScriptApi {
     window.addEventListener('pagehide', () => this.save());
     document.addEventListener('visibilitychange', () => document.hidden && this.save());
     this.debug = new URLSearchParams(location.search).has('debug') ? new Debug(this) : null;
+    this.icons = new Icons(this.renderer);
+    this.hud.icon = (id) => this.icons.get(id);
+    this.icons.warm(['gear-glove', 'gear-flask', 'gear-flask-life', 'gear-flask-attack']);
     this.pauseMenu = new PauseMenu(this);
     this.buds = new BudSystem(this);
     this.choice = new ChoiceMenu(this);

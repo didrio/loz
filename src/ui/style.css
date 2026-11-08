@@ -317,6 +317,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 .gmenu-detail { flex: 1; overflow-y: auto; padding: 4px 8px 0 20px; border-left: 1px solid rgba(232, 199, 112, 0.25); }
 .gmenu-detail-title { font-size: 15px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ui-gold); margin-bottom: 12px; }
 .gmenu-detail-text { font-size: 20px; line-height: 1.6; color: rgba(255, 255, 255, 0.92); white-space: pre-line; }
+.gmenu-icon { width: 32px; height: 32px; vertical-align: middle; margin: -6px 10px -6px 0; image-rendering: auto; }
+.gmenu-row.selected span:first-child:has(.gmenu-icon)::before { content: none; }
+.gmenu-detail-icon { float: right; width: 96px; height: 96px; margin: 0 0 8px 16px; }
 .gmenu-help { margin-top: 14px; font-size: 13px; color: rgba(255, 255, 255, 0.5); text-align: center; }
 .gmenu-help .key { height: 22px; min-width: 22px; font-size: 12px; vertical-align: middle; margin: 0 2px; }
 

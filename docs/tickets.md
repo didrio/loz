@@ -40,17 +40,4 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T39: Gear tab, with icons rendered from the models
-**Run:** auto · sonnet · medium
-**Why:** art.md "Items and the pause screen": a read-only answer to "what do I have?", with era icons drawn from the
-real 3D models.
-**Done when:**
-- Icons rendered offscreen from registered models at boot and cached: sword, shield, tunic, glove, the flasks, the bells,
-  keys, Pip's doll. The HUD's flask and glove icons use them.
-- A **Gear** tab in the pause menu, read-only: sword and shield, tunic, items, quest items, bells, the current dungeon's
-  keys. No map.
-- engine.md "The pause menu" updated.
-**Read first:** art.md "Items and the pause screen" and "UI" (the theme: style the tab with the `--ui-*` variables from
-`ui/theme.ts`, never colour literals; check it on the `/ui.html` bench); engine.md "The pause menu"; `game/pauseMenu.ts`; `game/menu.ts`
-(the `entry` row); the registry (`render/models/registry.ts`); `game/state.ts` (items, flasks, bells).
-**Verify:** `npm run check`; smoke `hints dev-menu`; look `hud` plus a pause-menu shot of the tab.
+_No open tickets. The next one is the golden set's first member (a Thornling): write it from [art.md](art.md) "The golden set" and [pipeline.md](pipeline.md)._
