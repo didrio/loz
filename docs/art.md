@@ -9,7 +9,7 @@ that looks the way people *remember* the N64, not the way it literally looked.
 - **Reference:** OoT and MM, upscaled. Modern indie benchmarks: *Corn Kidz 64*, *Cavern of Dreams*.
 - **Not:** the 3DS remake's busier detail, Wind Waker (cel bands), Twilight Princess, or a glossy, over-polished low-poly indie look. (Genre feel only: never a specific game's designs, AGENTS.md "Hard rules".)
 - **How we build it:** [pipeline.md](pipeline.md) (Rough and Final passes, the registry, the checks). The rebuild of
-  everything that exists is tickets T27–T42 (T27–T30 done) ([tickets.md](tickets.md)), then the golden set and the rest
+  everything that exists starts with the foundation tickets T32–T39 ([tickets.md](tickets.md)), then the golden set and the rest
   ([roadmap.md](roadmap.md) "The N64 look rebuild").
 
 Each section says **today** (what the code does now) and **target**. Until a ticket moves a section to the target, don't

@@ -40,19 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T42: Fix the `shrine-enemies` smoke step
-**Run:** auto · opus · high
-**Why:** `npm run smoke -- shrine-enemies` fails on step "a Dozing Sentinel sleeps, wakes as Wren comes close, swings, and falls to
-hits in its recovery: no sword hit landed in its recovery". It fails the same on `main` before T30 (checked with a stash), so it is
-not the look work; the other steps and "no errors in the console" pass. Either the scenario's timing drifted or the Sentinel's
-recovery window or Wren's reach changed.
-**Done when:** the scenario passes twice in a row (and alone after the retry), with the cause named in the report: a test fixed
-(headless timing) or a real bug fixed behind a failing unit test first (AGENTS.md Definition of done 5).
-**Read first:** docs/combat.md "Enemies" (the Sentinel); docs/testing.md (the `shrine-enemies` row); `scripts/smoke/` (Grep
-`shrine-enemies`); `game/sentinel.ts`; `game/player.ts` (Grep the sword's reach and hit window).
-**Verify:** `npm run check`; smoke `shrine-enemies`, then `combat`.
-**Notes:** If one fix attempt fails, write the repro and hand it to `architect`.
-
 ### T32: Effects presets
 **Run:** auto · sonnet · medium
 **Why:** art.md "Effects": combat feedback should read the same across every enemy and weapon. Today there are 59

@@ -34,6 +34,23 @@ export default async function run(t) {
   });
 
   await step('a Dozing Sentinel sleeps, wakes as Wren comes close, swings, and falls to hits in its recovery', async () => {
+    // The gallery holds three statues facing into a 14 m room, so any spot near one is in another's wake range: one of
+    // them woke and took 4 half-hearts before the test's own swing took the rest. Fight the one whose 9 m spot is in the
+    // room and clear of the others, and blind the others (Wren is never in their territory) so this is about one sentinel.
+    const picked = await game(() => {
+      const g = window.embervale, room = 'statueGallery';
+      const all = g.enemies.list.filter((e) => 'asleep' in e && e.alive && !('title' in e) && g.area.roomAt(e.pos)?.id === room);
+      const ok = (e) => {
+        const x = e.pos.x + Math.sin(e.facing) * 9, z = e.pos.z + Math.cos(e.facing) * 9;
+        return g.area.roomAt(e.pos.clone().set(x, e.pos.y, z))?.id === room && all.every((o) => o === e || Math.hypot(o.pos.x - x, o.pos.z - z) > 6);
+      };
+      const e = all.find((e) => e.asleep && ok(e));
+      if (!e) return { statues: all.length, picked: false };
+      e['smoke-asleep'] = true;
+      for (const o of all) if (o !== e) Object.defineProperty(o, 'territory', { value: () => false });
+      return { statues: all.length, picked: true };
+    });
+    check(picked.picked, `none of the gallery's ${picked.statues} statues has a spot 9 m in front, in the room and clear of the others`);
     let s = await find('asleep', 'statueGallery');
     check(s?.asleep, 'no sleeping sentinel in the Gallery of Statues');
     await stand(s, 9);
@@ -42,6 +59,7 @@ export default async function run(t) {
     for (let i = 0; i < 4; i++) await press('KeyQ', 1, 300);
     check(!(await state()).lock, 'lock-on picked a sleeping statue');
     const hp = (await state()).hp;
+    check(hp === 8, `Wren has ${hp} half-hearts before its swing, not the fixture's 8: something else hit her`);
     await stand(s, 2.4);
     await until((hp) => window.embervale.state.hp < hp, 30000, hp);
     check((await state()).hp === hp - 4, `its swing took ${hp - (await state()).hp} half-hearts, not 4`);
