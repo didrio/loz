@@ -30,6 +30,9 @@ export interface AssetEntry {
   note?: string;
 }
 
+/** The golden set (art.md "The golden set"): owner-approved ids that define the style. The contact sheet marks them. Empty until the owner approves the first. */
+export const GOLDEN_SET: readonly string[] = [];
+
 export const ASSETS: readonly AssetEntry[] = [
   { id: 'wren', kind: 'player', tier: 'rough', build: buildWren, note: 'tunic, sword and shield' },
   { id: 'villager', kind: 'npc', tier: 'rough', build: () => buildPerson(VILLAGER_COLORS), note: 'the humanoid every NPC shares (Maren\'s colours)' },

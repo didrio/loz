@@ -47,6 +47,10 @@
     "calls": 900,
     "triangles": 266000
   },
+  "contact": {
+    "calls": 390,
+    "triangles": 14000
+  },
   "door": {
     "calls": 120,
     "triangles": 210000

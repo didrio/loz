@@ -167,7 +167,10 @@ Indoors, call the `teleport` helper with a `fromY` just above the floor.
 **Dev tab**: the last tab of the pause menu (**P**, then Q/E): dev sprint (5× run
 speed, `Player.devSpeed`), invincibility, and **save states** (in play order; each has the hints and messages Wren could have by then) that jump to a ready-made point
 and replace the current save (see "Menus" in [engine.md](engine.md)). Off in builds with `VITE_DISABLE_DEV_TAB=1`.
-With `?debug`, **\** toggles the collider wireframe.
+With `?debug`, **\** toggles the collider wireframe and red rings round enemies' hurtboxes.
+`?state=<id or number>` boots straight into a Dev tab state (skips the title); `embervale.spawn('shellback', x, z)` puts a registered enemy in the world
+(omit x, z: 3 m ahead of Wren). `/viewer.html?asset=<id>` shows one model on a turntable; `?asset=contact` is the contact sheet (`npm run look -- contact`).
+Details: [pipeline.md](pipeline.md) "The viewer, contact sheet and dev shortcuts".
 **P** opens the pause menu (Settings, Hints, Messages tabs); music is muted with its volume slider there.
 
 ## Known testing quirks

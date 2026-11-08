@@ -205,3 +205,12 @@ const STATES: DevState[] = [
 ];
 
 export const DEV_STATES: DevState[] = STATES.map((s) => (s.save ? { ...s, save: withNotes(s.save) } : s));
+
+/** A state's id for `?state=<id>`: its name in lowercase letters and hyphens ("Waking Shrine: at the boss door" → "waking-shrine-at-the-boss-door"). */
+export const devStateId = (s: DevState) => s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+/** The state `?state=` names: by id, or by its 1-based number in the Dev tab's list. */
+export function findDevState(key: string): DevState | undefined {
+  const n = Number(key);
+  return Number.isInteger(n) && n >= 1 ? DEV_STATES[n - 1] : DEV_STATES.find((s) => devStateId(s) === key);
+}

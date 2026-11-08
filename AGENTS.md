@@ -22,7 +22,7 @@ As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
 after it only Lark and Pip remain in the village. Every gate is data (`content/progression.ts`, checked by a test). Everything is built in code; the
 look is flat-shaded and faceted (owner's call), colours snapped to one master palette and baked into vertices on merged scenery, generated crisp textures on everything but glows, glass, voids and writing (terrain, buildings, dungeons, trees, props, characters, enemies, bosses; a test guards the valley, Northpass and shrine; one global resolution slider in the Dev tab, default 32), and a Display setting (Native / Performance / N64). Sun shadows are a Settings option (**Shadows**, default On on desktop, Off on touch: one shadow map outdoors, `render/shadows.ts`; blob shadows remain indoors and for floating things), baked bounce light is a parked trial in the village (Dev toggle), and each place has its own atmosphere (`render/atmosphere.ts`), and the HUD corner shows the place's name and, in a dungeon, a rendered picture of it instead of the dial. NPCs talk in **blips**; **touch controls** are in a playtest on GitHub Pages; **Sallowmere** stands empty and untextured while the owner redesigns it.
-**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T34–T39. Every model is already a pure builder in `render/models/`, registered (all `rough`) and checked by a validator (`npm run assets`, [pipeline.md](docs/pipeline.md)). Dev server: port 5273.
+**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T35–T39 (the viewer and contact sheet, T34, are in). Every model is already a pure builder in `render/models/`, registered (all `rough`) and checked by a validator (`npm run assets`, [pipeline.md](docs/pipeline.md)). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -55,7 +55,7 @@ look is flat-shaded and faceted (owner's call), colours snapped to one master pa
   **Audio is synthesized in code** (no samples; all melodies original). The owner discloses the AI-generated code and writing on Steam.
 - **Every new asset, room or area runs Rough → Final without being asked** ([pipeline.md](docs/pipeline.md)), and **a final pass
   never changes gameplay** (behaviour, hurtboxes, timings, layout, puzzles; ask first). Colours from the palette (`pal()`), models registered
-  in `render/models/registry.ts` and in budget (`npm run assets`); check visuals in Native and N64 mode and on the contact sheet (from T34).
+  in `render/models/registry.ts` and in budget (`npm run assets`); check visuals in Native and N64 mode and on the contact sheet (`npm run look -- contact`).
 
 ## Working with the owner
 
@@ -162,7 +162,7 @@ scripts/
   flags.mjs, lexicon.mjs   who sets/reads each quest flag (npm run flags; flags.test.ts); the game's words → labs/speech/lexicon.ts (npm run lexicon)
   palette.mjs              hex literals still in code, by file, with their nearest swatch (npm run palette)
   assets.mjs               the model registry's table: triangles against budget, size, textures, findings (npm run assets)
-src/dev/ the blips test bench (/blips.html) and the swatch page (/palette.html), dev only · src/labs/ shelved, nothing imports it: speech/ (a speech synth), rigged/ (imported rigged models, docs/models.md)
+src/dev/ the blips test bench (/blips.html), the swatch page (/palette.html) and the asset viewer + contact sheet (/viewer.html), dev only · src/labs/ shelved, nothing imports it: speech/ (a speech synth), rigged/ (imported rigged models, docs/models.md)
 CREDITS.md third-party credits · assets/music-src/ the owner's MIDI exports, one folder per song (docs/audio.md)
 docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, agents/, skills/ /start and /wrap)
 ```

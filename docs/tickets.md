@@ -40,20 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T34: Viewer, contact sheet, dev shortcuts
-**Run:** auto · sonnet · medium
-**Why:** pipeline.md: the owner and the agent reach any test case in seconds, and outliers jump out of one image.
-**Done when:**
-- Dev-only `/viewer.html?asset=<id>` (like `/blips.html`): one registered asset on a turntable under the game's light and
-  fog, a time-of-day slider, its poses or moves to play, a hurtbox overlay, Native/N64.
-- A `contact` look scene: every registered asset side by side at one scale, the golden set marked.
-- `?state=<dev state id>` boots straight into a Dev tab save state; `embervale.spawn(id, x, z)` spawns a registered
-  enemy; `?debug`'s wireframe also draws hurtboxes.
-- pipeline.md "The viewer, contact sheet and dev shortcuts" and testing.md "Debugging in the browser" rewritten.
-**Read first:** pipeline.md; testing.md "Debugging in the browser"; `blips.html` and `src/dev/blips.ts` (the dev page
-pattern); the registry (`render/models/registry.ts`); `content/devStates.ts`; `game/debug.ts`; `src/main.ts`.
-**Verify:** `npm run check`; `npm run look -- contact`; open the viewer on two assets (`looker`).
-
 ### T35: The modeling kit, proven on the chest
 **Run:** auto · sonnet · high
 **Why:** pipeline.md: every final pass builds from one toolkit, so the style is consistent for free.

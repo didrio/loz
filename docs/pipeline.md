@@ -95,12 +95,22 @@ status) and every finding. Reading the table: today's rough models mostly hold g
 `MeshBasicMaterial`s written as hex) and a few props over the 300-triangle budget (the heart vessel's extruded heart); the
 Lamplighter is at about twice its mini-boss budget. A final pass fixes these; it never changes gameplay.
 
-## The viewer, contact sheet and dev shortcuts (T34)
+## The viewer, contact sheet and dev shortcuts
 
-Not built yet. Until then: Dev tab save states, `window.embervale` (teleport, `loadArea`, `activeBoss.forceMove`) and look
-scenes ([testing.md](testing.md)). T34 adds `/viewer.html?asset=<id>` (one asset on a turntable under game light),
-the `contact` look scene (every registered asset at one scale, the golden set alongside), `?state=<id>` and
-`embervale.spawn(id, x, z)`.
+- **Viewer** (dev server only, like `/blips.html`): `/viewer.html?asset=<registry id>` shows one model on a turntable under the
+  game's own `Sky` (light and fog by time of day), with a panel: asset picker, hour slider, Native / Performance / N64, the place's
+  atmosphere (valley, village, hollow, shrine), turntable on/off and an angle slider, and one x/y/z rotation slider per named
+  joint to pose it. URL params: `hour`, `place`, `display`, `spin=0`, `panel=0`. Code: `src/dev/viewer.ts`.
+  The viewer shows the **model**, not the behaviour, so moves and hurtboxes live in the game (below).
+- **Contact sheet**: `/viewer.html?asset=contact`, and the `contact` look scene (`npm run look -- contact`, also with
+  `--display n64`). Every registered model at one scale (shelves, biggest kinds first; layout in `src/dev/contactLayout.ts`), its id
+  under it; the golden set (`GOLDEN_SET` in `registry.ts`, empty until the owner approves a member) is starred and gold.
+  Any model change shows up in this shot, so an outlier is easy to see.
+- **`?state=<id>`** (dev server or `?debug`): boots past the title menu straight into a Dev tab save state. The id is the state's
+  name in lowercase with hyphens (`devStateId`: `?state=waking-shrine-the-entrance`), or its 1-based number in the Dev tab.
+- **`embervale.spawn(id, x?, z?)`**: puts a registered enemy (`thornling`, `gloomwisp`, `dozing-sentinel`, `shellback`,
+  `cragstalker`: `game/spawn.ts`) at (x, z) or 3 m in front of Wren. Bosses stay in their arenas: `activeBoss.forceMove(name)`.
+- **`?debug` + `\`** draws the collider wireframe **and** red rings round every live enemy's hurtboxes (`Debug`, `game/debug.ts`).
 
 ## The modeling kit (T35)
 

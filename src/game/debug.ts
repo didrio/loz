@@ -4,7 +4,7 @@ import type { Game } from './game';
 
 /**
  * Developer overlay, on with `?debug` in the URL: frame rate, draw calls, position, mode.
- * Backslash (\) toggles a wireframe of the physics colliders (terrain excluded).
+ * Backslash (\) toggles a wireframe of the physics colliders (terrain excluded) and red rings round every live enemy's hurtboxes.
  */
 export class Debug {
   private frames = 0;
@@ -13,6 +13,7 @@ export class Debug {
   private showColliders = false;
   private lines: THREE.LineSegments | null = null;
   private refresh = 0;
+  private hurt: THREE.LineSegments | null = null;
 
   constructor(private game: Game) {
     window.addEventListener('keydown', (e) => {
@@ -38,6 +39,7 @@ export class Debug {
       `day ${g.state.day} ${g.state.hours.toFixed(2)}h · \` colliders ${this.showColliders ? 'on' : 'off'}`,
     );
 
+    this.drawHurtboxes();
     this.refresh -= dt;
     if (!this.showColliders) {
       if (this.lines) this.lines.visible = false;
@@ -55,5 +57,40 @@ export class Debug {
     this.lines.visible = true;
     this.lines.geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     this.lines.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+  }
+
+  /** With the wireframe on: three rings (red) around every live enemy's hurtboxes, each frame (they move with the poses). */
+  private drawHurtboxes() {
+    if (!this.showColliders) {
+      if (this.hurt) this.hurt.visible = false;
+      return;
+    }
+    const pts: number[] = [];
+    for (const e of this.game.enemies.list) {
+      if (!e.alive) continue;
+      for (const h of e.hurtboxes()) hurtboxRings(h.center, h.radius, pts);
+    }
+    if (!this.hurt) {
+      this.hurt = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xff4040, depthTest: false, transparent: true }));
+      this.hurt.renderOrder = 21;
+      this.hurt.frustumCulled = false;
+      this.game.scene.add(this.hurt);
+    }
+    this.hurt.visible = true;
+    this.hurt.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  }
+}
+
+/** Appends line segments for three rings (one per axis) around a sphere. */
+export function hurtboxRings(c: THREE.Vector3, r: number, out: number[], segs = 16) {
+  for (let axis = 0; axis < 3; axis++) {
+    for (let i = 0; i < segs; i++) {
+      for (const k of [i, i + 1]) {
+        const a = (k / segs) * Math.PI * 2;
+        const u = Math.cos(a) * r;
+        const v = Math.sin(a) * r;
+        out.push(c.x + (axis === 0 ? 0 : axis === 1 ? u : u), c.y + (axis === 0 ? u : axis === 1 ? 0 : v), c.z + (axis === 0 ? v : axis === 1 ? v : 0));
+      }
+    }
   }
 }

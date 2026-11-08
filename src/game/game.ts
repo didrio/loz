@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createArea, isAreaId, type AreaId } from '../content/areas';
-import type { DevState } from '../content/devStates';
+import { findDevState, type DevState } from '../content/devStates';
+import { ENEMY_SPAWNERS } from './spawn';
 import type { AreaContent } from '../content/overworld';
 import { death, intro } from '../content/story';
 import { Sfx } from '../core/audio';
@@ -661,6 +662,28 @@ export class Game implements ScriptApi {
   giveShield() {
     this.state.set('hasShield');
     this.player.setShield(true);
+  }
+
+  /** Dev: `?state=<id>` boots straight into a Dev tab save state (no title menu). Returns false for an unknown state. */
+  bootToState(key: string): boolean {
+    const s = findDevState(key);
+    if (!s) return false;
+    this.hud.hideTitle();
+    this.mode = 'play';
+    this.content.start?.(this);
+    this.loadDevState(s);
+    return true;
+  }
+
+  /** Dev: puts a registered enemy (render/models/registry.ts id) at (x, z), or 3 m in front of Wren. */
+  spawn(id: string, x?: number, z?: number) {
+    const make = ENEMY_SPAWNERS[id];
+    if (!make) throw new Error(`No spawnable enemy "${id}". Try: ${Object.keys(ENEMY_SPAWNERS).join(', ')}`);
+    const f = this.player.facing;
+    const at = { x: x ?? this.player.pos.x + Math.sin(f) * 3, z: z ?? this.player.pos.z + Math.cos(f) * 3 };
+    const e = make(this.scene, this.physics, at.x, at.z);
+    this.enemies.add(e);
+    return e;
   }
 
   /** Dev tab: jumps to a ready-made point in the game, replacing the current save. */

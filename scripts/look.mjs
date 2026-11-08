@@ -59,6 +59,19 @@ const waitStep = (h, name, step, minT) =>
   );
 
 const SCENES = {
+  /**
+   * The contact sheet (dev/viewer.ts, docs/pipeline.md): every registered model at one scale, the golden set marked. Compare
+   * a new or changed asset with its neighbours; the sheet also changes whenever any model does.
+   */
+  async contact(h) {
+    const url = new URL('viewer.html', h.page.url() === 'about:blank' ? env.url : h.page.url());
+    url.search = `?asset=contact&panel=0&display=${['native', 'performance', 'n64'][display] ?? 'native'}`;
+    await h.page.setViewportSize({ width: 1600, height: 900 });
+    await h.page.goto(url.href);
+    await h.until(() => window.embervale?.mode === 'viewer', 30000);
+    await h.wait(400);
+    await h.shot('sheet');
+  },
   async title(h) {
     await h.boot();
     await h.shot('title');
