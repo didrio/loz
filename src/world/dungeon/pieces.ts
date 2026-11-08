@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Layer, type RAPIER } from '../../core/physics';
-import { mat, surf, uniqueMat } from '../../render/materials';
+import { mat, surf, uniqueMat, uniqueSurf } from '../../render/materials';
 import { faceted } from '../../render/textures';
 import { glow, GroundShadow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
@@ -296,7 +296,7 @@ export class DungeonSwitch {
   readonly prism: Prism | null = null;
 
   constructor(parent: THREE.Object3D, readonly id: string, readonly style: 'plate' | 'crystal' | 'prism', x: number, y: number, z: number, b: AreaBuilder) {
-    this.glowMat = uniqueMat(style === 'plate' ? 0x8a7a52 : 0x6fd8ff, { emissive: 0x000000 });
+    this.glowMat = style === 'plate' ? uniqueSurf('stone', 0x8a7a52, { emissive: 0x000000 }) : uniqueMat(0x6fd8ff, { emissive: 0x000000 });
     if (style === 'prism') {
       this.top = new THREE.Mesh();
       this.prism = new Prism(parent, b, x, y, z);

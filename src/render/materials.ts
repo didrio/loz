@@ -52,6 +52,27 @@ export function uniqueMat(color: number, extra: THREE.MeshLambertMaterialParamet
 }
 
 /**
+ * `uniqueMat` textured as `surface`: for things that flash, fade or glow (enemies, bosses, Wren's coat). The texture
+ * only brightens or darkens the colour, so a hit flash (emissive), a fade (`alphaHash`) and the blight's tint work as before.
+ * Faces and small bits (eyes, glows) stay on plain `uniqueMat`. Dynamic cones, cylinders and spheres need `faceted()` geometry.
+ */
+export function uniqueSurf(surface: SurfaceId, color: number, extra: THREE.MeshLambertMaterialParameters = {}) {
+  return applySurface(uniqueMat(color, extra), surface);
+}
+
+/**
+ * A copy of a material that keeps its texture (three's `clone` drops `onBeforeCompile`): for a fade that must not
+ * touch the shared original.
+ */
+export function cloneMaterial<T extends THREE.Material>(m: T): T {
+  const c = m.clone() as T;
+  c.onBeforeCompile = m.onBeforeCompile;
+  c.customProgramCacheKey = m.customProgramCacheKey;
+  c.userData = { ...m.userData };
+  return c;
+}
+
+/**
  * A glowing (additive) material that fades to nothing in the fog. Left alone, three.js mixes a fogged
  * pixel toward the fog's colour, and additive blending then adds that colour on top, so a far glow
  * shows through the fog as a pale shape (the Northpass gate's veil did, from across the valley).
@@ -143,6 +164,22 @@ function isBakeable(m: THREE.Material): m is THREE.MeshLambertMaterial {
  * costs a handful of draw calls. Each mesh's colour goes into a vertex colour with a little baked shade
  * (`bakeColor`). `src` must not be in the scene (its transform is treated as the world). InstancedMeshes are skipped.
  */
+/** One static mesh that was baked without a texture (see `mergeAudit`). */
+export interface PlainStatic {
+  geometry: string;
+  color: number;
+  emissive: number;
+  /** World-space centre and size of the mesh. */
+  at: THREE.Vector3;
+  size: THREE.Vector3;
+}
+
+/**
+ * A test hook: while `on`, `mergeStatic` records every plain (untextured) mesh it bakes. `world/texturesEverywhere.test.ts` builds
+ * the areas and fails on any that isn't justified, so "everything has a texture" stays true as the game grows.
+ */
+export const mergeAudit = { on: false, plain: [] as PlainStatic[] };
+
 export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
   src.updateMatrixWorld(true);
   const buckets = new Map<string, { material: THREE.Material; geos: THREE.BufferGeometry[] }>();
@@ -159,6 +196,9 @@ export function mergeStatic(src: THREE.Object3D, cellSize = 80) {
     if (bake) bakeColor(g, material.color);
     g.computeBoundingBox();
     g.boundingBox!.getCenter(center);
+    if (mergeAudit.on && bake && !material.userData.surface) {
+      mergeAudit.plain.push({ geometry: o.geometry.type, color: material.color.getHex(), emissive: material.emissive.getHex(), at: center.clone(), size: g.boundingBox!.getSize(new THREE.Vector3()) });
+    }
     const surface = material.userData.surface as SurfaceId | undefined;
     const emissive = bake ? material.emissive.getHex() : 0;
     const kind = bake ? `baked:${surface ?? ''}:${emissive}` : material.uuid;

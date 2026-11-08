@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
-import { disposeTree, fadeInFog, uniqueMat } from '../render/materials';
+import { disposeTree, fadeInFog, uniqueMat, uniqueSurf } from '../render/materials';
+import { faceted } from '../render/textures';
 import { GroundShadow } from '../render/shapes';
 import type { Sfx } from '../core/audio';
 import type { Particles } from '../render/particles';
@@ -325,14 +326,14 @@ export class Thornling extends GroundEnemy {
     this.radius = 0.75;
     this.lockHeight = 1.0;
 
-    const skin = uniqueMat(0x7a2f4a), thorn = uniqueMat(0xc9b27a), eye = new THREE.MeshBasicMaterial({ color: 0xffd23a });
+    const skin = uniqueSurf('hide', 0x7a2f4a), thorn = uniqueSurf('bark', 0xc9b27a), eye = new THREE.MeshBasicMaterial({ color: 0xffd23a });
     this.flashMats.push(skin, thorn);
     this.body = new THREE.Group();
     const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.65, 0), skin);
     this.body.add(ball);
     const dirs = new THREE.IcosahedronGeometry(1, 0).attributes.position;
     const seen = new Set<string>();
-    const spikeGeo = new THREE.ConeGeometry(0.13, 0.5, 5);
+    const spikeGeo = faceted(new THREE.ConeGeometry(0.13, 0.5, 5));
     for (let i = 0; i < dirs.count; i++) {
       const v = new THREE.Vector3().fromBufferAttribute(dirs, i).normalize();
       const k = v.toArray().map((n) => n.toFixed(2)).join();

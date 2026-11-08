@@ -40,28 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T41: Texture the living: characters, enemies, bosses
-**Run:** auto · sonnet · high
-**Why:** same owner call as T40, for everything that moves. Clothes, skin, hair, enemy hides, boss armour. These use
-`uniqueMat` (hit flashes, fades), so they need textures on materials of their own, not the shared `surf()` ones.
-**Done when:**
-- Wren, every NPC (`buildHumanoid`, `render/characters.ts`), every enemy (`game/enemies.ts`, `sentinel.ts`, `shellback.ts`,
-  `cragstalker.ts`, Gloomwisp, Thornling) and both bosses (`game/bosses/`) wear fitting textures: cloth/weave (clothes, cloaks),
-  leather, hide or scales, rough stone or metal for armoured things, fur or none where it doesn't suit. Faces and small
-  bits (eyes, glows, teeth) stay plain.
-- Hit flashes, fades (`alphaHash`), the guard's look and the blight's tint all still work (smoke: `shrine-enemies`'s hit
-  steps are known-failing on `main` since before T30; compare against that, don't chase it here).
-- Characters scale and move, so tiles are placed in the mesh's own space (they already are: `vSurfPos = transformed`); check a
-  walking and a hit pose, nothing swims.
-- New tiles as needed (`cloth`, `leather`, `scales`, `hide`), same rules as T40.
-**Read first:** engine.md "Textures"; combat.md "Enemies" (flash rules); `render/characters.ts`; `applySurface` in `render/textures.ts`;
-Grep `uniqueMat` in `src/game`.
-**Verify:** `npm run check`; smoke `shrine-enemies` (compare with `main`), `enemies`; look `enemies boss boss-moves gravelheart pip guard shield`.
-**Notes:** `applySurface(uniqueMat(color), 'cloth')` is the pattern (the mill's inside does it). The player's fade clones shared
-materials (`player.ts`); a clone of a textured material keeps its shader (`onBeforeCompile` is copied), verify. If hit flashes
-break, hand it to `architect` with the repro. T35's modelling kit will rebuild characters later: keep the texturing in
-a function of the material setup, so it moves with the models.
-
 ### T42: Fix the `shrine-enemies` smoke step
 **Run:** auto · opus · high
 **Why:** `npm run smoke -- shrine-enemies` fails on step "a Dozing Sentinel sleeps, wakes as Wren comes close, swings, and falls to
@@ -72,7 +50,7 @@ recovery window or Wren's reach changed.
 (headless timing) or a real bug fixed behind a failing unit test first (AGENTS.md Definition of done 5).
 **Read first:** docs/combat.md "Enemies" (the Sentinel); docs/testing.md (the `shrine-enemies` row); `scripts/smoke/` (Grep
 `shrine-enemies`); `game/sentinel.ts`; `game/player.ts` (Grep the sword's reach and hit window).
-**Verify:** `npm run check`; smoke `shrine-enemies`, then `enemies`.
+**Verify:** `npm run check`; smoke `shrine-enemies`, then `combat`.
 **Notes:** If one fix attempt fails, write the repro and hand it to `architect`.
 
 ### T32: Effects presets

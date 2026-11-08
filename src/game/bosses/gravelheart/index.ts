@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { clamp, damp } from '../../../core/math';
 import type { MusicMood } from '../../../core/tracks';
-import { uniqueMat } from '../../../render/materials';
+import { uniqueSurf } from '../../../render/materials';
 import type { Physics } from '../../../core/physics';
 import type { WardenHearth } from '../../../world/dungeon/hearth';
 import { Boss, type Move } from '../../boss';
@@ -65,8 +65,8 @@ export class Gravelheart extends Boss {
   private stepPhase = 0;
   private ground = false;
 
-  private readonly rubbleMat = uniqueMat(0x6f685d);
-  private readonly rubbleGeo = new THREE.BoxGeometry(0.8, 0.6, 0.8);
+  private readonly rubbleMat = uniqueSurf('rock', 0x6f685d);
+  private readonly rubbleGeo = new THREE.DodecahedronGeometry(0.5, 0);
 
   constructor(private readonly stage: THREE.Object3D, physics: Physics, readonly hearth: WardenHearth | null, x: number, y: number, z: number, yaw: number) {
     super(stage, physics, hearth, { x, y, z, yaw, hp: 40, radius: 1.5, halfHeight: 1.3, phases: [0.5] });

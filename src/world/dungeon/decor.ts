@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
 import { SHRINE, type FogLook } from '../../render/atmosphere';
-import { mat } from '../../render/materials';
+import { mat, surf } from '../../render/materials';
+import type { SurfaceId } from '../../render/textures';
 import { pal } from '../../render/palette';
 import type { AreaBuilder } from '../area';
 import type { RoomDef, RoomTheme } from './format';
@@ -51,8 +52,8 @@ export interface WallSpot {
   yaw: number;
 }
 
-const add = (g: THREE.Group, geo: THREE.BufferGeometry, color: number, x: number, y: number, z: number, yaw = 0, emissive = 0) => {
-  const m = new THREE.Mesh(geo, mat(color, emissive));
+const add = (g: THREE.Group, geo: THREE.BufferGeometry, color: number, x: number, y: number, z: number, yaw = 0, emissive = 0, surface?: SurfaceId) => {
+  const m = new THREE.Mesh(geo, surface ? surf(surface, color, emissive) : mat(color, emissive));
   m.position.set(x, y, z);
   m.rotation.y = yaw;
   g.add(m);
@@ -90,22 +91,22 @@ export function decorateRoom(
         if (!hasStones) {
           // A keeper, kneeling against the wall, asleep: blocky body, bowed head, closed eyes.
           const at = onWall(s, 0, 0.75);
-          add(solid, new THREE.BoxGeometry(1.2, 0.5, 0.9), p.trim, at.x, fy + 0.25, at.z, s.yaw);
-          add(solid, new THREE.BoxGeometry(0.9, 1.1, 0.7), p.pillar, at.x, fy + 1.05, at.z, s.yaw);
+          add(solid, new THREE.BoxGeometry(1.2, 0.5, 0.9), p.trim, at.x, fy + 0.25, at.z, s.yaw, 0, 'stone');
+          add(solid, new THREE.BoxGeometry(0.9, 1.1, 0.7), p.pillar, at.x, fy + 1.05, at.z, s.yaw, 0, 'stone');
           const head = onWall(s, 0, 0.95);
-          add(solid, new THREE.BoxGeometry(0.55, 0.55, 0.55), p.pillar, head.x, fy + 1.85, head.z, s.yaw);
+          add(solid, new THREE.BoxGeometry(0.55, 0.55, 0.55), p.pillar, head.x, fy + 1.85, head.z, s.yaw, 0, 'stone');
           for (const side of [-0.13, 0.13]) {
             const eye = onWall(s, side, 1.23);
-            add(solid, new THREE.BoxGeometry(0.14, 0.03, 0.02), p.trim, eye.x, fy + 1.88, eye.z, s.yaw);
+            add(solid, new THREE.BoxGeometry(0.14, 0.03, 0.02), p.trim, eye.x, fy + 1.88, eye.z, s.yaw, 0, 'stone');
           }
           b.box(at.x, fy + 1, at.z, 0.6, 1, 0.5, s.yaw, Layer.Prop);
         } else {
           // A sleeping face carved into the wall: flat, so stones slide past it.
           const at = onWall(s, 0, 0.3);
-          add(solid, new THREE.BoxGeometry(1.1, 1.4, 0.1), p.trim, at.x, fy + 2.4, at.z, s.yaw);
+          add(solid, new THREE.BoxGeometry(1.1, 1.4, 0.1), p.trim, at.x, fy + 2.4, at.z, s.yaw, 0, 'stone');
           for (const side of [-0.22, 0.22]) {
             const eye = onWall(s, side, 0.36);
-            add(solid, new THREE.BoxGeometry(0.28, 0.05, 0.03), p.pillar, eye.x, fy + 2.6, eye.z, s.yaw);
+            add(solid, new THREE.BoxGeometry(0.28, 0.05, 0.03), p.pillar, eye.x, fy + 2.6, eye.z, s.yaw, 0, 'stone');
           }
         }
       }
@@ -116,7 +117,7 @@ export function decorateRoom(
       for (const s of spots(5)) {
         const at = onWall(s, 0, 0.26);
         add(solid, new THREE.BoxGeometry(1.1, 3.2, 0.06), pal('moon', 3), at.x, fy + height - 2.6, at.z, s.yaw, pal('sky', 2));
-        add(solid, new THREE.BoxGeometry(1.4, 0.2, 0.2), p.trim, at.x, fy + height - 4.3, at.z, s.yaw);
+        add(solid, new THREE.BoxGeometry(1.4, 0.2, 0.2), p.trim, at.x, fy + height - 4.3, at.z, s.yaw, 0, 'stone');
         const beam = new THREE.Mesh(new THREE.BoxGeometry(1, height * 0.95, 0.9), new THREE.MeshBasicMaterial({ color: pal('sky', 3), transparent: true, opacity: 0.07, depthWrite: false, blending: THREE.AdditiveBlending }));
         const mid = onWall(s, 0, 1.6);
         beam.position.set(mid.x, fy + height * 0.47, mid.z);
@@ -139,10 +140,10 @@ export function decorateRoom(
         for (let k = 0; k < 3; k++) {
           const len = 1 + rand() * 2;
           const at = onWall(s, (rand() - 0.5) * 1.6, 0.3 + rand() * 0.3);
-          add(solid, new THREE.CylinderGeometry(0.05, 0.09, len, 5), pal('bark', 1), at.x, fy + height - len / 2, at.z);
+          add(solid, new THREE.CylinderGeometry(0.05, 0.09, len, 5), pal('bark', 1), at.x, fy + height - len / 2, at.z, 0, 0, 'bark');
         }
         const patch = onWall(s, (rand() - 0.5) * 1.5, 0.8);
-        add(solid, new THREE.BoxGeometry(1 + rand(), 0.02, 0.6 + rand() * 0.6), pal('leaf'), patch.x, fy + 0.012, patch.z, s.yaw + (rand() - 0.5) * 0.6);
+        add(solid, new THREE.BoxGeometry(1 + rand(), 0.02, 0.6 + rand() * 0.6), pal('leaf'), patch.x, fy + 0.012, patch.z, s.yaw + (rand() - 0.5) * 0.6, 0, 'foliage');
       }
       break;
     }

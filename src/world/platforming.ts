@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Layer } from '../core/physics';
-import { mat } from '../render/materials';
+import { surf } from '../render/materials';
+import { faceted } from '../render/textures';
 import type { AreaBuilder } from './area';
 
 /**
@@ -212,8 +213,8 @@ export function buildCourse(b: AreaBuilder, course: Pick<CourseDef, 'platforms'>
   for (const p of course.platforms) {
     const th = p.thickness ?? 1;
     const cx = origin.x + p.x, cy = origin.y + p.top - th / 2, cz = origin.z + p.z;
-    const geo = new THREE.CylinderGeometry(p.r, p.r, th, 20);
-    const material = mat(p.look ?? look);
+    const geo = faceted(new THREE.CylinderGeometry(p.r, p.r, th, 20));
+    const material = surf('stone', p.look ?? look);
     if (!p.move) {
       b.mesh(geo, material, cx, cy, cz);
       b.cylinder(cx, cy, cz, th / 2, p.r);

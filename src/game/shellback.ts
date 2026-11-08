@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, type Physics } from '../core/physics';
-import { uniqueMat } from '../render/materials';
+import { uniqueSurf } from '../render/materials';
+import { faceted } from '../render/textures';
 import { GroundEnemy, type Attack, type EnemyEnv, type HurtResult } from './enemies';
 
 /** The charge: light, but it comes fast. */
@@ -47,10 +48,10 @@ export class Shellback extends GroundEnemy {
     this.lockHeight = 0.7;
     this.deathColor = 0x5b6470;
 
-    const shell = uniqueMat(0x5b6470), plate = uniqueMat(0x76808c), skin = uniqueMat(0xb7875a), soft = uniqueMat(0xd9a070);
+    const shell = uniqueSurf('scales', 0x5b6470), plate = uniqueSurf('rock', 0x76808c), skin = uniqueSurf('hide', 0xb7875a), soft = uniqueSurf('hide', 0xd9a070);
     this.flashMats.push(shell, plate, skin, soft);
     // A low dome with ridged plates on top; a pale, soft rump at the back.
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.95, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2), shell);
+    const dome = new THREE.Mesh(faceted(new THREE.SphereGeometry(0.95, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2)), shell);
     dome.scale.set(1, 0.7, 1.15);
     dome.position.y = 0.25;
     this.body.add(dome);
@@ -60,11 +61,11 @@ export class Shellback extends GroundEnemy {
       ridge.position.set(px, 0.25 + 0.6 * Math.sqrt(Math.max(0, 1 - (px * px) / 0.9 - (pz * pz) / 1.3)), pz);
       this.body.add(ridge);
     }
-    const rump = new THREE.Mesh(new THREE.SphereGeometry(0.42, 7, 5), soft);
+    const rump = new THREE.Mesh(faceted(new THREE.SphereGeometry(0.42, 7, 5)), soft);
     rump.scale.set(1.2, 0.8, 0.7);
     rump.position.set(0, 0.35, -0.95);
     this.body.add(rump);
-    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.45, 5), soft);
+    const tail = new THREE.Mesh(faceted(new THREE.ConeGeometry(0.16, 0.45, 5)), soft);
     tail.rotation.x = -Math.PI / 2 - 0.3;
     tail.position.set(0, 0.3, -1.35);
     this.body.add(tail);

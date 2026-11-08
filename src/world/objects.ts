@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, type RAPIER } from '../core/physics';
 import { buildHumanoid, type Humanoid, type HumanoidColors } from '../render/characters';
-import { fadeInFog, mat, uniqueMat, surf } from '../render/materials';
+import { fadeInFog, uniqueMat, uniqueSurf, surf } from '../render/materials';
 import { glow, GroundShadow, heartGeometry, shieldModel } from '../render/shapes';
 import { faceted } from '../render/textures';
 import type { AreaBuilder } from './area';
@@ -64,7 +64,7 @@ export class Chest {
   private openT = 0;
 
   constructor(b: AreaBuilder, readonly x: number, readonly z: number, y: number, yaw: number, readonly locked = false) {
-    const wood = surf('wood', 0x7a4a24), trim = surf('metal', 0xc9a227), dark = mat(0x3a2412);
+    const wood = surf('wood', 0x7a4a24), trim = surf('metal', 0xc9a227), dark = surf('wood', 0x3a2412);
     const base = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.95), wood);
     base.position.y = 0.4;
     const band = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 1.0), trim);
@@ -86,7 +86,7 @@ export class Chest {
     // The padlock hangs from the clasp on the front.
     const iron = surf('metal', 0x4a4d52);
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.12), iron);
-    const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.03, 4, 10, Math.PI), mat(0x4a4d52));
+    const shackle = new THREE.Mesh(faceted(new THREE.TorusGeometry(0.1, 0.03, 4, 10, Math.PI)), iron);
     shackle.position.y = 0.13;
     const hole = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.02), dark);
     hole.position.set(0, -0.02, 0.065);
@@ -146,7 +146,7 @@ export class HingedDoor {
     root.rotation.y = yaw;
     this.pivot.position.x = -width / 2;
     root.add(this.pivot);
-    const strap = mat(0x33200f);
+    const strap = surf('leather', 0x33200f);
     const part = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
       const me = new THREE.Mesh(geo, m);
       me.position.set(px + width / 2, py, pz);
@@ -156,7 +156,7 @@ export class HingedDoor {
     for (const side of [-1, 1]) {
       for (const px of [-width / 4, 0, width / 4]) part(new THREE.BoxGeometry(0.04, height, 0.02), strap, px, height / 2, side * 0.08);
       for (const py of [0.45, height - 0.35]) part(new THREE.BoxGeometry(width - 0.24, 0.08, 0.03), strap, 0, py, side * 0.085);
-      part(new THREE.SphereGeometry(0.07, 6, 5), mat(0xc9a227), width / 2 - 0.22, 1.1, side * 0.13);
+      part(faceted(new THREE.SphereGeometry(0.07, 6, 5)), surf('metal', 0xc9a227), width / 2 - 0.22, 1.1, side * 0.13);
     }
     b.dynamic(root);
     this.collider = b.box(x, y + height / 2, z, width / 2, height / 2, 0.1, yaw);
@@ -245,7 +245,7 @@ export class BushField {
   private readonly m = new THREE.Matrix4();
 
   constructor(b: AreaBuilder, spots: { x: number; y: number; z: number; rot: number }[]) {
-    this.mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.75, 0), mat(0x3f7d2e), spots.length);
+    this.mesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.75, 0), surf('foliage', 0x3f7d2e), spots.length);
     spots.forEach((s, i) => {
       this.items.push({ ...s, alive: true, regrow: 0, collider: b.ball(s.x, s.y + 0.1, s.z, 0.6, Layer.Prop) });
       this.place(i, true);
@@ -310,7 +310,7 @@ export class BossArena {
   private readonly walls: RAPIER.Collider[] = [];
   private readonly flameMat = fadeInFog(new THREE.MeshBasicMaterial({ color: 0x6fe8ff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
   private readonly ringMat = fadeInFog(new THREE.MeshBasicMaterial({ color: 0x3fb8e0, transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
-  private readonly lampMat = uniqueMat(0x1e2a30, { emissive: 0x000000 });
+  private readonly lampMat = uniqueSurf('metal', 0x1e2a30, { emissive: 0x000000 });
   private readonly group = new THREE.Group();
 
   constructor(b: AreaBuilder, readonly x: number, readonly z: number, readonly y: number, readonly radius: number, lamps: THREE.Vector3[]) {
@@ -395,7 +395,7 @@ export class HeartVessel {
   constructor(b: AreaBuilder, readonly x: number, readonly y: number, readonly z: number) {
     const heart = new THREE.Mesh(heartGeometry(0.22), uniqueMat(0xff3b5c, { emissive: 0x5a0d1a }));
     heart.scale.setScalar(1.6);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 6, 24), mat(0xe8c770));
+    const rim = new THREE.Mesh(faceted(new THREE.TorusGeometry(0.75, 0.05, 6, 24)), surf('metal', 0xe8c770));
     this.group.add(heart, rim, glow(0xff7a8a, 1.0, 0.18));
     this.group.position.set(x, y + 1.3, z);
     this.group.visible = false;
@@ -429,7 +429,7 @@ export class ShieldPickup {
   private t = 0;
 
   constructor(b: AreaBuilder, readonly x: number, readonly y: number, readonly z: number, yaw: number) {
-    const shield = shieldModel(mat(0x8b5a2b), mat(0x9a9fa6));
+    const shield = shieldModel(surf('wood', 0x8b5a2b), surf('metal', 0x9a9fa6));
     shield.rotation.x = -0.35; // leaning back, its foot on the floor
     shield.position.y = 0.42;
     this.glint = glow(0xfff1c0, 0.16, 0.6);
@@ -460,7 +460,7 @@ export class ShieldPickup {
  */
 export class GreatLantern {
   readonly mesh: THREE.Mesh;
-  private readonly material = uniqueMat(0x3a3a44, { emissive: 0x000000 });
+  private readonly material = uniqueSurf('metal', 0x3a3a44, { emissive: 0x000000 });
   private readonly halo: THREE.Mesh;
   private readonly light: THREE.PointLight;
   private embers = 0;

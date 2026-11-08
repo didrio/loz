@@ -10,10 +10,10 @@ import { mulberry32 } from '../core/math';
  */
 
 /** The tiles. Each is `size × size`, one byte a texel, mean about 128, and wraps seamlessly. */
-export type TileId = 'plaster' | 'stone' | 'planks' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch' | 'cloth';
+export type TileId = 'plaster' | 'stone' | 'planks' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch' | 'cloth' | 'leather' | 'hide' | 'scales' | 'skin';
 
 /** What a material can be made of: which tile on its tops and walls, and how hard it shows. */
-export type SurfaceId = 'plaster' | 'stone' | 'wood' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch' | 'cloth';
+export type SurfaceId = 'plaster' | 'stone' | 'wood' | 'shingle' | 'ground' | 'rock' | 'bark' | 'foliage' | 'metal' | 'thatch' | 'cloth' | 'leather' | 'hide' | 'scales' | 'skin';
 
 /**
  * Two separate ideas (owner's call, 2026-11-07):
@@ -62,13 +62,17 @@ export const SURFACES: Record<SurfaceId, SurfaceDef> = {
   metal: { top: 'metal', side: 'metal', strength: 0.4 },
   thatch: { top: 'thatch', side: 'thatch', strength: 0.5 },
   cloth: { top: 'cloth', side: 'cloth', strength: 0.35 },
+  leather: { top: 'leather', side: 'leather', strength: 0.4 },
+  hide: { top: 'hide', side: 'hide', strength: 0.4 },
+  scales: { top: 'scales', side: 'scales', strength: 0.45 },
+  skin: { top: 'skin', side: 'skin', strength: 0.3 },
 };
 
 /** The size a tile is drawn at, in pixels: the most detail it has. */
-export const TILE_SIZE: Record<TileId, number> = { plaster: 64, stone: 64, planks: 64, shingle: 64, ground: 128, rock: 64, bark: 64, foliage: 64, metal: 64, thatch: 64, cloth: 32 };
+export const TILE_SIZE: Record<TileId, number> = { plaster: 64, stone: 64, planks: 64, shingle: 64, ground: 128, rock: 64, bark: 64, foliage: 64, metal: 64, thatch: 64, cloth: 32, leather: 32, hide: 32, scales: 48, skin: 32 };
 
 /** How many metres of world one repeat of a tile covers: its authored scale. (Every tile is 32 texels a metre at full detail so far.) */
-export const TILE_METRES: Record<TileId, number> = { plaster: 2, stone: 2, planks: 2, shingle: 2, ground: 4, rock: 2, bark: 2, foliage: 2, metal: 2, thatch: 2, cloth: 1 };
+export const TILE_METRES: Record<TileId, number> = { plaster: 2, stone: 2, planks: 2, shingle: 2, ground: 4, rock: 2, bark: 2, foliage: 2, metal: 2, thatch: 2, cloth: 1, leather: 1, hide: 1, scales: 1.5, skin: 1 };
 
 /** A tile's pixel size at `texelsPerMetre`: never more than it was drawn with, never less than 1. */
 export function tileSizeAt(id: TileId, texelsPerMetre: number) {
@@ -353,7 +357,68 @@ function cloth(n: number, rnd: () => number) {
   return f;
 }
 
-const DRAW: Record<TileId, (n: number, rnd: () => number) => Float32Array> = { plaster, stone, planks, shingle, ground, rock, bark, foliage, metal, thatch, cloth };
+/** Leather: a pebbled grain, a few creases where it folds, and a stitched seam every half metre. */
+function leather(n: number, rnd: () => number) {
+  const grain = periodicNoise(n, 10, 10, rnd);
+  const soft = fbmTile(n, 3, 3, 2, rnd);
+  const f = new Float32Array(n * n);
+  for (let i = 0; i < f.length; i++) f[i] = 0.3 + grain[i] * 0.35 + soft[i] * 0.4;
+  for (let c = 0; c < 3; c++) { // creases: dark wandering lines across u
+    let y = Math.floor(rnd() * n);
+    for (let x = 0; x < n; x++) {
+      f[wrap(y, n) * n + x] -= 0.35;
+      if (rnd() < 0.3) y += rnd() < 0.5 ? -1 : 1;
+    }
+  }
+  const seam = n / 2;
+  for (let y = 0; y < n; y++) {
+    if (y % 4 < 2) f[y * n + 2] += 0.35; // a stitch every four texels, in a line
+    f[y * n + 3] -= 0.12;
+    f[y * n + seam] -= 0.2;
+  }
+  return f;
+}
+
+/** Hide: coarse, patchy, with short hair strokes running down (v) and a few darker patches and pale scars. */
+function hide(n: number, rnd: () => number) {
+  const patch = fbmTile(n, 3, 3, 3, rnd);
+  const hair = fbmTile(n, 16, 4, 2, rnd);
+  const f = new Float32Array(n * n);
+  for (let i = 0; i < f.length; i++) f[i] = patch[i] * 0.55 + hair[i] * 0.4 + (rnd() - 0.5) * 0.06;
+  for (let s = 0; s < 4; s++) { // pale scars
+    const sx = Math.floor(rnd() * n), sy = Math.floor(rnd() * n), len = 4 + Math.floor(rnd() * 4);
+    for (let k = 0; k < len; k++) f[wrap(sy + k, n) * n + wrap(sx + (k >> 1), n)] += 0.3;
+  }
+  return f;
+}
+
+/** Skin: soft mottling with a fine pore grain and a few freckles. Very gentle (a low `strength`): a face must never read as noisy. */
+function skin(n: number, rnd: () => number) {
+  const soft = fbmTile(n, 3, 3, 3, rnd);
+  const f = new Float32Array(n * n);
+  for (let i = 0; i < f.length; i++) f[i] = 0.4 + soft[i] * 0.45 + (rnd() - 0.5) * 0.12;
+  for (let c = 0; c < 9; c++) f[wrap(Math.floor(rnd() * n), n) * n + wrap(Math.floor(rnd() * n), n)] -= 0.35; // freckles
+  return f;
+}
+
+/** Scales: rows of overlapping rounded scales (8 × 6 texels), every other row shifted half a scale, each lit on top and dark at its lower edge. */
+function scales(n: number, rnd: () => number) {
+  const w = 8, h = 6;
+  const f = new Float32Array(n * n);
+  const tint = periodicNoise(n, n / w, n / h, rnd) // 6 × 8 lattice at n = 48;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const row = Math.floor(y / h), yy = y % h, xx = (x + (row % 2) * (w / 2)) % w;
+    let v = 0.5 + (tint[y * n + x] - 0.5) * 0.25 - yy * 0.03;
+    if (yy <= 1) v += 0.18; // the lit upper edge
+    if (xx === 0) v -= 0.22; // the overlap beside it
+    if (yy === h - 1) v -= 0.35; // the shadow under the lower edge
+    else if (yy === h - 2 && (xx === 0 || xx === w - 1)) v -= 0.3; // the rounded corners
+    f[y * n + x] = v + (rnd() - 0.5) * 0.04;
+  }
+  return f;
+}
+
+const DRAW: Record<TileId, (n: number, rnd: () => number) => Float32Array> = { plaster, stone, planks, shingle, ground, rock, bark, foliage, metal, thatch, cloth, leather, hide, scales, skin };
 
 /** A tile's bytes: the same for the same id and seed, on every load. */
 export function drawTile(id: TileId, seed = 1) {

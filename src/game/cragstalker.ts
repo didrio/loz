@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, type Physics } from '../core/physics';
-import { uniqueMat } from '../render/materials';
+import { uniqueSurf } from '../render/materials';
+import { faceted } from '../render/textures';
 import { GroundEnemy, type Attack, type EnemyEnv } from './enemies';
 
 /** The lunge: stone claws, heavy (the Stoneward Tunic halves it). */
@@ -51,7 +52,7 @@ export class Cragstalker extends GroundEnemy {
     this.lockHeight = 0.8;
     this.deathColor = 0x7d776c;
 
-    const rock = uniqueMat(0x7a7468), slab = uniqueMat(0x5f5a50), hide = uniqueMat(0xa9865a), belly = uniqueMat(0xc9a878);
+    const rock = uniqueSurf('rock', 0x7a7468), slab = uniqueSurf('rock', 0x5f5a50), hide = uniqueSurf('hide', 0xa9865a), belly = uniqueSurf('hide', 0xc9a878);
     this.flashMats.push(rock, slab, hide, belly);
     const add = (geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = this.body) => {
       const mesh = new THREE.Mesh(geo, m);
@@ -82,7 +83,7 @@ export class Cragstalker extends GroundEnemy {
       const leg = add(new THREE.BoxGeometry(0.2, 0.7, 0.24), hide, lx, 0.35, lz);
       this.legs.push(leg);
     }
-    const tail = add(new THREE.ConeGeometry(0.14, 1.0, 5), slab, 0, 0.85, -1.4);
+    const tail = add(faceted(new THREE.ConeGeometry(0.14, 1.0, 5)), slab, 0, 0.85, -1.4);
     tail.rotation.x = -Math.PI / 2 + 0.5;
     this.root.add(this.body);
     parent.add(this.root);

@@ -8,13 +8,13 @@ import { HingedDoor } from '../objects';
 
 /** A door the size of the mill's (1.44 × 2.3 m): a stone frame and lintel, plank door, straps and a knob. Faces +z in `g`. */
 function door(g: THREE.Group, z: number, wood: number, part: (geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number) => THREE.Mesh) {
-  const frame = surf('stone', 0x7d6e60), strap = mat(0x33200f);
+  const frame = surf('stone', 0x7d6e60), strap = surf('leather', 0x33200f);
   for (const s of [-1, 1]) part(new THREE.BoxGeometry(0.22, 2.5, 0.3), frame, s * 0.83, 1.25, z);
   part(new THREE.BoxGeometry(1.88, 0.3, 0.32), frame, 0, 2.55, z);
   part(new THREE.BoxGeometry(1.44, 2.26, 0.14), surf('wood', wood), 0, 1.27, z + 0.04);
   for (const px of [-0.36, 0, 0.36]) part(new THREE.BoxGeometry(0.04, 2.26, 0.16), strap, px, 1.27, z + 0.05);
   for (const py of [0.5, 2.0]) part(new THREE.BoxGeometry(1.2, 0.08, 0.17), strap, 0, py, z + 0.05);
-  part(new THREE.SphereGeometry(0.07, 6, 5), mat(0xc9a227), 0.5, 1.1, z + 0.14);
+  part(new THREE.SphereGeometry(0.07, 6, 5), surf('metal', 0xc9a227), 0.5, 1.1, z + 0.14);
   part(new THREE.BoxGeometry(2.0, 0.18, 0.8), surf('stone', 0x9a958c), 0, 0.09, z + 0.4);
 }
 
@@ -92,7 +92,7 @@ export function buildVillage(b: AreaBuilder) {
     // Herbs drying under the porch roof.
     for (const px of [-0.9, -0.55, 0.9]) {
       part(new THREE.BoxGeometry(0.03, 0.3, 0.03), beam, px, 2.55, 5.6);
-      part(new THREE.ConeGeometry(0.12, 0.32, 5), mat(px < 0 ? 0x6f8f3a : 0x9a7a3a), px, 2.25, 5.6).rotation.x = Math.PI;
+      part(new THREE.ConeGeometry(0.12, 0.32, 5), surf('foliage', px < 0 ? 0x6f8f3a : 0x9a7a3a), px, 2.25, 5.6).rotation.x = Math.PI;
     }
     // A woodpile against the east side wall.
     const log = surf('wood', 0x8a5a2b);
@@ -114,7 +114,7 @@ export function buildVillage(b: AreaBuilder) {
   b.mesh(new THREE.RingGeometry(1.15, 3.1, 12).rotateX(-Math.PI / 2), surf('stone', 0x8a857c), cx, y0 + 0.05, cz);
   b.mesh(new THREE.CylinderGeometry(1.4, 1.5, 1, 12, 1, true), stone, cx, y0 + 0.5, cz);
   b.mesh(new THREE.RingGeometry(1.12, 1.42, 12).rotateX(-Math.PI / 2), stone, cx, y0 + 1, cz);
-  b.mesh(new THREE.CylinderGeometry(1.15, 1.15, 3.6, 12, 1, true), uniqueMat(0x4a4640, { side: THREE.BackSide }), cx, y0 - 0.8, cz);
+  b.mesh(new THREE.CylinderGeometry(1.15, 1.15, 3.6, 12, 1, true), applySurface(uniqueMat(0x4a4640, { side: THREE.BackSide }), 'stone'), cx, y0 - 0.8, cz);
   b.mesh(new THREE.CircleGeometry(1.15, 12).rotateX(-Math.PI / 2), mat(0x0e1c26), cx, y0 - 2.5, cz);
   for (const s of [-1, 1]) b.mesh(new THREE.BoxGeometry(0.2, 2.4, 0.2), wood, cx + s * 1.2, y0 + 1.7, cz);
   b.mesh(new THREE.ConeGeometry(2, 1.1, 4), surf('shingle', 0xa5452f), cx, y0 + 3.3, cz).rotation.y = Math.PI / 4;
@@ -165,18 +165,18 @@ export function buildVillage(b: AreaBuilder) {
   };
   const { x: bdx, z: bdz } = MILL_BED;
   room(1.3, 0.45, 2.4, wood, bdx, 0, bdz, true);
-  room(1.1, 0.2, 2.2, mat(0xf0e8d8), bdx, 0.45, bdz);
-  room(1.14, 0.24, 1.4, mat(0xa5452f), bdx, 0.45, bdz - 0.4);
-  room(0.8, 0.16, 0.5, mat(0xfff8ec), bdx, 0.65, bdz + 0.8);
+  room(1.1, 0.2, 2.2, surf('cloth', 0xf0e8d8), bdx, 0.45, bdz);
+  room(1.14, 0.24, 1.4, surf('cloth', 0xa5452f), bdx, 0.45, bdz - 0.4);
+  room(0.8, 0.16, 0.5, surf('cloth', 0xfff8ec), bdx, 0.65, bdz + 0.8);
   room(1.3, 1.0, 0.12, wood, bdx, 0, bdz + 1.26);
   room(1.7, 0.1, 1.0, wood, 0.9, 0.85, -1.6);
   for (const [ex, ez] of [[-0.75, -0.4], [0.75, -0.4], [-0.75, 0.4], [0.75, 0.4]]) room(0.1, 0.85, 0.1, surf('wood', 0x6d5236), 0.9 + ex, 0, -1.6 + ez);
   b.box(wx + 0.9, wy + 0.45, wz - 1.6, 0.9, 0.45, 0.55, 0, Layer.Prop);
   for (const ex of [-1.3, 1.3]) b.mesh(new THREE.CylinderGeometry(0.25, 0.28, 0.45, 8), wood, wx + 0.9 + ex, wy + 0.23, wz - 1.6);
   room(1.4, 1.5, 1.0, surf('stone', 0x7d7468), -1.0, 0, -3.0, true);
-  room(1.0, 0.1, 0.7, mat(0xe8a24a), -1.0, 1.5, -3.0);
+  room(1.0, 0.1, 0.7, surf('cloth', 0xe8a24a), -1.0, 1.5, -3.0);
   room(1.2, 0.08, 0.35, wood, -0.8, 1.4, 3.4);
-  [0xb4532a, 0x4f7d4a, 0xd9a531].forEach((c, i) => b.mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.32, 7), mat(c), wx - 1.2 + i * 0.4, wy + 1.6, wz + 3.4));
+  [0xb4532a, 0x4f7d4a, 0xd9a531].forEach((c, i) => b.mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.32, 7), surf('plaster', c), wx - 1.2 + i * 0.4, wy + 1.6, wz + 3.4));
   for (const [ex, ez] of [[2.2, 2.4], [1.2, 2.8], [0.2, 3.2]]) {
     b.mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.8, 8), surf('cloth', 0xe2d6bf), wx + ex, wy + 0.4, wz + ez);
     b.cylinder(wx + ex, wy + 0.4, wz + ez, 0.4, 0.5, Layer.Prop);
@@ -190,7 +190,7 @@ export function buildVillage(b: AreaBuilder) {
   const blades = new THREE.Group();
   const hub = outerAt(9.5) + 0.9;
   blades.position.set(wx + hub, wy + 9.5, wz);
-  const sail = mat(0xf2ead8), sailFrame = surf('wood', 0x5e3d20);
+  const sail = surf('cloth', 0xf2ead8), sailFrame = surf('wood', 0x5e3d20);
   const axle = b.mesh(new THREE.CylinderGeometry(0.25, 0.25, 1.6, 6), sailFrame, wx + hub - 0.8, wy + 9.5, wz);
   axle.rotation.z = Math.PI / 2;
   for (let i = 0; i < 4; i++) {
@@ -220,10 +220,10 @@ export function buildVillage(b: AreaBuilder) {
     b.mesh(new THREE.BoxGeometry(3.4, 0.12, 3.2), cloth, sx - 0.65, sy + 2.95, sz);
     for (const dz of [-1.0, 0, 1.0]) b.mesh(new THREE.BoxGeometry(3.42, 0.13, 0.4), stripe, sx - 0.65, sy + 2.96, sz + dz);
     // Wares: a folded slate-blue tunic, jars and a loaf.
-    b.mesh(new THREE.BoxGeometry(0.5, 0.14, 0.6), mat(0x6b8296), sx, sy + 1.14, sz - 0.7);
-    b.mesh(new THREE.BoxGeometry(0.46, 0.1, 0.56), mat(0x7d93a6), sx, sy + 1.26, sz - 0.7);
+    b.mesh(new THREE.BoxGeometry(0.5, 0.14, 0.6), surf('cloth', 0x6b8296), sx, sy + 1.14, sz - 0.7);
+    b.mesh(new THREE.BoxGeometry(0.46, 0.1, 0.56), surf('cloth', 0x7d93a6), sx, sy + 1.26, sz - 0.7);
     for (const [dz, c] of [[0.1, 0xb4532a], [0.45, 0x4f7d4a], [0.8, 0xd9a531]] as const) {
-      b.mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.3, 7), mat(c), sx, sy + 1.2, sz + dz);
+      b.mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.3, 7), surf('plaster', c), sx, sy + 1.2, sz + dz);
     }
   }
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Layer, type Physics } from '../core/physics';
+import { uniqueSurf } from '../render/materials';
 import type { Particles } from '../render/particles';
 import { glow, GroundShadow } from '../render/shapes';
 import type { Attack, HitResult } from './enemies';
@@ -154,7 +155,7 @@ export class Hazards {
    * (blockable, light). It can be caught mid-air with the glove (`tetherStone`).
    */
   stone(from: THREE.Vector3, o: StoneOptions = {}) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), new THREE.MeshLambertMaterial({ color: 0x8f887c, emissive: 0x0d3a33 }));
+    const mesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.58, 0), uniqueSurf('rock', 0x8f887c, { emissive: 0x0d3a33 })); // a boulder like the overworld's, about as big as the block it replaced
     mesh.position.copy(from);
     this.scene.add(mesh);
     this.stones.push({

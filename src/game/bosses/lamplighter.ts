@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { clamp, damp, easeOut, mix } from '../../core/math';
 import { Layer, type Physics } from '../../core/physics';
-import { mat, uniqueMat } from '../../render/materials';
+import { uniqueMat, uniqueSurf } from '../../render/materials';
+import { faceted } from '../../render/textures';
 import { glow } from '../../render/shapes';
 import type { BossArena } from '../../world/objects';
 import { Boss, type Move } from '../boss';
@@ -139,12 +140,12 @@ export class HollowLamplighter extends Boss {
     this.lockHeight = 2.6;
 
     // Its own materials (not the shared palette), so the hit flash and guard tint touch only it.
-    const cloth = [uniqueMat(0x1c1a22), uniqueMat(0x23202a), uniqueMat(0x17151c)];
-    const bone = uniqueMat(0xd9d2bf), iron = uniqueMat(0x2a2c31), wood = uniqueMat(0x2e241c), dark = uniqueMat(0x0c0b0e);
-    const maskMat = uniqueMat(0xe9e4d4);
-    this.flashMats.push(...cloth, bone, iron, wood, dark, maskMat);
+    const cloth = [uniqueSurf('cloth', 0x1c1a22), uniqueSurf('cloth', 0x23202a), uniqueSurf('cloth', 0x17151c)];
+    const bone = uniqueSurf('plaster', 0xd9d2bf), iron = uniqueSurf('metal', 0x2a2c31), wood = uniqueSurf('wood', 0x2e241c), dark = uniqueMat(0x0c0b0e);
+    const maskMat = uniqueSurf('plaster', 0xe9e4d4), wax = uniqueSurf('plaster', 0xe8dfc4);
+    this.flashMats.push(...cloth, bone, iron, wood, dark, maskMat, wax);
     const add = (parentNode: THREE.Object3D, geo: THREE.BufferGeometry, material: THREE.Material, x = 0, y = 0, z = 0) => {
-      const m = new THREE.Mesh(geo, material);
+      const m = new THREE.Mesh(material.userData.surface ? faceted(geo) : geo, material); // a textured tile needs each face's own normal
       m.position.set(x, y, z);
       parentNode.add(m);
       return m;
@@ -231,7 +232,7 @@ export class HollowLamplighter extends Boss {
 
     // Two candle stubs burning on its left shoulder: the only warm light on it.
     for (const [x, h, z] of [[0.38, 0.22, -0.12], [0.5, 0.14, 0.04]]) {
-      add(this.torso, new THREE.CylinderGeometry(0.035, 0.04, h, 6), mat(0xe8dfc4), x, 1.62 + h / 2, z);
+      add(this.torso, new THREE.CylinderGeometry(0.035, 0.04, h, 6), wax, x, 1.62 + h / 2, z);
       const f = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.09, 5), new THREE.MeshBasicMaterial({ color: 0xffb347 }));
       f.position.set(x, 1.62 + h + 0.05, z);
       this.torso.add(f);

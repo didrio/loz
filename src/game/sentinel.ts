@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import type { Physics } from '../core/physics';
-import { uniqueMat } from '../render/materials';
+import { uniqueSurf } from '../render/materials';
 import { GroundEnemy, type Attack, type EnemyEnv, type HurtResult } from './enemies';
 
 /** The two-handed maul: heavy on the guard (block one, then back off and lower the shield). */
@@ -60,7 +60,7 @@ export class DozingSentinel extends GroundEnemy {
     this.deathColor = 0xb3a68a;
     this.yaw = facing;
 
-    const stone = uniqueMat(0xa39880), dark = uniqueMat(0x7d735f), maulMat = uniqueMat(0x6b6253);
+    const stone = uniqueSurf('stone', 0xa39880), dark = uniqueSurf('stone', 0x7d735f), maulMat = uniqueSurf('rock', 0x6b6253);
     this.flashMats.push(stone, dark, maulMat);
     const box = (w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number, into: THREE.Object3D) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);

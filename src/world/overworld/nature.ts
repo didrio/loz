@@ -125,7 +125,7 @@ export function buildGrass(b: AreaBuilder) {
       flowerC.push(new THREE.Color(petal));
     }
   }
-  instanced(b, new THREE.ConeGeometry(0.18, 0.6, 3), mat(0xffffff), tufts, tuftC);
+  instanced(b, faceted(new THREE.ConeGeometry(0.18, 0.6, 3)), surf('foliage', 0xffffff), tufts, tuftC);
   instanced(b, new THREE.OctahedronGeometry(0.12), mat(0xffffff), flowers, flowerC);
 }
 

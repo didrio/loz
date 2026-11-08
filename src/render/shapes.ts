@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { fadeInFog } from './materials';
+import { faceted } from './textures';
 
 /** A chunky extruded heart, centered on the origin (about 0.7 m wide at scale 1). */
 export function heartGeometry(depth = 0.12) {
@@ -20,9 +21,9 @@ export function heartGeometry(depth = 0.12) {
  */
 export function shieldModel(wood: THREE.Material, iron: THREE.Material) {
   const g = new THREE.Group();
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.08, 12), wood);
+  const disc = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.42, 0.42, 0.08, 12)), wood);
   disc.rotation.x = Math.PI / 2;
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.04, 4, 16), iron);
+  const rim = new THREE.Mesh(faceted(new THREE.TorusGeometry(0.42, 0.04, 4, 16)), iron);
   const boss = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5), iron);
   boss.position.z = 0.05;
   g.add(disc, rim, boss);

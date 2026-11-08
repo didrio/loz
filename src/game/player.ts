@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { clamp, damp, easeOut, lerpAngle, mix } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
 import { buildHumanoid, type Humanoid } from '../render/characters';
-import { isSharedMaterial, mat, uniqueMat } from '../render/materials';
+import { cloneMaterial, isSharedMaterial, surf, uniqueSurf } from '../render/materials';
+import { faceted } from '../render/textures';
 import { GroundShadow, shieldModel } from '../render/shapes';
 import type { LockTarget } from './lockon';
 import type { Area } from '../world/area';
@@ -169,9 +170,9 @@ export class Player {
   private readonly trail: THREE.Mesh;
   private readonly trailPivot = new THREE.Group();
   /** The shield's wood; flashes red while the guard is broken. */
-  private readonly shieldMat = uniqueMat(0x8b5a2b);
+  private readonly shieldMat = uniqueSurf('wood', 0x8b5a2b);
   /** The blade, its own material so it can glow while an Ember Tonic is active. */
-  private readonly bladeMat = uniqueMat(0xd8dde3, { emissive: 0x000000 });
+  private readonly bladeMat = uniqueSurf('metal', 0xd8dde3, { emissive: 0x000000 });
   /** Seconds left of an Ember Tonic (the sword hits harder meanwhile). */
   attackBoost = 0;
   /** Seconds left of a glove throw: the arm is out, no sword or shield until it's back. */
@@ -182,14 +183,14 @@ export class Player {
   /** The blob under Wren's feet: how far above the ground she is matters most when platforming. */
   private readonly shadow: GroundShadow;
   private fadeMats: THREE.Material[] | null = null;
-  private readonly coatMat = uniqueMat(COAT);
+  private readonly coatMat = uniqueSurf('cloth', COAT);
   /** Wearing the Stoneward Tunic: stone hits do half damage (rounded up). */
   private stoneward = false;
 
   constructor(scene: THREE.Scene, private readonly physics: Physics, private readonly health: Health) {
     this.h = buildHumanoid({ skin: 0xf0c49c, hair: 0x2e2018, coat: COAT, pants: 0x4a4038, boots: 0x5a3a22, accent: 0x2aa198 });
     // The tunic gets its own material, so buying the Stoneward Tunic can recolor it.
-    const shared = mat(COAT);
+    const shared = surf('cloth', COAT);
     this.h.root.traverse((m) => {
       if (m instanceof THREE.Mesh && m.material === shared) m.material = this.coatMat;
     });
@@ -198,15 +199,15 @@ export class Player {
     this.body = physics.createCharacter(this.pos, this.radius, 0.5, Layer.Player, SOLID | Layer.Enemy);
 
     // Sword in the right hand, blade continuing the line of the arm.
-    const steel = mat(0xd8dde3), gold = mat(0xc9a227), grip = mat(0x3a2412);
+    const steel = surf('metal', 0xd8dde3), gold = surf('metal', 0xc9a227), grip = surf('leather', 0x3a2412);
     const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.05, 0.03), this.bladeMat);
     blade.position.y = -0.78;
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.057, 0.18, 4), steel);
+    const tip = new THREE.Mesh(faceted(new THREE.ConeGeometry(0.057, 0.18, 4)), steel);
     tip.rotation.x = Math.PI;
     tip.position.y = -1.39;
     const guard = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 0.1), gold);
     guard.position.y = -0.22;
-    const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.24, 6), grip);
+    const hilt = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.04, 0.04, 0.24, 6)), grip);
     hilt.position.y = -0.08;
     this.sword.add(blade, tip, guard, hilt);
     this.sword.position.y = -0.62;
@@ -214,7 +215,7 @@ export class Player {
     this.h.armR.add(this.sword);
 
     // A round wooden shield on the left arm (its face is local +z; `animate` sets the pose).
-    this.shield.add(shieldModel(this.shieldMat, mat(0x9a9fa6)));
+    this.shield.add(shieldModel(this.shieldMat, surf('metal', 0x9a9fa6)));
     this.shield.position.copy(SHIELD_REST_POS);
     this.shield.visible = false;
     this.h.armL.add(this.shield);
@@ -259,7 +260,7 @@ export class Player {
         const src = m.material as THREE.Material;
         let own = copies.get(src);
         if (!own) {
-          own = isSharedMaterial(src) ? src.clone() : src;
+          own = isSharedMaterial(src) ? cloneMaterial(src) : src;
           own.alphaHash = true;
           own.needsUpdate = true;
           copies.set(src, own);

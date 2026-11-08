@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { mat, uniqueMat } from '../../render/materials';
+import { surf, uniqueMat } from '../../render/materials';
+import { faceted } from '../../render/textures';
 import type { AreaBuilder } from '../area';
 import { SCARS, scarAt, scarLine, terrainHeight, THORN_SPREAD, thornClusters } from './layout';
 
@@ -63,7 +64,7 @@ export function buildBlightGrowths(b: AreaBuilder, rand: () => number) {
     clusters.push({ id: c.id, x: c.x, y, z: c.z, r: THORN_SPREAD, height, hp: THORN_HP });
   }
 
-  const mesh = new THREE.InstancedMesh(new THREE.ConeGeometry(0.6, THORN_H, 5).translate(0, THORN_H / 2, 0), mat(0xffffff, 0x1c0f2a), bases.length);
+  const mesh = new THREE.InstancedMesh(faceted(new THREE.ConeGeometry(0.6, THORN_H, 5).translate(0, THORN_H / 2, 0)), surf('bark', 0xffffff, 0x1c0f2a), bases.length);
   colors.forEach((c, i) => mesh.setColorAt(i, c));
   b.dynamic(mesh);
   const scars = buildScars(b);

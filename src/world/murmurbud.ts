@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { damp } from '../core/math';
 import { Layer } from '../core/physics';
-import { mat, uniqueMat } from '../render/materials';
+import { surf, uniqueSurf } from '../render/materials';
+import { faceted } from '../render/textures';
 import { glow } from '../render/shapes';
 import type { AreaBuilder, Interactable } from './area';
 
@@ -31,7 +32,7 @@ export class MurmurbudLook {
   readonly interactable: Interactable;
   private readonly motes: { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial }[] = [];
   private readonly bulb = new THREE.Group();
-  private readonly shellMat = uniqueMat(0x8a8f86, { emissive: 0x000000 });
+  private readonly shellMat = uniqueSurf('rock', 0x8a8f86, { emissive: 0x000000 });
   private readonly petals: THREE.Mesh[] = [];
   private readonly note: THREE.Group;
   private growth = 0;
@@ -42,10 +43,10 @@ export class MurmurbudLook {
 
   constructor(b: AreaBuilder, readonly id: string, readonly x: number, readonly y: number, readonly z: number) {
     // The leaf collar stays put; the bulb swells inside it.
-    const leaf = mat(0x4f7d3a);
+    const leaf = surf('foliage', 0x4f7d3a);
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2;
-      const l = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.9, 4), leaf);
+      const l = new THREE.Mesh(faceted(new THREE.ConeGeometry(0.22, 0.9, 4)), leaf);
       l.position.set(Math.cos(a) * 0.38, 0.25, Math.sin(a) * 0.38);
       l.rotation.set(Math.sin(a) * 1.05, 0, -Math.cos(a) * 1.05);
       this.group.add(l);
@@ -57,17 +58,17 @@ export class MurmurbudLook {
       hinge.rotation.y = a;
       // A wedge of shell centred on the hinge's -X side, so tilting the hinge about Z peels it outward.
       const w = (Math.PI * 2) / PETALS + 0.08;
-      const p = new THREE.Mesh(new THREE.SphereGeometry(0.5, 6, 5, -w / 2, w, 0, Math.PI * 0.62), this.shellMat);
+      const p = new THREE.Mesh(faceted(new THREE.SphereGeometry(0.5, 6, 5, -w / 2, w, 0, Math.PI * 0.62)), this.shellMat);
       p.position.y = -0.05;
       hinge.add(p);
       this.bulb.add(hinge);
       this.petals.push(p);
     }
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.36, 5), this.shellMat);
+    const tip = new THREE.Mesh(faceted(new THREE.ConeGeometry(0.17, 0.36, 5)), this.shellMat);
     tip.position.y = 0.48;
     tip.name = 'tip';
     this.bulb.add(tip);
-    const base = new THREE.Mesh(new THREE.SphereGeometry(0.48, 6, 4, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45), this.shellMat);
+    const base = new THREE.Mesh(faceted(new THREE.SphereGeometry(0.48, 6, 4, 0, Math.PI * 2, Math.PI * 0.55, Math.PI * 0.45)), this.shellMat);
     base.position.y = -0.05;
     this.bulb.add(base);
     this.bulb.position.y = 0.45;
@@ -75,9 +76,9 @@ export class MurmurbudLook {
 
     // The rolled note inside, with a faint glow; shown when it opens.
     this.note = new THREE.Group();
-    const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.5, 7), mat(0xeadfc0));
+    const roll = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.09, 0.09, 0.5, 7)), surf('cloth', 0xeadfc0));
     roll.rotation.z = Math.PI / 2;
-    const tie = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 7), mat(0x9c3b2b));
+    const tie = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 7)), surf('cloth', 0x9c3b2b));
     tie.rotation.z = Math.PI / 2;
     this.note.add(roll, tie, glow(0xffe8a8, 0.38, 0.14));
     this.note.position.y = 0.85;

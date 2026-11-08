@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { mat } from './materials';
+import { mat, surf } from './materials';
+import { faceted } from './textures';
 
 export interface HumanoidColors {
   skin: number;
@@ -25,10 +26,10 @@ export interface Humanoid {
 }
 
 export function buildHumanoid(c: HumanoidColors, scale = 1): Humanoid {
-  const m = mat;
-  const coat = m(c.coat), skin = m(c.skin), hair = m(c.hair);
-  const pants = m(c.pants), boots = m(c.boots), accent = m(c.accent);
-  const dark = m(0x1b1410);
+  // Clothes are cloth, boots and belt leather, skin and hair have their own tiles; only the eyes stay plain (T41, and the owner's follow-up). Textured pieces are `faceted`
+  // (a cylinder, sphere or torus needs its faces' own normals to project a tile); boxes don't.
+  const coat = surf('cloth', c.coat), pants = surf('cloth', c.pants), accent = surf('cloth', c.accent), boots = surf('leather', c.boots);
+  const skin = surf('skin', c.skin), hair = surf('hide', c.hair), dark = mat(0x1b1410);
 
   const root = new THREE.Group();
   const pivot = new THREE.Group();
@@ -55,10 +56,10 @@ export function buildHumanoid(c: HumanoidColors, scale = 1): Humanoid {
   const legL = leg(0.14);
   const legR = leg(-0.14);
 
-  body.add(mesh(new THREE.CylinderGeometry(0.31, 0.42, 0.75, 8), coat, 0, 1.2, 0));
-  body.add(mesh(new THREE.CylinderGeometry(0.43, 0.52, 0.3, 8), coat, 0, 0.78, 0));
-  body.add(mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.09, 8), boots, 0, 0.97, 0));
-  const scarf = mesh(new THREE.TorusGeometry(0.25, 0.09, 6, 10), accent, 0, 1.58, 0);
+  body.add(mesh(faceted(new THREE.CylinderGeometry(0.31, 0.42, 0.75, 8)), coat, 0, 1.2, 0));
+  body.add(mesh(faceted(new THREE.CylinderGeometry(0.43, 0.52, 0.3, 8)), coat, 0, 0.78, 0));
+  body.add(mesh(faceted(new THREE.CylinderGeometry(0.44, 0.44, 0.09, 8)), boots, 0, 0.97, 0));
+  const scarf = mesh(faceted(new THREE.TorusGeometry(0.25, 0.09, 6, 10)), accent, 0, 1.58, 0);
   scarf.rotation.x = Math.PI / 2;
   body.add(scarf);
   const tail = mesh(new THREE.BoxGeometry(0.16, 0.45, 0.06), accent, 0.1, 1.38, -0.3);
@@ -70,7 +71,7 @@ export function buildHumanoid(c: HumanoidColors, scale = 1): Humanoid {
     g.position.set(x, 1.5, 0);
     g.rotation.order = 'YXZ';
     g.add(mesh(new THREE.BoxGeometry(0.18, 0.6, 0.18), coat, 0, -0.3, 0));
-    g.add(mesh(new THREE.SphereGeometry(0.11, 6, 5), skin, 0, -0.65, 0));
+    g.add(mesh(faceted(new THREE.SphereGeometry(0.11, 6, 5)), skin, 0, -0.65, 0));
     body.add(g);
     return g;
   };
@@ -79,8 +80,8 @@ export function buildHumanoid(c: HumanoidColors, scale = 1): Humanoid {
 
   const head = new THREE.Group();
   head.position.y = 1.88;
-  head.add(mesh(new THREE.SphereGeometry(0.3, 10, 8), skin));
-  const cap = mesh(new THREE.SphereGeometry(0.33, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), hair, 0, 0.03, -0.03);
+  head.add(mesh(faceted(new THREE.SphereGeometry(0.3, 10, 8)), skin));
+  const cap = mesh(faceted(new THREE.SphereGeometry(0.33, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55)), hair, 0, 0.03, -0.03);
   cap.rotation.x = -0.35;
   head.add(cap);
   head.add(mesh(new THREE.BoxGeometry(0.06, 0.09, 0.03), dark, 0.11, 0.0, 0.28));

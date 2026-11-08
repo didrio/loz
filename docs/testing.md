@@ -114,6 +114,8 @@ another one. Add a new fixture only when a scenario needs a state no fixture has
 
 Tests live next to their modules (`*.test.ts`).
 
+- `world/texturesEverywhere.test.ts` builds the valley, the Northpass and the shrine and fails on any plain (untextured) static mesh that isn't glowing, a void or tiny (engine.md "Everything is textured unless justified"); `game/livingTextures.test.ts` does the same for people, enemies and bosses (every curved textured piece must be `faceted`).
+
 - `content/fakeApi.ts` is the shared fake `ScriptApi` for content tests: everything
   resolves instantly and what scripts do is recorded (said, queued `run`s, enemies,
   travel).

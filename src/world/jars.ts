@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Layer } from '../core/physics';
-import { mat } from '../render/materials';
+import { surf } from '../render/materials';
+import { faceted } from '../render/textures';
 import type { AreaBuilder } from './area';
 
 /** What a jar holds: nothing, a blue gem (5 gems), a heart, or Pip's doll (a story script, `jar.doll`). */
@@ -28,17 +29,17 @@ export class JarField {
   private readonly items: Jar[] = [];
 
   constructor(b: AreaBuilder, spots: JarSpot[]) {
-    const clay = mat(0xa8683a), dark = mat(0x7a4a2a);
+    const clay = surf('plaster', 0xa8683a), dark = surf('plaster', 0x7a4a2a);
     for (const s of spots) {
       const g = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), clay);
+      const body = new THREE.Mesh(faceted(new THREE.SphereGeometry(0.4, 8, 6)), clay);
       body.scale.set(1, 1.15, 1);
       body.position.y = 0.46;
-      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.2, 8), clay);
+      const neck = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.2, 0.26, 0.2, 8)), clay);
       neck.position.y = 0.95;
-      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.07, 8), dark);
+      const rim = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.27, 0.27, 0.07, 8)), dark);
       rim.position.y = 1.08;
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.405, 0.405, 0.07, 8), dark);
+      const band = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.405, 0.405, 0.07, 8)), dark);
       band.position.y = 0.5;
       for (const m of [body, neck, rim, band]) {
         g.add(m);

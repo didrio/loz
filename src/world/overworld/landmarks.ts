@@ -66,7 +66,7 @@ export function buildGrove(b: AreaBuilder) {
 export function buildShrine(b: AreaBuilder) {
   const { x, z } = SHRINE;
   const y = 9;
-  const stone = surf('stone', 0x8f8a80), dark = surf('stone', 0x5e5a53), moss = mat(0x5d7d3c);
+  const stone = surf('stone', 0x8f8a80), dark = surf('stone', 0x5e5a53), moss = surf('foliage', 0x5d7d3c);
   b.mesh(new THREE.BoxGeometry(7, 7, 10), stone, x + 0.5, y + 3.3, z);
   b.mesh(new THREE.BoxGeometry(8, 0.8, 11), dark, x + 0.5, y + 7.1, z);
   const roof = b.mesh(new THREE.ConeGeometry(5.4, 3.5, 4), dark, x + 0.5, y + 9.2, z);
@@ -108,7 +108,7 @@ export function buildShrine(b: AreaBuilder) {
  */
 export function buildSign(b: AreaBuilder, x: number, z: number) {
   const y = terrainHeight(x, z);
-  const wood = surf('wood', 0xb07a44, 0x6a4824), dark = surf('wood', 0x8a5e34, 0x4a3016), paper = mat(0xfaf0d2, 0xbeb28c), ink = mat(0x3a2a1e), seal = mat(0xc23b2a, 0x5a1a10);
+  const wood = surf('wood', 0xb07a44, 0x6a4824), dark = surf('wood', 0x8a5e34, 0x4a3016), paper = surf('plaster', 0xfaf0d2, 0xbeb28c), ink = mat(0x3a2a1e), seal = mat(0xc23b2a, 0x5a1a10);
   // (Emissive, because a sign faces the spawn, often away from the sun, and would sit in gloom.)
   const g = new THREE.Group();
   g.position.set(x, y, z);

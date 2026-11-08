@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { angleDiff } from '../../core/math';
 import { Layer } from '../../core/physics';
-import { mat, surf } from '../../render/materials';
+import { surf } from '../../render/materials';
+import { faceted } from '../../render/textures';
 import type { AreaBuilder } from '../area';
 import { HOLLOW, HOLLOW_ENTRANCE, regionRng, terrainHeight } from './layout';
 
@@ -66,7 +67,7 @@ export function buildHollow(b: AreaBuilder) {
     tufts.push(new THREE.Matrix4().compose(new THREE.Vector3(x, terrainHeight(x, z) + 0.22 * s, z), q, new THREE.Vector3(s, s, s)));
     colors.push(new THREE.Color().setHSL(0.11 + rand() * 0.05, 0.12 + rand() * 0.1, 0.3 + rand() * 0.12));
   }
-  const grass = new THREE.InstancedMesh(new THREE.ConeGeometry(0.16, 0.6, 3), mat(0xffffff), tufts.length);
+  const grass = new THREE.InstancedMesh(faceted(new THREE.ConeGeometry(0.16, 0.6, 3)), surf('foliage', 0xffffff), tufts.length);
   tufts.forEach((m, i) => grass.setMatrixAt(i, m));
   colors.forEach((c, i) => grass.setColorAt(i, c));
   b.dynamic(grass);

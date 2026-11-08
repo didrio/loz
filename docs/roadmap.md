@@ -20,7 +20,7 @@ when it's near.
 - **The N64 look rebuild** (owner, 2026-11-07; replaces the shelved PS2 "look pass", old T20–T26 in git history): the
   starter zone rebuilt on the new pipeline ([art.md](art.md), [pipeline.md](pipeline.md)) before any new area. Behaviour
   never changes. In order, each written as a ticket when it's near (at the previous one's `/wrap`):
-  1. **Foundations:** T32–T43 in [tickets.md](tickets.md) (T27–T31 are done: look loop, Display setting, palette, shading and textures, atmosphere and blob shadows; T40 and T43 textured the static world; T41 does the living).
+  1. **Foundations:** T32–T39 in [tickets.md](tickets.md) (T27–T31 are done: look loop, Display setting, palette, shading and textures, atmosphere and blob shadows; T40 and T43 textured the static world; T41 the living).
   2. **The golden set**, one Final-pass ticket each, locked only when the owner approves (the first ones
      plan · opusplan · high, as they define the style): a Thornling → Wren with her full animation set → the starter-area
      entrance vignette (phone frame rate checked) → the prop set (chest from T35, door, jar, crate, sign) → Pip → the Hollow
@@ -31,14 +31,14 @@ when it's near.
      props, interactables and pickups (doors, wakestones, switches, plates, jars, signs, keys, hearts, gems, the bells and
      posts, the doll, the glove, the shield, the Heart Vessel, the prism); each valley sub-region with its atmosphere
      (Thistledown and the mill, the ruins, the grove and bridge, the hollow, the gorge, the camp and the Northpass, the
-     blight's thorns), texturing what isn't yet (T41) and the de-uniforming jitter (old T20); the shrine's rooms
+     blight's thorns), the de-uniforming jitter (old T20); the shrine's rooms
      in groups; water with a ripple and shore band (old T24); the UI on every screen (HUD, pause, title, file select).
   4. **The phone performance pass:** the owner reads `?debug` (fps, draw calls) on a real mid-range phone at set spots;
      merging and instancing fixes; scene budgets written into art.md; the Performance cap tuned from the numbers.
   5. **The parity sweep:** the registry shows no `rough` assets, nothing uses the old materials, UI or unprocessed audio,
      the full smoke and look suites pass, and a complete playthrough (start to the Waybell, every quest, puzzle, enemy and
      boss) behaves as before. Then the starter zone is a candidate for the public demo.
-  Sallowmere and Stiltwick get the global changes for free and their final passes after the owner's redesign.
+  Sallowmere and Stiltwick get the global changes (palette, atmosphere, shadows) for free, but their ~480 plain pieces need texturing (`surf`) and their final passes after the owner's redesign; add them to `world/texturesEverywhere.test.ts` then.
 - **Optional, any time:** the Glimmer Lake grotto (the glove pulls a half-sunk wakestone; shrine.md).
 - **Later (owner's asks):** an SFX pass; the rescue quests for Maren, Tobin and Odo (major story
   quests out in the world, Odo back at his stall, the kids' lines changing with them;

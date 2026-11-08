@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { uniqueMat } from '../../../render/materials';
+import { uniqueMat, uniqueSurf } from '../../../render/materials';
 import { glow } from '../../../render/shapes';
 
 /**
@@ -78,7 +78,7 @@ export class GravelheartRig {
   /** Every material that should flash on a hit. */
   readonly flashMats: THREE.MeshLambertMaterial[];
   /** The keystone's face: glows teal when it is loose (the glove can pull it). */
-  readonly keyMat = uniqueMat(0xa9a293, { emissive: 0x000000 });
+  readonly keyMat = uniqueSurf('stone', 0xa9a293, { emissive: 0x000000 });
   /** Roll angle of the whole body about its hips (Cairn Roll sets it directly, no blending). */
   spin = 0;
   readonly eyeMat = uniqueMat(0x0a0908, { emissive: 0x000000 });
@@ -90,7 +90,7 @@ export class GravelheartRig {
   private t = 0;
 
   constructor(root: THREE.Group) {
-    const stone = uniqueMat(0x8f887c), dark = uniqueMat(0x5f5850), pale = uniqueMat(0xa9a293), teal = uniqueMat(0x2f8a7a, { emissive: 0x0d3a33 });
+    const stone = uniqueSurf('rock', 0x8f887c), dark = uniqueSurf('rock', 0x5f5850), pale = uniqueSurf('rock', 0xa9a293), teal = uniqueMat(0x2f8a7a, { emissive: 0x0d3a33 });
     this.flashMats = [stone, dark, pale, teal, this.keyMat];
     const add = (parent: THREE.Object3D, geo: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0) => {
       const mesh = new THREE.Mesh(geo, m);
@@ -138,7 +138,7 @@ export class GravelheartRig {
     for (let i = 0; i < 3; i++) {
       const plate = new THREE.Group();
       plate.position.set((i - 1) * 0.5, 1.15, 0.86);
-      const m = uniqueMat(0x9b9486, { emissive: 0x000000 });
+      const m = uniqueSurf('stone', 0x9b9486, { emissive: 0x000000 });
       this.plateMats.push(m);
       this.flashMats.push(m);
       const slab = add(plate, block(0.5, 1.45, 0.22), m);
