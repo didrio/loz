@@ -44,8 +44,8 @@
     "triangles": 195000
   },
   "choice": {
-    "calls": 900,
-    "triangles": 266000
+    "calls": 700,
+    "triangles": 228000
   },
   "contact": {
     "calls": 390,
@@ -108,8 +108,8 @@
     "triangles": 180000
   },
   "hud": {
-    "calls": 1080,
-    "triangles": 274000
+    "calls": 700,
+    "triangles": 228000
   },
   "landmarks": {
     "calls": 540,
@@ -172,16 +172,16 @@
     "triangles": 269000
   },
   "text": {
-    "calls": 900,
-    "triangles": 266000
+    "calls": 700,
+    "triangles": 228000
   },
   "thorns": {
     "calls": 750,
     "triangles": 260000
   },
   "title": {
-    "calls": 1170,
-    "triangles": 286000
+    "calls": 760,
+    "triangles": 236000
   },
   "touch": {
     "calls": 790,

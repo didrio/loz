@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Embervale UI bench (dev)</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { background: #000; }
+      .bench {
+        position: fixed; left: 8px; top: 50%; transform: translateY(-50%); z-index: 20; display: flex; flex-direction: column; gap: 6px;
+        padding: 10px; border-radius: 8px; background: rgba(20, 18, 28, 0.88); color: #e8e2d6; font: 12px/1.3 system-ui, sans-serif;
+      }
+      .bench.closed label, .bench.closed .status { display: none; }
+      .bench label { display: flex; flex-direction: column; gap: 2px; }
+      .bench select { font: inherit; }
+      .bench .status { max-width: 140px; color: #a99f90; }
+      .specimen {
+        position: fixed; inset: 16px 16px 16px 170px; z-index: 12; overflow: auto; padding: 16px 20px; border-radius: 10px;
+        background: rgba(10, 14, 30, 0.88); color: #fff; font-family: var(--ui-font);
+      }
+      .specimen h3 { margin: 14px 0 4px; font: 12px system-ui, sans-serif; color: #a99f90; }
+      .specimen p { margin: 2px 0; overflow-wrap: anywhere; }
+      html.font-system { --ui-font: 'Trebuchet MS', 'Gill Sans', sans-serif !important; }
+    </style>
+  </head>
+  <body>
+    <div class="bench">
+      <button id="benchToggle">UI bench ▾</button>
+      <label>Look <select id="look"></select></label>
+      <label>Backdrop <select id="backdrop"></select></label>
+      <label>Font <select id="font"><option value="embervale">Embervale</option><option value="system">System (old)</option></select></label>
+      <label>Device <select id="device"><option>keyboard</option><option>gamepad</option><option>touch</option></select></label>
+      <label>View <select id="view"><option value="dialog">Dialog</option><option value="choice">Question</option><option value="play">Playing (prompt, area name)</option><option value="specimen">Font specimen</option></select></label>
+      <div class="status" id="status">Font: loading…</div>
+    </div>
+    <div class="specimen hidden" id="specimen"></div>
+    <div id="hud"></div>
+    <script type="module" src="/src/dev/ui.ts"></script>
+  </body>
+</html>

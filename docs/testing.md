@@ -10,7 +10,8 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   (the same checks run in `npm run check`: `render/models/registry.test.ts`; [pipeline.md](pipeline.md)).
 - `npm run palette`: the hex colour literals still in `src/`, by file, each off-palette one with its nearest swatch
   (`-- --summary` for counts only, `-- <path part>` for one area). Final passes replace them with `pal()` names. The swatch
-  page is `/palette.html` on the dev server.
+  page is `/palette.html` on the dev server; the **UI bench** is `/ui.html` (the real HUD on stand-in backdrops, each look,
+  device and moment, and the font specimen with its load status; art.md "UI").
 - `npm run flags`: who sets and who reads each quest flag (`FLAGS` in `game/state.ts`), as file:line; flags nothing sets or reads are marked `!!`. `game/flags.test.ts` fails on such a flag unless it is in its `NOT_SEEN` list with a reason (flags built from a template string, like `hint.<id>`, can't be seen by name). A new flag needs a `set('x')` and a `has('x')`.
 - `npm run smoke`: starts one dev server and headless Chrome and runs the **scenarios**
   (below) in parallel pages, up to 3 at a time; prints one ok/FAIL line per scenario (with

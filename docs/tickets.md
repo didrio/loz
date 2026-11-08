@@ -40,23 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T38: The period UI
-**Run:** plan · opusplan · high
-**Why:** art.md "UI": modern structure, period surface; a menu screenshot should pass for a late-90s game and stay
-readable on a phone.
-**Done when:**
-- The owner chose the approach on mockups. The recommendation: keep the DOM HUD and give it the period surface with CSS
-  (gradients, bevels, translucent tinted boxes, outlined or shadowed text, palette colours) plus a font authored in code
-  (glyphs as data made into a real font at runtime with `FontFace`). The alternative from the proposal: a 640×480 canvas
-  upscaled with smoothing (blurry text, a rewrite of hit-testing, menus, rich text and typing).
-- Built: the base styles and font, the HUD, the dialog box and choice window, prompts, the touch buttons' styling.
-  Readable on a phone (look `touch`); the title and pause menu follow in the UI pass (roadmap.md).
-**Read first:** art.md "UI"; `ui/hud.ts` (Grep for the method you need; it's 626 lines); `ui/style.css`;
-`ui/richText.ts`; `ui/touch.ts`.
-**Verify:** `npm run check`; look `hud text choice touch title` in Native and N64 mode; smoke `touch hints village`.
-**Notes:** Ask the owner up front: font mood (rounded sans as proposed?), how garish, and which of the two approaches
-after seeing a mockup of each on the dialog box.
-
 ### T39: Gear tab, with icons rendered from the models
 **Run:** auto · sonnet · medium
 **Why:** art.md "Items and the pause screen": a read-only answer to "what do I have?", with era icons drawn from the
@@ -67,6 +50,7 @@ real 3D models.
 - A **Gear** tab in the pause menu, read-only: sword and shield, tunic, items, quest items, bells, the current dungeon's
   keys. No map.
 - engine.md "The pause menu" updated.
-**Read first:** art.md "Items and the pause screen"; engine.md "The pause menu"; `game/pauseMenu.ts`; `game/menu.ts`
+**Read first:** art.md "Items and the pause screen" and "UI" (the theme: style the tab with the `--ui-*` variables from
+`ui/theme.ts`, never colour literals; check it on the `/ui.html` bench); engine.md "The pause menu"; `game/pauseMenu.ts`; `game/menu.ts`
 (the `entry` row); the registry (`render/models/registry.ts`); `game/state.ts` (items, flasks, bells).
 **Verify:** `npm run check`; smoke `hints dev-menu`; look `hud` plus a pause-menu shot of the tab.

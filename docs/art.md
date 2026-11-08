@@ -120,15 +120,29 @@ sword's arc (player). `glow` (render/shapes.ts) and `motes` (atmosphere) are unc
 readable and easy to use.
 - **Look:** saturated colours, gradient fills, beveled edges, translucent tinted text boxes, text with drop shadows or
   outlines. Bold and a little garish. Soft, not pixel art.
-- **Font:** authored in code (a slightly rounded sans, two sizes, shadowed); no system or web fonts.
+- **Font: Embervale (built, T38).** A rounded geometric sans authored in code: each character is a skeleton (where a round
+  pen travels: points, arcs, loops, dots) in `ui/font/glyphs.ts`; `outline.ts` traces the pen into outlines (sharp corners
+  get round joins, overlaps are flagged), `ttf.ts` writes a real TrueType file, and `loadUiFont()` hands it to the browser
+  with `FontFace` at boot. Two weights from one skeleton (a wider pen for bold), two text sizes (`--ui-text-size` 21 px,
+  `--ui-small-size` 14 px; display text like the area name is the bold at a larger size). CSS names a system font after it,
+  so a failed load still reads. A test fails if any character in `content/text/` or a button label lacks a glyph: a new
+  character means a new skeleton (check it on the bench's specimen).
 - **Icons:** rendered from the real 3D models into small images (T39).
 - **Era habits:** text typed letter by letter with a sound (have it: blips), coloured keywords (have it: `[gear]` tags),
   a big item-get moment (have it), button prompts for the active device (have it). Our own icon designs only.
 - **Modern conveniences:** clear structure, big touch targets, text speed and size options.
-- **How it's drawn** is decided in T38 on mockups. Recommendation: keep the DOM HUD (it already does layout, wrapping,
-  touch and mouse hit-testing, rich text, typing) and give it the period surface with CSS, plus the code-authored font
-  turned into a real font at runtime (`FontFace`). The proposal's alternative, a 640×480 canvas upscaled with smoothing,
-  blurs text on phones and retina screens and means rewriting all of that.
+- **How it's drawn (owner's call, 2026-11-08, on the bench):** the DOM HUD with the period surface in CSS, not a 640×480
+  canvas (that blurred text on phones and retina screens and meant rewriting layout, hit-testing, rich text and typing).
+  The surface is data: `ui/theme.ts` holds looks (`restrained`, **`bold`**, the owner's pick, and `full`) as palette names
+  and sizes, and `applyTheme()` writes them as `--ui-*` CSS variables at boot; `style.css` only reads those. Boxes (dialog,
+  choice window, toast, prompt, action hints, pause panel, compass) share one surface: gradient fill, rim, an inner
+  bevel lit top-left. Text has a dark outline plus a drop shadow (`--ui-ink`); the name plate and button chips are small
+  gold bevelled tablets. A colour change goes in the theme, never as a literal in CSS.
+- **The bench:** `/ui.html` on the dev server shows the real HUD over stand-in backdrops (day, dusk, night, dungeon,
+  snow) with the look, font, device and moment (dialog, question, playing) switchable, and the font specimen. Check UI
+  work there on a desktop and a phone (`npm run dev -- --host`) before the look scenes.
+- **Still to do in the UI pass** (roadmap.md): the title screen (logo, menu, controls card) and the pause menu's layout;
+  icons are T39.
 - **The corner (T47):** the round picture, the time, then the place's name (quiet, one line, ellipsis; follows `areaName`, so it
   changes with the area-name card). Outdoors and in houses the picture is the sky dial; in a dungeon it is a still render of
   the def's `portrait` view (`DungeonDef.portrait`, room-relative eye and look), taken once at load by `renderStill`
@@ -151,7 +165,7 @@ The music's composition stays as it is. The goal is the era's *playback* charact
 ## Mobile controls
 
 **Built (T37):** engine.md "Touch controls" has the layout and the assists. Below is the design it follows (swap Jump and
-Lock if jump matters more in combat); only the styling (T38) and the later items remain.
+Lock if jump matters more in combat); the styling is in (T38); only the later items remain.
 - **Interact** gets its own button that appears only when something is usable, always in the same spot (up-left of
   Sword, between Shield and Lock), shows its verb (Talk, Open, Check, Grab) and animates in.
 - **Jump** is only jump and moves to the outer ring, up-left of the cluster (swap with Lock if jump matters more in combat).
@@ -159,7 +173,7 @@ Lock if jump matters more in combat); only the styling (T38) and the later items
 - **Lock** directly above Sword; when the target dies it moves to the next one.
 - **Item** (the glove) on the outer ring, upper part. Hearts and keys top-left with a small menu button; the dial top-right.
 - Touch areas bigger than the drawn buttons, nothing under ~44 pt. Gamepad A stays interact + jump (AGENTS.md).
-- Era styling of the buttons comes with the UI (T38): semi-transparent, palette colours, a subtle bevel, the game's font.
+- Era styling (T38, built): the theme's translucent fill and rim, a domed bevel that flips gold when pressed, the game's font.
 - Later: a layout editor, haptics on native builds.
 
 ## Items and the pause screen

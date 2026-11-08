@@ -1,9 +1,13 @@
 import { initPhysics, Physics } from './core/physics';
 import { Game } from './game/game';
+import { loadUiFont } from './ui/font';
+import { applyTheme } from './ui/theme';
 import './ui/style.css';
 
 async function boot() {
-  await initPhysics();
+  applyTheme();
+  // The font is built in code (ui/font/); if it fails, the CSS falls back to a system font.
+  await Promise.all([initPhysics(), loadUiFont()]);
   const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
   const game = new Game(canvas, new Physics());
   game.start();
