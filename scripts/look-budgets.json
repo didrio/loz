@@ -184,8 +184,8 @@
     "triangles": 286000
   },
   "touch": {
-    "calls": 1200,
-    "triangles": 289000
+    "calls": 790,
+    "triangles": 241000
   },
   "village": {
     "calls": 360,

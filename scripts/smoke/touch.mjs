@@ -1,5 +1,5 @@
 // Touch controls on a landscape phone (ui/touch.ts): the title takes a tap, the stick walks, the sword swings,
-// Jump then holding Shield surfs, Jump reads Talk near Lark and opens her talk, taps read on, ☰ and ✕ open and close the
+// Jump then holding Shield surfs, Interact (its own button) reads Talk near Lark and opens her talk, taps read on, ☰ (top-left) and ✕ open and close the
 // pause menu, and a key press hides the controls until the next touch.
 export const fixture = 'field-sword';
 export const touch = true;
@@ -36,8 +36,9 @@ export default async function run(t) {
     await tap('.menu-item');
     await until(() => window.embervale.mode === 'play', 60000);
     await wait(600);
-    for (const sel of ['.tb-attack', '.tb-shield', '.tb-jump', '.tb-lock']) check(await shown(sel), `${sel} hidden`);
+    for (const sel of ['.tb-attack', '.tb-shield', '.tb-jump', '.tb-lock', '.menu-btn']) check(await shown(sel), `${sel} hidden`);
     check(!(await shown('.tb-item')), 'the glove button shows without the glove');
+    check(!(await shown('.tb-interact.show')), 'the interact button shows with nothing to use');
     check(!(await shown('.actions')), 'the keyboard hints should hide on touch');
   });
 
@@ -65,8 +66,6 @@ export default async function run(t) {
     await wait(300);
     await down(1, 150, 280);
     await move(1, 150, 210);
-    // Run on until nothing is in reach: Jump reads Talk near something, and then it talks instead.
-    await until(() => document.querySelector('.tb-jump')?.textContent === 'Jump', 10000);
     const j = await center('.tb-jump');
     await down(3, j.x, j.y);
     await up(3);
@@ -79,14 +78,18 @@ export default async function run(t) {
     await up(1);
   });
 
-  await step('near Lark, Jump reads Talk and opens her talk; taps read on', async () => {
+  await step('near Lark, Interact appears reading Talk (Jump stays Jump) and opens her talk; taps read on', async () => {
     const p = await game(() => {
       const it = window.embervale.area.interactables.find((i) => i.id === 'npc.lark');
       return { x: it.x, z: it.z };
     });
     await teleport(p.x + 1.2, p.z, -Math.PI / 2);
-    await until(() => document.querySelector('.tb-jump')?.textContent !== 'Jump', 5000);
+    await until(() => document.querySelector('.tb-interact.show')?.textContent === 'Talk', 5000);
+    check((await game(() => document.querySelector('.tb-jump').textContent)) === 'Jump', 'Jump should stay Jump near Lark');
     await tap('.tb-jump');
+    await wait(500);
+    check((await g()).mode === 'play', 'a Jump tap near Lark started her talk');
+    await tap('.tb-interact');
     await until(() => window.embervale.mode === 'cutscene', 5000);
     const end = Date.now() + 45000;
     while ((await g()).mode === 'cutscene') {
@@ -97,20 +100,20 @@ export default async function run(t) {
     }
   });
 
-  await step('the bed: Jump reads Sleep, its label is centred, a tapped "Sleep" ends with the controls back and the stick working', async () => {
+  await step('the bed: Interact reads Sleep, its label is centred, a tapped "Sleep" ends with the controls back and the stick working', async () => {
     const b = await game(() => {
       const it = window.embervale.area.interactables.find((i) => i.id === 'bed.mill');
       return { x: it.x, z: it.z };
     });
     await teleport(b.x, b.z, -Math.PI / 2, 3);
-    await until(() => document.querySelector('.tb-jump')?.textContent !== 'Jump' && document.querySelector('.prompt.show'), 5000);
+    await until(() => document.querySelector('.tb-interact.show') && document.querySelector('.prompt.show'), 5000);
     const off = await game(() => {
       const p = document.querySelector('.prompt').getBoundingClientRect();
       const l = document.querySelector('.prompt span:not(.key)').getBoundingClientRect();
       return (l.left + l.width / 2) - (p.left + p.width / 2);
     });
     check(Math.abs(off) < 2, `the prompt's label is ${off.toFixed(1)} px off centre`);
-    await tap('.tb-jump');
+    await tap('.tb-interact');
     await until(() => window.embervale.mode === 'cutscene', 5000);
     const end = Date.now() + 60000;
     while ((await g()).mode === 'cutscene') {
@@ -130,7 +133,7 @@ export default async function run(t) {
   });
 
   await step('☰ opens the pause menu, ✕ closes it', async () => {
-    await tap('.menu-hint');
+    await tap('.menu-btn');
     await until(() => window.embervale.pauseMenu.isOpen, 5000);
     await tap('.gmenu-close');
     await until(() => !window.embervale.pauseMenu.isOpen, 5000);

@@ -121,7 +121,7 @@ export class Hud {
   constructor() {
     this.el.innerHTML = `
       <div class="hud-top-left">
-        <div class="hearts"></div>
+        <div class="top-row"><div class="menu-btn">☰</div><div class="hearts"></div></div>
         <div class="gems"><span class="gem-icon"></span><span class="gem-count">0</span></div>
         <div class="keys hidden">${SMALL_KEY_SVG}<span class="key-count">×0</span><span class="color-keys"></span>${BOSS_KEY_SVG}</div>
         <div class="drinks"></div>
@@ -158,7 +158,7 @@ export class Hud {
         </div>
         <div class="controls-touch">
           <div><b>Left thumb</b> move</div><div><b>Right thumb</b> drag the camera</div>
-          <div><b>Hold Shield</b> guard</div><div><b>Jump</b> jump · talk</div>
+          <div><b>Hold Shield</b> guard</div><div><b>Jump</b> jump · <b>Talk</b> appears when near</div>
           <div><b>☰</b> pause</div><div><b>Tap</b> read on</div>
         </div>
       </div>
@@ -185,6 +185,7 @@ export class Hud {
     this.compass = new Compass(q('.compass'));
     this.menuHint = q('.menu-hint');
     this.menuHint.addEventListener('click', () => this.onTap('pause'));
+    q('.menu-btn').addEventListener('click', () => this.onTap('pause'));
     this.menu = q('.menu');
     this.menu.addEventListener('click', (e) => {
       const r = (e.target as HTMLElement).closest<HTMLElement>('[data-row]');

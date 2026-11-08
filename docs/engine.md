@@ -233,15 +233,26 @@ shows while the device is `touch`: a key press or a gamepad hides it, the next t
 
 - **Left 45% of the screen: a floating stick** where the thumb lands (its centre follows a thumb that slides past
   the rim). **Elsewhere: drag to turn the camera** (`TOUCH_LOOK` rad/px × the stick sensitivity).
-- **Buttons, bottom right:** Sword; Jump, which reads the interactable's label ("Talk", "Open") in reach and
-  presses both `jump` and `interact` like gamepad A; Shield (hold; jump, then hold it to surf, as on a pad: a plain
-  button, owner's call 2026-11-04, no gestures); Lock; Glove (once owned).
-  Sword and Shield only show once Wren has them.
+- **Buttons, bottom right** (CSS `.tb-*`; a thumb's arc around Sword, the biggest, which is never context-sensitive):
+  Shield left of it (hold; jump, then hold it to surf, as on a pad: a plain button, owner's call 2026-11-04, no
+  gestures); Lock directly above it (a toggle; with nothing near it recentres the camera); **Interact** up-left of
+  Sword between Shield and Lock, its own button that scales/fades in only when something is usable, always in the same
+  spot, reading the verb ("Talk", "Open"); **Jump** on the outer ring up-left of the cluster, only ever jump (a sign
+  beside you never turns a jump into a read); Glove (once owned) on the outer ring's upper part. Sword and Shield
+  only show once Wren has them. On a touch device the **menu button** (☰, `.menu-btn`) sits top-left, left of the
+  hearts; the "Menu" hint under the clock is hidden there.
+- **Hit areas** are the drawn circle plus 5 px all round (`.touch-btn::before`), all ≥ ~44 pt, with gaps between
+  buttons wider than 10 px so the areas never overlap.
+- **Touch-only assists** (`input.device === 'touch'`; keyboard and gamepad are unchanged: the pad's A stays interact + jump):
+  with several interactables in reach, `nearestInteractable(list, pos, facing)` picks the one most in front (dead
+  ahead is worth 1.5 m); when the locked target dies lock-on moves to the next enemy (`Combat.updateLock(.., touch)`,
+  `nextLockTarget`); an unlocked swing turns toward the nearest enemy within 5 m and ~40° in front (`autoAimYaw`,
+  `Combat.aimSwing`). The rules are in `game/lockon.ts`.
 - **While Wren surfs**, a finger holding Shield also turns the camera when it slides (`TouchPad.buttonLooks`, set
-  by the game each frame from `player.surfing`), so one thumb holds the surf and steers. Jump labels longer than
-  6 characters get smaller type (`.tb-jump.long`). HUD hearts are inline SVG, not the ♥ glyph (phones draw that as
+  by the game each frame from `player.surfing`), so one thumb holds the surf and steers. Interact labels longer than
+  6 characters get smaller type (`.tb-interact.long`). HUD hearts are inline SVG, not the ♥ glyph (phones draw that as
   a fixed-colour emoji).
-- **HUD taps:** title rows, the ☰ hint (`pause`), the flask and glove icons, a ✕ on every menu (closes the pause
+- **HUD taps:** title rows, the ☰ menu button (`pause`), the flask and glove icons, a ✕ on every menu (closes the pause
   menu, or `cancel`), dialog choices. In dialog, a tap anywhere reads on (`confirm`).
 - A finger keeps its job (stick, look, a button) until it lifts, wherever it slides. `core/touch.ts` is pure
   (unit-tested); `ui/touch.ts` draws and hit-tests and gets a `TouchContext` from the game each frame.

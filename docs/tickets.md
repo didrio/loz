@@ -40,23 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T37: Touch controls, refined
-**Run:** auto · sonnet · high
-**Why:** art.md "Mobile controls": an interact button of its own, so a nearby sign never turns a jump into a read.
-**Done when:**
-- Interact is its own button that appears only when something is usable, always in the same spot (up-left of Sword,
-  between Shield and Lock), shows its verb and animates in; with several in reach it picks the one most in front.
-- Jump is only jump, on the outer ring up-left of the cluster; the glove on the outer ring's upper part; the menu button
-  top-left with the hearts.
-- On touch, lock-on moves to the next enemy when its target dies, and an unlocked swing turns lightly toward the nearest
-  enemy in front.
-- Hit areas ≥ ~44 pt, bigger than the drawn buttons, spaced against mis-taps.
-- Gamepad and keyboard unchanged (A stays interact + jump). engine.md "Touch controls" rewritten.
-**Read first:** art.md "Mobile controls"; engine.md "Touch controls"; `ui/touch.ts`; `core/touch.ts` and its test;
-`game/combat.ts` (lock-on, ~line 60–90); `game/lockon.ts`.
-**Verify:** `npm run check`; smoke `touch`; look `touch`.
-**Notes:** Styling waits for T38.
-
 ### T38: The period UI
 **Run:** plan · opusplan · high
 **Why:** art.md "UI": modern structure, period surface; a menu screenshot should pass for a late-90s game and stay

@@ -20,7 +20,7 @@ when it's near.
 - **The N64 look rebuild** (owner, 2026-11-07; replaces the shelved PS2 "look pass", old T20–T26 in git history): the
   starter zone rebuilt on the new pipeline ([art.md](art.md), [pipeline.md](pipeline.md)) before any new area. Behaviour
   never changes. In order, each written as a ticket when it's near (at the previous one's `/wrap`):
-  1. **Foundations:** T37–T39 in [tickets.md](tickets.md) (T27–T33 are done: effects presets, look loop, Display setting, palette, shading and textures, atmosphere and blob shadows, the model registry and validator, T34 the viewer and contact sheet, T35 the modeling kit and `bakeRig`, T36 the N64 sound chain, proven on the chest; T40 and T43 textured the static world; T41 the living).
+  1. **Foundations:** T38–T39 in [tickets.md](tickets.md) (T27–T33 are done: effects presets, look loop, Display setting, palette, shading and textures, atmosphere and blob shadows, the model registry and validator, T34 the viewer and contact sheet, T35 the modeling kit and `bakeRig`, T36 the N64 sound chain, T37 touch controls refined, proven on the chest; T40 and T43 textured the static world; T41 the living).
   2. **The golden set**, one Final-pass ticket each, locked only when the owner approves (the first ones
      plan · opusplan · high, as they define the style): a Thornling → Wren with her full animation set → the starter-area
      entrance vignette (phone frame rate checked) → the prop set (chest done and approved 2026-11-08; door, jar, crate, sign) → Pip → the Hollow
@@ -44,7 +44,7 @@ when it's near.
   quests out in the world, Odo back at his stall, the kids' lines changing with them;
   [world.md](world.md) "The empty village").
 - **Touch controls:** tune by the friend's reports: camera drag (`TOUCH_LOOK`), button sizes. The layout's refinement is
-  T37; touch devices default to the Performance display.
+  done (T37); touch devices default to the Performance display.
 - **Gem economy** (for balancing): 95 in the shrine plus bushes, against the 50-gem tunic and 20
   per flask refill.
 - **Pause menu:** Settings, Hints, Messages ([engine.md](engine.md) "The pause menu"). A new tab

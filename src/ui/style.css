@@ -14,6 +14,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 
 /* Hearts & gems */
 .hud-top-left { position: absolute; top: 18px; left: 22px; }
+.top-row { display: flex; align-items: center; }
+.menu-btn { display: none; }
 .hearts { display: flex; gap: 3px; }
 .heart { display: block; width: 30px; height: 28px; }
 .heart svg { display: block; width: 100%; height: 100%; overflow: visible; stroke: #3b0d12; stroke-width: 1.5; stroke-linejoin: round; }
@@ -324,8 +326,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 #hud.touch .actions, #hud.touch .prompt .key, #hud.touch .gmenu-help, #hud.touch .gmenu-tabkey { display: none; }
 #hud.touch .menu-hint, #hud.touch .drink { pointer-events: auto; }
 #hud.touch .drink .key { display: none; } /* the icons themselves are the buttons */
-#hud.touch .menu-hint { font-size: 15px; padding: 6px 10px; margin: -6px -10px; }
-#hud.touch .menu-hint .key { height: 30px; min-width: 30px; font-size: 18px; opacity: 1; }
+/* On touch the menu button sits left of the hearts (top-left); the corner hint under the clock goes. */
+#hud.touch .menu-hint { display: none; }
+#hud.touch .menu-btn {
+  display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: -8px 8px -8px -8px; border-radius: 50%;
+  font-size: 22px; background: rgba(10, 16, 30, 0.38); border: 2px solid rgba(255, 255, 255, 0.4); pointer-events: auto;
+}
 #hud.touch .gmenu-row { padding: 9px 14px; }
 .gmenu-panel { position: relative; }
 .gmenu-close { display: none; }
@@ -354,14 +360,22 @@ html.touch-device #hud { padding: env(safe-area-inset-top) env(safe-area-inset-r
 .touch-btn.down { background: rgba(255, 215, 106, 0.4); border-color: #ffd76a; }
 /* The arc around the right thumb: the sword at the corner, the rest within one reach of it. */
 .tb-attack { width: 88px; height: 88px; font-size: 16px; right: calc(28px + env(safe-area-inset-right)); bottom: calc(26px + env(safe-area-inset-bottom)); }
-.tb-shield { right: calc(130px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); }
-.tb-jump { right: calc(36px + env(safe-area-inset-right)); bottom: calc(128px + env(safe-area-inset-bottom)); }
-.tb-jump.use { border-color: #ffd76a; color: #ffe9a8; }
-.tb-jump { text-align: center; line-height: 1.1; padding: 0 5px; overflow: hidden; overflow-wrap: anywhere; }
-.tb-jump.long { font-size: 11px; letter-spacing: 0; }
-.tb-lock { width: 54px; height: 54px; font-size: 12px; right: calc(122px + env(safe-area-inset-right)); bottom: calc(104px + env(safe-area-inset-bottom)); }
+/* Hit areas: the drawn circle plus 5 px all round (never under ~44 pt); the gaps between buttons are wider than 10 px. */
+.touch-btn::before { content: ''; position: absolute; inset: -5px; border-radius: 50%; }
+/* Inner ring: Shield left of the sword, Lock above it, Interact between them (up-left of the sword). */
+.tb-shield { width: 66px; height: 66px; right: calc(130px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); }
+.tb-lock { width: 58px; height: 58px; font-size: 12px; right: calc(43px + env(safe-area-inset-right)); bottom: calc(131px + env(safe-area-inset-bottom)); }
 .tb-lock.on { border-color: #ff9b6a; background: rgba(255, 120, 60, 0.3); }
-.tb-item { width: 54px; height: 54px; font-size: 12px; right: calc(196px + env(safe-area-inset-right)); bottom: calc(132px + env(safe-area-inset-bottom)); }
+.tb-interact {
+  width: 70px; height: 70px; right: calc(115px + env(safe-area-inset-right)); bottom: calc(95px + env(safe-area-inset-bottom));
+  border-color: #ffd76a; color: #ffe9a8; text-align: center; line-height: 1.1; padding: 0 5px; overflow: visible; overflow-wrap: anywhere;
+  opacity: 0; transform: scale(0.5); pointer-events: none; transition: opacity 0.15s, transform 0.18s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.tb-interact.show { opacity: 1; transform: none; pointer-events: auto; }
+.tb-interact.long { font-size: 11px; letter-spacing: 0; }
+/* Outer ring: Jump up-left of the cluster, the glove on its upper part. */
+.tb-jump { width: 66px; height: 66px; right: calc(202px + env(safe-area-inset-right)); bottom: calc(142px + env(safe-area-inset-bottom)); }
+.tb-item { width: 58px; height: 58px; font-size: 12px; right: calc(121px + env(safe-area-inset-right)); bottom: calc(186px + env(safe-area-inset-bottom)); }
 .touch-rotate { display: none; }
 @media (orientation: portrait) {
   html.touch-device .touch-rotate {

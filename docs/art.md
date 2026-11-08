@@ -150,9 +150,8 @@ The music's composition stays as it is. The goal is the era's *playback* charact
 
 ## Mobile controls
 
-**Today:** engine.md "Touch controls": floating stick, drag-to-look, Sword, Jump (doubles as interact and shows its verb),
-Shield, Lock (a toggle; with nothing near it recentres the camera), Glove.
-**Target (T37):** refine, don't replace.
+**Built (T37):** engine.md "Touch controls" has the layout and the assists. Below is the design it follows (swap Jump and
+Lock if jump matters more in combat); only the styling (T38) and the later items remain.
 - **Interact** gets its own button that appears only when something is usable, always in the same spot (up-left of
   Sword, between Shield and Lock), shows its verb (Talk, Open, Check, Grab) and animates in.
 - **Jump** is only jump and moves to the outer ring, up-left of the cluster (swap with Lock if jump matters more in combat).

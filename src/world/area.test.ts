@@ -17,4 +17,11 @@ describe('nearestInteractable', () => {
     expect(nearestInteractable([thing('above', 1, 0, { y: 6 })], at)).toBeNull();
     expect(nearestInteractable([thing('here', 1, 0, { y: 0.5 })], at)?.id).toBe('here');
   });
+
+  it('given a facing (touch), prefers the one in front over a slightly nearer one behind', () => {
+    const list = [thing('behind', 0, -1), thing('ahead', 0, 1.8)];
+    expect(nearestInteractable(list, at)?.id).toBe('behind'); // plain nearest
+    expect(nearestInteractable(list, at, 0)?.id).toBe('ahead'); // facing +z
+    expect(nearestInteractable(list, at, Math.PI)?.id).toBe('behind'); // facing -z
+  });
 });

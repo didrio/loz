@@ -140,15 +140,23 @@ export interface Trigger {
 /** Whether a stacked-floor spot (`y`) is on the player's level. */
 export const sameLevel = (y: number | undefined, playerY: number) => y === undefined || Math.abs(playerY - y) < 2.5;
 
-/** The nearest enabled interactable within its reach of `pos`, on the same level, or null. */
-export function nearestInteractable(list: readonly Interactable[], pos: { x: number; y: number; z: number }) {
-  let best: Interactable | null = null, bestD = Infinity;
+/**
+ * The nearest enabled interactable within its reach of `pos`, on the same level, or null.
+ * With `facing` (a yaw; touch, which has an interact button of its own) the one most in front
+ * wins instead of the plain nearest: being dead ahead is worth 1.5 m of distance.
+ */
+export function nearestInteractable(list: readonly Interactable[], pos: { x: number; y: number; z: number }, facing?: number) {
+  let best: Interactable | null = null, bestScore = Infinity;
   for (const it of list) {
     if (!it.enabled() || !sameLevel(it.y, pos.y)) continue;
-    const d = Math.hypot(pos.x - it.x, pos.z - it.z);
-    if (d < it.r && d < bestD) {
+    const dx = it.x - pos.x, dz = it.z - pos.z;
+    const d = Math.hypot(dx, dz);
+    if (d >= it.r) continue;
+    let score = d;
+    if (facing !== undefined && d > 0.01) score -= (Math.cos(facing) * dz + Math.sin(facing) * dx) / d * 1.5;
+    if (score < bestScore) {
       best = it;
-      bestD = d;
+      bestScore = score;
     }
   }
   return best;

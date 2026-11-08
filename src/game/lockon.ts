@@ -50,3 +50,38 @@ export function pickLockTarget(from: THREE.Vector3, camFwd: THREE.Vector3, enemi
   }
   return best;
 }
+
+/**
+ * Touch only. The target to move lock-on to when `gone` (the one just locked) dies: the best
+ * pick from Wren's spot, facing where she faces (the camera is no use: a thumb isn't steering it).
+ */
+export function nextLockTarget(from: THREE.Vector3, facing: number, enemies: readonly LockTarget[], gone: LockTarget, physics: Physics) {
+  const fwd = new THREE.Vector3(Math.sin(facing), 0, Math.cos(facing));
+  return pickLockTarget(from, fwd, enemies.filter((e) => e !== gone && e.alive), physics);
+}
+
+/** An unlocked swing on touch turns toward an enemy at most this far away… */
+export const AIM_RANGE = 5;
+/** …and at most this far (radians) off the way Wren faces: "in front". */
+export const AIM_CONE = 0.7;
+
+/**
+ * Touch only. The direction (a yaw) to turn an unlocked swing toward: the nearest enemy within
+ * `AIM_RANGE` and `AIM_CONE` of `facing`, or null (swing where she faces).
+ */
+export function autoAimYaw(from: THREE.Vector3, facing: number, enemies: readonly LockTarget[]) {
+  let best: number | null = null, bestD = Infinity;
+  for (const e of enemies) {
+    if (!e.alive || !e.targetable) continue;
+    const dx = e.pos.x - from.x, dz = e.pos.z - from.z;
+    const d = Math.hypot(dx, dz);
+    if (d > AIM_RANGE || d >= bestD || Math.abs(from.y - e.pos.y) > 2) continue;
+    const yaw = Math.atan2(dx, dz);
+    let off = yaw - facing;
+    off = Math.atan2(Math.sin(off), Math.cos(off));
+    if (Math.abs(off) > AIM_CONE) continue;
+    best = yaw;
+    bestD = d;
+  }
+  return best;
+}

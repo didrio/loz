@@ -9,7 +9,7 @@ import { Boss } from './boss';
 import type { CameraRig } from './camera';
 import type { Enemy, EnemyEnv, EnemyManager, HurtResult } from './enemies';
 import type { HazardEnv, Hazards } from './hazards';
-import { pickLockTarget, type LockTarget } from './lockon';
+import { autoAimYaw, nextLockTarget, pickLockTarget, type LockTarget } from './lockon';
 import { BLUEGEM_GEMS, type Pickups } from './pickups';
 import type { Player, PlayerEnv } from './player';
 import type { GameState } from './state';
@@ -65,22 +65,38 @@ export class Combat {
   /**
    * Lock-on during play: lets go when the target dies, gets far away or ends up on another
    * floor; `pressed` toggles it, and with nothing to lock onto recenters the camera instead.
+   * On touch (`touch`) a target that dies hands the lock to the next enemy, so a thumb never has to re-aim.
    */
-  updateLock(pressed: boolean) {
+  updateLock(pressed: boolean, touch = false) {
     const { player } = this.g;
     const l = this.lock;
-    if (l && (!l.alive || l.pos.distanceTo(player.pos) > 25 || Math.abs(l.pos.y - player.pos.y) > 4)) this.lock = null;
+    if (l && (!l.alive || l.pos.distanceTo(player.pos) > 25 || Math.abs(l.pos.y - player.pos.y) > 4)) {
+      this.lock = touch && !l.alive ? nextLockTarget(player.pos, player.facing, this.lockables(), l, this.g.physics) : null;
+      if (this.lock) this.g.sfx.lockOn();
+    }
     if (!pressed) return;
     if (this.lock) {
       this.lock = null;
       return;
     }
     const camFwd = new THREE.Vector3(-Math.sin(this.g.rig.yaw), 0, -Math.cos(this.g.rig.yaw));
-    // Murmurbuds can be locked onto too: they're hard to hit squarely otherwise.
-    const buds = this.g.area.buds ? [...this.g.area.buds.values()] : [];
-    this.lock = pickLockTarget(player.pos, camFwd, [...this.g.enemies.list, ...buds], this.g.physics);
+    this.lock = pickLockTarget(player.pos, camFwd, this.lockables(), this.g.physics);
     if (this.lock) this.g.sfx.lockOn();
     else this.g.rig.recenter(player.facing);
+  }
+
+  /** Everything lock-on may hold. Murmurbuds count too: they're hard to hit squarely otherwise. */
+  private lockables(): LockTarget[] {
+    const buds = this.g.area.buds ? [...this.g.area.buds.values()] : [];
+    return [...this.g.enemies.list, ...buds];
+  }
+
+  /** Touch: a swing with no lock-on turns lightly toward the nearest enemy in front (lockon.ts `autoAimYaw`). */
+  aimSwing() {
+    const { player } = this.g;
+    if (this.lock?.alive) return;
+    const yaw = autoAimYaw(player.pos, player.facing, this.g.enemies.list);
+    if (yaw !== null) player.facing = yaw;
   }
 
   /** An enemy left the area: stop locking on to it. */

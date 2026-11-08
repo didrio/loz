@@ -16,7 +16,7 @@ export type TouchMode = 'play' | 'dialog' | 'menu' | 'title' | 'off';
 
 export interface TouchContext {
   mode: TouchMode;
-  /** What the jump button does instead, when something is in reach ("Talk", "Open"), or null to jump. */
+  /** The verb on the Interact button when something is in reach ("Talk", "Open"); null hides the button. */
   use: string | null;
   sword: boolean;
   shield: boolean;
@@ -24,14 +24,15 @@ export interface TouchContext {
   locked: boolean;
 }
 
-type ButtonId = 'attack' | 'jump' | 'shield' | 'lock' | 'item';
+type ButtonId = 'attack' | 'jump' | 'interact' | 'shield' | 'lock' | 'item';
 
 type ButtonRole = Extract<FingerRole, { kind: 'button' }>;
 
 const ROLES: Record<ButtonId, ButtonRole> = {
   attack: { kind: 'button', actions: ['attack'] },
-  // Jump doubles as interact, like the gamepad's A: the game checks interact first.
-  jump: { kind: 'button', actions: ['jump', 'interact'] },
+  // Jump is only jump: interact has its own button, so a sign beside you never turns a jump into a read.
+  jump: { kind: 'button', actions: ['jump'] },
+  interact: { kind: 'button', actions: ['interact'] },
   // Hold to guard (jump, then hold it to land on it: the surf).
   shield: { kind: 'button', actions: ['shield'] },
   lock: { kind: 'button', actions: ['lock'] },
@@ -64,6 +65,7 @@ export class TouchControls {
       <div class="touch-stick hidden"><div class="touch-knob"></div></div>
       <div class="touch-btn tb-attack" data-btn="attack">Sword</div>
       <div class="touch-btn tb-jump" data-btn="jump">Jump</div>
+      <div class="touch-btn tb-interact" data-btn="interact"></div>
       <div class="touch-btn tb-shield" data-btn="shield">Shield</div>
       <div class="touch-btn tb-lock" data-btn="lock">Lock</div>
       <div class="touch-btn tb-item" data-btn="item">Glove</div>`;
@@ -74,7 +76,7 @@ export class TouchControls {
     const q = (s: string) => this.el.querySelector<HTMLElement>(s)!;
     this.stickBase = q('.touch-stick');
     this.stickKnob = q('.touch-knob');
-    this.buttons = { attack: q('.tb-attack'), jump: q('.tb-jump'), shield: q('.tb-shield'), lock: q('.tb-lock'), item: q('.tb-item') };
+    this.buttons = { attack: q('.tb-attack'), jump: q('.tb-jump'), interact: q('.tb-interact'), shield: q('.tb-shield'), lock: q('.tb-lock'), item: q('.tb-item') };
 
     this.enabled = wantsTouch();
     if (this.enabled) this.enable();
@@ -130,9 +132,13 @@ export class TouchControls {
       this.buttons.shield.classList.toggle('hidden', !c.shield);
       this.buttons.item.classList.toggle('hidden', !c.tether);
       this.buttons.lock.classList.toggle('on', c.locked);
-      this.buttons.jump.textContent = c.use ?? 'Jump';
-      this.buttons.jump.classList.toggle('use', !!c.use);
-      this.buttons.jump.classList.toggle('long', (c.use ?? '').length > 6); // two words or a long one: smaller type
+      const b = this.buttons.interact;
+      // It fades out still reading its last verb, so a leaving "Talk" doesn't blank mid-fade.
+      if (c.use) {
+        b.textContent = c.use;
+        b.classList.toggle('long', c.use.length > 6); // two words or a long one: smaller type
+      }
+      b.classList.toggle('show', !!c.use);
     }
     for (const [id, b] of Object.entries(this.buttons) as [ButtonId, HTMLElement][]) b.classList.toggle('down', this.pad.held(ROLES[id].actions[0]));
     const v = this.pad.stickView;

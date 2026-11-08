@@ -319,10 +319,11 @@ export class Game implements ScriptApi {
     if (!this.area.indoor || this.warpTo !== null) this.advanceClock(dt);
     if (this.input.clicked() && !this.input.locked) this.input.requestLock();
 
-    this.combat.updateLock(this.input.pressed('lock'));
+    const touch = this.input.device === 'touch';
+    this.combat.updateLock(this.input.pressed('lock'), touch);
 
-    // "Interact" comes before "jump" because they share a gamepad button.
-    const near = nearestInteractable(this.area.interactables, this.player.pos);
+    // "Interact" comes before "jump" because they share a gamepad button (touch has a button of its own).
+    const near = this.nearInteractable();
     if (near && this.input.pressed('interact')) {
       const script = this.content.scripts[near.id];
       if (script) this.run(script);
@@ -330,6 +331,7 @@ export class Game implements ScriptApi {
     }
 
     if (this.input.pressed('item') && this.state.items.has('tether')) this.combat.throwTether();
+    if (touch && this.input.pressed('attack') && this.state.has('hasSword')) this.combat.aimSwing();
     this.player.update(dt, this.controls(), this.combat.playerEnv);
     this.combat.update(dt);
     this.buds.update(dt);
@@ -375,9 +377,14 @@ export class Game implements ScriptApi {
     return this.toScreen(this.player.pos.clone().add(new THREE.Vector3(0, 1.3, 0)).addScaledVector(right, 1.1));
   }
 
+  /** What interact would use: the nearest in reach; on touch the one most in front (the button can't aim). */
+  private nearInteractable() {
+    return nearestInteractable(this.area.interactables, this.player.pos, this.input.device === 'touch' ? this.player.facing : undefined);
+  }
+
   /** The interact prompt floating over whatever is in reach (null when nothing is, or not in play). */
   private interactPrompt() {
-    const near = this.mode === 'play' ? nearestInteractable(this.area.interactables, this.player.pos) : null;
+    const near = this.mode === 'play' ? this.nearInteractable() : null;
     if (!near) return null;
     const at = this.toScreen(new THREE.Vector3(near.x, near.promptY ?? this.player.pos.y + 2.4, near.z));
     return at && { ...at, label: near.label };
@@ -387,7 +394,7 @@ export class Game implements ScriptApi {
   private touchContext(): TouchContext {
     const { mode, state } = this;
     const menu = this.pauseMenu.isOpen || this.choice.isOpen || this.dialog.asking;
-    const near = mode === 'play' ? nearestInteractable(this.area.interactables, this.player.pos) : null;
+    const near = mode === 'play' ? this.nearInteractable() : null;
     return {
       mode: mode === 'title' ? 'title' : menu ? 'menu' : mode === 'cutscene' ? 'dialog' : 'play',
       use: near?.label ?? null, sword: state.has('hasSword'), shield: state.has('hasShield'), tether: state.items.has('tether'), locked: !!this.combat.lock,
