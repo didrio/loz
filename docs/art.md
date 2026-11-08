@@ -142,7 +142,7 @@ readable and easy to use.
   snow) with the look, font, device and moment (dialog, question, playing) switchable, and the font specimen. Check UI
   work there on a desktop and a phone (`npm run dev -- --host`) before the look scenes.
 - **Still to do in the UI pass** (roadmap.md): the title screen (logo, menu, controls card) and the pause menu's layout;
-  icons are T39.
+  the Gear tab and its icons are done.
 - **The corner (T47):** the round picture, the time, then the place's name (quiet, one line, ellipsis; follows `areaName`, so it
   changes with the area-name card). Outdoors and in houses the picture is the sky dial; in a dungeon it is a still render of
   the def's `portrait` view (`DungeonDef.portrait`, room-relative eye and look), taken once at load by `renderStill`
