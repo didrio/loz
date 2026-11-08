@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Embervale N64 sound chain (dev)</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { font: 15px/1.4 system-ui, sans-serif; background: #1d1a24; color: #e8e2d6; margin: 0; padding: 24px; max-width: 760px; }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      p.note { color: #a99f90; margin: 0 0 20px; }
+      .card { background: #2a2533; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+      button, select { font: inherit; background: #3a3347; color: inherit; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; margin: 2px; }
+      button.on { outline: 2px solid #f1c24a; }
+      label.row { display: grid; grid-template-columns: 110px 1fr 70px; gap: 8px; align-items: center; font-size: 13px; margin: 4px 0; }
+      pre { background: #1d1a24; padding: 8px; border-radius: 6px; font-size: 12px; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Embervale N64 sound chain</h1>
+    <p class="note">Dev server only. Play a song or an effect, move the sliders, flip the chain off to hear the difference. "Copy values" gives the numbers for <code>N64_DEFAULT</code> in core/n64chain.ts.</p>
+    <div id="app"></div>
+    <script type="module" src="/src/dev/n64audio.ts"></script>
+  </body>
+</html>

@@ -185,6 +185,7 @@ export class Game implements ScriptApi {
     this.shadows.mark();
     this.physics.refreshQueries();
     this.sky.setIndoor(!!area.indoor);
+    this.sfx.setRoom(area.voiceRoom ?? 'outdoors');
     this.rig.dist = area.indoor ? 7 : 9;
     const valleyOpen = this.state.has('valleyOpen');
     this.enemies = new EnemyManager(area.root, this.physics, area, fieldPopulation(area, valleyOpen));

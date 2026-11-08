@@ -28,6 +28,19 @@ no area is a "house" yet (the mill is in the overworld).
 **Tuning by ear**: `npm run dev`, then <http://localhost:5273/blips.html> (dev only): every NPC's trial line types out with its
 blips, sliders for each parameter, and "Copy values" to paste into `content/voices.ts`. Not heard by the owner yet.
 
+## The N64 chain (`core/n64chain.ts`)
+
+The era's playback character on the master bus, without touching a song or an instrument (T36). Music and effects pass
+through `N64Chain` on the way to the master gain (NPC blips stay clear of it): a **sample-rate reducer** (a tiny AudioWorklet,
+sample-and-hold, loaded from an inline blob) and then a **low-pass**. `MusicPlayer.limiter` (a `VoiceLimiter`) caps simultaneous
+notes; kick, snare, bass and drive are never dropped. **Reverb follows the place**: `Sfx.setRoom(area.voiceRoom)` (called in
+`Game.loadArea`) sets the music's reverb level and tail from the same `ROOMS` entry the blips use (`musicRoom`), and effects get
+a send into a room of `ROOMS` too, so fields are drier and dungeons wetter. All the numbers are `N64_DEFAULT`
+(rate 22050 Hz, low-pass 9000 Hz, 24 notes, reverb 1): **start values, not tuned**. Tune by ear: `npm run dev`, then
+<http://localhost:5273/n64audio.html> (dev only; it runs the game's own `Sfx`): songs, places, effects, sliders, a chain on/off
+switch, and "Copy values" to paste into `N64_DEFAULT`. Not heard by the owner yet. Without AudioWorklet support the chain is
+the low-pass and the note cap only.
+
 ## The shelved speech synth (`labs/speech/`, `labs/voices.ts`)
 
 Formant speech from text, built 2026-11-04 and shelved the same day because its sound was creepy. Nothing in the game imports it

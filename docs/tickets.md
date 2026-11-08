@@ -40,19 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T36: The N64 sound chain
-**Run:** auto · sonnet · medium
-**Why:** art.md "Audio": the era's playback character on what we already compose, without touching a song.
-**Done when:**
-- Music and effects pass through a master chain: a lower effective sample rate, a gentle low-pass, a cap on simultaneous
-  notes; reverb per area (fields drier, caves and dungeons wetter), reusing `Area.voiceRoom` and `ROOMS`.
-- A dev bench (like `/blips.html`) plays the songs and a few effects through the chain with sliders and "Copy values",
-  so the owner tunes it by ear.
-- Songs and instruments unchanged; audio.md updated.
-**Read first:** art.md "Audio"; audio.md; `core/synth.ts` (`MusicPlayer`, the reverb); Grep `core/audio.ts` for the
-master gain and `Sfx`; `core/blips.ts` (`ROOMS`).
-**Verify:** `npm run check` (render a song offline and check its level against today's); the owner listens.
-
 ### T37: Touch controls, refined
 **Run:** auto · sonnet · high
 **Why:** art.md "Mobile controls": an interact button of its own, so a nearby sign never turns a jump into a read.

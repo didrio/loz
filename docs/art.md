@@ -144,7 +144,7 @@ Anything noticeably crisper, flatter or cleaner than its neighbours gets fixed.
 The music's composition stays as it is. The goal is the era's *playback* character, not new writing.
 - **Have it:** songs are notation data (`core/tracks.ts`, `music.ts`), played on a shared, fixed set of synthesized
   instruments (`core/synth.ts`), so the soundtrack is one ensemble and a sound change never rewrites a song.
-- **Target (T36):** an N64 chain on the master bus for music and effects: a lower effective sample rate, gentle low-pass,
+- **Built (T36, values to tune by ear):** an N64 chain on the master bus for music and effects: a lower effective sample rate, gentle low-pass,
   a modest cap on simultaneous notes, and reverb per area (caves wetter, fields drier). Tuned by the owner's ear.
 - No soundfonts or recorded samples. Details: [audio.md](audio.md).
 

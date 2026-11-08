@@ -22,7 +22,7 @@ As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
 after it only Lark and Pip remain in the village. Every gate is data (`content/progression.ts`, checked by a test). Everything is built in code; the
 look is flat-shaded and faceted (owner's call), colours snapped to one master palette and baked into vertices on merged scenery, generated crisp textures on everything but glows, glass, voids and writing (terrain, buildings, dungeons, trees, props, characters, enemies, bosses; a test guards the valley, Northpass and shrine; one global resolution slider in the Dev tab, default 32), and a Display setting (Native / Performance / N64). Sun shadows are a Settings option (**Shadows**, default On on desktop, Off on touch: one shadow map outdoors, `render/shadows.ts`; blob shadows remain indoors and for floating things), baked bounce light is a parked trial in the village (Dev toggle), and each place has its own atmosphere (`render/atmosphere.ts`), and the HUD corner shows the place's name and, in a dungeon, a rendered picture of it instead of the dial. NPCs talk in **blips**; **touch controls** are in a playtest on GitHub Pages; **Sallowmere** stands empty and untextured while the owner redesigns it.
-**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T36–T39 (the viewer and contact sheet, T34, and the modeling kit, T35, are in: `render/kit.ts` + `bakeRig.ts`, the chest is the first model built with it and the first of the golden set, `final`). Every model is a pure builder in `render/models/`, registered (all `rough` but the chest) and checked by a validator (`npm run assets`, [pipeline.md](docs/pipeline.md)). Dev server: port 5273.
+**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T37–T39 (the N64 sound chain, T36, is in: `core/n64chain.ts` + the `/n64audio.html` bench; the viewer and contact sheet, T34, and the modeling kit, T35, are in: `render/kit.ts` + `bakeRig.ts`, the chest is the first model built with it and the first of the golden set, `final`). Every model is a pure builder in `render/models/`, registered (all `rough` but the chest) and checked by a validator (`npm run assets`, [pipeline.md](docs/pipeline.md)). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -118,6 +118,7 @@ src/
     audio.ts, math.ts      sound effects + the song per mood; noise, easing, angles, seeded RNG
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
+    n64chain.ts            the N64 sound chain: sample-rate reducer, low-pass, note cap, reverb per place (audio.md)
     blips.ts               talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
   render/                  the look: palette (the master palette: `pal`, `snap`), materials, textures, shapes, kit + bakeRig (the modeling kit), effects, atmosphere, sky, shadows, retro (the Display modes), particles, motes, characters (`buildHumanoid`); every file: render.md "Render files"
     models/                every model as a pure builder (no physics, no game), `registry.ts` (id, kind, tier, `build()`), `validate.ts` (budgets, palette); docs/pipeline.md
@@ -162,7 +163,7 @@ scripts/
   flags.mjs, lexicon.mjs   who sets/reads each quest flag (npm run flags; flags.test.ts); the game's words → labs/speech/lexicon.ts (npm run lexicon)
   palette.mjs              hex literals still in code, by file, with their nearest swatch (npm run palette)
   assets.mjs               the model registry's table: triangles against budget, size, textures, findings (npm run assets)
-src/dev/ the blips test bench (/blips.html), the swatch page (/palette.html) and the asset viewer + contact sheet (/viewer.html), dev only · src/labs/ shelved, nothing imports it: speech/ (a speech synth), rigged/ (imported rigged models, docs/models.md)
+src/dev/ the blips test bench (/blips.html), the N64 sound chain's (/n64audio.html), the swatch page (/palette.html) and the asset viewer + contact sheet (/viewer.html), dev only · src/labs/ shelved, nothing imports it: speech/ (a speech synth), rigged/ (imported rigged models, docs/models.md)
 CREDITS.md third-party credits · assets/music-src/ the owner's MIDI exports, one folder per song (docs/audio.md)
 docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, agents/, skills/ /start and /wrap)
 ```

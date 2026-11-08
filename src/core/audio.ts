@@ -3,8 +3,9 @@
  * The context is created on the first key press (browsers require a user gesture).
  */
 
-import { BlipPlayer, type Blip, type RoomName } from './blips';
-import { MusicPlayer } from './synth';
+import { BlipPlayer, ROOMS, type Blip, type RoomName } from './blips';
+import { N64_DEFAULT, N64Chain, musicRoom, type N64Params } from './n64chain';
+import { MusicPlayer, impulse } from './synth';
 import { BOSS_MOODS, compiledSong, type MusicMood } from './tracks';
 
 export type { MusicMood } from './tracks';
@@ -33,6 +34,13 @@ export class Sfx {
   private volumes = { master: DEFAULT_VOLUME, music: DEFAULT_VOLUME, sfx: DEFAULT_VOLUME, voice: DEFAULT_VOLUME };
   private noiseBuf!: AudioBuffer;
   private music!: MusicPlayer;
+  /** The N64 chain music and effects pass through (`core/n64chain.ts`); the voice bus stays clear of it. */
+  private chain!: N64Chain;
+  private sfxRoom!: ConvolverNode;
+  private sfxRoomGain!: GainNode;
+  private sfxRoomSeconds = 0;
+  chainParams: N64Params = { ...N64_DEFAULT };
+  private room: RoomName = 'outdoors';
   /** The mood whose song is playing, or null for silence. */
   private musicMood: MusicMood | null = null;
   musicOn = true;
@@ -48,19 +56,54 @@ export class Sfx {
     this.ctx = new AudioContext();
     this.master = this.ctx.createGain();
     this.master.connect(this.ctx.destination);
+    this.chain = new N64Chain(this.ctx, this.master, this.chainParams);
     this.musicGain = this.ctx.createGain();
-    this.musicGain.connect(this.master);
+    this.musicGain.connect(this.chain.input);
     this.sfxGain = this.ctx.createGain();
-    this.sfxGain.connect(this.master);
+    this.sfxGain.connect(this.chain.input);
+    // Effects get a little of the place's reverb too.
+    this.sfxRoom = this.ctx.createConvolver();
+    this.sfxRoomGain = this.ctx.createGain();
+    this.sfxGain.connect(this.sfxRoomGain).connect(this.sfxRoom).connect(this.chain.input);
     // NPC speech gets its own bus and its own volume setting.
     this.voiceGain = this.ctx.createGain();
     this.voiceGain.connect(this.master);
     this.voice = new BlipPlayer(this.ctx, this.voiceGain);
     this.applyVolumes();
     this.music = new MusicPlayer(this.ctx, this.musicGain);
+    this.setRoom(this.room);
     this.noiseBuf = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+
+  /** Where the player is (`Area.voiceRoom`): the music's and the effects' reverb follow it. */
+  setRoom(room: RoomName) {
+    this.room = room;
+    if (!this.ctx) return;
+    this.applyRoom();
+  }
+
+  /** Changes the N64 chain's settings (the dev bench; the defaults live in `n64chain.ts`). */
+  setChain(params: N64Params) {
+    this.chainParams = { ...params };
+    if (!this.ctx) return;
+    this.chain.set(params);
+    this.music.limiter.max = params.on ? params.voices : Infinity;
+    this.applyRoom();
+  }
+
+  private applyRoom() {
+    const amount = this.chainParams.reverb;
+    const r = ROOMS[this.room];
+    const m = musicRoom(r, amount);
+    this.music.setRoom(m.wet, m.seconds);
+    this.music.limiter.max = this.chainParams.on ? this.chainParams.voices : Infinity;
+    if (r.seconds !== this.sfxRoomSeconds) {
+      this.sfxRoomSeconds = r.seconds;
+      this.sfxRoom.buffer = impulse(this.ctx!, r.seconds);
+    }
+    this.sfxRoomGain.gain.value = r.room * amount;
   }
 
   /** Sets the volumes (0..1, from settings). At DEFAULT_VOLUME everything is as loud as it was before the sliders. */

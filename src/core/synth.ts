@@ -9,6 +9,7 @@
  * Takes any BaseAudioContext, so the same code can render offline (to a WAV) for checks.
  */
 import type { CompiledSong, Instrument, NoteEvent } from './music';
+import { VoiceLimiter } from './n64chain';
 
 /** How far ahead notes are scheduled. Longer survives worse frame drops; shorter switches songs faster. */
 const LOOKAHEAD = 0.25;
@@ -18,6 +19,14 @@ const SEND: Record<Instrument, number> = {
   flute: 0.35, bell: 0.5, box: 0.55, harp: 0.4, pad: 0.45, bass: 0.05, drive: 0.04, brass: 0.25, mallet: 0.3, piano: 0.2, keys: 0.3,
   kick: 0.04, snare: 0.2, hat: 0.1, shaker: 0.2, tom: 0.25,
 };
+
+/** Roughly how long each instrument rings at least, for counting simultaneous notes (the cap in `n64chain.ts`). */
+const RING: Record<Instrument, number> = {
+  flute: 0.3, bell: 1.8, box: 1.1, harp: 1.4, pad: 0.9, bass: 0.3, drive: 0.1, brass: 0.2, mallet: 0.7, piano: 0.25, keys: 0.5,
+  kick: 0.35, snare: 0.18, hat: 0.05, shaker: 0.1, tom: 0.4,
+};
+/** The rhythm section is never dropped by the note cap. */
+const KEEP: ReadonlySet<Instrument> = new Set<Instrument>(['kick', 'snare', 'bass', 'drive']);
 
 /** A song's private output, so it can fade out while the next one starts. */
 interface Bus {
@@ -38,18 +47,31 @@ interface Playing {
 
 export class MusicPlayer {
   private reverb: ConvolverNode;
+  private reverbReturn: GainNode;
+  private reverbSeconds = 2.6;
+  /** The cap on simultaneous notes (set its `max` from the N64 chain's `voices`). */
+  readonly limiter = new VoiceLimiter(Infinity);
   private noiseBuf: AudioBuffer;
   private playing: Playing | null = null;
 
   constructor(private ctx: BaseAudioContext, private out: AudioNode) {
     this.reverb = ctx.createConvolver();
     this.reverb.buffer = impulse(ctx, 2.6);
-    const ret = ctx.createGain();
-    ret.gain.value = 0.7;
-    this.reverb.connect(ret).connect(out);
+    this.reverbReturn = ctx.createGain();
+    this.reverbReturn.gain.value = 0.7;
+    this.reverb.connect(this.reverbReturn).connect(out);
     this.noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+
+  /** The room the music is heard in (`musicRoom`): reverb level and tail. A new tail swaps the impulse, so call it on area changes. */
+  setRoom(wet: number, seconds: number) {
+    this.reverbReturn.gain.value = wet;
+    if (Math.abs(seconds - this.reverbSeconds) > 0.01) {
+      this.reverbSeconds = seconds;
+      this.reverb.buffer = impulse(this.ctx, seconds);
+    }
   }
 
   get current() {
@@ -72,6 +94,7 @@ export class MusicPlayer {
       src.stop(now + fade + 3);
     }
     this.playing = null;
+    this.limiter.reset();
     if (!song || !song.events.length) return;
     const dry = this.ctx.createGain();
     const wet = this.ctx.createGain();
@@ -183,6 +206,7 @@ export class MusicPlayer {
   private note(ev: NoteEvent, t: number, bus: Bus) {
     // A touch of human looseness: tiny timing and loudness variation.
     t += Math.random() * 0.006;
+    if (!this.limiter.admit(t, t + Math.max(ev.dur, RING[ev.inst]), KEEP.has(ev.inst))) return;
     const v = ev.vel * (0.9 + Math.random() * 0.15);
     const f = ev.freq;
     const d = ev.dur;
