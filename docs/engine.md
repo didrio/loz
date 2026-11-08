@@ -46,7 +46,7 @@ pure logic: the owner of the menu feeds it input (keyboard, d-pad/stick, mouse h
 click via `Hud.onMenuHover/onMenuClick`) and `Hud.setMenu(view)` draws it. The main menu
 should be built on it too. `MenuDriver` (`game/menuDriver.ts`) feeds one from input
 (up/down with a tick, confirm, cancel) and draws it; the game routes the HUD's mouse hover and
-click to whichever menu is open. `ChoiceMenu` is `ScriptApi.choose(title, options)`: a titled
+click to whichever menu is open. Hover follows real mouse movement only, and the menu scrolls to the selection only when the selection moves (never on a hover or an unrelated redraw), so trackpad momentum and touch panning (`touch-action: pan-y` on `.gmenu-list`/`.gmenu-detail`) work. `ChoiceMenu` is `ScriptApi.choose(title, options)`: a titled
 panel of options resolving with the index or null (backed out), shown during a cutscene instead
 of the dialog box (the bells' travel menu). `choose(title, options, exit?)` and `ask(pages, options, exit?)` share one look: a small centered
 window, rows stacked, ▸ and a bar on the selected one, mouse hover/click; `exit` is the index of the back-out row (Not now, Stay), drawn red,

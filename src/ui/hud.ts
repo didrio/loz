@@ -91,6 +91,9 @@ export class Hud {
   private debug: HTMLElement;
   private gmenu: HTMLElement;
   private gmenuHtml = '';
+  /** The menu is redrawing because the mouse moved onto a row: it is already in view, so don't scroll to it. */
+  private hoverDraw = false;
+  private gmenuSelected = '';
   /** Set by the game: the mouse hovered a row / clicked a row of the open menu. */
   onMenuHover: (i: number) => void = () => {};
   onMenuClick: (i: number) => void = () => {};
@@ -215,9 +218,14 @@ export class Hud {
     this.debug = q('.debug');
     this.gmenu = q('.gmenu');
     const rowOf = (e: Event) => (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
-    this.gmenu.addEventListener('mouseover', (e) => {
+    // Hover follows the mouse's own movement, not rows scrolling under a resting cursor (a trackpad
+    // fling would otherwise redraw the menu mid-scroll, stop its momentum and snap back to the selection).
+    this.gmenu.addEventListener('mousemove', (e) => {
+      if (e.movementX === 0 && e.movementY === 0) return;
       const r = rowOf(e);
-      if (r) this.onMenuHover(Number(r.dataset.row));
+      if (!r || r.classList.contains('selected')) return;
+      this.hoverDraw = true;
+      try { this.onMenuHover(Number(r.dataset.row)); } finally { this.hoverDraw = false; }
     });
     this.gmenu.addEventListener('click', (e) => {
       const el = e.target as HTMLElement;
@@ -332,12 +340,21 @@ export class Hud {
       html = `<div class="gmenu-panel${view.tabs ? ' wide' : ''}${view.compact ? ' compact' : ''}">${close}${tabs}${content}<div class="gmenu-help">${help}</div></div>`;
     }
     if (html === this.gmenuHtml) return;
-    const oldScroll = this.gmenu.querySelector('.gmenu-list')?.scrollTop ?? 0;
+    const oldList = this.gmenu.querySelector<HTMLElement>('.gmenu-list');
+    const oldScroll = oldList?.scrollTop ?? 0;
+    const oldDetail = this.gmenu.querySelector<HTMLElement>('.gmenu-detail')?.scrollTop ?? 0;
     this.gmenu.innerHTML = this.gmenuHtml = html;
     const list = this.gmenu.querySelector<HTMLElement>('.gmenu-list');
+    // Only the selection moving (keys, pad, a new menu) scrolls to it. Any other redraw (a value
+    // ticking, the mouse) leaves the player's own scrolling alone.
+    const sel = view ? `${view.title}|${view.tabs?.active ?? ''}|${view.rows.findIndex((r) => r.selected)}` : '';
+    const moved = sel !== this.gmenuSelected;
+    this.gmenuSelected = sel;
     if (list) {
       list.scrollTop = oldScroll;
-      this.gmenu.querySelector('.gmenu-row.selected')?.scrollIntoView({ block: 'nearest' });
+      const detail = this.gmenu.querySelector<HTMLElement>('.gmenu-detail');
+      if (detail) detail.scrollTop = oldDetail;
+      if (moved && !this.hoverDraw) this.gmenu.querySelector('.gmenu-row.selected')?.scrollIntoView({ block: 'nearest' });
     }
   }
 
