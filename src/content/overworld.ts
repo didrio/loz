@@ -15,6 +15,7 @@ import { hintContent } from './hints';
 import { sigilContent } from './sigils';
 import { O } from './text/overworld';
 import { villageContent } from './village';
+import { pal } from '../render/palette';
 
 /** What a loaded area needs from content: scripts by interactable/trigger id, and save restore. */
 export interface AreaContent {
@@ -128,7 +129,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     const up = start.clone().setY(start.y + 5);
     await api.tween(1.6, (t) => {
       spark.position.lerpVectors(start, up, easeInOut(t));
-      api.particles.burst(spark.position, 0xffb35a, 1, 1, 0.5, false);
+      api.particles.fx('embers', spark.position, { count: 1, speed: 1, life: 0.5 });
     });
     ow.hollow.clear();
 
@@ -139,13 +140,13 @@ export function overworldContent(ow: Overworld): AreaContent {
     await api.tween(2.4, (t) => {
       spark.position.copy(arc(up, mid, lantern, easeInOut(t) * 0.45));
       api.shot(from, spark.position);
-      api.particles.burst(spark.position, 0xffb35a, 2, 1.5, 0.6, false);
+      api.particles.fx('embers', spark.position, { speed: 1.5 });
     });
     // Through the gap in the shrine's ring of pillars, looking up at the roof.
     api.shot(new THREE.Vector3(lantern.x - 16, lantern.y - 5, lantern.z + 2), lantern, true);
     await api.tween(1.8, (t) => {
       spark.position.copy(arc(up, mid, lantern, 0.45 + easeInOut(t) * 0.55));
-      api.particles.burst(spark.position, 0xffb35a, 2, 1.5, 0.6, false);
+      api.particles.fx('embers', spark.position, { speed: 1.5 });
     });
     spark.removeFromParent();
     spark.traverse((m) => m instanceof THREE.Mesh && (m.geometry.dispose(), (m.material as THREE.Material).dispose()));
@@ -176,7 +177,7 @@ export function overworldContent(ow: Overworld): AreaContent {
     ow.vessel.show();
     // Where the Lamplighter stood, something has been written in the air.
     ow.sigil.setPresent(true);
-    api.particles.burst(ow.sigil.group.position, 0xe2d6ff, 24, 2, 1.2, false);
+    api.particles.fx('itemSparkle', ow.sigil.group.position, { color: pal('violet', 3), speed: 2, life: 1.2 });
     await api.say([{ text: O.hollow.flameHome }]);
   };
 
@@ -219,7 +220,7 @@ export function overworldContent(ow: Overworld): AreaContent {
       await api.wait(0.9);
       api.sfx.fanfare();
       api.giveSword();
-      api.particles.burst(new THREE.Vector3(ow.chest.x, api.player.pos.y + 1.2, ow.chest.z), 0xfff1a8, 30, 4, 1.2, false);
+      api.particles.fx('itemSparkle', new THREE.Vector3(ow.chest.x, api.player.pos.y + 1.2, ow.chest.z), { count: 30, speed: 4, life: 1.2 });
       await api.say(O.grove.sword.map((text) => ({ text })));
     },
 

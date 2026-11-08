@@ -36,7 +36,7 @@ export function villageContent(ow: Overworld) {
       ow.shield.take();
       api.giveShield();
       api.sfx.fanfare();
-      api.particles.burst(new THREE.Vector3(ow.shield.x, ow.shield.y + 0.6, ow.shield.z), 0xfff1a8, 24, 3, 1, false);
+      api.particles.fx('itemSparkle', new THREE.Vector3(ow.shield.x, ow.shield.y + 0.6, ow.shield.z));
       await api.say([
         { text: V.shield.got },
         { text: GUARD_TUTORIAL },

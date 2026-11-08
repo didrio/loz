@@ -3,6 +3,7 @@ import { Layer } from '../../../core/physics';
 import type { Move } from '../../boss';
 import type { Attack, EnemyEnv } from '../../enemies';
 import type { Gravelheart } from './index';
+import { pal } from '../../../render/palette';
 
 /**
  * The attack sheet: damage in half-hearts (owner's call, 2026-11-03: every hit is two whole hearts,
@@ -54,8 +55,8 @@ export const HAMMERFALL: Move<G> = {
       const at = slamPoint(b, env);
       if (env.playerPos.distanceTo(at) < 2.4 && env.playerPos.y - at.y < 1.2) env.hitPlayer(at, ATTACKS.hammerfall);
       env.hazards.shockwave(at, { speed: 15, maxRadius: 16, damage: 4, stone: true });
-      env.particles.burst(at.clone().setY(at.y + 0.3), 0x4f4a42, 22, 6, 0.9);
-      env.particles.burst(at.clone().setY(at.y + 0.2), 0xff7a32, 10, 4, 0.5);
+      env.particles.fx('smoke', at.clone().setY(at.y + 0.3), { color: pal('stone', 1), count: 22, speed: 6, life: 0.9, gravity: true });
+      env.particles.fx('embers', at.clone().setY(at.y + 0.2), { color: pal('ember', 2), count: 10, speed: 4, life: 0.5, gravity: true });
       env.shake(0.9);
       env.sfx.boom();
     }
@@ -195,7 +196,7 @@ export const VOLLEY: Move<G> = {
         const from = b.takeStone(env.playerPos) ?? b.pos.clone().add(new THREE.Vector3((i - 1) * 2.2, 5 + (i % 2) * 0.8, 0));
         const hoverAt = b.pos.clone().addScaledVector(side, (i - (VOLLEY_STONES - 1) / 2) * 2.2).addScaledVector(b.forward, 0.5).setY(b.pos.y + 5.4);
         env.hazards.stone(from, { hoverAt, delay: VOLLEY.timing(b).windup + i * gap, attack: ATTACKS.stone, speed: 18, homing: 1.3, onLand: (at) => b.addRubble(at.setY(at.y - 0.15)) });
-        env.particles.burst(from, 0x8f887c, 8, 3, 0.5);
+        env.particles.fx('dustKick', from, { color: pal('stone', 2), count: 8, life: 0.5 });
       }
     } else if (step === 'active') {
       b.turnRate = 0.8;
@@ -226,7 +227,7 @@ export const GRIND: Move<G> = {
       const rel = env.playerPos.clone().sub(b.pos).setY(0);
       if (rel.length() < 3.4 && env.playerPos.y - b.pos.y < 1) env.hitPlayer(b.pos, ATTACKS.grind);
       env.hazards.shockwave(b.pos.clone().setY(b.pos.y + 0.05), { speed: 10, maxRadius: 6, damage: 4, stone: true });
-      env.particles.burst(b.pos.clone().setY(b.pos.y + 0.3), 0x4f4a42, 20, 5, 0.8);
+      env.particles.fx('smoke', b.pos.clone().setY(b.pos.y + 0.3), { color: pal('stone', 1), count: 20, speed: 5, life: 0.8, gravity: true });
       env.shake(0.6);
       env.sfx.grind();
     }
@@ -260,7 +261,7 @@ export const STAGGER: Move<G> = {
     }
   },
   update(b, step, _t, env) {
-    if (step === 'active' && Math.random() < 0.15) env.particles.burst(b.emberWorldPos(), 0xff7a32, 2, 2.5, 0.5, false);
+    if (step === 'active' && Math.random() < 0.15) env.particles.fx('embers', b.emberWorldPos(), { color: pal('ember', 2), speed: 2.5, life: 0.5 });
     if (step === 'windup') b.pose({ lean: -0.35, hipsY: 1.2, rArm: 0.2, lArm: 0.2, eyes: 1, lids: 0.1, red: 0, ember: 2 }, 12);
     else if (step === 'active') b.pose({ lean: 0.1, hipsY: 0.95, headPitch: 0.45, rArm: 0.4, lArm: 0.4, rOut: 0.5, lOut: 0.5, eyes: 0.2, lids: 0.75, ember: 2 }, 6);
     else b.pose({ lean: 0.1, hipsY: 1.4, headPitch: 0.1, eyes: 0.8, lids: 0.35, ember: 1.2 }, 4);
@@ -299,7 +300,7 @@ export const ROLL: Move<G> = {
       b.keyT = 3;
       env.shake(0.9);
       env.sfx.boom();
-      env.particles.burst(b.pos.clone().addScaledVector(b.rollDir, 1.6).setY(b.pos.y + 1.5), 0x4f4a42, 20, 6, 0.8);
+      env.particles.fx('smoke', b.pos.clone().addScaledVector(b.rollDir, 1.6).setY(b.pos.y + 1.5), { color: pal('stone', 1), count: 20, speed: 6, life: 0.8, gravity: true });
     }
   },
   update(b, step, t, env, dt) {
@@ -363,7 +364,7 @@ export const KNEEL: Move<G> = {
     if (step === 'windup') b.pose({ lean: -0.5, hipsY: 1.5, headPitch: -0.3, rArm: 0.4, lArm: 0.4, rOut: 0.9, lOut: 0.9, eyes: 1, lids: 0.1, ember: 2, float: 2 }, 5);
     else if (step === 'active') b.pose({ lean: 1.15, hipsY: 0.8, headPitch: 0.3, rArm: 0.85, lArm: 0.85, rOut: 0.3, lOut: 0.3, rBend: 0.1, lBend: 0.1, eyes: 0.3, lids: 0.7, ember: 2.4, float: 0.4 }, 4);
     else b.pose({ lean: 0.4, hipsY: 1.4, headPitch: 0.1, eyes: 0.8, lids: 0.35, ember: 1.4 }, 4);
-    if (step === 'active' && Math.random() < 0.15) env.particles.burst(b.emberWorldPos(), 0xff7a32, 2, 2.5, 0.5, false);
+    if (step === 'active' && Math.random() < 0.15) env.particles.fx('embers', b.emberWorldPos(), { color: pal('ember', 2), speed: 2.5, life: 0.5 });
   },
   exit(b) {
     b.chestOpen = false;
@@ -393,7 +394,7 @@ export const HOWL: Move<G> = {
       b.hearth?.raiseRing();
       const c = b.hearth?.center ?? b.pos;
       for (const dx of [-3, 3]) env.drop('heart', new THREE.Vector3(c.x + dx, c.y + 0.5, c.z));
-      env.particles.burst(b.pos.clone().setY(b.pos.y + 0.3), 0x4f4a42, 30, 8, 1);
+      env.particles.fx('smoke', b.pos.clone().setY(b.pos.y + 0.3), { color: pal('stone', 1), count: 30, speed: 8, life: 1, gravity: true });
       env.shake(1.4);
       env.sfx.boom();
     }

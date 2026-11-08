@@ -37,7 +37,7 @@ export function fakeApi(area: Area, physics: Physics, state = new GameState()) {
   const sfx = new Proxy({}, { get: () => noop }) as Sfx;
   const api: ScriptApi = {
     state, sfx, player, area,
-    particles: { burst: noop } as unknown as Particles,
+    particles: { burst: noop, fx: noop } as unknown as Particles,
     physics,
     tween: async () => {},
     showBossTitle: noop,

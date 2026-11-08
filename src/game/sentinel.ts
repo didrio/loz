@@ -3,6 +3,7 @@ import { damp, lerpAngle } from '../core/math';
 import type { Physics } from '../core/physics';
 import { uniqueSurf } from '../render/materials';
 import { GroundEnemy, type Attack, type EnemyEnv, type HurtResult } from './enemies';
+import { pal } from '../render/palette';
 
 /** The two-handed maul: heavy on the guard (block one, then back off and lower the shield). */
 export const SENTINEL_SWING: Attack = { damage: 4, guard: 2, knockback: 16, stone: true };
@@ -216,7 +217,7 @@ export class DozingSentinel extends GroundEnemy {
           const strike = this.pos.clone().add(new THREE.Vector3(Math.sin(this.yaw), 0, Math.cos(this.yaw)).multiplyScalar(2.2 + ARM_STRETCH));
           env.sfx.stoneThunk();
           env.shake(0.2);
-          env.particles.burst(strike.setY(this.pos.y + 0.2), 0xb3a68a, 10, 4, 0.5);
+          env.particles.fx('dustKick', strike.setY(this.pos.y + 0.2), { color: pal('stone', 2), count: 10, speed: 4, life: 0.5 });
           this.go('recover');
         }
         break;

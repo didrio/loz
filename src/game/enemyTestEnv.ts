@@ -12,7 +12,7 @@ export function enemyEnv(physics: Physics, playerPos: THREE.Vector3, result: () 
   const env = {
     playerPos, playerAlive: true, night: false, physics,
     hazards: {} as EnemyEnv['hazards'], sfx: new Proxy({}, { get: () => noop }) as EnemyEnv['sfx'],
-    particles: { burst: noop } as unknown as EnemyEnv['particles'],
+    particles: { burst: noop, fx: noop } as unknown as EnemyEnv['particles'],
     hitPlayer: (from, attack) => {
       const r = result();
       hits.push({ from: from.clone(), attack, result: r });

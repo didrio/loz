@@ -60,8 +60,8 @@
     "triangles": 245000
   },
   "enemies": {
-    "calls": 810,
-    "triangles": 68000
+    "calls": 800,
+    "triangles": 69000
   },
   "entrance": {
     "calls": 1500,
@@ -96,8 +96,8 @@
     "triangles": 195000
   },
   "guard": {
-    "calls": 930,
-    "triangles": 266000
+    "calls": 810,
+    "triangles": 223000
   },
   "hollow": {
     "calls": 90,
@@ -132,8 +132,8 @@
     "triangles": 268000
   },
   "orbs": {
-    "calls": 1030,
-    "triangles": 272000
+    "calls": 650,
+    "triangles": 217000
   },
   "pip": {
     "calls": 850,

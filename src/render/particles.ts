@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { snap } from './palette';
+import { resolveFx, room, type FxName, type FxOpts } from './effects';
 
 interface Particle {
   mesh: THREE.Mesh;
@@ -19,13 +21,28 @@ export class Particles {
   private mat(color: number) {
     let m = this.mats.get(color);
     if (!m) {
-      m = new THREE.MeshBasicMaterial({ color, transparent: true });
+      m = new THREE.MeshBasicMaterial({ color: snap(color), transparent: true });
       this.mats.set(color, m);
     }
     return m;
   }
 
+  /** A named effect (render/effects.ts): `fx('hitSpark', at)`, or with an override: `fx('dustKick', at, { count: 8 })`. */
+  fx(name: FxName, pos: THREE.Vector3, opts?: FxOpts) {
+    const p = resolveFx(name, opts);
+    this.burst(pos, p.color, p.count, p.speed, p.life, p.gravity);
+  }
+
+  /** How many particles are flying now. */
+  get alive() {
+    let n = 0;
+    for (const p of this.pool) if (p.life > 0) n++;
+    return n;
+  }
+
+  /** The raw emitter behind `fx`; call sites use `fx`. Trimmed so no more than MAX_PARTICLES fly at once. */
   burst(pos: THREE.Vector3, color: number, count = 10, speed = 5, life = 0.6, gravity = true) {
+    count = room(this.alive, count);
     for (let i = 0; i < count; i++) {
       let p = this.pool.find((q) => q.life <= 0);
       if (!p) {

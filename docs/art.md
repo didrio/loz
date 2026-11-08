@@ -9,7 +9,7 @@ that looks the way people *remember* the N64, not the way it literally looked.
 - **Reference:** OoT and MM, upscaled. Modern indie benchmarks: *Corn Kidz 64*, *Cavern of Dreams*.
 - **Not:** the 3DS remake's busier detail, Wind Waker (cel bands), Twilight Princess, or a glossy, over-polished low-poly indie look. (Genre feel only: never a specific game's designs, AGENTS.md "Hard rules".)
 - **How we build it:** [pipeline.md](pipeline.md) (Rough and Final passes, the registry, the checks). The rebuild of
-  everything that exists starts with the foundation tickets T32–T39 ([tickets.md](tickets.md)), then the golden set and the rest
+  everything that exists starts with the foundation tickets T33–T39 ([tickets.md](tickets.md)), then the golden set and the rest
   ([roadmap.md](roadmap.md) "The N64 look rebuild").
 
 Each section says **today** (what the code does now) and **target**. Until a ticket moves a section to the target, don't
@@ -108,9 +108,11 @@ transparent layers few.
 
 ## Effects
 
-**Today:** `Particles` (little cubes) with ad-hoc `burst(...)` calls; `glow`; `motes`.
-**Target (T32):** named presets every enemy and weapon uses: hit spark, guard spark, death puff, dust kick, item
-sparkle, magic motes, a sword slash trail. Palette colours. Combat feedback then reads the same everywhere.
+**Done (T32), `render/effects.ts`:** named presets (`FX`): `hitSpark`, `weakSpark`, `guardSpark`, `hurtSpark`, `deathPuff`,
+`dustKick`, `leafCut`, `shards`, `itemSparkle`, `magicMotes`, `smoke`, `embers`. Call `particles.fx('hitSpark', at)`; a site that
+truly differs overrides a colour or a number (`{ count, speed, life, gravity, color }`). Never call `burst` outside `fx`.
+Colours are `pal(...)` and `Particles` snaps anything else; no more than `MAX_PARTICLES` (320) fly at once. `SlashTrail` is the
+sword's arc (player). `glow` (render/shapes.ts) and `motes` (atmosphere) are unchanged. New effect = a new preset, not a raw burst.
 
 ## UI
 

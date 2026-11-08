@@ -36,7 +36,7 @@ export function hintContent(buds: ReadonlyMap<string, MurmurbudLook>) {
       const first = foundHints(api.state).length === 0;
       const bud = buds.get(`bud.${hint.id}`);
       api.state.set(hintFlag(hint.id));
-      if (bud) api.particles.burst(bud.center.setY(bud.center.y + 1), 0xffe8a8, 10, 2, 0.6, false);
+      if (bud) api.particles.fx('itemSparkle', bud.center.setY(bud.center.y + 1), { count: 10, speed: 2, life: 0.6 });
       bud?.take();
       api.sfx.select();
       await api.say([{ who: hint.title, text: hint.text }]);

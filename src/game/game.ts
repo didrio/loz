@@ -34,6 +34,7 @@ import type { Page, Script, ScriptApi } from './script';
 import { GameState, dayTurn } from './state';
 import { TitleMenu } from './title';
 import { TouchControls, wantsTouch, type TouchContext } from '../ui/touch';
+import { pal } from '../render/palette';
 
 /**
  * - title: the menu over a slow camera orbit
@@ -586,10 +587,10 @@ export class Game implements ScriptApi {
     if (potion === 'life') {
       this.state.hp = this.state.maxHp;
       this.sfx.heart();
-      this.particles.burst(at, 0xff6080, 20, 3, 0.9, false);
+      this.particles.fx('itemSparkle', at, { color: pal('rose', 3), count: 20, life: 0.9 });
     } else {
       this.player.attackBoost = ATTACK_BOOST_SECONDS;
-      this.particles.burst(at, 0xffa030, 20, 3, 0.9, false);
+      this.particles.fx('itemSparkle', at, { color: pal('amber', 2), count: 20, life: 0.9 });
     }
   }
 

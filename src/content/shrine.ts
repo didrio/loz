@@ -13,6 +13,7 @@ import { readSigil } from './sigils';
 import { SH } from './text/shrine';
 import { wardenContent } from './gravelheart';
 import type { AreaContent } from './overworld';
+import { pal } from '../render/palette';
 
 /**
  * The Waking Shrine's content: what its chests hold and say, what unlocks what, when a
@@ -67,14 +68,14 @@ export function shrineContent(area: DungeonArea): AreaContent {
       const sigil = area.sigils.get(t.id)!;
       if (sigil.present || !met(t.appears, p)) continue;
       sigil.setPresent(true);
-      api.particles.burst(sigil.group.position, 0xe2d6ff, 24, 2, 1.2, false);
+      api.particles.fx('itemSparkle', sigil.group.position, { color: pal('violet', 3), speed: 2, life: 1.2 });
     }
     for (const t of def.things) {
       if (t.kind !== 'chest' || !t.appears) continue;
       const chest = area.chests.get(t.id)!;
       if (chest.present || !met(t.appears, p)) continue;
       chest.setPresent(true);
-      api.particles.burst(chest.group.position.clone().setY(chest.group.position.y + 0.8), 0xfff1a8, 24, 3, 0.9, false);
+      api.particles.fx('itemSparkle', chest.group.position.clone().setY(chest.group.position.y + 0.8), { life: 0.9 });
       api.sfx.solved();
     }
   };
@@ -120,7 +121,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
       p.chests.add(t.id);
       await api.wait(0.9);
       api.sfx.fanfare();
-      api.particles.burst(chest.group.position.clone().setY(chest.group.position.y + 1.2), 0xfff1a8, 30, 4, 1.2, false);
+      api.particles.fx('itemSparkle', chest.group.position.clone().setY(chest.group.position.y + 1.2), { count: 30, speed: 4, life: 1.2 });
       const loot = t.loot;
       if (loot === 'bossKey') p.bossKey = true;
       else if ('key' in loot) p.keys.add(loot.key);
@@ -130,7 +131,7 @@ export function shrineContent(area: DungeonArea): AreaContent {
           api.state.items.add('tether');
           const w = api.player.pos, f = api.player.forward;
           api.shot(w.clone().add(new THREE.Vector3(f.x * 2.6 - f.z * 1.2, 1.6, f.z * 2.6 + f.x * 1.2)), w.clone().setY(w.y + 1.2), true);
-          api.particles.burst(w.clone().setY(w.y + 1.5), 0x7ff7e8, 40, 5, 1.4, false);
+          api.particles.fx('magicMotes', w.clone().setY(w.y + 1.5), { color: pal('teal', 3), count: 40, speed: 5, life: 1.4 });
           api.sfx.tetherLatch();
           await api.wait(1.2);
         }
@@ -243,12 +244,12 @@ export function shrineContent(area: DungeonArea): AreaContent {
         if (hits < PRISM_HITS) {
           api.sfx.weakHit();
           api.sfx.stoneThunk();
-          api.particles.burst(at, 0xbff0ff, 14 + hits * 6, 4 + hits, 0.9, true);
+          api.particles.fx('magicMotes', at, { count: 14 + hits * 6, speed: 4 + hits, life: 0.9, gravity: true });
         } else {
           api.sfx.shatter();
           api.sfx.rumble();
-          api.particles.burst(at, 0xffffff, 40, 8, 1.4, true);
-          api.particles.burst(at, 0x7fe6ff, 30, 5, 1.8, true);
+          api.particles.fx('hitSpark', at, { count: 40, speed: 8, life: 1.4 });
+          api.particles.fx('magicMotes', at, { color: pal('spirit', 2), count: 30, speed: 5, life: 1.8, gravity: true });
         }
       };
       area.onStone = (_id, result, from) => {

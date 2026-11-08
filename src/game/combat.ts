@@ -14,6 +14,7 @@ import { BLUEGEM_GEMS, type Pickups } from './pickups';
 import type { Player, PlayerEnv } from './player';
 import type { GameState } from './state';
 import { TetherCord } from './tether';
+import { pal } from '../render/palette';
 
 /** What combat needs from the game. `area` and `enemies` change with every area load. */
 export interface CombatHost {
@@ -170,17 +171,17 @@ export class Combat {
         // A light puff of earth from under the shield every ~1.5 m: dust, not a smoke trail.
         else if (speed < 3 || at.distanceToSquared(this.surfDust) < 1.5 * 1.5) return;
         this.surfDust.copy(at);
-        particles.burst(at.clone().setY(at.y + 0.1), 0xa8916a, mounted ? 8 : 3, 2.5, 0.45);
+        particles.fx('dustKick', at.clone().setY(at.y + 0.1), { count: mounted ? 8 : 3, speed: 2.5 });
       },
       onHitEnemy: (e, result, at) => this.onSwordHit(e, result, at),
       onCutBush: (at) => {
         sfx.cut();
-        particles.burst(at, 0x4f9a35, 14, 5, 0.6);
+        particles.fx('leafCut', at);
         pickups.drop(at, 0.3, 0.1);
       },
       onHitThorn: (hit) => {
         // Violet chips on every hit; a felled clump bursts and stays down for good.
-        particles.burst(hit.at, 0x5a2a78, hit.felled ? 26 : 8, hit.felled ? 6 : 4, hit.felled ? 0.8 : 0.45);
+        particles.fx('leafCut', hit.at, { color: pal('plum', 2), count: hit.felled ? 26 : 8, speed: hit.felled ? 6 : 4, life: hit.felled ? 0.8 : 0.45 });
         if (hit.felled) {
           this.g.state.set(hit.id);
           sfx.jar();
@@ -189,7 +190,7 @@ export class Combat {
       onBreakJar: (jar) => {
         this.g.state.set(`jar.${jar.id}`);
         sfx.jar();
-        particles.burst(jar.at, 0xa8683a, 16, 5, 0.7);
+        particles.fx('shards', jar.at);
         if (jar.drop === 'doll') this.g.runScript('jar.doll');
         else if (jar.drop !== 'empty') pickups.spawn(jar.drop, jar.at);
       },
@@ -231,24 +232,24 @@ export class Combat {
     if (result === 'ignored') return;
     if (result === 'guarded') {
       sfx.clank();
-      particles.burst(at, 0xffe28a, 10, 6, 0.35);
+      particles.fx('guardSpark', at);
       this.hitStop = 0.05;
       return;
     }
     const isBoss = e instanceof Boss;
     if (result === 'weak') {
       sfx.weakHit();
-      particles.burst(at, 0x9ff0ff, 14, 7, 0.45);
+      particles.fx('weakSpark', at);
       this.hitStop = 0.11;
       this.g.rig.shake(0.25);
     } else {
       sfx.hit();
-      particles.burst(at, 0xffffff, 6, 6, 0.3);
+      particles.fx('hitSpark', at);
       if (isBoss) this.hitStop = 0.06;
     }
     if (e.alive || isBoss) return;
     sfx.enemyDie();
-    particles.burst(at, e.deathColor, 18, 6, 0.7);
+    particles.fx('deathPuff', at, { color: e.deathColor });
     this.g.pickups.drop(e.pos.clone(), 0.65, 0.2);
     this.forget(e);
   }
@@ -261,19 +262,19 @@ export class Combat {
     const shieldAt = at.clone().add(player.forward.multiplyScalar(0.7));
     if (r === 'hit') {
       sfx.hurt();
-      particles.burst(at, 0xff4d4d, 8, 4);
+      particles.fx('hurtSpark', at);
       this.hitStop = Math.max(this.hitStop, 0.07);
       rig.shake(0.2);
     } else if (r === 'blocked') {
       // Heavier attacks clang harder: the cost should be felt, not just seen in the HUD.
       if (attack.guard >= 2) sfx.heavyBlock();
       else sfx.clank();
-      particles.burst(shieldAt, 0xffe28a, 4 + attack.guard * 4, 5, 0.3);
+      particles.fx('guardSpark', shieldAt, { count: 4 + attack.guard * 4, speed: 5, life: 0.3 });
       if (attack.guard >= 2) rig.shake(0.12 * attack.guard);
     } else if (r === 'broken') {
       sfx.guardBreak();
-      particles.burst(shieldAt, 0x8b5a2b, 14, 6, 0.6);
-      particles.burst(shieldAt, 0xffe28a, 10, 7, 0.35);
+      particles.fx('shards', shieldAt, { count: 14, speed: 6, life: 0.6 });
+      particles.fx('guardSpark', shieldAt, { speed: 7 });
       this.hitStop = Math.max(this.hitStop, 0.09);
       rig.shake(0.4);
       this.g.hud.flashGuard();

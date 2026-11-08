@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T44**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T45**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -40,14 +40,14 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T32: Effects presets
+### T44: The boss look scene's howl shot renders black
 **Run:** auto · sonnet · medium
-**Why:** art.md "Effects": combat feedback should read the same across every enemy and weapon. Today there are 59
-ad-hoc `burst(...)` calls.
-**Done when:** named presets (hit spark, guard spark, death puff, dust kick, item sparkle, motes) and a sword slash trail
-exist; every `burst` call site uses one; colours come from the palette; particle counts are capped.
-**Read first:** art.md "Effects"; `render/particles.ts`; `render/shapes.ts` (`glow`); `render/motes.ts`; Grep `\.burst(`.
-**Verify:** `npm run check`; smoke `combat shrine-enemies`; look `enemies boss guard orbs`.
+**Why:** `npm run look -- boss` gives an all-black `boss-howl` frame (HUD only; the baseline shows the Lamplighter mid-howl). It
+is the same on HEAD without T32, so it predates the effects work (probably the texture commits). The boss baselines are stale
+and weren't approved.
+**Done when:** `boss-howl` shows the howl again, and `npm run look -- boss --approve` goes in the commit.
+**Read first:** `scripts/look.mjs` (the `boss` scene), `game/bosses/lamplighter.ts` (the howl, Grep `howl`).
+**Verify:** `npm run check`; look `boss`.
 
 ### T33: Asset registry, pure model builders, validator
 **Run:** auto · sonnet · high

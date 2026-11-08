@@ -4,6 +4,7 @@ import { uniqueSurf } from '../render/materials';
 import type { Particles } from '../render/particles';
 import { glow, GroundShadow } from '../render/shapes';
 import type { Attack, HitResult } from './enemies';
+import { pal } from '../render/palette';
 
 /**
  * Attacks that outlive the move that made them: expanding shockwaves (jump over them) and
@@ -228,14 +229,14 @@ export class Hazards {
       o.mesh.position.copy(o.pos);
       o.mesh.rotation.y += dt * 6;
       o.shadow.place(o.pos.x, o.pos.y, o.pos.z, env.physics.groundY(o.pos.x, o.pos.z, o.pos.y, Layer.World));
-      if (Math.random() < dt * 30) env.particles.burst(o.pos, o.color, 1, 0.6, 0.35, false);
+      if (Math.random() < dt * 30) env.particles.fx('magicMotes', o.pos, { color: o.color, count: 1, speed: 0.6, life: 0.35 });
       let pop = o.t > o.life || wall < dist + o.radius;
       if (!pop && o.pos.distanceTo(chest) < 0.75 + o.radius) {
         const r = env.hitPlayer(o.pos, o.attack);
         pop = r !== 'miss';
       }
       if (pop) {
-        env.particles.burst(o.pos, o.color, 10, 4, 0.4);
+        env.particles.fx('magicMotes', o.pos, { color: o.color, count: 10, speed: 4, life: 0.4, gravity: true });
         env.onPop?.(o.pos);
         this.removeOrb(i);
       }
@@ -276,7 +277,7 @@ export class Hazards {
         if (s.attack && !land && s.pos.distanceTo(chest) < 1.2) land = env.hitPlayer(s.pos, s.attack) !== 'miss';
         if (land) {
           if (floor !== null) s.pos.y = Math.max(floor + 0.45, s.pos.y);
-          env.particles.burst(s.pos, 0x8f887c, 10, 4, 0.5);
+          env.particles.fx('dustKick', s.pos, { color: pal('stone', 2), count: 10, speed: 4, life: 0.5 });
           env.onPop?.(s.pos);
           s.onLand?.(s.pos.clone());
           this.removeStone(i);

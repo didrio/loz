@@ -17,7 +17,7 @@ function setup(result: HitResult = 'hit') {
   const env: HazardEnv = {
     playerPos: player,
     physics,
-    particles: { burst: () => {} } as unknown as Particles,
+    particles: { burst: () => {}, fx: () => {} } as unknown as Particles,
     hitPlayer: (_f, attack) => (calls.push(attack), result),
   };
   return { hazards: new Hazards(new THREE.Scene()), env, calls, player };

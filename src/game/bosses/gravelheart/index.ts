@@ -9,6 +9,7 @@ import type { EnemyEnv, Hurtbox } from '../../enemies';
 import { RING_WIDTH } from '../../../world/dungeon/hearth';
 import { HOWL, KNEEL, MOVES, STAGGER } from './moves';
 import { blendPose, GravelheartRig, SLEEP, STAND, type Pose } from './rig';
+import { pal } from '../../../render/palette';
 
 /**
  * GRAVELHEART, Who Came Home. Boss of the Waking Shrine (docs/shrine.md, "The boss").
@@ -172,7 +173,7 @@ export class Gravelheart extends Boss {
     this.loose = -1;
     this.looseT = 0;
     this.addRubble(from.clone().addScaledVector(dir, 1.8));
-    this.env?.particles.burst(at, 0x9b9486, 16, 5, 0.6);
+    this.env?.particles.fx('dustKick', at, { color: pal('stone', 2), count: 16, speed: 5, life: 0.6 });
     this.env?.shake(0.5);
     this.env?.sfx.boom();
     if (!this.platesOn) this.interruptWith(STAGGER.name);
@@ -188,7 +189,7 @@ export class Gravelheart extends Boss {
     if (to.length() > 14 || to.normalize().dot(dir) < 0.9 || to.dot(this.forward) < 0.2) return null;
     this.keyT = 0;
     this.addRubble(from.clone().addScaledVector(dir, 1.8));
-    this.env?.particles.burst(at, 0x9b9486, 18, 5, 0.6);
+    this.env?.particles.fx('dustKick', at, { color: pal('stone', 2), count: 18, speed: 5, life: 0.6 });
     this.env?.shake(0.6);
     this.env?.sfx.boom();
     this.interruptWith(KNEEL.name);
@@ -224,7 +225,7 @@ export class Gravelheart extends Boss {
     for (let i = 0; i < this.plates.length; i++) {
       if (this.plates[i]) continue;
       const from = this.takeStone(this.pos) ?? this.pos.clone().setY(this.pos.y + 4);
-      env.particles.burst(from, 0x9b9486, 8, 3, 0.5);
+      env.particles.fx('dustKick', from, { color: pal('stone', 2), count: 8, life: 0.5 });
       this.plates[i] = true;
     }
     env.sfx.grind();
@@ -319,7 +320,7 @@ export class Gravelheart extends Boss {
       this.ground = true;
       env.sfx.grind();
     }
-    if (t > 2 && t < 3.4 && Math.random() < 0.4) env.particles.burst(this.pos.clone().setY(this.pos.y + 0.2 + Math.random() * 3), 0x6a645a, 2, 1.5, 0.9, false);
+    if (t > 2 && t < 3.4 && Math.random() < 0.4) env.particles.fx('smoke', this.pos.clone().setY(this.pos.y + 0.2 + Math.random() * 3), { color: pal('stone', 1), life: 0.9, count: 2, speed: 1.5 });
   }
 
   private poseDying(env: EnemyEnv) {

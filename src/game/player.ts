@@ -3,6 +3,7 @@ import { clamp, damp, easeOut, lerpAngle, mix } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
 import { buildHumanoid, type Humanoid } from '../render/characters';
 import { cloneMaterial, isSharedMaterial, surf, uniqueSurf } from '../render/materials';
+import { SlashTrail } from '../render/effects';
 import { faceted } from '../render/textures';
 import { GroundShadow, shieldModel } from '../render/shapes';
 import type { LockTarget } from './lockon';
@@ -167,8 +168,7 @@ export class Player {
   private deathT = 0;
   private readonly sword = new THREE.Group();
   private readonly shield = new THREE.Group();
-  private readonly trail: THREE.Mesh;
-  private readonly trailPivot = new THREE.Group();
+  private readonly trail: SlashTrail;
   /** The shield's wood; flashes red while the guard is broken. */
   private readonly shieldMat = uniqueSurf('wood', 0x8b5a2b);
   /** The blade, its own material so it can glow while an Ember Tonic is active. */
@@ -220,12 +220,7 @@ export class Player {
     this.shield.visible = false;
     this.h.armL.add(this.shield);
 
-    this.trail = new THREE.Mesh(
-      new THREE.RingGeometry(0.7, 2.3, 18, 1, 0, Math.PI * 0.9),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }),
-    );
-    this.trailPivot.add(this.trail);
-    scene.add(this.trailPivot);
+    this.trail = new SlashTrail(scene);
   }
 
   get hp() {
@@ -256,7 +251,7 @@ export class Player {
       const fadeMats: THREE.Material[] = (this.fadeMats = []);
       const copies = new Map<THREE.Material, THREE.Material>();
       this.h.root.traverse((m) => {
-        if (!(m instanceof THREE.Mesh) || m === this.trail) return;
+        if (!(m instanceof THREE.Mesh) || m === this.trail.mesh) return;
         const src = m.material as THREE.Material;
         let own = copies.get(src);
         if (!own) {
@@ -566,8 +561,7 @@ export class Player {
     h.pivot.position.y = 0.9 + Math.abs(s) * 0.07 * amt;
     h.pivot.rotation.set(0, 0, 0);
     this.sword.rotation.x = -1.1;
-    const trailMat = this.trail.material as THREE.MeshBasicMaterial;
-    trailMat.opacity = Math.max(0, trailMat.opacity - dt * 5);
+    this.trail.fade(dt);
 
     if (!this.body.grounded) {
       h.legL.rotation.x = -0.6;
@@ -596,12 +590,7 @@ export class Player {
       h.legL.rotation.x = 0.4;
       h.legR.rotation.x = -0.3;
       if (p > 0.15 && p < 0.7) {
-        trailMat.opacity = 0.45;
-        this.trailPivot.position.copy(this.pos).setY(this.pos.y + (this.combo === 2 ? 1.5 : 1.2));
-        this.trailPivot.rotation.y = this.facing;
-        // Horizontal arc centered on forward, or a vertical arc for the overhead chop.
-        if (this.combo === 2) this.trail.rotation.set(0, -Math.PI / 2, 0);
-        else this.trail.rotation.set(-Math.PI / 2, 0, -Math.PI * 0.95);
+        this.trail.show(this.pos, this.combo === 2 ? 1.5 : 1.2, this.facing, this.combo === 2);
       }
     } else if (this.state === 'hurt') {
       h.pivot.rotation.x = -0.35;

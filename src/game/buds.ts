@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Area } from '../world/area';
 import type { Game } from './game';
 import { BUD, Murmurbud } from './murmurbud';
+import { pal } from '../render/palette';
 
 /** How close Wren must be for a stirred bud's gauge to show. */
 const GAUGE_RANGE = 9;
@@ -75,7 +76,7 @@ export class BudSystem {
     const result = rule.strike();
     if (result === 'grew') {
       sfx.budTap(rule.growth);
-      particles.burst(look.center, 0xb9c2a8, 5, 3, 0.35);
+      particles.fx('dustKick', look.center, { color: pal('moss', 3), count: 5, life: 0.35 });
     } else if (result === 'overload') {
       sfx.nuhUh();
       look.sulk();
@@ -88,6 +89,6 @@ export class BudSystem {
     const look = this.game.area.buds!.get(id)!;
     look.open();
     this.game.sfx.budOpen();
-    this.game.particles.burst(look.center, 0xffe8a8, 18, 4, 0.9, false);
+    this.game.particles.fx('itemSparkle', look.center, { count: 18, speed: 4, life: 0.9 });
   }
 }

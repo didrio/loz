@@ -7,6 +7,7 @@ import { glow } from '../../render/shapes';
 import type { BossArena } from '../../world/objects';
 import { Boss, type Move } from '../boss';
 import { Gloomwisp, type Attack, type EnemyEnv, type Hurtbox } from '../enemies';
+import { pal } from '../../render/palette';
 
 /**
  * THE HOLLOW LAMPLIGHTER, Keeper of a Stolen Flame. Mini-boss of Gloaming Hollow.
@@ -434,8 +435,8 @@ export class HollowLamplighter extends Boss {
     if (env.playerPos.distanceTo(at) < 2.1) env.hitPlayer(at, ATTACKS.slam);
     env.hazards.shockwave(at, { speed: 9, maxRadius: 16, damage: 1 });
     if (this.phase >= 2) this.later(0.5, () => env.hazards.shockwave(at, { speed: 10.5, maxRadius: 16, damage: 1 }));
-    env.particles.burst(at.clone().setY(at.y + 0.3), 0x6fe8ff, 18, 7, 0.6);
-    env.particles.burst(at.clone().setY(at.y + 0.2), 0x4f4a42, 16, 5, 0.8);
+    env.particles.fx('magicMotes', at.clone().setY(at.y + 0.3), { color: pal('spirit', 3), count: 18, speed: 7, life: 0.6, gravity: true });
+    env.particles.fx('smoke', at.clone().setY(at.y + 0.2), { count: 16, speed: 5, life: 0.8, gravity: true });
     env.shake(0.7);
     env.sfx.boom();
   }
@@ -459,12 +460,12 @@ export class HollowLamplighter extends Boss {
     for (const s of this.strips) {
       if (!s.front) continue;
       s.g.visible = false;
-      env.particles.burst(new THREE.Vector3(0, 1, 0).applyMatrix4(s.g.matrixWorld), 0x1c1a22, 6, 4, 0.9);
+      env.particles.fx('smoke', new THREE.Vector3(0, 1, 0).applyMatrix4(s.g.matrixWorld), { color: pal('ink', 2), count: 6, speed: 4, life: 0.9, gravity: true });
     }
     for (const l of this.lanterns) {
       l.g.visible = false;
       const at = new THREE.Vector3().setFromMatrixPosition(l.glow.matrixWorld);
-      env.particles.burst(at, 0xb06aff, 12, 5, 0.6);
+      env.particles.fx('magicMotes', at, { color: pal('violet', 2), count: 12, speed: 5, life: 0.6, gravity: true });
       const w = new Gloomwisp(this.root.parent!, env.physics, at.x, at.z, {
         nocturnal: false,
         anchor: () => (this.alive ? this.headWorldPos() : null),
@@ -546,8 +547,8 @@ export class HollowLamplighter extends Boss {
     this.root.scale.set(0.7 + k * 0.3, Math.max(0.01, k), 0.7 + k * 0.3);
     if (Math.random() < dt * 40) {
       const at = this.pos.clone().setY(this.pos.y - 1 + Math.random() * 3.5 * k);
-      env.particles.burst(at, Math.random() < 0.5 ? 0xffb35a : 0x7fdcff, 2, 2, 0.7);
-      env.particles.burst(at, 0x3a3633, 2, 1.2, 1.2, false);
+      env.particles.fx(Math.random() < 0.5 ? 'embers' : 'magicMotes', at, { count: 2, gravity: true, life: 0.7 });
+      env.particles.fx('smoke', at, { count: 2, speed: 1.2, life: 1.2 });
     }
     if (rising && this.presence >= 1) this.fading = null;
     if (!rising && this.presence <= 0) {
@@ -564,8 +565,8 @@ export class HollowLamplighter extends Boss {
       const at = this.pos.clone().setY(this.pos.y + 0.5 + Math.random() * 2.5);
       at.x += (Math.random() - 0.5) * 1.2;
       at.z += (Math.random() - 0.5) * 1.2;
-      env.particles.burst(at, 0xffb35a, 6, 3, 0.5);
-      env.particles.burst(at, 0x3a3633, 3, 1.5, 0.9, false);
+      env.particles.fx('embers', at, { count: 6, speed: 3, life: 0.5, gravity: true });
+      env.particles.fx('smoke', at, { count: 3, life: 0.9 });
     }
   }
 
@@ -635,16 +636,16 @@ export class HollowLamplighter extends Boss {
         this.shattered = true;
         const at = this.headWorldPos();
         this.cage.visible = this.mask.visible = false;
-        env.particles.burst(at, 0x2a2c31, 22, 7, 1.0);
-        env.particles.burst(at, 0xe9e4d4, 10, 5, 1.0);
-        env.particles.burst(at, 0xffb35a, 24, 6, 0.8);
+        env.particles.fx('smoke', at, { color: pal('ink', 3), count: 22, speed: 7, gravity: true });
+        env.particles.fx('deathPuff', at, { color: pal('chalk', 1), count: 10, speed: 5, life: 1 });
+        env.particles.fx('embers', at, { count: 24, speed: 6, life: 0.8, gravity: true });
         env.shake(0.6);
         env.sfx.shatter();
       }
       // The body crumbles into ash.
       const k = clamp((t - 3.6) / 2.2, 0, 1);
       this.root.scale.set(1 - k * 0.3, Math.max(0.01, 1 - k), 1 - k * 0.3);
-      if (Math.random() < dt * 30) env.particles.burst(this.pos.clone().setY(this.pos.y + 1 + Math.random() * 2 * (1 - k)), 0x3a3633, 2, 1.5, 1.2, false);
+      if (Math.random() < dt * 30) env.particles.fx('smoke', this.pos.clone().setY(this.pos.y + 1 + Math.random() * 2 * (1 - k)), { count: 2, life: 1.2 });
       this.pose({ hipsY: 0.8, lean: 0.9, flame: Math.max(0, 1 - k * 3) }, 3);
     }
     if (this.poleDropped) {

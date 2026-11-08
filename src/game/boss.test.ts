@@ -34,7 +34,7 @@ function setup(playerAt = new THREE.Vector3(0, 0, 4)) {
     physics,
     hazards,
     sfx: new Proxy({}, { get: () => noop }) as Sfx,
-    particles: { burst: noop } as unknown as Particles,
+    particles: { burst: noop, fx: noop } as unknown as Particles,
     hitPlayer: (_from, attack) => (hits.push(attack), 'hit'),
     pushPlayer: noop,
     spawn: (e) => spawned.push(e),

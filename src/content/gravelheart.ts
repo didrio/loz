@@ -85,7 +85,7 @@ export function wardenContent(area: DungeonArea) {
     api.shot(start.clone().addScaledVector(side, 14).setY(start.y + 1), start, true);
     await api.tween(3.2, (t) => {
       spark.position.lerpVectors(start, top, easeInOut(t));
-      api.particles.burst(spark.position, 0xffb35a, 1, 1, 0.5, false);
+      api.particles.fx('embers', spark.position, { count: 1, speed: 1, life: 0.5 });
       api.shot(start.clone().addScaledVector(side, 14).setY(start.y + 1), spark.position);
     });
     spark.removeFromParent();
