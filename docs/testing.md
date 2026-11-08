@@ -6,6 +6,8 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
 ## Commands
 
 - `npm run check`: lint + unit tests + typecheck/build. Run before calling work done.
+- `npm run assets`: builds every registered model in Node and prints triangles against budget, size, textures and the validator's findings
+  (the same checks run in `npm run check`: `render/models/registry.test.ts`; [pipeline.md](pipeline.md)).
 - `npm run palette`: the hex colour literals still in `src/`, by file, each off-palette one with its nearest swatch
   (`-- --summary` for counts only, `-- <path part>` for one area). Final passes replace them with `pal()` names. The swatch
   page is `/palette.html` on the dev server.
@@ -58,7 +60,12 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   script steps them (50 ms of game time each), `h.wait(ms)` runs frames instead of sleeping, `h.until` checks after every
   frame (its timeout is game time), `Math.random` is seeded and CSS animations are finished before a shot. Two runs on
   unchanged code give nearly identical frames: a few shots (gorge, orbs, hollow) still differ by a handful of scattered pixels
-  (cause not found), which the tolerance absorbs. A "changed" shot is a real change, or a new random draw order. A scene must use
+  (cause not found), which the tolerance absorbs. A "changed" shot is a real change, or a new random draw order. **three.js draws four `Math.random()` numbers for every object, material and
+  geometry it creates (its UUIDs), and a wisp's orbit adds `root.id`:** a refactor that builds a different number of objects (an extra
+  group in a model builder) shifts everything seeded after it, so the boss arena's flame phases and the freed wisps differ by a few
+  pixels with no model changed (T33: `boss` went from 5 unchanged to 0.13-1.6%). To prove a model refactor changed nothing, fingerprint the
+  model before and after instead (every mesh's geometry type, vertex count, bounds, world matrix, material colour, emissive and surface, from
+  a throwaway test that builds it on the old tree with `git stash` and on the new one) and compare. A scene must use
   `h.wait`/`h.until`/`h.shot`/`h.shotOf(locator, name)`, never `page.waitForTimeout` or its own screenshots. The full run takes ~1 min.
 - Both scripts share `scripts/browser.mjs` (dev server, Chrome, `newGame`, `teleport`,
   `finishScript`...). One-off investigation scripts belong in your session scratchpad, not

@@ -17,7 +17,8 @@
     "map": "node scripts/map.mjs",
     "midi": "node scripts/midi-import.mjs",
     "flags": "node scripts/flags.mjs",
-    "palette": "node scripts/palette.mjs"
+    "palette": "node scripts/palette.mjs",
+    "assets": "node scripts/assets.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.21.0",

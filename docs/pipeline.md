@@ -24,8 +24,8 @@ Detail is wasted at this stage.
 - Built from primitives (the kit, from T35), at the right scale, with the intended silhouette roughly there. Palette colours by name (`pal('wood', 1)`).
 - **Full gameplay:** behaviour, hurtboxes and hit ranges, attack timings, the standard poses (simple is fine), sounds.
   Recipes: `/add-enemy`, `/add-npc`, `/add-quest-beat`.
-- Registered as `tier: 'rough'` (from T33), with a short spec in its topic doc (design intent, attacks, timings, weak points).
-- **Done when:** placed in the game, playable, the Definition of done passes (AGENTS.md), the validator passes (from T33),
+- Registered as `tier: 'rough'` in `render/models/registry.ts`, with a short spec in its topic doc (design intent, attacks, timings, weak points).
+- **Done when:** placed in the game, playable, the Definition of done passes (AGENTS.md), the validator passes (`npm run assets`; no failures in `npm run check`),
   and the report says how to reach it (a dev state, `?state=`, or `embervale.spawn`, from T34).
 
 ## Final pass: looks finished, plays the same
@@ -56,18 +56,44 @@ model in place: there is never a rough and a final model side by side.
 
 Characters are rigid parts on a hierarchy of joints (`THREE.Group`s): no skinning, so nothing distorts. Animation is
 code: a **`Pose`**, a flat set of numbers (joint angles, heights, glow amounts) that moves and states blend toward, and
-one `pose(p)` that applies it to the joints. Both bosses already work this way (`game/bosses/gravelheart/rig.ts`, the
-Lamplighter's `Pose`); regular enemies pose inline and adopt it in their final passes. State names: `idle`, `move`,
+one `pose(p)` that applies it to the joints. Both bosses already work this way (`render/models/gravelheart.ts`, the
+Lamplighter's `Pose` in `game/bosses/lamplighter.ts`); regular enemies pose inline and adopt it in their final passes. State names: `idle`, `move`,
 `anticipate`, `attack`, `recover`, `hurt`, `death`, plus extras per creature; bosses use the move system's
 windup/active/recover ([combat.md](combat.md)). Pose data stays separate from geometry, so a model can be re-detailed
 without breaking its animation. From T35, `bakeRig` merges each joint's parts into one mesh with one material (fewer
 draw calls; the hit flash becomes a uniform).
 
-## The registry and validator (T33)
+## The registry and validator
 
-Not built yet. Until then: count triangles by hand if a budget is in doubt (`renderer.info` in `?debug`), name
-colours with `pal()` (`render/palette.ts`). T33 adds a registry of every model (id, kind, tier, a pure `build()`), a validator that runs in
-`npm run check` (budget, palette, texture sizes, shared materials, bounds) and `npm run assets` (the table).
+**A model is a pure builder** in `render/models/<name>.ts`: a function that returns a `Model` (`types.ts`): `root` (everything
+visible, at the origin, facing +z), `joints` (the parts behaviour poses or hangs hurtboxes on, by name), `flashMats` (the unique
+materials that flash on a hit) and optionally `animated` (other unique materials it animates itself: glowing eyes, an ember). It uses
+no physics and no game, so Node can build it. The behaviour file (`game/…`, `world/objects.ts`) calls the builder, adds `root` to its
+own, and keeps stats, timings, attack sheets and hurtbox sizes; hurtboxes still ride the named joints. Models that need extra parts
+return them beside the `Model` (the Shellback's `eyes` and `legs`, Wren's `coatMat`).
+
+**The registry** (`render/models/registry.ts`): `ASSETS`, one entry per model: `id`, `kind` (`player`, `enemy`, `miniboss`, `boss`,
+`npc`, `prop`, `piece`), `tier` (`rough` or `final`) and `build()`. A test fails if a `build…` function in `render/models/` is not
+used in the registry, so a new model cannot be forgotten. **Adding a model:** write `render/models/<name>.ts`, register it
+(`tier: 'rough'`), run `npm run assets`. `piece` (dungeon rooms and set pieces) is defined but empty: those join with the dungeon
+look ticket. Not models, so not registered: `BossArena` (a sealing flame ring, an effect) and the terrain and buildings (merged static
+scenery, [art.md](art.md)). Every NPC is `buildHumanoid` with its own colours; the registry holds one stand-in (`villager`).
+
+**The validator** (`render/models/validate.ts`) builds every entry in Node and checks it:
+
+| Check | Rule |
+|---|---|
+| Triangles | at most the kind's budget (art.md "Budgets": player 2,000, enemy 1,200, mini-boss 2,500, boss 4,000, NPC 1,200, prop 300; instances counted) |
+| Colours | every material's colour (and a glow's emissive) is exactly a palette swatch: models name theirs with `pal()` |
+| Materials | every `MeshLambertMaterial` is shared (`mat`, `surf`) or declared in `flashMats` / `animated`; no hand-made ones |
+| Textures | generated tiles at most 64 px (the ground tile excepted) |
+| Bounds | the bounding box is not empty or tiny, and not longer than the kind's limit (a scale sanity check) |
+
+**Findings warn for `rough` and fail for `final`.** `registry.test.ts` runs it inside `npm run check`: any finding on a `final` asset fails,
+and a rough asset's findings print as one warning line. `npm run assets` prints the table (triangles against budget, size, textures,
+status) and every finding. Reading the table: today's rough models mostly hold glow colours that are not swatches (eyes, embers, halos:
+`MeshBasicMaterial`s written as hex) and a few props over the 300-triangle budget (the heart vessel's extruded heart); the
+Lamplighter is at about twice its mini-boss budget. A final pass fixes these; it never changes gameplay.
 
 ## The viewer, contact sheet and dev shortcuts (T34)
 

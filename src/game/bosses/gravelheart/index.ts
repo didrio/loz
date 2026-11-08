@@ -8,7 +8,7 @@ import { Boss, type Move } from '../../boss';
 import type { EnemyEnv, Hurtbox } from '../../enemies';
 import { RING_WIDTH } from '../../../world/dungeon/hearth';
 import { HOWL, KNEEL, MOVES, STAGGER } from './moves';
-import { blendPose, GravelheartRig, SLEEP, STAND, type Pose } from './rig';
+import { blendPose, GravelheartRig, SLEEP, STAND, type Pose } from '../../../render/models/gravelheart';
 import { pal } from '../../../render/palette';
 
 /**

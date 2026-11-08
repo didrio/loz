@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { clamp, damp, easeOut, lerpAngle, mix } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
-import { buildHumanoid, type Humanoid } from '../render/characters';
-import { cloneMaterial, isSharedMaterial, surf, uniqueSurf } from '../render/materials';
+import type { Humanoid } from '../render/characters';
+import { cloneMaterial, isSharedMaterial } from '../render/materials';
+import { buildWren, SHIELD_REST_POS, WREN_COAT } from '../render/models/wren';
 import { SlashTrail } from '../render/effects';
-import { faceted } from '../render/textures';
-import { GroundShadow, shieldModel } from '../render/shapes';
+import { GroundShadow } from '../render/shapes';
 import type { LockTarget } from './lockon';
 import type { Area } from '../world/area';
 import type { BrokenJar } from '../world/jars';
@@ -68,14 +68,12 @@ const SWINGS = [
   { dur: 0.3, dmg: 1 },
   { dur: 0.42, dmg: 2 },
 ];
-/** Wren's tunic: orange, or slate-blue once the Stoneward Tunic is bought. */
-const COAT = 0xb4532a;
+/** Wren's tunic is orange (render/models/wren.ts), or slate-blue once the Stoneward Tunic is bought. */
 const STONEWARD_COAT = 0x6b8296;
 const RUN_SPEED = 8.5;
 /** While the guard is broken Wren staggers: a crawl at this fraction of normal speed, no jumping, no sword. */
 const STAGGER_SPEED = 0.06;
 /** The shield lowered: on the outside of the left forearm (arm space), face turned ~80° out to the side. */
-const SHIELD_REST_POS = new THREE.Vector3(0.14, -0.4, 0.02);
 const SHIELD_REST_YAW = 1.4;
 /** The shield raised: its center in front of the chest (body space, before the character's scale). */
 const SHIELD_BLOCK_POS = new THREE.Vector3(0.05, 1.2, 0.62);
@@ -166,13 +164,13 @@ export class Player {
   private walkPhase = 0;
   private speedXZ = 0;
   private deathT = 0;
-  private readonly sword = new THREE.Group();
-  private readonly shield = new THREE.Group();
+  private readonly sword: THREE.Group;
+  private readonly shield: THREE.Group;
   private readonly trail: SlashTrail;
   /** The shield's wood; flashes red while the guard is broken. */
-  private readonly shieldMat = uniqueSurf('wood', 0x8b5a2b);
+  private readonly shieldMat: THREE.MeshLambertMaterial;
   /** The blade, its own material so it can glow while an Ember Tonic is active. */
-  private readonly bladeMat = uniqueSurf('metal', 0xd8dde3, { emissive: 0x000000 });
+  private readonly bladeMat: THREE.MeshLambertMaterial;
   /** Seconds left of an Ember Tonic (the sword hits harder meanwhile). */
   attackBoost = 0;
   /** Seconds left of a glove throw: the arm is out, no sword or shield until it's back. */
@@ -183,42 +181,21 @@ export class Player {
   /** The blob under Wren's feet: how far above the ground she is matters most when platforming. */
   private readonly shadow: GroundShadow;
   private fadeMats: THREE.Material[] | null = null;
-  private readonly coatMat = uniqueSurf('cloth', COAT);
+  private readonly coatMat: THREE.MeshLambertMaterial;
   /** Wearing the Stoneward Tunic: stone hits do half damage (rounded up). */
   private stoneward = false;
 
   constructor(scene: THREE.Scene, private readonly physics: Physics, private readonly health: Health) {
-    this.h = buildHumanoid({ skin: 0xf0c49c, hair: 0x2e2018, coat: COAT, pants: 0x4a4038, boots: 0x5a3a22, accent: 0x2aa198 });
-    // The tunic gets its own material, so buying the Stoneward Tunic can recolor it.
-    const shared = surf('cloth', COAT);
-    this.h.root.traverse((m) => {
-      if (m instanceof THREE.Mesh && m.material === shared) m.material = this.coatMat;
-    });
+    const m = buildWren();
+    this.h = m.humanoid;
+    this.coatMat = m.coatMat;
+    this.bladeMat = m.bladeMat;
+    this.shieldMat = m.shieldMat;
+    this.sword = m.joints.sword;
+    this.shield = m.joints.shield;
     scene.add(this.h.root);
     this.shadow = new GroundShadow(scene, 0.4, 'character');
     this.body = physics.createCharacter(this.pos, this.radius, 0.5, Layer.Player, SOLID | Layer.Enemy);
-
-    // Sword in the right hand, blade continuing the line of the arm.
-    const steel = surf('metal', 0xd8dde3), gold = surf('metal', 0xc9a227), grip = surf('leather', 0x3a2412);
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.05, 0.03), this.bladeMat);
-    blade.position.y = -0.78;
-    const tip = new THREE.Mesh(faceted(new THREE.ConeGeometry(0.057, 0.18, 4)), steel);
-    tip.rotation.x = Math.PI;
-    tip.position.y = -1.39;
-    const guard = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.06, 0.1), gold);
-    guard.position.y = -0.22;
-    const hilt = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.04, 0.04, 0.24, 6)), grip);
-    hilt.position.y = -0.08;
-    this.sword.add(blade, tip, guard, hilt);
-    this.sword.position.y = -0.62;
-    this.sword.visible = false;
-    this.h.armR.add(this.sword);
-
-    // A round wooden shield on the left arm (its face is local +z; `animate` sets the pose).
-    this.shield.add(shieldModel(this.shieldMat, surf('metal', 0x9a9fa6)));
-    this.shield.position.copy(SHIELD_REST_POS);
-    this.shield.visible = false;
-    this.h.armL.add(this.shield);
 
     this.trail = new SlashTrail(scene);
   }
@@ -270,7 +247,7 @@ export class Player {
 
   setStoneward(on: boolean) {
     this.stoneward = on;
-    this.coatMat.color.setHex(on ? STONEWARD_COAT : COAT);
+    this.coatMat.color.setHex(on ? STONEWARD_COAT : WREN_COAT);
   }
 
   setSword(has: boolean) {

@@ -9,7 +9,7 @@ that looks the way people *remember* the N64, not the way it literally looked.
 - **Reference:** OoT and MM, upscaled. Modern indie benchmarks: *Corn Kidz 64*, *Cavern of Dreams*.
 - **Not:** the 3DS remake's busier detail, Wind Waker (cel bands), Twilight Princess, or a glossy, over-polished low-poly indie look. (Genre feel only: never a specific game's designs, AGENTS.md "Hard rules".)
 - **How we build it:** [pipeline.md](pipeline.md) (Rough and Final passes, the registry, the checks). The rebuild of
-  everything that exists starts with the foundation tickets T33–T39 ([tickets.md](tickets.md)), then the golden set and the rest
+  everything that exists starts with the foundation tickets T34–T39 ([tickets.md](tickets.md)), then the golden set and the rest
   ([roadmap.md](roadmap.md) "The N64 look rebuild").
 
 Each section says **today** (what the code does now) and **target**. Until a ticket moves a section to the target, don't
@@ -26,7 +26,7 @@ extend the "today" look: build new work so it moves toward the target.
 | Textures | **Done (T30):** grey detail tiles × colour, drawn at 32 texels/m and shown at a global **resolution** of 32/m, i.e. full detail, by default (owner's call; tunable 1–32 live in the Dev tab), with each tile's **scale** authored with it, **nearest** up close (bilinear was tried in T30: too blurry) | Intensity texture × colour is what N64 games did; ≤ 64 px tiles (the ground's 128 px stays). Untextured is fine for small props and simple creatures |
 | Fog | **Done (T31):** the colour of the sky's horizon, tinted and reaching differently per place (`render/atmosphere.ts`, below); indoors one dark fog | Same. A core part of the look |
 | Sky | **Done (T31):** painted gradient, the day's keys per place, blended as Wren crosses (below). No cloud layers yet | Gradient with simple cloud layers, tinted per area to match its fog, driven by the existing day/night cycle |
-| Shadows | **Done (T46, owner's call: back as an option, 2026-11-07):** Settings → Shadows (default On on desktop, Off on touch). One sun shadow map outdoors (`render/shadows.ts`, engine.md "Sun shadows"): the sun by day and the moon, weaker, at night, following Wren within 24 m; houses, trees, props, Wren, NPCs, enemies and bosses cast, the ground and scenery receive. It fades out as the sun nears the horizon. N64 uses a small unfiltered map (a crisp, blocky edge). **Dungeons and houses keep the blobs**; outdoors `GroundShadow` blobs of characters hide and orbs, wisps and stones keep theirs. Off: no map, everything as in T31 (baked `BAKED_SHADE` darkening in the vertices either way) | Same. Anything lit and solid casts on its own; a glow or glass never does (`userData.noShadow` opts out). Give anything new that stands or floats a blob (it shows indoors and with Shadows off) |
+| Shadows | **Done (T46, owner's call: back as an option, 2026-11-07):** Settings → Shadows (default On on desktop, Off on touch). One sun shadow map outdoors (`render/shadows.ts`, render.md "Sun shadows"): the sun by day and the moon, weaker, at night, following Wren within 24 m; houses, trees, props, Wren, NPCs, enemies and bosses cast, the ground and scenery receive. It fades out as the sun nears the horizon. N64 uses a small unfiltered map (a crisp, blocky edge). **Dungeons and houses keep the blobs**; outdoors `GroundShadow` blobs of characters hide and orbs, wisps and stones keep theirs. Off: no map, everything as in T31 (baked `BAKED_SHADE` darkening in the vertices either way) | Same. Anything lit and solid casts on its own; a glow or glass never does (`userData.noShadow` opts out). Give anything new that stands or floats a blob (it shows indoors and with Shadows off) |
 
 **Not allowed:** PBR materials, normal maps, high-resolution or photographic textures, cel/toon light bands, outlines,
 SSAO, depth of field, motion blur, heavy bloom.
@@ -50,7 +50,7 @@ and the blight's ash (`BLIGHT_ASH`) wins while it lies on the valley. To add a p
 
 ## Display modes
 
-**Today (T28 done):** one **Display** setting with three options (engine.md "Display modes"):
+**Today (T28 done):** one **Display** setting with three options (render.md "Display modes"):
 - **Native**: full device resolution (cap 3×), antialiased. Default on desktop and Steam.
 - **Performance**: the same look with the render resolution capped (pixel ratio ~1). Default on touch devices.
 - **N64**: the 3D scene drawn 240 rows tall, width from the screen's aspect (no black bars), upscaled with soft
@@ -78,8 +78,8 @@ warm 0.5; a softer, warmer grade read too grey); glows, gems and the key colours
   swatch (OKLab distance), so old literals are on palette without being touched; final passes still replace them with names
   (`npm run palette` lists what's left).
 - **Sub-palettes:** `AREA_PALETTES` lists each area's swatches (valley, village, hollow, blight, Northpass, the four shrine
-  wings, whose `THEMES` in `world/dungeon/decor.ts` are palette names). A final pass paints with its area's list; T33's
-  validator checks against it.
+  wings, whose `THEMES` in `world/dungeon/decor.ts` are palette names). A final pass paints with its area's list; the
+  asset validator checks colours against the palette.
 - **Blending is fine:** sky keys, fog, lights and the ground paint name palette colours but blend freely between them; baked
   shading darkens a palette colour. Authored flat colours never sit between swatches.
 - **The swatch page:** `/palette.html` on the dev server (every hue and shade, each area's strip).
@@ -88,7 +88,7 @@ warm 0.5; a softer, warmer grade read too grey); glows, gems and the key colours
 
 ## Budgets
 
-Starting points; the validator (T33) measures the real counts. Scene budgets (draw calls, overdraw) come from the phone
+Starting points; the validator (`npm run assets`, [pipeline.md](pipeline.md)) measures the real counts and enforces them on final assets. Scene budgets (draw calls, overdraw) come from the phone
 performance pass and go here.
 
 | Asset type | Triangles | Textures (generated, ≤ 64 px) |

@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, type Physics } from '../core/physics';
-import { uniqueSurf } from '../render/materials';
-import { faceted } from '../render/textures';
+import { buildCragstalker } from '../render/models/cragstalker';
 import { GroundEnemy, type Attack, type EnemyEnv } from './enemies';
 
 /** The lunge: stone claws, heavy (the Stoneward Tunic halves it). */
@@ -40,9 +39,9 @@ export class Cragstalker extends GroundEnemy {
   private hitDone = false;
   private readonly wanderTo = new THREE.Vector3();
   private readonly lungeDir = new THREE.Vector3();
-  private readonly body = new THREE.Group();
-  private readonly eyeMat = new THREE.MeshBasicMaterial({ color: 0x5a3a1a });
-  private readonly legs: THREE.Mesh[] = [];
+  private readonly body: THREE.Group;
+  private readonly eyeMat: THREE.MeshBasicMaterial;
+  private readonly legs: THREE.Mesh[];
 
   constructor(parent: THREE.Object3D, physics: Physics, x: number, z: number, fromY = 400, territory?: (p: THREE.Vector3) => boolean) {
     super(physics, x, z, fromY, territory, 0.6, 0.15);
@@ -52,40 +51,12 @@ export class Cragstalker extends GroundEnemy {
     this.lockHeight = 0.8;
     this.deathColor = 0x7d776c;
 
-    const rock = uniqueSurf('rock', 0x7a7468), slab = uniqueSurf('rock', 0x5f5a50), hide = uniqueSurf('hide', 0xa9865a), belly = uniqueSurf('hide', 0xc9a878);
-    this.flashMats.push(rock, slab, hide, belly);
-    const add = (geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = this.body) => {
-      const mesh = new THREE.Mesh(geo, m);
-      mesh.position.set(x, y, z);
-      parent.add(mesh);
-      return mesh;
-    };
-    // A long, low body of hide with a ridge of stone plates down its back.
-    const torso = add(new THREE.BoxGeometry(0.8, 0.6, 1.7), hide, 0, 0.7, 0);
-    torso.rotation.x = 0.04;
-    add(new THREE.BoxGeometry(0.6, 0.25, 1.5), belly, 0, 0.45, 0);
-    for (let i = 0; i < 4; i++) {
-      const plate = add(new THREE.IcosahedronGeometry(0.3 - i * 0.02, 0), i % 2 ? slab : rock, 0, 1.05, -0.55 + i * 0.4);
-      plate.scale.set(1.1, 0.7, 1);
-    }
-    // The head hangs low and forward, with a blunt stone brow.
-    const head = new THREE.Group();
-    head.position.set(0, 0.75, 1.0);
-    this.body.add(head);
-    add(new THREE.BoxGeometry(0.55, 0.42, 0.62), hide, 0, 0, 0.1, head);
-    add(new THREE.BoxGeometry(0.62, 0.16, 0.5), rock, 0, 0.26, 0.05, head);
-    for (const s of [-1, 1]) {
-      const eye = add(new THREE.SphereGeometry(0.07, 6, 4), this.eyeMat, s * 0.18, 0.1, 0.4, head);
-      eye.scale.set(1.3, 0.8, 0.6);
-    }
-    // Four long legs and a stiff tail.
-    for (const [lx, lz] of [[-0.42, 0.6], [0.42, 0.6], [-0.42, -0.6], [0.42, -0.6]]) {
-      const leg = add(new THREE.BoxGeometry(0.2, 0.7, 0.24), hide, lx, 0.35, lz);
-      this.legs.push(leg);
-    }
-    const tail = add(faceted(new THREE.ConeGeometry(0.14, 1.0, 5)), slab, 0, 0.85, -1.4);
-    tail.rotation.x = -Math.PI / 2 + 0.5;
-    this.root.add(this.body);
+    const m = buildCragstalker();
+    this.body = m.joints.body;
+    this.eyeMat = m.eyeMat;
+    this.legs = m.legs;
+    this.flashMats.push(...m.flashMats);
+    this.root.add(m.root);
     parent.add(this.root);
   }
 

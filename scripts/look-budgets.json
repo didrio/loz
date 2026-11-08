@@ -16,8 +16,8 @@
     "triangles": 222000
   },
   "boss": {
-    "calls": 1220,
-    "triangles": 232000
+    "calls": 1160,
+    "triangles": 231000
   },
   "boss-moves": {
     "calls": 460,
@@ -60,8 +60,8 @@
     "triangles": 245000
   },
   "enemies": {
-    "calls": 800,
-    "triangles": 69000
+    "calls": 680,
+    "triangles": 64000
   },
   "entrance": {
     "calls": 1500,
@@ -85,7 +85,7 @@
   },
   "gravelheart": {
     "calls": 1600,
-    "triangles": 81000
+    "triangles": 82000
   },
   "gravelheart2": {
     "calls": 410,

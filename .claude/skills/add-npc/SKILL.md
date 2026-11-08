@@ -14,17 +14,19 @@ tested), `content/village.ts` (`npc.pip` is the model), `content/villageNews.ts`
    `{ day, night }`. Cut each box to half, ≤ ~120 visible chars, ≤ 2 highlights, no kin words,
    directions true from where they're said, landmarks must exist. Give the NPC a voice: one trait.
 2. **Voice:** add the speaker's `who` to `SPEAKERS` in `content/voices.ts` (a `BLIP_PRESETS` entry).
-3. **Place** in the area (overworld: `npcs` in `world/overworld/index.ts`: `Npc` with colors, an
+3. **Look:** an NPC is `buildHumanoid(colors, scale)` (`render/characters.ts`); a new silhouette gets a pure builder in
+   `render/models/` and an entry in `registry.ts` (`tier: 'rough'`; `npm run assets`). The registry's `villager` stands in for every humanoid NPC.
+4. **Place** in the area (overworld: `npcs` in `world/overworld/index.ts`: `Npc` with colors, an
    interactable `{ id: 'npc.<id>', r, label: 'Talk', promptY, enabled }`, and `update`). Dungeon NPCs
    go through the dungeon data. `world/` never holds dialog.
-4. **Script** `'npc.<id>'(api)` in the area's content: an `if` chain, freshest story state first
+5. **Script** `'npc.<id>'(api)` in the area's content: an `if` chain, freshest story state first
    (flag/gear/`isNight`/progress), the default last. Set a `<area>.<thing>` flag with `state.set` for
    anything later lines or quests need; add it to `FLAGS` in `game/state.ts` (never rename a shipped
    flag). One-time reactions to big news go through `withNews` rather than new branches.
-5. **Tests:** `content/overworld.test.ts` (every interactable has a script) and a talk test with
+6. **Tests:** `content/overworld.test.ts` (every interactable has a script) and a talk test with
    `fakeApi`: each branch says its line, flags set once, nothing said twice. `npm run flags`
    must show the flag set and read; `textRules.test.ts` covers the words.
-6. **Verify:** `npm run check`; a smoke step in the area's scenario (talk, branch by fixture/flag);
+7. **Verify:** `npm run check`; a smoke step in the area's scenario (talk, branch by fixture/flag);
    a `look` shot if the figure is new (via `looker`).
 
 **Gotchas:** dialog freezes enemies and the clock; an NPC that vanishes with story state needs its

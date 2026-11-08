@@ -22,7 +22,7 @@ As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell. Until then **the blight** lies on the valley;
 after it only Lark and Pip remain in the village. Every gate is data (`content/progression.ts`, checked by a test). Everything is built in code; the
 look is flat-shaded and faceted (owner's call), colours snapped to one master palette and baked into vertices on merged scenery, generated crisp textures on everything but glows, glass, voids and writing (terrain, buildings, dungeons, trees, props, characters, enemies, bosses; a test guards the valley, Northpass and shrine; one global resolution slider in the Dev tab, default 32), and a Display setting (Native / Performance / N64). Sun shadows are a Settings option (**Shadows**, default On on desktop, Off on touch: one shadow map outdoors, `render/shadows.ts`; blob shadows remain indoors and for floating things), baked bounce light is a parked trial in the village (Dev toggle), and each place has its own atmosphere (`render/atmosphere.ts`), and the HUD corner shows the place's name and, in a dungeon, a rendered picture of it instead of the dial. NPCs talk in **blips**; **touch controls** are in a playtest on GitHub Pages; **Sallowmere** stands empty and untextured while the owner redesigns it.
-**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T33–T39. Dev server: port 5273.
+**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T34–T39. Every model is already a pure builder in `render/models/`, registered (all `rough`) and checked by a validator (`npm run assets`, [pipeline.md](docs/pipeline.md)). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -33,6 +33,7 @@ look is flat-shaded and faceted (owner's call), colours snapped to one master pa
 | [docs/art.md](docs/art.md) | making or changing **anything visible or audible**: the style bible (rendering rules, palette, budgets, display modes, UI, controls, golden set) |
 | [docs/pipeline.md](docs/pipeline.md) | **adding or finishing any asset, room or area**: the Rough and Final passes, trigger phrases, the registry, viewer and kit |
 | [docs/engine.md](docs/engine.md) | touching the frame loop, modes, areas, physics, input, scripts/cutscenes, saves; conventions |
+| [docs/render.md](docs/render.md) | touching `render/`: shadows, Display modes, generated textures, model builders (file list) |
 | [docs/combat.md](docs/combat.md) | touching the sword, shield/guard, enemies, hazards or bosses (incl. boss fairness rules) |
 | [docs/dungeons.md](docs/dungeons.md) | designing or building a dungeon (the data format, solver, text map) |
 | [docs/shrine.md](docs/shrine.md) | working on the first dungeon: its design, item, enemies, boss, the Northpass gate, build plan |
@@ -49,12 +50,12 @@ look is flat-shaded and faceted (owner's call), colours snapped to one master pa
   day/night). Never recreate a specific existing game's names, characters, story, map layout, music, sound effects,
   logos or UI design, and never use another franchise's names in code, text or marketing. If a request would recreate
   a specific game's content, do the original version and say so.
-- **Art is built in code**: primitives (boxes, cylinders, cones, spheres) with textures **generated in code** (`render/textures.ts`, engine.md "Textures").
+- **Art is built in code**: primitives (boxes, cylinders, cones, spheres) with textures **generated in code** (`render/textures.ts`, render.md "Textures").
   No imported models, images or sprites (owner's call, 2026-11-07, after a shelved experiment: [models.md](docs/models.md)).
   **Audio is synthesized in code** (no samples; all melodies original). The owner discloses the AI-generated code and writing on Steam.
 - **Every new asset, room or area runs Rough → Final without being asked** ([pipeline.md](docs/pipeline.md)), and **a final pass
   never changes gameplay** (behaviour, hurtboxes, timings, layout, puzzles; ask first). Colours from the palette (`pal()`), models registered
-  and in budget (from T33); check visuals in Native and N64 mode and on the contact sheet (from T34).
+  in `render/models/registry.ts` and in budget (`npm run assets`); check visuals in Native and N64 mode and on the contact sheet (from T34).
 
 ## Working with the owner
 
@@ -118,8 +119,8 @@ src/
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
     blips.ts               talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
-  render/                  palette.ts (the master palette: `pal`, `snap`, area sub-palettes), materials (shared/unique, `surf` textured, snapped to the palette, static merging), bakeLight.ts (baked bounce light into vertex colours; a village trial), textures.ts (generated detail tiles, the projection shader), shapes, effects.ts (the named particle presets, the cap, SlashTrail), characters, atmosphere.ts (each place's sky, light, fog, motes and sub-palette as data), sky (blends them; the blight look), shadows.ts (the sun's shadow map: the Settings' Shadows option; texel snapping, what casts), particles, motes,
-                           retro.ts (the Display modes: N64's 240-row target, dither + colour crush; Native/Performance pixel ratio)
+  render/                  the look: palette (the master palette: `pal`, `snap`), materials, textures, shapes, effects, atmosphere, sky, shadows, retro (the Display modes), particles, motes, characters (`buildHumanoid`); every file: render.md "Render files"
+    models/                every model as a pure builder (no physics, no game), `registry.ts` (id, kind, tier, `build()`), `validate.ts` (budgets, palette); docs/pipeline.md
   world/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern
@@ -139,7 +140,7 @@ src/
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
     sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
     blight.ts              the blight's rules (where it lies, the lift, the strays, its songs, THORN_ATTACK)
-    boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (rig, moves, the boss); dungeonQuiet.ts (no music once beaten)
+    boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (moves, the boss; its model is render/models/gravelheart.ts); dungeonQuiet.ts (no music once beaten)
     lockon.ts, trialFalls.ts, flasks.ts, water.ts   lock-on's pick; trials' fall rule; the two flasks; dry/shallow/deep at Wren's feet (WaterFalls)
     camera.ts, dialog.ts (say + ask), pickups.ts, state.ts, debug.ts, enemyTestEnv.ts (enemy unit tests' stand-in game)
   content/                 the game's story; what things DO
@@ -160,6 +161,7 @@ scripts/
   map.mjs, midi-import.mjs a dungeon's text map + problems (npm run map -- <id>); assets/music-src/<folder>/*.mid → src/core/imported/ (npm run midi)
   flags.mjs, lexicon.mjs   who sets/reads each quest flag (npm run flags; flags.test.ts); the game's words → labs/speech/lexicon.ts (npm run lexicon)
   palette.mjs              hex literals still in code, by file, with their nearest swatch (npm run palette)
+  assets.mjs               the model registry's table: triangles against budget, size, textures, findings (npm run assets)
 src/dev/ the blips test bench (/blips.html) and the swatch page (/palette.html), dev only · src/labs/ shelved, nothing imports it: speech/ (a speech synth), rigged/ (imported rigged models, docs/models.md)
 CREDITS.md third-party credits · assets/music-src/ the owner's MIDI exports, one folder per song (docs/audio.md)
 docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, agents/, skills/ /start and /wrap)
@@ -168,7 +170,7 @@ docs/ (table above); CLAUDE.md, .claude/ (Claude Code only: model/cost routing, 
 ## Commands
 
 `npm run dev` (then `?debug`) · `npm run check` · `npm run smoke [-- <scenarios>]` · `npm run look -- <scenes>`
-· `npm run map -- <dungeon id>` · `npm run midi -- <song folder>` · `npm run lexicon` · `npm run flags` · `npm run palette`. Details in [docs/testing.md](docs/testing.md).
+· `npm run map -- <dungeon id>` · `npm run midi -- <song folder>` · `npm run lexicon` · `npm run flags` · `npm run palette` · `npm run assets`. Details in [docs/testing.md](docs/testing.md).
 
 ## Design decisions (don't undo without asking)
 

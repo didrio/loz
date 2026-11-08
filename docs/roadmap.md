@@ -20,7 +20,7 @@ when it's near.
 - **The N64 look rebuild** (owner, 2026-11-07; replaces the shelved PS2 "look pass", old T20–T26 in git history): the
   starter zone rebuilt on the new pipeline ([art.md](art.md), [pipeline.md](pipeline.md)) before any new area. Behaviour
   never changes. In order, each written as a ticket when it's near (at the previous one's `/wrap`):
-  1. **Foundations:** T33–T39 in [tickets.md](tickets.md) (T27–T32 are done: effects presets, look loop, Display setting, palette, shading and textures, atmosphere and blob shadows; T40 and T43 textured the static world; T41 the living).
+  1. **Foundations:** T34–T39 in [tickets.md](tickets.md) (T27–T33 are done: effects presets, look loop, Display setting, palette, shading and textures, atmosphere and blob shadows, the model registry and validator; T40 and T43 textured the static world; T41 the living).
   2. **The golden set**, one Final-pass ticket each, locked only when the owner approves (the first ones
      plan · opusplan · high, as they define the style): a Thornling → Wren with her full animation set → the starter-area
      entrance vignette (phone frame rate checked) → the prop set (chest from T35, door, jar, crate, sign) → Pip → the Hollow
@@ -90,6 +90,7 @@ enemy randomness.
 - [ ] **The travel menu at scale**: group bells by region, mark where Wren is, maybe a
   little map of the valley. *Trigger: more than ~8 bells.*
 - [x] **Quest/flag overview**: done (`npm run flags`, `game/flags.test.ts`).
+- [ ] **`northpass` smoke fails on its Sallowmere step** ("the descent and its foot are dry, the town's shallows wade…": Stiltwick's shallows read y 0.91; already failing 2026-11-08, on a clean tree too). Fix or rewrite the step with Sallowmere's redesign. *Trigger: that redesign, or CI going red.*
 - [ ] **Docs hygiene**: if a topic doc passes ~400 lines, split it. *Trigger: as stated.*
 - [ ] **AGENTS.md's layout tree at scale**: every region and dungeon adds files, and the tree is
   loaded into every session. When a folder lists more than ~8 files, give it one line in the

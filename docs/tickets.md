@@ -40,31 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T33: Asset registry, pure model builders, validator
-**Run:** auto · sonnet · high
-**Why:** pipeline.md: agents need to know what exists, its tier and budget, and a check that fails off-palette or
-over-budget work. That needs every model buildable on its own, without physics or a game.
-**Done when:**
-- Every model's geometry comes from a pure builder (no physics, no game) returning its root, named joints and its flash
-  material(s). Split out of the constructors of the Thornling, Gloomwisp, Dozing Sentinel, Shellback and Cragstalker; the
-  props in `world/objects.ts`; `buildHumanoid`; both bosses (Gravelheart's `rig.ts` already is one; the Lamplighter's
-  model comes out of its 940-line file). Behaviour files keep stats, timings, attack sheets and hurtbox sizes; hurtboxes
-  still ride joints. Suggested home: `render/models/`, so the dependency rule holds.
-- A registry: id, kind (player, enemy, miniboss, boss, npc, prop, piece), tier (`rough` / `final`), `build()`. Every model is
-  in it, all `rough` for now.
-- The validator is a unit test in `npm run check`: it builds every entry in Node and checks triangles against art.md's
-  budget for its kind, authored colours on the palette, textures ≤ 64 px (the ground tile excepted), shared materials
-  only, and a sane bounding box. Violations only warn for `rough` and fail for `final`. `npm run assets` prints the table.
-- pipeline.md "The registry and validator" rewritten; `/add-enemy` and `/add-npc` register new models as rough.
-**Read first:** pipeline.md; art.md "Budgets"; `game/enemies.ts` (the `Enemy`/`GroundEnemy` constructors, ~line 77–290);
-`game/sentinel.ts` (a typical model-in-constructor); `game/bosses/gravelheart/rig.ts` (the target shape); `world/objects.ts`;
-`render/characters.ts`; `.claude/skills/add-enemy/`, `add-npc/`.
-**Verify:** `npm run check`; smoke `shrine-enemies combat shrine-boss full` (ask before `full`: it touches shared systems
-only lightly); look `enemies boss gravelheart village` print **unchanged** (a refactor).
-**Notes:** Big. If it runs long, stop at a clean point: T33a the registry, validator, props and humanoid; T33b the
-enemies and bosses. **Scaling checklist fired** ("AGENTS.md's layout tree at scale"): AGENTS.md is over 200 lines, so
-when `render/models/` joins the tree, give the busiest folders one line each and move their file lists to topic docs.
-
 ### T34: Viewer, contact sheet, dev shortcuts
 **Run:** auto · sonnet · medium
 **Why:** pipeline.md: the owner and the agent reach any test case in seconds, and outliers jump out of one image.
@@ -76,7 +51,7 @@ when `render/models/` joins the tree, give the busiest folders one line each and
   enemy; `?debug`'s wireframe also draws hurtboxes.
 - pipeline.md "The viewer, contact sheet and dev shortcuts" and testing.md "Debugging in the browser" rewritten.
 **Read first:** pipeline.md; testing.md "Debugging in the browser"; `blips.html` and `src/dev/blips.ts` (the dev page
-pattern); the registry from T33; `content/devStates.ts`; `game/debug.ts`; `src/main.ts`.
+pattern); the registry (`render/models/registry.ts`); `content/devStates.ts`; `game/debug.ts`; `src/main.ts`.
 **Verify:** `npm run check`; `npm run look -- contact`; open the viewer on two assets (`looker`).
 
 ### T35: The modeling kit, proven on the chest
@@ -92,7 +67,7 @@ pattern); the registry from T33; `content/devStates.ts`; `game/debug.ts`; `src/m
   it (a golden-set candidate).
 - pipeline.md "The modeling kit" holds the reference: each builder with a one-line example and two recipes.
 **Read first:** pipeline.md; art.md "Shape language" and "Budgets"; `render/shapes.ts`; `render/materials.ts`; the
-registry from T33; `world/objects.ts` (`Chest`).
+registry (`render/models/registry.ts`); `render/models/props.ts` (`buildChest`, which `world/objects.ts`'s `Chest` uses).
 **Verify:** `npm run check`; smoke `full` covers a chest (ask first) or the shrine scenarios that open one; look `chest`
 in Native and N64 mode, and the contact sheet.
 
@@ -154,5 +129,5 @@ real 3D models.
   keys. No map.
 - engine.md "The pause menu" updated.
 **Read first:** art.md "Items and the pause screen"; engine.md "The pause menu"; `game/pauseMenu.ts`; `game/menu.ts`
-(the `entry` row); the registry (T33); `game/state.ts` (items, flasks, bells).
+(the `entry` row); the registry (`render/models/registry.ts`); `game/state.ts` (items, flasks, bells).
 **Verify:** `npm run check`; smoke `hints dev-menu`; look `hud` plus a pause-menu shot of the tab.

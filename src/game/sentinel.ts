@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import type { Physics } from '../core/physics';
-import { uniqueSurf } from '../render/materials';
+import { buildSentinel } from '../render/models/sentinel';
 import { GroundEnemy, type Attack, type EnemyEnv, type HurtResult } from './enemies';
 import { pal } from '../render/palette';
 
@@ -48,10 +48,10 @@ export class DozingSentinel extends GroundEnemy {
   private t = 0;
   /** This swing already landed (or was blocked), so it can't hit twice. */
   private struck = false;
-  private readonly body = new THREE.Group();
-  private readonly arms = new THREE.Group();
-  private readonly head = new THREE.Group();
-  private readonly eyeMat = new THREE.MeshBasicMaterial({ color: 0x2a241c });
+  private readonly body: THREE.Group;
+  private readonly arms: THREE.Group;
+  private readonly head: THREE.Group;
+  private readonly eyeMat: THREE.MeshBasicMaterial;
 
   constructor(parent: THREE.Object3D, physics: Physics, x: number, z: number, fromY = 400, territory?: (p: THREE.Vector3) => boolean, facing = 0) {
     super(physics, x, z, fromY, territory, 0.75, 0.6);
@@ -61,36 +61,13 @@ export class DozingSentinel extends GroundEnemy {
     this.deathColor = 0xb3a68a;
     this.yaw = facing;
 
-    const stone = uniqueSurf('stone', 0xa39880), dark = uniqueSurf('stone', 0x7d735f), maulMat = uniqueSurf('rock', 0x6b6253);
-    this.flashMats.push(stone, dark, maulMat);
-    const box = (w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number, into: THREE.Object3D) => {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
-      mesh.position.set(x, y, z);
-      into.add(mesh);
-      return mesh;
-    };
-    // Legs and a broad, square torso; the head a heavy block with a brow.
-    box(0.45, 0.9, 0.5, dark, -0.32, 0.45, 0, this.body);
-    box(0.45, 0.9, 0.5, dark, 0.32, 0.45, 0, this.body);
-    box(1.3, 1.1, 0.75, stone, 0, 1.45, 0, this.body);
-    box(1.6, 0.3, 0.85, dark, 0, 2.05, 0, this.body); // shoulders
-    this.head.position.set(0, 2.2, 0.05);
-    box(0.6, 0.6, 0.6, stone, 0, 0.3, 0, this.head);
-    box(0.7, 0.14, 0.2, dark, 0, 0.45, 0.3, this.head);
-    for (const s of [-1, 1]) {
-      const eye = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.05), this.eyeMat);
-      eye.position.set(s * 0.15, 0.3, 0.31);
-      this.head.add(eye);
-    }
-    this.body.add(this.head);
-    // Arms pivot at the shoulders and hold the maul together in front.
-    this.arms.position.set(0, 1.95, 0);
-    for (const s of [-1, 1]) box(0.3, 1.0, 0.32, stone, s * 0.62, -0.45, 0.25, this.arms);
-    box(0.95, 0.2, 0.25, dark, 0, -0.95, 0.4, this.arms); // the hands
-    box(0.16, 1.7, 0.16, dark, 0, -0.95, 1.2, this.arms).rotation.x = Math.PI / 2; // haft
-    box(0.55, 0.55, 0.85, maulMat, 0, -0.95, 2.35, this.arms); // head of the maul
-    this.body.add(this.arms);
-    this.root.add(this.body);
+    const m = buildSentinel();
+    this.body = m.joints.body;
+    this.arms = m.joints.arms;
+    this.head = m.joints.head;
+    this.eyeMat = m.eyeMat;
+    this.flashMats.push(...m.flashMats);
+    this.root.add(m.root);
     parent.add(this.root);
     this.pose(0);
   }

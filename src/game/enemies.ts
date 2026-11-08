@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
-import { disposeTree, fadeInFog, uniqueMat, uniqueSurf } from '../render/materials';
-import { faceted } from '../render/textures';
+import { disposeTree } from '../render/materials';
+import { buildGloomwisp } from '../render/models/gloomwisp';
+import { buildThornling } from '../render/models/thornling';
 import { GroundShadow } from '../render/shapes';
 import type { Sfx } from '../core/audio';
 import type { Particles } from '../render/particles';
@@ -326,31 +327,10 @@ export class Thornling extends GroundEnemy {
     this.radius = 0.75;
     this.lockHeight = 1.0;
 
-    const skin = uniqueSurf('hide', 0x7a2f4a), thorn = uniqueSurf('bark', 0xc9b27a), eye = new THREE.MeshBasicMaterial({ color: 0xffd23a });
-    this.flashMats.push(skin, thorn);
-    this.body = new THREE.Group();
-    const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.65, 0), skin);
-    this.body.add(ball);
-    const dirs = new THREE.IcosahedronGeometry(1, 0).attributes.position;
-    const seen = new Set<string>();
-    const spikeGeo = faceted(new THREE.ConeGeometry(0.13, 0.5, 5));
-    for (let i = 0; i < dirs.count; i++) {
-      const v = new THREE.Vector3().fromBufferAttribute(dirs, i).normalize();
-      const k = v.toArray().map((n) => n.toFixed(2)).join();
-      if (seen.has(k) || v.z > 0.7) continue;
-      seen.add(k);
-      const spike = new THREE.Mesh(spikeGeo, thorn);
-      spike.position.copy(v).multiplyScalar(0.7);
-      spike.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v);
-      this.body.add(spike);
-    }
-    for (const s of [-1, 1]) {
-      const e = new THREE.Mesh(new THREE.SphereGeometry(0.11, 6, 5), eye);
-      e.position.set(s * 0.22, 0.12, 0.58);
-      this.body.add(e);
-    }
-    this.body.position.y = 0.75;
-    this.root.add(this.body);
+    const m = buildThornling();
+    this.body = m.joints.body;
+    this.flashMats.push(...m.flashMats);
+    this.root.add(m.root);
     parent.add(this.root);
   }
 
@@ -495,14 +475,12 @@ export class Gloomwisp extends Enemy {
     this.deathColor = 0xb06aff;
     this.lockHeight = 0.6;
     this.pos.set(x, (physics.groundY(x, z, 400, Layer.World) ?? 0) + 1.6, z);
-    this.coreMat = uniqueMat(0x2a1840, { emissive: 0x6a2fb0 });
-    this.flashMats.push(this.coreMat);
-    this.core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), this.coreMat);
-    this.halo = new THREE.Mesh(
-      new THREE.SphereGeometry(0.8, 10, 8),
-      fadeInFog(new THREE.MeshBasicMaterial({ color: 0xb06aff, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false })),
-    );
-    this.root.add(this.core, this.halo);
+    const m = buildGloomwisp();
+    this.coreMat = m.coreMat;
+    this.core = m.joints.core;
+    this.halo = m.joints.halo;
+    this.flashMats.push(...m.flashMats);
+    this.root.add(m.root);
     this.root.scale.setScalar(0.01);
     parent.add(this.root);
   }

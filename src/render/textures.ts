@@ -6,7 +6,7 @@ import { mulberry32 } from '../core/math';
  * small grey **detail tile**: it only brightens or darkens the material's own colour, so one "plaster"
  * tile serves every plaster colour and the palette stays the palette. Tiles are placed by position, not
  * UVs (`mergeStatic` drops UVs): the shader works out each face's normal and projects the tile onto it,
- * along the wall for walls and downhill for slopes (see `applySurface`). Details: engine.md "Textures".
+ * along the wall for walls and downhill for slopes (see `applySurface`). Details: render.md "Textures".
  */
 
 /** The tiles. Each is `size × size`, one byte a texel, mean about 128, and wraps seamlessly. */

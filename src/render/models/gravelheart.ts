@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { uniqueMat, uniqueSurf } from '../../../render/materials';
-import { glow } from '../../../render/shapes';
+import { uniqueMat, uniqueSurf } from '../materials';
+import { glow } from '../shapes';
+import type { Model } from './types';
 
 /**
  * Gravelheart's body: about 5.5 m of stacked wakestones. A blocky torso on two stubby stone
@@ -236,4 +237,17 @@ export class GravelheartRig {
   setPlateGlow(i: number, g: number) {
     this.plateMats[i].emissive.setRGB(0.2 * g, 0.75 * g, 0.65 * g);
   }
+}
+
+/** Gravelheart as a model: the rig on a root of its own, joints named for the registry (the boss poses them through `GravelheartRig.apply`). */
+export function buildGravelheart(): Model<{ hips: THREE.Group; torso: THREE.Group; head: THREE.Group; ember: THREE.Group; keystone: THREE.Group }> & { rig: GravelheartRig } {
+  const root = new THREE.Group();
+  const rig = new GravelheartRig(root);
+  return {
+    root,
+    joints: { hips: rig.hips, torso: rig.torso, head: rig.head, ember: rig.ember, keystone: rig.keystone },
+    flashMats: rig.flashMats,
+    animated: [rig.eyeMat, rig.emberMat],
+    rig,
+  };
 }

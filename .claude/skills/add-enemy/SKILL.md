@@ -8,11 +8,14 @@ description: Recipe for a new enemy type on Embervale (a GroundEnemy subclass wi
 rewrite or delete it. **Default Run:** auto · sonnet · medium (high if the AI is new, not a variant).
 
 **Read first:** [docs/combat.md](../../../docs/combat.md) ("What enemies notice", guards, boss/enemy
-fairness), `game/cragstalker.ts` (the model to copy: a small enemy end to end), `game/enemyTestEnv.ts`.
+fairness), `game/cragstalker.ts` + `render/models/cragstalker.ts` (the model to copy: a small enemy end to end), `game/enemyTestEnv.ts`.
 
-1. **The class** `game/<name>.ts` extends `GroundEnemy`: a state machine (idle → stalk → tell →
-   attack → recover → stagger), `hp`, `radius`, `lockHeight`, `deathColor`, mesh from primitives
-   with `uniqueMat` (push to `flashMats` so hits flash). Export the attack sheet and timings as consts.
+1. **The model** `render/models/<name>.ts`: a pure `build<Name>()` returning a `Model` (`render/models/types.ts`: root,
+   named joints, `flashMats`), primitives with `uniqueSurf` and `pal()` colours, no physics or game. Register it in
+   `render/models/registry.ts` as `tier: 'rough'` and run `npm run assets` (a test fails if it is not registered).
+   **The class** `game/<name>.ts` extends `GroundEnemy`: a state machine (idle → stalk → tell →
+   attack → recover → stagger), `hp`, `radius`, `lockHeight`, `deathColor`; it calls the builder, adds `model.root` to
+   `this.root`, and pushes `model.flashMats` to `flashMats` so hits flash. Export the attack sheet and timings as consts.
 2. **Fair by construction:** every attack has a tell of at least 0.5 s and ends in a recovery that
    is the opening (longer when the shield stopped it). Mark `stone: true` for stone things (the
    Stoneward Tunic halves it). Armor (`armor: true` hurtbox) sits tight on the mesh; answer
