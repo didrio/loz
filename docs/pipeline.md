@@ -54,7 +54,13 @@ model in place: there is never a rough and a final model side by side.
 Characters are rigid parts on a hierarchy of joints (`THREE.Group`s): no skinning, so nothing distorts. Animation is
 code: a **`Pose`**, a flat set of numbers (joint angles, heights, glow amounts) that moves and states blend toward, and
 one `pose(p)` that applies it to the joints. Both bosses already work this way (`render/models/gravelheart.ts`, the
-Lamplighter's `Pose` in `game/bosses/lamplighter.ts`); regular enemies pose inline and adopt it in their final passes. State names: `idle`, `move`,
+Lamplighter's `Pose` in `game/bosses/lamplighter.ts`). **Regular enemies adopt it in their final passes; the Thornling
+(`render/models/thornling.ts`, T49) is the example to copy:** the model exports its `Pose`, a `REST` pose, `blendPose` and a
+`ThornlingRig`; the behaviour file keeps every timing and only hands the rig its state each frame (`rig.update(dt, { state, t,
+windup, moving })`) and its death (`rig.die(deathT / 0.35)` from a `dying` override). The rig's `target(cue)` is where each
+state's look lives (anticipation, overshoot, the hit reaction), all inside the windows behaviour already has; idle life (a
+seeded blink, breathing, the hop's squash and stretch) is added on top. A timing the rig must end on (the windup) becomes a
+named constant in the behaviour file. Enemies without a final pass still pose inline. State names: `idle`, `move`,
 `anticipate`, `attack`, `recover`, `hurt`, `death`, plus extras per creature; bosses use the move system's
 windup/active/recover ([combat.md](combat.md)). Pose data stays separate from geometry, so a model can be re-detailed
 without breaking its animation. `bakeRig` merges each joint's parts into one mesh with one material (fewer
@@ -97,7 +103,8 @@ Lamplighter is at about twice its mini-boss budget. A final pass fixes these; it
 - **Viewer** (dev server only, like `/blips.html`): `/viewer.html?asset=<registry id>` shows one model on a turntable under the
   game's own `Sky` (light and fog by time of day), with a panel: asset picker, hour slider, Native / Performance / N64, the place's
   atmosphere (valley, village, hollow, shrine), turntable on/off and an angle slider, and one x/y/z rotation slider per named
-  joint to pose it. URL params: `hour`, `place`, `display`, `spin=0`, `panel=0`. Code: `src/dev/viewer.ts`.
+  joint to pose it. URL params: `hour`, `place`, `display`, `spin=0`, `panel=0`, `angle=<deg>` (fixed camera, turntable off: front 0,
+  three-quarter 45, side 90; the golden set's reference renders). Code: `src/dev/viewer.ts`.
   The viewer shows the **model**, not the behaviour, so moves and hurtboxes live in the game (below).
 - **Contact sheet**: `/viewer.html?asset=contact`, and the `contact` look scene (`npm run look -- contact`, also with
   `--display n64`). Every registered model at one scale (shelves, biggest kinds first; layout in `src/dev/contactLayout.ts`), its id
@@ -148,7 +155,9 @@ centimetres (seeded) so no two edges are parallel; `crevice` last. Spend triangl
 smoother cylinders.
 
 Kit colours are palette colours; `crevice` and the lighting then darken them, as in the scenery. The kit material (white, vertex-coloured) is a swatch, so the validator accepts it.
-The chest (`render/models/props.ts`, 272 of its 300 triangles) is the first model built this way.
+The chest (`render/models/props.ts`, 272 of its 300 triangles) is the first model built this way; the Thornling
+(`render/models/thornling.ts`, 800 of 1,200: an 80-face ball, thorns as `extrudePath` spikes curving back, a face of glow eyes, brows and a
+hinged jaw, five joints) the first creature.
 
 ## Visual checks
 

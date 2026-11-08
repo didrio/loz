@@ -9,7 +9,7 @@ the palette, static merging), `bakeLight.ts` (baked bounce light into vertex col
 shader), `shapes.ts`, `kit.ts` + `bakeRig.ts` (the modeling kit: docs/pipeline.md), `effects.ts` (the named particle presets, the cap, `SlashTrail`), `characters.ts` (`buildHumanoid`), `atmosphere.ts` (each place's sky,
 light, fog, motes and sub-palette as data), `sky.ts` (blends them; the blight look), `shadows.ts` (the sun's shadow map: the Settings' Shadows option; texel
 snapping, what casts), `particles.ts`, `motes.ts`, `icons.ts` (`Icons`: a registered model drawn once offscreen onto a transparent PNG, cached; the Gear tab and the HUD's flask and glove use the `gear-*` models in `models/gear.ts`), `retro.ts` (the Display modes: N64's 240-row target, dither + colour crush; Native/Performance pixel ratio).
-`models/` holds every model as a **pure builder** (no physics, no game: `thornling.ts`, `gloomwisp.ts`, `sentinel.ts`, `shellback.ts`, `cragstalker.ts`,
+`models/` holds every model as a **pure builder** (no physics, no game: `thornling.ts` (final: kit-built, its `ThornlingRig` and `Pose`), `gloomwisp.ts`, `sentinel.ts`, `shellback.ts`, `cragstalker.ts`,
 `lamplighter.ts`, `gravelheart.ts` (the rig and its `Pose`), `props.ts` (chest, doors, vessel, shield, lantern, bush), `wren.ts` (Wren and the people)),
 `types.ts` (`Model`: root, named joints, flash materials), `registry.ts` and `validate.ts` ([pipeline.md](pipeline.md) "The registry and validator").
 

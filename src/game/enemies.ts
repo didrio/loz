@@ -3,7 +3,7 @@ import { damp, lerpAngle } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
 import { disposeTree } from '../render/materials';
 import { buildGloomwisp } from '../render/models/gloomwisp';
-import { buildThornling } from '../render/models/thornling';
+import { buildThornling, type ThornlingRig } from '../render/models/thornling';
 import { GroundShadow } from '../render/shapes';
 import type { Sfx } from '../core/audio';
 import type { Particles } from '../render/particles';
@@ -41,6 +41,8 @@ export interface Attack {
 }
 
 const THORNLING_LUNGE: Attack = { damage: 1, guard: 1 };
+/** The Thornling's windup before the lunge (s, by day; night shortens it). Its model's tell is timed to end on it. */
+const THORNLING_WINDUP = 0.55;
 const WISP_DIVE: Attack = { damage: 1, guard: 1, knockback: 6 };
 
 /** A sphere the sword can hit. `priority` picks weak points over the body when both are in reach. */
@@ -315,11 +317,11 @@ export abstract class GroundEnemy extends Enemy {
 export class Thornling extends GroundEnemy {
   private state: 'wander' | 'chase' | 'windup' | 'lunge' | 'recover' | 'stagger' = 'wander';
   private t = 0;
-  private hopT = Math.random() * 10;
   private readonly wanderTo = new THREE.Vector3();
   private readonly lungeDir = new THREE.Vector3();
   private hitDone = false;
-  private readonly body: THREE.Group;
+  /** How it looks at each moment (render/models/thornling.ts): behaviour hands it the state, it poses the joints. */
+  private readonly rig: ThornlingRig;
 
   constructor(parent: THREE.Object3D, physics: Physics, x: number, z: number, fromY = 400, territory?: (p: THREE.Vector3) => boolean) {
     super(physics, x, z, fromY, territory, 0.6, 0.15);
@@ -328,7 +330,7 @@ export class Thornling extends GroundEnemy {
     this.lockHeight = 1.0;
 
     const m = buildThornling();
-    this.body = m.joints.body;
+    this.rig = m.rig;
     this.flashMats.push(...m.flashMats);
     this.root.add(m.root);
     parent.add(this.root);
@@ -364,7 +366,6 @@ export class Thornling extends GroundEnemy {
     const speedMul = env.night ? 1.3 : 1;
     const vel = new THREE.Vector3();
     let face = this.yaw;
-    let squash = 1;
 
     this.calm = Math.max(0, this.calm - dt);
     switch (this.state) {
@@ -398,8 +399,7 @@ export class Thornling extends GroundEnemy {
       }
       case 'windup':
         face = Math.atan2(to.x, to.z);
-        squash = 1 - Math.min(1, this.t / 0.5) * 0.35;
-        if (this.t > 0.55 / speedMul) {
+        if (this.t > THORNLING_WINDUP / speedMul) {
           this.go('lunge');
           this.lungeDir.copy(to);
           this.hitDone = false;
@@ -407,7 +407,6 @@ export class Thornling extends GroundEnemy {
         break;
       case 'lunge':
         vel.copy(this.lungeDir).multiplyScalar(13);
-        squash = 1.15;
         if (!this.hitDone && dist < 1.6 && this.level(env)) {
           this.hitDone = true;
           if (env.hitPlayer(this.pos, THORNLING_LUNGE) === 'blocked') {
@@ -426,14 +425,17 @@ export class Thornling extends GroundEnemy {
     this.walk(vel, dt);
 
     this.yaw = lerpAngle(this.yaw, face, damp(10, dt));
-    const moving = vel.lengthSq() > 0.5 && this.state !== 'stagger';
-    if (moving) this.hopT += dt * 9;
-    const hop = moving ? Math.abs(Math.sin(this.hopT)) * 0.45 : 0;
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.yaw;
-    this.body.position.y = 0.75 + hop;
-    this.body.scale.set(1 / Math.sqrt(squash), squash, 1 / Math.sqrt(squash));
-    this.body.rotation.x = this.state === 'stagger' ? Math.sin(this.t * 30) * 0.3 : 0;
+    const moving = vel.lengthSq() > 0.5 && this.state !== 'stagger';
+    this.rig.update(dt, { state: this.state, t: this.t, windup: THORNLING_WINDUP / speedMul, moving });
+  }
+
+  /** Its own death (the rig's burst), on the shared clock: gone after 0.35 s like every enemy. */
+  protected dying(dt: number) {
+    this.deathT += dt;
+    this.rig.die(this.deathT / 0.35);
+    if (this.deathT > 0.35) this.gone = true;
   }
 
   private go(s: Thornling['state']) {

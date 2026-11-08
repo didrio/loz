@@ -59,7 +59,9 @@ window.addEventListener('resize', resize);
 const focus = new THREE.Vector3();
 let orbitR = 5;
 let orbitY = 1.5;
-let angle = 0.6;
+/** The camera's angle round the model (rad; 0 = front). `?angle=<deg>` fixes it and stops the turntable (front 0, three-quarter 45, side 90). */
+let angle = q.has('angle') ? (Number(q.get('angle')) * Math.PI) / 180 : 0.6;
+if (q.has('angle')) spin = false;
 const joints: { name: string; obj: THREE.Object3D; rest: THREE.Euler }[] = [];
 
 function setupAsset(entry: AssetEntry) {
@@ -209,7 +211,7 @@ function setupPanel(info: { entry: AssetEntry; size: THREE.Vector3 }) {
     spinBtn.textContent = spin ? 'Stop turntable' : 'Turn';
   });
   scene1.append(spinBtn);
-  slider('angle', -180, 180, 1, 34, (v) => { angle = (v * Math.PI) / 180; spin = false; spinBtn.textContent = 'Turn'; }, scene1);
+  slider('angle', -180, 180, 1, Math.round((angle * 180) / Math.PI), (v) => { angle = (v * Math.PI) / 180; spin = false; spinBtn.textContent = 'Turn'; }, scene1);
   if (joints.length) {
     panel.append(Object.assign(document.createElement('h2'), { textContent: 'Pose (joint rotations, degrees)' }));
     for (const j of joints) {

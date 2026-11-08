@@ -52,8 +52,8 @@
     "triangles": 269000
   },
   "contact": {
-    "calls": 490,
-    "triangles": 18000
+    "calls": 480,
+    "triangles": 19000
   },
   "door": {
     "calls": 60,
@@ -182,6 +182,10 @@
   "text": {
     "calls": 700,
     "triangles": 270000
+  },
+  "thornling": {
+    "calls": 300,
+    "triangles": 248000
   },
   "thorns": {
     "calls": 630,

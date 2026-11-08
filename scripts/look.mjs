@@ -72,6 +72,75 @@ const SCENES = {
     await h.wait(400);
     await h.shot('sheet');
   },
+  /**
+   * The Thornling (the golden set's first enemy, T49; docs/art.md): in the field idle, at the end of its windup (the tell),
+   * mid-lunge, staggered and dying; then the model alone in the viewer from the front, three-quarter and side.
+   */
+  async thornling(h) {
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale;
+      g.player.invuln = 1e6;
+      for (const e of g.enemies.list) e.alive = false; // the blight's posts, out of the shots
+    });
+    await h.wait(600);
+    // `window.lookThornling`: the one this scene spawns, 4 m in front of Wren.
+    await h.game(() => {
+      const g = window.embervale, f = g.player.facing;
+      window.lookThornling = g.spawn('thornling', g.player.pos.x + Math.sin(f) * 4, g.player.pos.z + Math.cos(f) * 4);
+      g.setTimeScale(0.01);
+    });
+    // From its front-left, low: the camera `dist` ahead of it, `side` to its left.
+    const view = (dist = 3.2, side = 1.8, height = 1.3) =>
+      h.game(([dist, side, height]) => {
+        const g = window.embervale, e = window.lookThornling, T = e.pos.constructor;
+        const f = { x: Math.sin(e.yaw), z: Math.cos(e.yaw) };
+        g.rig.shot(new T(e.pos.x + f.x * dist - f.z * side, e.pos.y + height, e.pos.z + f.z * dist + f.x * side), new T(e.pos.x, e.pos.y + 0.8, e.pos.z), true);
+      }, [dist, side, height]);
+    const until = (state, minT) =>
+      h.until(([state, minT]) => window.lookThornling.state === state && window.lookThornling.t >= minT, 20000, [state, minT]);
+    const at = async (state, minT, name, ...cam) => {
+      await h.game(() => window.embervale.setTimeScale(1));
+      await until(state, minT);
+      await h.game(() => window.embervale.setTimeScale(0.01));
+      await view(...cam);
+      await h.wait(300);
+      await h.shot(name);
+    };
+    await view();
+    await h.wait(400);
+    await h.shot('idle');
+    await at('windup', 0.45, 'windup');
+    await at('lunge', 0.1, 'lunge', 3, 2.6);
+    await h.game(() => {
+      const e = window.lookThornling;
+      e.hp = 99; // a stagger, not a death
+      e.hurt(1, window.embervale.player.pos);
+    });
+    await at('stagger', 0.22, 'stagger'); // past the 0.18 s hit flash, eyes still shut
+    await h.game(() => {
+      const e = window.lookThornling;
+      e.hp = 1;
+      e.hurt(1, window.embervale.player.pos);
+      window.embervale.setTimeScale(1);
+    });
+    await h.until(() => window.lookThornling.deathT >= 0.2, 10000); // past the hit flash: the burst
+    await h.game(() => window.embervale.setTimeScale(0.01));
+    await view(3.2, 1.8, 1.3);
+    await h.wait(300);
+    await h.shot('death');
+
+    const mode = ['native', 'performance', 'n64'][display] ?? 'native';
+    await h.page.setViewportSize({ width: 900, height: 900 });
+    for (const [name, deg] of [['front', 0], ['three-quarter', 45], ['side', 90]]) {
+      const url = new URL('viewer.html', h.page.url());
+      url.search = `?asset=thornling&panel=0&angle=${deg}&display=${mode}`;
+      await h.page.goto(url.href);
+      await h.until(() => window.embervale?.mode === 'viewer', 30000);
+      await h.wait(400);
+      await h.shot(`model-${name}`);
+    }
+  },
   async title(h) {
     await h.boot();
     await h.shot('title');

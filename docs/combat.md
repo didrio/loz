@@ -56,6 +56,11 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   until it's lowered; the whole gauge goes red when broken), like a stamina wheel. It appears when
   the guard takes damage and stays until a second after it's full again
   (`Guard.gaugeVisible`, positioned by `Game.guardGaugePosition`).
+- **The Thornling** (`Thornling` in `game/enemies.ts`; its look is `render/models/thornling.ts`): wanders, chases inside
+  3.2 m, then winds up for `THORNLING_WINDUP` (0.55 s by day, ÷1.3 at night) and lunges 0.28 s at 13 m/s (`THORNLING_LUNGE`:
+  1, guard 1; a blocked lunge bounces it into a stagger), recovering for 0.7 s; 3 HP, a 0.7 s stagger when hit. **The tell**
+  (its final pass, T49): it sinks onto its belly and rears back, thorns bristling, brows down, jaw cracking open, and shivers
+  in the last 0.12 s; the lunge throws it forward with the jaw wide.
 - **What enemies notice** (thornlings; follow this for every new enemy): Wren must be on
   the same level (not through a floor), in a clear line of sight (a World-layer ray, so not
   through walls), and, if the enemy has a `territory` (dungeon enemies: their room),

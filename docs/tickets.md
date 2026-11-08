@@ -41,17 +41,9 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
 **The golden set** (owner, 2026-11-08; [roadmap.md](roadmap.md) "The N64 look rebuild" step 2): each is a Final pass, in this order, locked only when the owner approves. Written ahead at the owner's request: when starting one, re-read it against what the previous one taught.
-
-### T49: Final pass: the Thornling (golden set 1)
-**Run:** plan · opusplan · high
-**Why:** The common enemy is the cheapest place to shake out the enemy side of the pipeline and set the style every other creature follows.
-**Done when:**
-- Idle life, anticipation before the lunge, overshoot and settle, a hit reaction and a death, with the active frames' timings unchanged.
-- `tier: 'final'` in the registry; within budget; every colour a `pal()` name; built with the kit and `bakeRig`; the behaviour file untouched in the diff (silhouette, scale, joints, hurtboxes, timings frozen; ask the owner first if one must change).
-- Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
-**Read first:** src/render/models/thornling.ts, game/enemies.ts (Thornling), combat.md (its attack sheet); pipeline.md "Final pass", "The rig convention" and "The modeling kit"; art.md "The golden set" and the style rules; the model's file in `render/models/` and its behaviour file; `render/models/props.ts` `buildChest` (the approved example of the kit).
-**Verify:** `npm run check` (the validator fails a final asset's findings); the unit tests and smoke scenarios for it pass **unchanged**; `npm run look -- contact` and the asset viewer in Native and N64 mode, before and after (looker). smoke `shrine-enemies`.
-**Notes:** After this, write the `/final-pass` skill (CLAUDE.md: a recipe the second time; do it after T50).
+- **Waiting on the owner:** the Thornling (golden set 1, `render/models/thornling.ts`) is built and `final`. When the owner says "approve", add `'thornling'` to `GOLDEN_SET` (`registry.ts`) and list it in art.md "The golden set" with its reference renders (`scripts/baselines/look/thornling-model-*.png`, `thornling-windup*.png`).
+- **"The behaviour file untouched"** in every ticket below means (owner's call, 2026-11-08, T49): its posing lines move into the model's rig (pipeline.md "The rig convention", the Thornling as example) and the behaviour file then only hands the rig its state; stats, timings, AI and hurtboxes stay byte-identical, and the existing tests pass unedited.
+- **Renders:** before touching the model, add a look scene for it (like `thornling`: in-game states, then the viewer with `angle=0/45/90`) and capture it in Native and `--display n64`. Copy the shots to the scratchpad as the "before" set.
 
 ### T50: Final pass: Wren with her full animation set (golden set 2)
 **Run:** plan · opusplan · high
@@ -60,9 +52,9 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - Every state of the rig convention has a pose; the shared humanoid (`buildHumanoid`, `render/characters.ts`) keeps NPCs working. Then write the `/final-pass` skill.
 - `tier: 'final'` in the registry; within budget; every colour a `pal()` name; built with the kit and `bakeRig`; the behaviour file untouched in the diff (silhouette, scale, joints, hurtboxes, timings frozen; ask the owner first if one must change).
 - Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
-**Read first:** render/models/wren.ts, render/characters.ts, game/player.ts (grep the pose code, big file); pipeline.md "Final pass", "The rig convention" and "The modeling kit"; art.md "The golden set" and the style rules; the model's file in `render/models/` and its behaviour file; `render/models/props.ts` `buildChest` (the approved example of the kit).
+**Read first:** render/models/wren.ts, render/characters.ts, game/player.ts (grep the pose code, big file); render/models/thornling.ts (the rig to copy: `Pose`, `target(cue)`, `update`, `die`) and its test; pipeline.md "Final pass", "The rig convention" and "The modeling kit"; art.md "The golden set" and the style rules; the model's file in `render/models/` and its behaviour file; `render/models/props.ts` `buildChest` (the approved example of the kit).
 **Verify:** `npm run check` (the validator fails a final asset's findings); the unit tests and smoke scenarios for it pass **unchanged**; `npm run look -- contact` and the asset viewer in Native and N64 mode, before and after (looker). smoke `field-sword hints`; the full suite only after asking the owner (player is a shared system).
-**Notes:** The player's sword and shield materials are unique and recoloured by the game; keep them.
+**Notes:** The player's sword and shield materials are unique and recoloured by the game; keep them. Round forms (head, limbs) get more facets, never smooth shading (art.md "Rendering rules"). The owner found the Thornling's first squash and stretch overdone: start subtle (≤ ~10% stretch). `/final-pass` skill: a recipe from T49 and this one (CLAUDE.md "a recipe the second time").
 
 ### T51: Final pass: the starter-area entrance vignette (golden set 3)
 **Run:** plan · opusplan · high
