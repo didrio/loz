@@ -192,8 +192,10 @@ animation set → the starter-area entrance vignette → the prop set (chest, do
 Hollow Lamplighter → Gravelheart → one shrine room. Each approved member gets front, three-quarter, side and one in-game
 render, stored and listed here. If the style changes, update the golden set first, then everything else.
 
-*Members approved so far:* the chest (2026-11-08). *Built and waiting on the owner:* the Thornling (T49), Wren (T50; reference
-renders: the `wren` look scene, `wren-model-*` and the in-game states).
+*Members approved so far* (reference renders in `scripts/baselines/look/`, Native and `-n64`):
+- **The chest** (2026-11-08): `chest-*`, the first kit model.
+- **The Thornling** (2026-11-08, T49): `thornling-model-front`, `-three-quarter`, `-side`; in game `thornling-windup`.
+- **Wren** (2026-11-08, T50): `wren-model-front`, `-three-quarter`, `-side`; in game `wren-guard` (the `wren` scene has every state).
 
 ## Escape hatch
 
