@@ -42,7 +42,8 @@ How to prove a change works. The Definition of done in AGENTS.md says *when*; th
   re-approve costs ~6 MB of git history. To keep that small a baseline is stored at 4x shrunk **and 5 bits per colour channel** (every
   value a multiple of 8, RGB without alpha, best deflate: `QUANT`, `writeBaseline` in `lookCompare.mjs`; both sides of a compare are
   quantized, so it never shows as a change). `--display n64` (or `performance`) captures a scene in that Display mode: the shots are named `<shot>-n64` so they never meet the Native baselines, and
-  budgets are only checked and written for Native. Since N64 moves `renderer.info`, `RetroPipeline`
+  budgets are only checked and written for Native. **Shadows are off in every look and smoke run** (`openGame` plants `shadows: false`, so the baselines and budgets stay
+  comparable); `--shadows` captures with the Shadows setting On (shots named `<shot>-shadows`, then `-n64`; no budget check). Since N64 moves `renderer.info`, `RetroPipeline`
   turns `autoReset` off so the budgets still count the whole frame.
   **Speed and the renderer** (measured 2026-11-07, M3 Pro, 11 cores): locally Chrome draws on the **real GPU** (ANGLE on Metal, Chrome's own
   default flags); `GL=software` switches to SwiftShader (on the CPU, the fallback), and anything outside a Mac, or with `CI` set, uses it

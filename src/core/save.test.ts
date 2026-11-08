@@ -159,6 +159,13 @@ describe('save files', () => {
     expect(decodeSettings('{"voiceVolume":0.25}').voiceVolume).toBe(0.25);
   });
 
+  it('gives shadows the install default unless saved', () => {
+    expect(decodeSettings('{"display":1}').shadows).toBe(true);
+    expect(decodeSettings('{"display":1}', { ...DEFAULT_SETTINGS, shadows: false }).shadows).toBe(false); // a touch device
+    expect(decodeSettings('{"shadows":false}').shadows).toBe(false);
+    expect(decodeSettings('{"shadows":"yes"}').shadows).toBe(true);
+  });
+
   it('keeps saved settings and clamps or drops nonsense', () => {
     const s = decodeSettings('{"masterVolume":0.3,"mouseSensitivity":9,"stickSensitivity":"fast","invertY":true,"display":2,"sfxVolume":-1}');
     expect(s).toMatchObject({ masterVolume: 0.3, mouseSensitivity: 2, stickSensitivity: 1, invertY: true, display: 2, sfxVolume: 0 });

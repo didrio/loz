@@ -91,7 +91,7 @@ const steppedClock = (stepMs) => {
  * A page plus helpers for driving the game. Headless rendering is slow and game time runs
  * slower than real time there, so helpers wait on game state, never on fixed delays.
  */
-export async function openGame(env, outDir, { fixture, touch = false, stepped = false, display } = {}) {
+export async function openGame(env, outDir, { fixture, touch = false, stepped = false, display, shadows = false } = {}) {
   await mkdir(outDir, { recursive: true });
   // `touch`: a landscape phone with the on-screen controls (ui/touch.ts, forced on with ?touch=1).
   const page = await env.browser.newPage(
@@ -105,10 +105,12 @@ export async function openGame(env, outDir, { fixture, touch = false, stepped = 
       if (!localStorage.getItem(key)) localStorage.setItem(key, raw);
     }, ['embervale:save:0', save]);
   }
-  if (display !== undefined) {
-    // A Display mode (0 Native, 1 Performance, 2 N64) planted as the saved setting, before the game boots.
-    await page.addInitScript((d) => localStorage.setItem('embervale:settings', JSON.stringify({ display: d })), display);
-  }
+  // Settings planted before the game boots: a Display mode (0 Native, 1 Performance, 2 N64) and Shadows (off unless asked: a
+  // desktop install defaults to On, but shadows add draw calls and every baseline and budget was taken without them).
+  await page.addInitScript(
+    (s) => localStorage.setItem('embervale:settings', JSON.stringify(s)),
+    { ...(display !== undefined ? { display } : {}), shadows },
+  );
   if (stepped) await page.addInitScript(steppedClock, STEP_MS);
   const errors = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));

@@ -42,30 +42,13 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 
 ### T44: The boss look scene's howl shot renders black
 **Run:** auto · sonnet · medium
+**Also:** every `dungeon` look shot (and others: `buds`, `village` drift) differs from its baseline on a clean HEAD, with the interior frames fully black; likely the same cause. Check it first, and re-approve the scenes that are stale only once they render right.
 **Why:** `npm run look -- boss` gives an all-black `boss-howl` frame (HUD only; the baseline shows the Lamplighter mid-howl). It
 is the same on HEAD without T32, so it predates the effects work (probably the texture commits). The boss baselines are stale
 and weren't approved.
 **Done when:** `boss-howl` shows the howl again, and `npm run look -- boss --approve` goes in the commit.
 **Read first:** `scripts/look.mjs` (the `boss` scene), `game/bosses/lamplighter.ts` (the howl, Grep `howl`).
 **Verify:** `npm run check`; look `boss`.
-
-### T46: Sun shadows, a Display toggle
-**Run:** auto · sonnet · high
-**Why:** the owner (2026-11-07) wants nicer lighting while keeping the N64 look: real sun shadows on top of the baked light,
-reversing T31's "no shadow maps" as an option. Houses, trees and Wren cast shadows that turn with the time of day.
-**Done when:**
-- A Settings row "Shadows: Off / On" (saved with the other settings; default On on desktop, Off on touch devices).
-- On: the sun (and the moon at night, dimmer) casts one shadow map that follows Wren; static scenery, trees, characters,
-  enemies and bosses cast; the ground and scenery receive. No shadow acne or floating shadows on the faceted surfaces.
-- With shadows on, the blob shadows are hidden where a real shadow does their job (characters in the sun), kept indoors and in
-  dungeons. Off: everything exactly as today.
-- N64 mode looks right: the shadow's edge is crisp and a little blocky, like the rest of the frame, not soft-blurred.
-- Within the draw-call and frame budgets (art.md "Budgets"); the cost of On is noted in art.md.
-**Read first:** art.md "Rendering rules" (the Shadows row) and "Budgets"; `render/sky.ts` (the sun, `DirectionalLight`);
-`render/retro.ts`; `game/game.ts` (Grep `renderer` for setup); `core/save.ts` (Settings); `game/pauseMenu.ts` (settingsRows);
-`render/shapes.ts` (Grep `GroundShadow`).
-**Verify:** `npm run check`; look `village` and a dungeon scene with shadows on and off, Native and N64; draw calls in budget.
-**Notes:** Update art.md's Shadows row (owner's call, 2026-11-07: shadows are back as an option).
 
 ### T33: Asset registry, pure model builders, validator
 **Run:** auto · sonnet · high

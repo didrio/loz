@@ -53,6 +53,8 @@ export interface Settings {
   invertY: boolean;
   /** Display (render/retro.ts): 0 Native, 1 Performance (pixel ratio ~1), 2 N64 (240 rows, colour crush). Replaced Resolution + Retro look. */
   display: 0 | 1 | 2;
+  /** Sun shadows (render/shadows.ts, T46): one shadow map outdoors. Fresh installs get On, touch devices Off. */
+  shadows: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -64,6 +66,7 @@ export const DEFAULT_SETTINGS: Settings = {
   stickSensitivity: 1,
   invertY: false,
   display: 0,
+  shadows: true,
 };
 
 export const SENSITIVITY_RANGE = { min: 0.2, max: 2 };
@@ -241,6 +244,7 @@ export function decodeSettings(raw: string | null, defaults: Settings = DEFAULT_
       stickSensitivity: num(o.stickSensitivity, d.stickSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max),
       invertY: typeof o.invertY === 'boolean' ? o.invertY : d.invertY,
       display,
+      shadows: typeof o.shadows === 'boolean' ? o.shadows : d.shadows,
     };
   } catch {
     return { ...defaults };

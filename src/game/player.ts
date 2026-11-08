@@ -195,7 +195,7 @@ export class Player {
       if (m instanceof THREE.Mesh && m.material === shared) m.material = this.coatMat;
     });
     scene.add(this.h.root);
-    this.shadow = new GroundShadow(scene, 0.4);
+    this.shadow = new GroundShadow(scene, 0.4, 'character');
     this.body = physics.createCharacter(this.pos, this.radius, 0.5, Layer.Player, SOLID | Layer.Enemy);
 
     // Sword in the right hand, blade continuing the line of the arm.

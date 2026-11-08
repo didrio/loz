@@ -37,6 +37,19 @@ and has sunk out of sight by 18:00, and the moon does the same overnight, so the
 fed the render camera's look direction every frame (`Hud.setHeading`), so it is right in cutscene shots too;
 `bearing(dx, dz)` maps +x east, −z north, the same in the field and in dungeons.
 
+## Sun shadows (`render/shadows.ts`, T46)
+
+**Settings → Shadows** (`Settings.shadows`; default On on desktop, Off where `wantsTouch()`). `ShadowRig` (made by `Game`; `configure` from `applySettings`,
+`update(dt, indoor)` each frame after `Sky.update`) owns the sun's shadow camera: a second camera at the sun that records only depth.
+- **One map, one light.** `sky.sun` is the sun by day and the moon by night, so moon shadows come free and weaker. A ±`SHADOW_RADIUS` (24 m) box follows Wren;
+  **outdoors only** (`area.indoor` turns it off: dungeons and houses keep blobs). `shadowIntensity` fades it out as the sun nears the horizon.
+- **No shimmer, no acne.** `snapToTexel` moves the light onto the map's texel grid; `bias` and `normalBias` stop faceted faces shadowing themselves.
+- **Casting** (`castsShadow`/`receivesShadow`): every solid lit mesh; not glows, glass, trails, blobs, the sky or anything transparent (those may still
+  receive). `userData.noShadow` opts out. `mark()` flags the scene on area load and every 0.25 s, so spawned enemies join in with no constructor changes.
+- **Blobs.** `GroundShadow(..., 'character')` hides while `blobConfig.realShadows`; `'marker'` blobs (orbs, wisps, stones) always stay.
+- **Display modes.** `shadowMapSize`/`shadowMapType`: N64 a small unfiltered map (hard, blocky edge), Performance 1024, Native 2048, filtered.
+- Look and smoke runs plant Shadows **off**; `npm run look -- <scenes> --shadows` captures with it on ([testing.md](testing.md)).
+
 ## Display modes (`render/retro.ts`, T28)
 
 One **Display** setting (Settings, `Settings.display`): **Native** (0, the default on desktop), **Performance** (1, the default on touch devices) and
@@ -131,7 +144,7 @@ Row kinds in `menu.ts`: action, toggle, submenu, **slider** (left/right or click
 choose to cycle), **entry**. `MenuDriver.onTab` is how a tabbed menu hears Q/E (they win over confirm, which E also is).
 **Settings** (`Settings` in `core/save.ts`, saved at once under `embervale:settings`, applied by `Game.changeSettings`/`applySettings`):
 master/music/effects volume (0..1; 0.8 is the original loudness; `Sfx.setVolumes`), mouse and stick sensitivity (0.2..2×, one number
-scaling both axes: `Input.mouseSensitivity/stickSensitivity`), invert camera up/down (`Input.invertY`), **Display** (Native / Performance / N64, default Native on desktop and Performance on touch devices; see "Display modes") and Fullscreen
+scaling both axes: `Input.mouseSensitivity/stickSensitivity`), invert camera up/down (`Input.invertY`), **Display** (Native / Performance / N64, default Native on desktop and Performance on touch devices; see "Display modes"), **Shadows** (On / Off, default On on desktop; see "Sun shadows") and Fullscreen
 (browser Fullscreen API, hidden if unsupported, not saved; a gamepad button may be refused by the browser, which toasts). There is no music hotkey:
 the music slider at 0 is mute. Old `music: false` saves load as music volume 0.
 

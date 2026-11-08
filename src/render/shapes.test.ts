@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { GroundShadow } from './shapes';
+import { blobConfig, GroundShadow } from './shapes';
 
 describe('GroundShadow', () => {
   it('sits on the ground, smaller and fainter the higher the thing above it flies', () => {
@@ -20,5 +20,23 @@ describe('GroundShadow', () => {
     expect(s.mesh.visible).toBe(false);
     s.dispose();
     expect(scene.children.length).toBe(0);
+  });
+
+  it("a character's blob gives way to the sun's shadow map, a marker's stays", () => {
+    const scene = new THREE.Scene();
+    const character = new GroundShadow(scene, 1, 'character');
+    const marker = new GroundShadow(scene, 1);
+    try {
+      blobConfig.realShadows = true;
+      character.place(0, 0, 0, 0);
+      marker.place(0, 1, 0, 0);
+      expect(character.mesh.visible).toBe(false);
+      expect(marker.mesh.visible).toBe(true);
+      blobConfig.realShadows = false; // indoors, or Shadows off: everything as before
+      character.place(0, 0, 0, 0);
+      expect(character.mesh.visible).toBe(true);
+    } finally {
+      blobConfig.realShadows = false;
+    }
   });
 });

@@ -10,6 +10,7 @@ import type { Physics } from '../core/physics';
 import { DEFAULT_SETTINGS, decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings } from '../core/save';
 import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
+import { ShadowRig } from '../render/shadows';
 import { RetroPipeline, renderStill, internalSize, pixelRatioFor, DISPLAY_NATIVE, DISPLAY_PERFORMANCE, DISPLAY_N64 } from '../render/retro';
 import type { AtmosphereId } from '../render/atmosphere';
 import { Sky } from '../render/sky';
@@ -68,6 +69,8 @@ export class Game implements ScriptApi {
   readonly particles: Particles;
   readonly pickups: Pickups;
   readonly sky: Sky;
+  /** The sun's shadow map (render/shadows.ts): on by the Shadows setting, outdoors only. */
+  readonly shadows: ShadowRig;
   private readonly motes: Motes;
   readonly player: Player;
   readonly rig: CameraRig;
@@ -117,6 +120,7 @@ export class Game implements ScriptApi {
     this.touch = new TouchControls(this.input, document.getElementById('hud')!, () => this.sfx.init());
     this.dialog = new Dialog(this.hud, this.sfx, () => this.area.voiceRoom ?? 'outdoors');
     this.sky = new Sky(this.scene);
+    this.shadows = new ShadowRig(this.renderer, this.scene, this.sky.sun);
     this.motes = new Motes(this.scene);
     this.particles = new Particles(this.scene);
     this.pickups = new Pickups(this.scene);
@@ -126,7 +130,7 @@ export class Game implements ScriptApi {
     this.combat = new Combat(this);
 
     this.saveSlot = new SaveSlot(store);
-    this.settings = decodeSettings(store.get(SETTINGS_KEY), { ...DEFAULT_SETTINGS, display: wantsTouch() ? DISPLAY_PERFORMANCE : DISPLAY_NATIVE });
+    this.settings = decodeSettings(store.get(SETTINGS_KEY), { ...DEFAULT_SETTINGS, display: wantsTouch() ? DISPLAY_PERFORMANCE : DISPLAY_NATIVE, shadows: !wantsTouch() });
     this.applySettings();
     this.loadArea('overworld');
 
@@ -177,6 +181,7 @@ export class Game implements ScriptApi {
     this.area = area;
     this.content = content;
     this.scene.add(area.root);
+    this.shadows.mark();
     this.physics.refreshQueries();
     this.sky.setIndoor(!!area.indoor);
     this.rig.dist = area.indoor ? 7 : 9;
@@ -478,6 +483,7 @@ export class Game implements ScriptApi {
     if (this.area.fogAt) this.sky.indoorFogTarget = this.area.fogAt(player.pos);
     this.sky.setAtmosphere(this.atmosphereAt(player.pos));
     this.sky.update(state.hours, this.mode === 'title' ? new THREE.Vector3() : player.pos, this.camera.position, dt);
+    this.shadows.update(dt, !!this.area.indoor);
     this.debug?.update(dt);
   }
 
@@ -704,6 +710,7 @@ export class Game implements ScriptApi {
     this.input.mouseSensitivity = s.mouseSensitivity;
     this.input.stickSensitivity = s.stickSensitivity;
     this.input.invertY = s.invertY;
+    this.shadows.configure(s.shadows, s.display);
     this.resize();
   }
 

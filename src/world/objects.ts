@@ -17,27 +17,29 @@ export class Npc {
   present = true;
   private readonly blob: GroundShadow;
 
-  constructor(b: AreaBuilder, colors: HumanoidColors, readonly x: number, readonly z: number, y: number, private readonly baseYaw: number, scale = 1) {
+  constructor(b: AreaBuilder, colors: HumanoidColors, readonly x: number, readonly z: number, private readonly y: number, private readonly baseYaw: number, scale = 1) {
     this.h = buildHumanoid(colors, scale);
     this.yaw = baseYaw;
     this.h.root.position.set(x, y, z);
     this.h.root.rotation.y = baseYaw;
     b.dynamic(this.h.root);
     this.collider = b.cylinder(x, y + 0.9, z, 0.9, 0.45, Layer.Prop);
-    // Villagers never leave the spot they stand on: one blob, placed once.
-    this.blob = new GroundShadow(b.dynamicGroup, 0.5 * scale);
+    // Villagers never leave the spot they stand on: one blob, placed again each frame only so it can give way to the sun's shadow.
+    this.blob = new GroundShadow(b.dynamicGroup, 0.5 * scale, 'character');
     this.blob.place(x, y, z, y);
   }
 
   setPresent(on: boolean) {
     this.present = on;
     this.h.root.visible = on;
-    this.blob.mesh.visible = on;
+    if (on) this.blob.place(this.x, this.y, this.z, this.y);
+    else this.blob.mesh.visible = false;
     this.collider.setEnabled(on);
   }
 
   update(dt: number, player: THREE.Vector3) {
     this.t += dt;
+    if (this.present) this.blob.place(this.x, this.y, this.z, this.y);
     const near = Math.hypot(player.x - this.x, player.z - this.z) < 7;
     const target = near ? Math.atan2(player.x - this.x, player.z - this.z) : this.baseYaw;
     this.yaw = lerpAngle(this.yaw, target, damp(5, dt));

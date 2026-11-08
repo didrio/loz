@@ -117,7 +117,7 @@ enemy randomness.
 - **Baked light is parked** (owner, 2026-11-07: "I don't really see a difference; revisit later"). The village trial stays as
   built (`render/bakeLight.ts`, engine.md "Baked light", Dev toggle) and costs ~1 s at load. On revisit: stronger settings
   (`BAKE.occlusion` above 1, a lower floor) or drop it; if kept, the whole valley, baked in a worker or cached, not on the main
-  thread. Sun shadows (T46) are the bigger visible change and may be what the owner was missing.
+  thread. Sun shadows (done, a Settings option) are the bigger visible change and may be what the owner was missing.
 
 - **Village homes are shells**: the two standing cottages have locked doors (`door.home0/1`, "The door is locked.") and no
   interior. When they become enterable, follow the mill: a `HingedDoor` (`world/objects.ts`), a room inside the walls

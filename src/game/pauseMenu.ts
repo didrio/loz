@@ -110,6 +110,7 @@ export class PauseMenu {
       sensitivity('Stick sensitivity', 'stickSensitivity'),
       { kind: 'toggle', label: 'Invert camera up/down', get: () => s.invertY, set: (on) => this.change({ invertY: on }) },
       { kind: 'choice', label: 'Display', space: true, options: DISPLAY_NAMES, get: () => s.display, set: (i) => this.change({ display: i as Settings['display'] }) },
+      { kind: 'toggle', label: 'Shadows', get: () => s.shadows, set: (on) => this.change({ shadows: on }) },
     ];
     if (game.canFullscreen) {
       rows.push({ kind: 'toggle', label: 'Fullscreen', get: () => game.isFullscreen, set: (on) => game.setFullscreen(on) });

@@ -111,7 +111,7 @@ export abstract class Enemy {
   placeShadow(physics: Physics) {
     const parent = this.root.parent;
     if (!parent) return;
-    this.blob ??= new GroundShadow(parent, this.shadowSize);
+    this.blob ??= new GroundShadow(parent, this.shadowSize, 'character');
     if (!this.alive) {
       this.blob.mesh.visible = false;
       return;

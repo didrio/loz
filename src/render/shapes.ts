@@ -43,16 +43,24 @@ const SHADOW_GEO = new THREE.CircleGeometry(1, 16).rotateX(-Math.PI / 2);
 const SHADOW_FADE = 12;
 
 /**
+ * Whether the sun's real shadow map is drawing (render/shadows.ts, T46: on, outdoors). While it is, the blobs of
+ * characters (`kind: 'character'`) hide, because the real shadow does their job; markers (orbs, wisps, stones: how high
+ * something floats) stay, and indoors the map is off so every blob stays.
+ */
+export const blobConfig = { realShadows: false };
+
+/**
  * A dark disc on the ground under something that floats (orbs, wisps), so you can read how
  * far away it is and how high: the higher it flies, the smaller and fainter the disc.
  * Not a real shadow (those are hard to read on flat-shaded ground at night); a blob, the
  * way late-90s games did it. Call `place` every frame with the ground height under it.
+ * A `character` blob gives way to the sun's shadow map when that is on (`blobConfig`).
  */
 export class GroundShadow {
   readonly mesh: THREE.Mesh;
   private readonly material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
 
-  constructor(parent: THREE.Object3D, private readonly size: number) {
+  constructor(parent: THREE.Object3D, private readonly size: number, private readonly kind: 'character' | 'marker' = 'marker') {
     this.mesh = new THREE.Mesh(SHADOW_GEO, this.material);
     this.mesh.renderOrder = 1;
     this.mesh.visible = false;
@@ -63,7 +71,7 @@ export class GroundShadow {
   place(x: number, y: number, z: number, groundY: number | null, strength = 1) {
     const h = groundY === null ? Infinity : y - groundY;
     const k = 1 - Math.min(1, Math.max(0, h) / SHADOW_FADE);
-    this.mesh.visible = k > 0.02 && strength > 0.02;
+    this.mesh.visible = k > 0.02 && strength > 0.02 && !(this.kind === 'character' && blobConfig.realShadows);
     if (!this.mesh.visible) return;
     this.mesh.position.set(x, groundY! + 0.04, z);
     this.mesh.scale.setScalar(this.size * (0.45 + 0.55 * k));
