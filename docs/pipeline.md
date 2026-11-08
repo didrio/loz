@@ -101,7 +101,7 @@ Lamplighter is at about twice its mini-boss budget. A final pass fixes these; it
   The viewer shows the **model**, not the behaviour, so moves and hurtboxes live in the game (below).
 - **Contact sheet**: `/viewer.html?asset=contact`, and the `contact` look scene (`npm run look -- contact`, also with
   `--display n64`). Every registered model at one scale (shelves, biggest kinds first; layout in `src/dev/contactLayout.ts`), its id
-  under it; the golden set (`GOLDEN_SET` in `registry.ts`, empty until the owner approves a member) is starred and gold.
+  under it; the golden set (`GOLDEN_SET` in `registry.ts`: the chest, approved 2026-11-08, is the first member) is starred and gold.
   Any model change shows up in this shot, so an outlier is easy to see.
 - **`?state=<id>`** (dev server or `?debug`): boots past the title menu straight into a Dev tab save state. The id is the state's
   name in lowercase with hyphens (`devStateId`: `?state=waking-shrine-the-entrance`), or its 1-based number in the Dev tab.

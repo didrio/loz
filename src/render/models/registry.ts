@@ -31,7 +31,7 @@ export interface AssetEntry {
 }
 
 /** The golden set (art.md "The golden set"): owner-approved ids that define the style. The contact sheet marks them. Empty until the owner approves the first. */
-export const GOLDEN_SET: readonly string[] = [];
+export const GOLDEN_SET: readonly string[] = ['chest'];
 
 export const ASSETS: readonly AssetEntry[] = [
   { id: 'wren', kind: 'player', tier: 'rough', build: buildWren, note: 'tunic, sword and shield' },
@@ -43,7 +43,7 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'cragstalker', kind: 'enemy', tier: 'rough', build: buildCragstalker },
   { id: 'hollow-lamplighter', kind: 'miniboss', tier: 'rough', build: buildLamplighter },
   { id: 'gravelheart', kind: 'boss', tier: 'rough', build: buildGravelheart },
-  { id: 'chest', kind: 'prop', tier: 'rough', build: () => buildChest(true), note: 'locked, with its padlock' },
+  { id: 'chest', kind: 'prop', tier: 'final', build: () => buildChest(true), note: 'locked, with its padlock' },
   { id: 'hinged-door', kind: 'prop', tier: 'rough', build: () => buildHingedDoor() },
   { id: 'stone-door', kind: 'prop', tier: 'rough', build: () => buildStoneDoor(), note: 'the shrine\'s door size' },
   { id: 'heart-vessel', kind: 'prop', tier: 'rough', build: buildHeartVessel },

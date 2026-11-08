@@ -23,7 +23,7 @@ when it's near.
   1. **Foundations:** T36–T39 in [tickets.md](tickets.md) (T27–T33 are done: effects presets, look loop, Display setting, palette, shading and textures, atmosphere and blob shadows, the model registry and validator, T34 the viewer and contact sheet, T35 the modeling kit and `bakeRig`, proven on the chest; T40 and T43 textured the static world; T41 the living).
   2. **The golden set**, one Final-pass ticket each, locked only when the owner approves (the first ones
      plan · opusplan · high, as they define the style): a Thornling → Wren with her full animation set → the starter-area
-     entrance vignette (phone frame rate checked) → the prop set (chest built with the kit in T35, awaiting the owner's approval for the golden set; door, jar, crate, sign) → Pip → the Hollow
+     entrance vignette (phone frame rate checked) → the prop set (chest done and approved 2026-11-08; door, jar, crate, sign) → Pip → the Hollow
      Lamplighter → Gravelheart → one shrine room (puzzles unchanged). Each captures its reference renders (art.md
      "The golden set"). After the second final pass, write a `/final-pass` skill (CLAUDE.md: recipes the second time).
   3. **Everything else, final passes** (auto · sonnet, following the golden set): each remaining enemy (Gloomwisp, Dozing
