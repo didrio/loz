@@ -40,16 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T44: The boss look scene's howl shot renders black
-**Run:** auto · sonnet · medium
-**Also:** every `dungeon` look shot (and others: `buds`, `village` drift) differs from its baseline on a clean HEAD, with the interior frames fully black; likely the same cause. Check it first, and re-approve the scenes that are stale only once they render right.
-**Why:** `npm run look -- boss` gives an all-black `boss-howl` frame (HUD only; the baseline shows the Lamplighter mid-howl). It
-is the same on HEAD without T32, so it predates the effects work (probably the texture commits). The boss baselines are stale
-and weren't approved.
-**Done when:** `boss-howl` shows the howl again, and `npm run look -- boss --approve` goes in the commit.
-**Read first:** `scripts/look.mjs` (the `boss` scene), `game/bosses/lamplighter.ts` (the howl, Grep `howl`).
-**Verify:** `npm run check`; look `boss`.
-
 ### T33: Asset registry, pure model builders, validator
 **Run:** auto · sonnet · high
 **Why:** pipeline.md: agents need to know what exists, its tier and budget, and a check that fails off-palette or

@@ -77,7 +77,10 @@ describe('surf()', () => {
     expect(shader.vertexShader).toContain('vSurfPos = transformed;');
     expect(shader.vertexShader).toContain('attribute vec3 surfNormal;');
     expect(shader.vertexShader).toContain('? surfNormal : objectNormal;');
-    expect(shader.fragmentShader).toContain('flat varying vec3 vSurfNormal;');
+    // Never `flat`: on Metal (ANGLE) a flat varying here ran the GPU out of memory and lost the WebGL context (T44). Every vertex of a face carries the same normal, so smooth interpolation is identical.
+    expect(shader.fragmentShader).toContain('\nvarying vec3 vSurfNormal;');
+    expect(shader.fragmentShader).not.toContain('flat varying');
+    expect(shader.vertexShader).not.toContain('flat varying');
     expect(shader.fragmentShader).toContain('diffuseColor.rgb *= 1.0 + surfStrength');
     expect(shader.fragmentShader).toContain('#include <color_fragment>');
     expect((shader.uniforms.surfTop.value as THREE.DataTexture).image.width).toBe(tileSizeAt('ground', DEFAULT_TEXTURE_RESOLUTION));

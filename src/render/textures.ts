@@ -565,6 +565,7 @@ const SURFACE_FRAGMENT = /* glsl */ `
  * Makes `m` show `surface`. Use on materials of your own (the terrain's, a BackSide room); shared
  * coloured ones come from `surf()` in materials.ts. Every textured material shares one shader program.
  */
+// vSurfNormal is deliberately not `flat`: on Metal (ANGLE) a flat varying ran the GPU out of memory and lost the WebGL context (T44).
 export function applySurface<T extends THREE.MeshLambertMaterial>(m: T, surface: SurfaceId): T {
   const def = SURFACES[surface];
   m.onBeforeCompile = (shader) => {
@@ -574,10 +575,10 @@ export function applySurface<T extends THREE.MeshLambertMaterial>(m: T, surface:
     shader.uniforms.surfSideRepeat = { value: 1 / TILE_METRES[def.side] };
     shader.uniforms.surfStrength = { value: def.strength };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec3 surfNormal;\nvarying vec3 vSurfPos;\nflat varying vec3 vSurfNormal;')
+      .replace('#include <common>', '#include <common>\nattribute vec3 surfNormal;\nvarying vec3 vSurfPos;\nvarying vec3 vSurfNormal;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSurfPos = transformed;\nvSurfNormal = dot(surfNormal, surfNormal) > 0.5 ? surfNormal : objectNormal;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vSurfPos;\nflat varying vec3 vSurfNormal;\nuniform sampler2D surfTop;\nuniform sampler2D surfSide;\nuniform float surfTopRepeat;\nuniform float surfSideRepeat;\nuniform float surfStrength;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vSurfPos;\nvarying vec3 vSurfNormal;\nuniform sampler2D surfTop;\nuniform sampler2D surfSide;\nuniform float surfTopRepeat;\nuniform float surfSideRepeat;\nuniform float surfStrength;')
       .replace('#include <color_fragment>', SURFACE_FRAGMENT);
   };
   m.customProgramCacheKey = () => 'surface';

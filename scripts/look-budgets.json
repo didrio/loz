@@ -16,16 +16,16 @@
     "triangles": 222000
   },
   "boss": {
-    "calls": 1500,
-    "triangles": 273000
+    "calls": 1220,
+    "triangles": 232000
   },
   "boss-moves": {
     "calls": 460,
     "triangles": 234000
   },
   "buds": {
-    "calls": 870,
-    "triangles": 247000
+    "calls": 480,
+    "triangles": 200000
   },
   "camera": {
     "calls": 360,

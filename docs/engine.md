@@ -69,6 +69,7 @@ One **Display** setting (Settings, `Settings.display`): **Native** (0, the defau
 
 ## Textures (`render/textures.ts`, T19)
 
+- **Never `flat` varyings in the surface shader** (T44): `vSurfNormal` as `flat varying` made Metal (ANGLE, Mac GPU) fail with GL_OUT_OF_MEMORY and lose the WebGL context, so frames went black with no console error. A face's vertices share one normal, so smooth interpolation is identical. A black look shot with no error: check `webglcontextlost` and the console's warnings.
 Generated in code, never imported (owner's call, 2026-11-06). A texture is a small grey **detail tile**: a single channel with
 mean ~128. It only brightens or darkens the material's own colour (`colour × (1 + strength·(t − 0.5)·2)`), so one tile
 serves every colour of that surface, and the palette, the blight and the N64 crush behave as before. Think of it as a
