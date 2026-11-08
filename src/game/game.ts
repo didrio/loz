@@ -10,7 +10,7 @@ import type { Physics } from '../core/physics';
 import { DEFAULT_SETTINGS, decodeSettings, localStore, SaveSlot, type KeyValueStore, type Settings } from '../core/save';
 import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
-import { RetroPipeline, internalSize, pixelRatioFor, DISPLAY_NATIVE, DISPLAY_PERFORMANCE } from '../render/retro';
+import { RetroPipeline, renderStill, internalSize, pixelRatioFor, DISPLAY_NATIVE, DISPLAY_PERFORMANCE, DISPLAY_N64 } from '../render/retro';
 import type { AtmosphereId } from '../render/atmosphere';
 import { Sky } from '../render/sky';
 import { Hud } from '../ui/hud';
@@ -85,6 +85,8 @@ export class Game implements ScriptApi {
   private readonly timer = new THREE.Timer();
   private readonly debug: Debug | null;
   private areaName = '';
+  /** The dungeon's corner picture (a data URL), rendered when it loads; null outside dungeons. */
+  private portrait: string | null = null;
   private warpTo: number | null = null;
   private fadeValue = 0;
   private autosaveT = AUTOSAVE_SECONDS;
@@ -185,10 +187,35 @@ export class Game implements ScriptApi {
     this.area.setBlight?.(this.sky.blight);
     this.state.area = id;
     this.placeAtSpawn(entrance);
+    this.portrait = this.capturePortrait();
     if (this.mode !== 'title') {
       this.content.restore(this.state);
       this.content.start?.(this);
     }
+  }
+
+  /**
+   * Renders the area's `portrait` view once: a fresh camera, the area's own light and fog, no Wren and no enemies (none exist yet).
+   * Cached for the visit by the caller.
+   */
+  private capturePortrait(): string | null {
+    const view = this.area.portrait;
+    if (!view) return null;
+    const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 400);
+    cam.position.copy(view.eye);
+    cam.lookAt(view.target);
+    cam.updateMatrixWorld();
+    const wasOpacity = this.rig.playerOpacity;
+    this.player.setOpacity(0);
+    this.sky.setIndoor(true); // the next update snaps the fog instead of easing
+    if (this.area.fogAt) this.sky.indoorFogTarget = this.area.fogAt(view.eye);
+    this.sky.update(this.state.hours, view.eye, view.eye, 0);
+    this.area.update(0, { night: 0, playerPos: view.eye }); // the lights nearest the view, not the doorway
+    const url = renderStill(this.renderer, this.scene, cam, this.settings.display === DISPLAY_N64 ? 64 : 128, this.settings.display);
+    this.area.update(0, { night: 0, playerPos: this.player.pos });
+    this.player.setOpacity(wasOpacity);
+    this.sky.setIndoor(true);
+    return url || null;
   }
 
   /** The atmosphere (render/atmosphere.ts) of the ground at `p`: the area's say, else the valley's outdoors or the shrine's indoors. */
@@ -428,7 +455,7 @@ export class Game implements ScriptApi {
     hud.setGems(state.gems);
     hud.setFlasks(state.flasks.slots, player.attackBoost / ATTACK_BOOST_SECONDS, state.items.has('tether'));
     hud.setKeys(state.keysHere, state.dungeonKeysHere, !!state.dungeons.get(state.area)?.bossKey);
-    hud.setClock(state.hours);
+    hud.setCorner(state.hours, this.mode === 'title' ? '' : this.areaName, this.mode === 'title' ? null : this.portrait);
     if (this.mode !== 'play') hud.setActions([]);
     const mood = boss ? boss.music : blightMood(this.area.music ?? this.area.musicAt?.(player.pos.x, player.pos.z, state.isNight) ?? (state.isNight ? 'night' : 'day'), isBlighted);
     this.sfx.updateMusic(mood, this.mode !== 'title' && !this.musicSilenced && !dungeonQuiet(state.area, state));

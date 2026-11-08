@@ -260,5 +260,12 @@ export function validateDungeon(def: DungeonDef): string[] {
   const entry = room(def.entrance.room, 'The entrance');
   if (entry) inside(entry, def.entrance.at, 'The entrance');
   room(def.goal, 'The goal');
+  if (def.portrait) {
+    const pr = room(def.portrait.room, 'The portrait');
+    if (pr) {
+      inside(pr, [def.portrait.eye[0], def.portrait.eye[1]], 'The portrait eye');
+      inside(pr, [def.portrait.look[0], def.portrait.look[1]], 'The portrait target');
+    }
+  }
   return errors;
 }

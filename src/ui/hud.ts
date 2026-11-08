@@ -5,6 +5,7 @@ import type { MenuView } from '../game/menu';
 import { KEY_HEX, type KeyColor, type Potion } from '../world/dungeon/format';
 import { Compass } from './compass';
 import { richHtml } from './richText';
+import { cornerView } from './corner';
 import { SkyDial } from './skyDial';
 
 /** A little corked bottle in a potion's color (a pale glass one when empty). */
@@ -69,6 +70,8 @@ export class Hud {
   private prompt: HTMLElement;
   private promptLabel = '';
   private clock: HTMLElement;
+  private place: HTMLElement;
+  private clockEl: HTMLElement;
   private dial: SkyDial;
   private compass: Compass;
   private menuHint: HTMLElement;
@@ -127,6 +130,7 @@ export class Hud {
       <div class="hud-top-right">
         <div class="clock"></div>
         <div class="clock-text"></div>
+        <div class="place"></div>
         <div class="menu-hint"></div>
       </div>
       <div class="actions"></div>
@@ -175,7 +179,9 @@ export class Hud {
     });
     this.prompt = q('.prompt');
     this.clock = q('.clock-text');
-    this.dial = new SkyDial(q('.clock'));
+    this.place = q('.place');
+    this.clockEl = q('.clock');
+    this.dial = new SkyDial(this.clockEl);
     this.compass = new Compass(q('.compass'));
     this.menuHint = q('.menu-hint');
     this.menuHint.addEventListener('click', () => this.onTap('pause'));
@@ -452,7 +458,19 @@ export class Hud {
     this.compass.set(dx, dz);
   }
 
-  setClock(hours: number) {
+  /** The corner: the sky dial and time, or a dungeon's picture (see ui/corner.ts), and the place's name under it. */
+  setCorner(hours: number, place: string, portrait: string | null) {
+    const v = cornerView(place, portrait);
+    this.clockEl.classList.toggle('picture', v.picture);
+    this.clockEl.style.backgroundImage = v.picture ? `url(${portrait})` : '';
+    this.clock.style.display = v.showTime ? '' : 'none';
+    if (this.place.textContent !== v.name) this.place.textContent = v.name;
+    this.place.title = v.name;
+    this.place.style.display = v.name ? '' : 'none';
+    if (v.showTime) this.setClock(hours);
+  }
+
+  private setClock(hours: number) {
     const h = Math.floor(hours), m = Math.floor(((hours % 1) * 60) / 10) * 10;
     const ampm = h < 12 ? 'AM' : 'PM';
     const h12 = h % 12 === 0 ? 12 : h % 12;

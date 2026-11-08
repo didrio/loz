@@ -20,6 +20,8 @@ export const SHRINE: DungeonDef = {
   music: 'shrine',
   entrance: { room: 'entry', at: [5, 6], facing: 'e' },
   goal: 'boss',
+  // The Nave from its south end, looking up the pillars to the far wall.
+  portrait: { room: 'nave', eye: [8, 18.5, 3.2], look: [8, 2, 2.4] },
   rooms: [
     // ── The Sleeping Halls (floor 0) ────────────────────────────────────────────────────
     { id: 'entry', name: 'Hall of Sleepers', floor: 0, x: 0, z: 0, w: 14, d: 12, theme: 'sandstone' },

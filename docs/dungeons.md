@@ -14,7 +14,7 @@ switches, tablets and sconces). Per-dungeon design notes: [shrine.md](shrine.md)
 
 1. Sketch the dungeon's flow first (in words or with the owner): what's the gimmick, where
    are the keys, what's the route, where does the boss key sit.
-2. Write the `DungeonDef` in its own file (`src/world/dungeon/defs/<id>.ts`) and add it to
+2. Write the `DungeonDef` in its own file (give it a `portrait`: the HUD corner's picture, one line of data) (`src/world/dungeon/defs/<id>.ts`) and add it to
    `DUNGEONS` in `index.ts`. Write its design notes in `docs/<id>.md`.
 3. `npm run map -- <id>`: prints the map of every floor, the chest contents and locked
    doors, and any problems. Fix until it says "No problems."

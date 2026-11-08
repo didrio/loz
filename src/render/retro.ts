@@ -152,3 +152,37 @@ export class RetroPipeline {
     this.composite.dispose();
   }
 }
+
+/**
+ * One still frame as a PNG data URL (the dungeon portrait in the HUD corner, T47): `scene` seen by `camera`, `size` pixels
+ * square, drawn through the Display look: N64 gets the colour crush and dither (on the CPU, with `crushChannel`),
+ * the others stay smooth. Restores the renderer's target afterwards.
+ */
+export function renderStill(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, size: number, display: Display): string {
+  const rt = new THREE.WebGLRenderTarget(size, size, { samples: display === DISPLAY_N64 ? 0 : 4, depthBuffer: true });
+  rt.texture.colorSpace = THREE.SRGBColorSpace;
+  const prev = renderer.getRenderTarget();
+  renderer.setRenderTarget(rt);
+  renderer.render(scene, camera);
+  const px = new Uint8Array(size * size * 4);
+  renderer.readRenderTargetPixels(rt, 0, 0, size, size, px);
+  renderer.setRenderTarget(prev);
+  rt.dispose();
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  const img = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const src = ((size - 1 - y) * size + x) * 4, dst = (y * size + x) * 4; // GL rows run bottom-up
+      for (let c = 0; c < 3; c++) {
+        const v = px[src + c] / 255;
+        img.data[dst + c] = Math.round((display === DISPLAY_N64 ? crushChannel(v, x, y) : v) * 255);
+      }
+      img.data[dst + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas.toDataURL('image/png');
+}

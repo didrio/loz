@@ -109,6 +109,7 @@ export class DungeonArea implements Area {
   readonly voiceRoom = 'dungeon';
   readonly enemyCount = 0;
   readonly indoor = true;
+  readonly portrait?: { eye: THREE.Vector3; target: THREE.Vector3 };
   readonly music: DungeonDef['music'];
   readonly interactables: Interactable[] = [];
   readonly triggers: Trigger[] = [];
@@ -164,6 +165,14 @@ export class DungeonArea implements Area {
   constructor(physics: Physics, readonly def: DungeonDef) {
     this.id = def.id;
     this.music = def.music;
+    if (def.portrait) {
+      const pr = def.portrait, room = def.rooms.find((r) => r.id === pr.room)!;
+      const at = (p: [number, number, number]) => {
+        const [x, z] = worldPos(room, [p[0], p[1]]);
+        return new THREE.Vector3(x, floorY(def, room.floor) + p[2], z);
+      };
+      this.portrait = { eye: at(pr.eye), target: at(pr.look) };
+    }
     const b = new AreaBuilder(physics, mulberry32(7));
     const rooms = new Map(def.rooms.map((r) => [r.id, r]));
     const src = new Map<number, { solid: THREE.Group; ceiling: THREE.Group }>();

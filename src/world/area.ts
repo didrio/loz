@@ -31,6 +31,8 @@ export interface Area {
   readonly voiceRoom?: 'outdoors' | 'house' | 'dungeon';
   readonly interactables: Interactable[];
   readonly triggers: Trigger[];
+  /** A dungeon's iconic view (world coordinates); the HUD's corner shows a still render of it instead of the sky dial. */
+  readonly portrait?: { eye: THREE.Vector3; target: THREE.Vector3 };
   /** Name shown when the player walks into a part of the area. */
   nameAt(x: number, z: number): string;
   /** A random spot where an enemy may appear, optionally in a ring around `near`. */

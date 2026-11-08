@@ -35,6 +35,11 @@ export interface DungeonDef {
   entrance: { room: string; at: Vec2; facing: Dir };
   /** The room that counts as finishing the dungeon (normally the boss room). */
   goal: string;
+  /**
+   * The picture in the HUD's corner (T47): the dungeon's iconic view, rendered once when it loads. Positions are
+   * relative to `room` like `at` elsewhere: x and z in meters from its northwest corner, `h` above its floor.
+   */
+  portrait?: { room: string; eye: [x: number, z: number, h: number]; look: [x: number, z: number, h: number] };
   rooms: RoomDef[];
   doors: DoorDef[];
   things: ThingDef[];

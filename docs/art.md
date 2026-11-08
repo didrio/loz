@@ -129,6 +129,11 @@ readable and easy to use.
   touch and mouse hit-testing, rich text, typing) and give it the period surface with CSS, plus the code-authored font
   turned into a real font at runtime (`FontFace`). The proposal's alternative, a 640×480 canvas upscaled with smoothing,
   blurs text on phones and retina screens and means rewriting all of that.
+- **The corner (T47):** the round picture, the time, then the place's name (quiet, one line, ellipsis; follows `areaName`, so it
+  changes with the area-name card). Outdoors and in houses the picture is the sky dial; in a dungeon it is a still render of
+  the def's `portrait` view (`DungeonDef.portrait`, room-relative eye and look), taken once at load by `renderStill`
+  (`render/retro.ts`) in the current Display look (N64: 64 px, crushed and dithered; otherwise 128 px), with no Wren or
+  enemies, and the time text is gone. The rule is `ui/corner.ts`. It isn't re-taken if Display changes mid-visit.
 - **Title and file select** get the same care: they set the tone before play starts.
 
 **Authenticity test (UI and audio):** put a screenshot or clip next to real games of the era at the same size or volume.
