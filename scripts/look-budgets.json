@@ -36,12 +36,12 @@
     "triangles": 305000
   },
   "chest": {
-    "calls": 130,
-    "triangles": 236000
+    "calls": 60,
+    "triangles": 195000
   },
   "chestOpen": {
-    "calls": 120,
-    "triangles": 234000
+    "calls": 60,
+    "triangles": 195000
   },
   "choice": {
     "calls": 900,

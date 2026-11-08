@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { meshTriangles } from '../kit';
 import { isSharedMaterial } from '../materials';
 import { snap, swatchName, nearest } from '../palette';
 import { SURFACES, TILE_SIZE, type SurfaceId } from '../textures';
@@ -36,12 +37,7 @@ export interface AssetReport {
   problems: string[];
 }
 
-/** Triangles in one mesh (instances counted). */
-export function meshTriangles(m: THREE.Mesh): number {
-  const g = m.geometry;
-  const tris = (g.index ? g.index.count : g.attributes.position.count) / 3;
-  return tris * (m instanceof THREE.InstancedMesh ? m.count : 1);
-}
+export { meshTriangles };
 
 const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
 

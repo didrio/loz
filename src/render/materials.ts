@@ -106,6 +106,14 @@ function bakedMat(surface: SurfaceId | undefined, emissive: number) {
   return m;
 }
 
+/**
+ * The shared material for kit pieces (render/kit.ts): colour comes from the vertices, optionally textured as `surface`.
+ * Same rules as `mat()`: never mutate it. A model that flashes goes through `bakeRig` instead, which makes its own.
+ */
+export function kitMat(surface?: SurfaceId) {
+  return bakedMat(surface, 0);
+}
+
 export function isSharedMaterial(m: THREE.Material) {
   for (const v of cache.values()) if (v === m) return true;
   for (const v of baked.values()) if (v === m) return true;

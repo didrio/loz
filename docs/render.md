@@ -6,7 +6,7 @@ The look's code: what each `render/` file does, the sun's shadows, the Display m
 
  `palette.ts` (the master palette: `pal`, `snap`, area sub-palettes), `materials.ts` (shared/unique, `surf` textured, snapped to
 the palette, static merging), `bakeLight.ts` (baked bounce light into vertex colours; a village trial), `textures.ts` (generated detail tiles, the projection
-shader), `shapes.ts`, `effects.ts` (the named particle presets, the cap, `SlashTrail`), `characters.ts` (`buildHumanoid`), `atmosphere.ts` (each place's sky,
+shader), `shapes.ts`, `kit.ts` + `bakeRig.ts` (the modeling kit: docs/pipeline.md), `effects.ts` (the named particle presets, the cap, `SlashTrail`), `characters.ts` (`buildHumanoid`), `atmosphere.ts` (each place's sky,
 light, fog, motes and sub-palette as data), `sky.ts` (blends them; the blight look), `shadows.ts` (the sun's shadow map: the Settings' Shadows option; texel
 snapping, what casts), `particles.ts`, `motes.ts`, `retro.ts` (the Display modes: N64's 240-row target, dither + colour crush; Native/Performance pixel ratio).
 `models/` holds every model as a **pure builder** (no physics, no game: `thornling.ts`, `gloomwisp.ts`, `sentinel.ts`, `shellback.ts`, `cragstalker.ts`,

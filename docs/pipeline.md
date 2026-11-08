@@ -4,9 +4,6 @@ How every model, room and area gets made so the game stays one consistent thing 
 look like). The owner talks like a designer ("add an enemy here", "now do the final version"); the agent runs the right
 pass **without being asked** and without the owner listing steps.
 
-Some tools named here don't exist yet: each section says which ticket builds it and what to do until then. The ticket
-that builds a tool rewrites its section.
-
 ## Trigger phrases
 
 | The owner says | Run |
@@ -21,7 +18,7 @@ Feel is only iterated in rough. A final pass that fails its checks goes back for
 ## Rough pass: playable today
 
 Detail is wasted at this stage.
-- Built from primitives (the kit, from T35), at the right scale, with the intended silhouette roughly there. Palette colours by name (`pal('wood', 1)`).
+- Built from primitives (the kit, below), at the right scale, with the intended silhouette roughly there. Palette colours by name (`pal('wood', 1)`).
 - **Full gameplay:** behaviour, hurtboxes and hit ranges, attack timings, the standard poses (simple is fine), sounds.
   Recipes: `/add-enemy`, `/add-npc`, `/add-quest-beat`.
 - Registered as `tier: 'rough'` in `render/models/registry.ts`, with a short spec in its topic doc (design intent, attacks, timings, weak points).
@@ -60,7 +57,7 @@ one `pose(p)` that applies it to the joints. Both bosses already work this way (
 Lamplighter's `Pose` in `game/bosses/lamplighter.ts`); regular enemies pose inline and adopt it in their final passes. State names: `idle`, `move`,
 `anticipate`, `attack`, `recover`, `hurt`, `death`, plus extras per creature; bosses use the move system's
 windup/active/recover ([combat.md](combat.md)). Pose data stays separate from geometry, so a model can be re-detailed
-without breaking its animation. From T35, `bakeRig` merges each joint's parts into one mesh with one material (fewer
+without breaking its animation. `bakeRig` merges each joint's parts into one mesh with one material (fewer
 draw calls; the hit flash becomes a uniform).
 
 ## The registry and validator
@@ -112,12 +109,46 @@ Lamplighter is at about twice its mini-boss budget. A final pass fixes these; it
   `cragstalker`: `game/spawn.ts`) at (x, z) or 3 m in front of Wren. Bosses stay in their arenas: `activeBoss.forceMove(name)`.
 - **`?debug` + `\`** draws the collider wireframe **and** red rings round every live enemy's hurtboxes (`Debug`, `game/debug.ts`).
 
-## The modeling kit (T35)
+## The modeling kit
 
-Not built yet. Until then: three.js primitives through `mat`/`surf`/`uniqueMat` (`render/materials.ts`), `buildHumanoid`
-(`render/characters.ts`), `render/shapes.ts`. T35 adds the builders (beveled box, taper, capsule, lathe, extrude along a
-path, mirror, merge, crease-angle normals, palette region paint, crevice darkening, triangle counter, all seeded) and
-writes their reference here.
+Every final pass builds from one toolkit, so the style is consistent for free. **`render/kit.ts`**: builders that return a plain
+non-indexed `BufferGeometry` (`position`, `normal`, a vertex `color`), pure and deterministic. **`render/bakeRig.ts`**: merges a model's
+parts per joint. Forms stand on y = 0 and are centred on x and z (a box on all three); faces always point outward. Tests: `kit.test.ts`, `bakeRig.test.ts`.
+
+| Builder | What it gives | Example |
+|---|---|---|
+| `bevelBox(w, h, d, bevel)` | a box with chamfered edges (44 triangles; bevel 0 = plain 12) | `bevelBox(1.4, 0.8, 0.95, 0.07)` |
+| `taper(bottom, top, height, sides, flatten)` | a tapered limb, trunk or tooth from y = 0 | `taper(0.18, 0.1, 0.6, 5, 0.7)` |
+| `capsule(r, length, sides, rings)` | a rounded limb or body | `capsule(0.25, 0.9)` |
+| `lowSphere(r, sides, rings)` | a chunky sphere (6 × 4 default) | `lowSphere(0.4, 6, 4)` |
+| `lathe(profile, sides)` | a surface of revolution from `[radius, y]` points | `lathe([[0.4, 0], [0.3, 0.5], [0, 0.8]], 8)` |
+| `extrudePath(profile, path, scale)` | a 2D profile swept along a 3D path: horns, tails, handles, a curved lid | `extrudePath(square, arcPoints, (t) => 1 - t)` |
+| `mirror(g, axis)` | the piece plus its reflection, both facing outward | `mirror(place(arm, 0.5, 1, 0))` |
+| `merge(...gs)` / `place(g, x, y, z, rot)` | join pieces / move (and turn) a copy | `merge(body, head)` |
+| `wobble(g, amount, seed)` | seeded asymmetry, no cracks at shared vertices | `wobble(rock, 0.04, 3)` |
+| `creaseNormals(g, deg)` | smooth normals inside the crease angle, hard edges beyond it | `creaseNormals(dome, 50)` |
+| `paint(g, colour)` | one palette colour into the vertices (anything else snaps to a swatch) | `paint(g, pal('wood'))` |
+| `paintRegion(g, pick)` | colour breakup: `pick(centre, normal)` returns a colour or `undefined` | `paintRegion(g, (c, n) => n.y > 0.8 ? pal('moss') : undefined)` |
+| `crevice(g, shade)` | darkens undersides and wall feet; defaults are the scenery's `BAKED_SHADE` | `crevice(paint(g, c))` (paint first: it multiplies) |
+| `triangleCount(g or object)` | triangles in a geometry or under an object | `triangleCount(model.root)` |
+| `kitMesh(g, surface?)` | a mesh in the shared vertex-colour material (`kitMat`), optionally textured | `kitMesh(g, 'wood')` |
+
+**`bakeRig(model, { shared? })`** returns the model with every joint's meshes merged into one per kind of surface (colours baked into the
+vertices), so a model is a handful of draw calls and one material to flash. The joints keep their place and transform, so behaviour poses
+them as before. It bakes plain opaque Lambert meshes (kit pieces and old `mat`/`surf` ones alike) and leaves glows, transparent and
+`MeshBasicMaterial` parts, `animated` materials and a joint that is itself a `Mesh`. `flashMats` becomes the baked materials (the game's
+`m.emissive.setRGB(k, k, k)` flash works unchanged: the flash is the material's emissive uniform). `shared: true` uses the shared kit
+materials instead, for a prop that never flashes (`flashMats` stays empty).
+
+**Recipe: a limb with a joint.** Build each part as a kit piece, move it with `place`, `paint` it from the area's sub-palette, `crevice` it,
+`kitMesh` it into the joint's `Group`, then `bakeRig` the model at the end of the builder. Rig and poses stay as they were.
+
+**Recipe: colour breakup and wear.** `paintRegion` for a lighter crown, a mossy top, a stained foot; `wobble` the big forms a few
+centimetres (seeded) so no two edges are parallel; `crevice` last. Spend triangles on silhouette (a bevel, a strap, a horn), not on
+smoother cylinders.
+
+Kit colours are palette colours; `crevice` and the lighting then darken them, as in the scenery. The kit material (white, vertex-coloured) is a swatch, so the validator accepts it.
+The chest (`render/models/props.ts`, 272 of its 300 triangles) is the first model built this way.
 
 ## Visual checks
 

@@ -40,23 +40,6 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
-### T35: The modeling kit, proven on the chest
-**Run:** auto · sonnet · high
-**Why:** pipeline.md: every final pass builds from one toolkit, so the style is consistent for free.
-**Done when:**
-- Kit builders, seeded and returning vertex-coloured geometry: beveled box, tapered limb, capsule, low-segment sphere,
-  lathe, extrude along a path, mirror, merge, crease-angle normals, palette region paint, crevice and underside
-  darkening, a triangle counter. Unit-tested (determinism, triangle counts, colours on the palette).
-- `bakeRig`: merges each joint's parts into one mesh with one material whose hit flash is a uniform, replacing
-  `flashMats` lists for models that use it.
-- The chest rebuilt with the kit (same size, lid hinge and interaction), registered as `final` once the owner approves
-  it (a golden-set candidate).
-- pipeline.md "The modeling kit" holds the reference: each builder with a one-line example and two recipes.
-**Read first:** pipeline.md; art.md "Shape language" and "Budgets"; `render/shapes.ts`; `render/materials.ts`; the
-registry (`render/models/registry.ts`); `render/models/props.ts` (`buildChest`, which `world/objects.ts`'s `Chest` uses).
-**Verify:** `npm run check`; smoke `full` covers a chest (ask first) or the shrine scenarios that open one; look `chest`
-in Native and N64 mode, and the contact sheet.
-
 ### T36: The N64 sound chain
 **Run:** auto · sonnet · medium
 **Why:** art.md "Audio": the era's playback character on what we already compose, without touching a song.

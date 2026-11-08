@@ -1,5 +1,8 @@
 import * as THREE from 'three';
+import { bakeRig } from '../bakeRig';
+import { bevelBox, crevice, extrudePath, kitMesh, merge, paint, paintRegion, place, type Vec3 } from '../kit';
 import { uniqueMat, uniqueSurf, surf } from '../materials';
+import { pal } from '../palette';
 import { glow, heartGeometry, shieldModel } from '../shapes';
 import { faceted } from '../textures';
 import type { Model } from './types';
@@ -9,41 +12,47 @@ import type { Model } from './types';
  * animates the named joints. Every builder is registered in `registry.ts`.
  */
 
-/** A treasure chest with a hinged lid, its front (lock side) facing +z. A locked chest wears an iron padlock until it's opened. */
+/**
+ * A treasure chest with a hinged lid, its front (lock side) facing +z. A locked chest wears an iron padlock until it's opened.
+ * Built with the modeling kit (render/kit.ts) and baked per joint (`bakeRig`): a beveled body on feet, a domed lid with two
+ * brass straps, a lock plate and a padlock. Same size, hinge and joints as ever; `world/objects.ts`'s `Chest` swings `lid`.
+ */
 export function buildChest(locked = false): Model<{ lid: THREE.Group; padlock: THREE.Group }> {
-  const wood = surf('wood', 0x7a4a24), trim = surf('metal', 0xc9a227), dark = surf('wood', 0x3a2412);
+  const wood = pal('wood', 2), woodDark = pal('wood', 1), woodDeep = pal('bark', 0), brass = pal('amber', 1), iron = pal('slate', 1);
+  /** The lid's dome: a half hexagon-ish disc swept along the chest's width, radius `r`, `length` long, centred on x. */
+  const dome = (r: number, length: number, x: number, steps: number) => {
+    const profile: [number, number][] = [];
+    for (let i = 0; i <= steps; i++) profile.push([Math.cos((i / steps) * Math.PI) * r, Math.sin((i / steps) * Math.PI) * r]);
+    return place(extrudePath(profile, [[x - length / 2, 0, 0], [x + length / 2, 0, 0]]), 0, 0, 0.47);
+  };
+  const part = (parent: THREE.Object3D, g: THREE.BufferGeometry, surface: 'wood' | 'metal') => parent.add(kitMesh(g, surface));
+
   const root = new THREE.Group();
   const lid = new THREE.Group();
   const padlock = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.95), wood);
-  base.position.y = 0.4;
-  const band = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.12, 1.0), trim);
-  band.position.y = 0.7;
+
+  // The body: beveled, a darker skirt, four feet, a brass band round the rim, a dark hollow under the lid.
+  const body = paintRegion(paint(place(bevelBox(1.4, 0.8, 0.95, 0.07), 0, 0.4, 0), wood), (c) => (c.y < 0.16 ? woodDark : undefined));
+  const feet = merge(...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => paint(place(bevelBox(0.18, 0.12, 0.18, 0), sx * 0.64, 0.06, sz * 0.42), woodDeep))));
+  part(root, crevice(merge(body, feet)), 'wood');
+  part(root, paint(place(bevelBox(1.45, 0.12, 1.0, 0), 0, 0.7, 0), brass), 'metal');
+  part(root, paint(place(bevelBox(1.3, 0.05, 0.85, 0), 0, 0.78, 0), woodDeep), 'wood');
+
+  // The lid: hinged at the back (the pivot), a dome of planks with a lighter crown, two brass straps, a lock plate.
   lid.position.set(0, 0.8, -0.47);
-  // A half cylinder lying along the chest's width (x), domed side up.
-  const lidMesh = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.48, 0.48, 1.4, 8, 1, false, 0, Math.PI)), wood);
-  lidMesh.rotation.z = Math.PI / 2;
-  lidMesh.position.z = 0.47;
-  const lock = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.28, 0.08), trim);
-  lock.position.set(0, 0.05, 0.96);
-  // The half cylinder has no flat face; close its underside so the open lid isn't see-through.
-  const underside = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.04, 0.96), dark);
-  underside.position.set(0, -0.01, 0.47);
-  lid.add(lidMesh, lock, underside);
-  const inside = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.05, 0.85), dark);
-  inside.position.y = 0.78;
+  part(lid, merge(paintRegion(paint(dome(0.48, 1.4, 0, 6), wood), (_c, n) => (n.y > 0.8 ? pal('wood', 3) : undefined)), paint(place(bevelBox(1.4, 0.04, 0.96, 0), 0, -0.01, 0.47), woodDark)), 'wood');
+  part(lid, merge(paint(dome(0.5, 0.12, -0.42, 4), brass), paint(dome(0.5, 0.12, 0.42, 4), brass), paint(place(bevelBox(0.22, 0.28, 0.08, 0), 0, 0.05, 0.96), brass)), 'metal');
+
   // The padlock hangs from the clasp on the front.
-  const iron = surf('metal', 0x4a4d52);
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.12), iron);
-  const shackle = new THREE.Mesh(faceted(new THREE.TorusGeometry(0.1, 0.03, 4, 10, Math.PI)), iron);
-  shackle.position.y = 0.13;
-  const hole = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.02), dark);
-  hole.position.set(0, -0.02, 0.065);
-  padlock.add(body, shackle, hole);
   padlock.position.set(0, 0.6, 0.56);
+  const shackle: Vec3[] = [];
+  for (let i = 0; i <= 4; i++) shackle.push([Math.cos((i / 4) * Math.PI) * 0.1, 0.13 + Math.sin((i / 4) * Math.PI) * 0.1, 0]);
+  const loop: [number, number][] = [[-0.025, -0.025], [0.025, -0.025], [0.025, 0.025], [-0.025, 0.025]];
+  part(padlock, merge(paint(bevelBox(0.3, 0.26, 0.12, 0), iron), paint(extrudePath(loop, shackle), iron), paint(place(bevelBox(0.05, 0.09, 0.02, 0), 0, -0.02, 0.065), woodDeep)), 'metal');
   padlock.visible = locked;
-  root.add(base, band, inside, lid, padlock);
-  return { root, joints: { lid, padlock }, flashMats: [] };
+
+  root.add(lid, padlock);
+  return bakeRig({ root, joints: { lid, padlock }, flashMats: [] }, { shared: true });
 }
 
 /**
