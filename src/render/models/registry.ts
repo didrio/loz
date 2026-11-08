@@ -36,7 +36,7 @@ export interface AssetEntry {
 export const GOLDEN_SET: readonly string[] = ['chest'];
 
 export const ASSETS: readonly AssetEntry[] = [
-  { id: 'wren', kind: 'player', tier: 'rough', build: buildWren, note: 'tunic, sword and shield' },
+  { id: 'wren', kind: 'player', tier: 'final', build: () => buildWren(1), note: 'tunic, sword and shield; posed by her rig' },
   { id: 'villager', kind: 'npc', tier: 'rough', build: () => buildPerson(VILLAGER_COLORS), note: 'the humanoid every NPC shares (Maren\'s colours)' },
   { id: 'thornling', kind: 'enemy', tier: 'final', build: buildThornling },
   { id: 'gloomwisp', kind: 'enemy', tier: 'rough', build: buildGloomwisp },

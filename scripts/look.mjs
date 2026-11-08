@@ -141,6 +141,68 @@ const SCENES = {
       await h.shot(`model-${name}`);
     }
   },
+  /**
+   * Wren (the golden set's second member, T50; docs/art.md): every state of the animation set in the field, then the model
+   * alone in the viewer from the front, three-quarter and side. The player's update is swapped for its `animate` alone, so
+   * each state is set by hand (state, combo, swing time, shield, surf, throw, broken guard, death) and held still while it
+   * is shot: the same steps drive the rough and the final model.
+   */
+  async wren(h) {
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale, p = g.player;
+      for (const e of g.enemies.list) e.alive = false; // the blight's posts, out of the shots
+      g.state.set('hasSword');
+      p.setSword(true);
+      p.setShield(true);
+      p.invuln = 0;
+      p.update = (dt) => p.animate(dt); // pose only: no input, no movement, no physics
+      // `lookWren(fields)`: back to standing still, then these fields set.
+      window.lookWren = (fields = {}) => {
+        Object.assign(p, { state: 'move', combo: 0, t: 0, shielding: false, surfing: false, throwT: 0, speedXZ: 0, invuln: 0 }, fields);
+        p.guard.broken = fields.broken ?? 0;
+      };
+    });
+    await h.wait(4000); // the area's name card fades
+    const pose = async (name, fields, cam = { dist: 3.6, side: 2, height: 1.6, lookHeight: 1.1 }, ms = 500) => {
+      await h.game((f) => window.lookWren(f), fields);
+      await park(h, cam);
+      await h.wait(ms);
+      await h.shot(name);
+    };
+    await pose('idle', {});
+    await pose('run', { speedXZ: 8.5 }, undefined, 230);
+    // Mid-arc in each swing (the `t` the swing's ease is halfway through), the camera behind the right shoulder too.
+    await pose('swing1', { state: 'attack', combo: 0, t: 0.13 });
+    await pose('swing2', { state: 'attack', combo: 1, t: 0.13 });
+    await pose('swing3', { state: 'attack', combo: 2, t: 0.18 }, { dist: 3.2, side: 3, height: 1.4, lookHeight: 1.3 });
+    await pose('guard', { shielding: true });
+    await pose('hurt', { state: 'hurt', t: 0.1 });
+    await pose('broken', { broken: 1.2 });
+    await pose('surf', { surfing: true });
+    await pose('throw', { throwT: 0.3 });
+    // The death: in cutscene mode, so the game's death script (the fade) never starts; half a second in, Wren lies flat.
+    await h.game(() => {
+      const g = window.embervale;
+      window.lookWren({});
+      g.mode = 'cutscene';
+      g.player.health.hp = 0;
+    });
+    await park(h, { dist: 3.6, side: 2.4, height: 2, lookHeight: 0.4 });
+    await h.wait(700);
+    await h.shot('death');
+
+    const mode = ['native', 'performance', 'n64'][display] ?? 'native';
+    await h.page.setViewportSize({ width: 900, height: 900 });
+    for (const [name, deg] of [['front', 0], ['three-quarter', 45], ['side', 90]]) {
+      const url = new URL('viewer.html', h.page.url());
+      url.search = `?asset=wren&panel=0&angle=${deg}&display=${mode}`;
+      await h.page.goto(url.href);
+      await h.until(() => window.embervale?.mode === 'viewer', 30000);
+      await h.wait(400);
+      await h.shot(`model-${name}`);
+    }
+  },
   async title(h) {
     await h.boot();
     await h.shot('title');
@@ -814,6 +876,7 @@ const SCENES = {
       await h.game(([floor, from, to]) => {
         const g = window.embervale;
         g.player.teleport(from[0], floor * 8 + 0.05, from[1], 0);
+        g.hidePlayer(true); // the camera stands where Wren does: not inside the head
         g.rig.frozen = true;
         g.camera.position.set(from[0], floor * 8 + from[2], from[1]);
         g.camera.lookAt(to[0], floor * 8 + to[2], to[1]);
@@ -1016,9 +1079,11 @@ const SCENES = {
     await at(1.5, 19, 0, Math.PI / 2);
     await h.wait(1200);
     await h.shot('shaft-door');
+    await h.game(() => window.embervale.hidePlayer(true)); // the camera stands where Wren does: not inside the head
     await cam([1.2, 1.7, 19], [12, 6, 17]);
     await h.wait(1200);
     await h.shot('shaft-climb');
+    await h.game(() => window.embervale.hidePlayer(false));
     await cam([4, 17, 27], [13, 9, 13]);
     await h.wait(1200);
     await h.shot('shaft-from-above');

@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { clamp, damp, easeOut, lerpAngle, mix } from '../core/math';
+import { clamp, damp, lerpAngle } from '../core/math';
 import { Layer, SOLID, type Character, type Physics } from '../core/physics';
 import type { Humanoid } from '../render/characters';
 import { cloneMaterial, isSharedMaterial } from '../render/materials';
-import { buildWren, SHIELD_REST_POS, WREN_COAT } from '../render/models/wren';
+import { buildWren, STONEWARD_COAT, WREN_COAT, type WrenRig } from '../render/models/wren';
 import { SlashTrail } from '../render/effects';
 import { GroundShadow } from '../render/shapes';
 import type { LockTarget } from './lockon';
@@ -68,19 +68,9 @@ const SWINGS = [
   { dur: 0.3, dmg: 1 },
   { dur: 0.42, dmg: 2 },
 ];
-/** Wren's tunic is orange (render/models/wren.ts), or slate-blue once the Stoneward Tunic is bought. */
-const STONEWARD_COAT = 0x6b8296;
 const RUN_SPEED = 8.5;
 /** While the guard is broken Wren staggers: a crawl at this fraction of normal speed, no jumping, no sword. */
 const STAGGER_SPEED = 0.06;
-/** The shield lowered: on the outside of the left forearm (arm space), face turned ~80° out to the side. */
-const SHIELD_REST_YAW = 1.4;
-/** The shield raised: its center in front of the chest (body space, before the character's scale). */
-const SHIELD_BLOCK_POS = new THREE.Vector3(0.05, 1.2, 0.62);
-/** Surfing: the shield flat under her feet (body space; the pivot is raised by `SURF_LIFT` to stand on it). */
-const SHIELD_SURF_POS = new THREE.Vector3(0, -0.05, 0);
-const SHIELD_SURF_ROT = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
-const SURF_LIFT = 0.12;
 /** How far the sword reaches (from Wren's centre to a hurtbox's surface). */
 export const SWORD_REACH = 2.6;
 
@@ -161,14 +151,12 @@ export class Player {
   /** This swing has already struck the area (stones, crystals): once per swing. */
   private struck = false;
   private knock = new THREE.Vector3();
-  private walkPhase = 0;
   private speedXZ = 0;
-  private deathT = 0;
   private readonly sword: THREE.Group;
   private readonly shield: THREE.Group;
   private readonly trail: SlashTrail;
-  /** The shield's wood; flashes red while the guard is broken. */
-  private readonly shieldMat: THREE.MeshLambertMaterial;
+  /** Poses her each frame from what she's doing (render/models/wren.ts; docs/pipeline.md "The rig convention"). */
+  private readonly rig: WrenRig;
   /** The blade, its own material so it can glow while an Ember Tonic is active. */
   private readonly bladeMat: THREE.MeshLambertMaterial;
   /** Seconds left of an Ember Tonic (the sword hits harder meanwhile). */
@@ -187,10 +175,10 @@ export class Player {
 
   constructor(scene: THREE.Scene, private readonly physics: Physics, private readonly health: Health) {
     const m = buildWren();
-    this.h = m.humanoid;
+    this.h = { root: m.root as THREE.Group, ...m.joints };
+    this.rig = m.rig;
     this.coatMat = m.coatMat;
     this.bladeMat = m.bladeMat;
-    this.shieldMat = m.shieldMat;
     this.sword = m.joints.sword;
     this.shield = m.joints.shield;
     scene.add(this.h.root);
@@ -275,9 +263,8 @@ export class Player {
     this.health.hp = this.health.maxHp;
     this.state = 'move';
     this.invuln = 2;
-    this.deathT = 0;
     this.guard.reset();
-    this.h.pivot.rotation.set(0, 0, 0);
+    this.rig.reset();
   }
 
   /**
@@ -522,96 +509,31 @@ export class Player {
     }
   }
 
+  /** Places her and hands the rig what she's doing; the rig decides how it looks (render/models/wren.ts). */
   private animate(dt: number) {
     const { h } = this;
     h.root.position.copy(this.pos);
     h.root.rotation.y = this.facing;
-    const amt = clamp(this.speedXZ / RUN_SPEED, 0, 1);
-    this.walkPhase += dt * (4 + this.speedXZ * 1.1) * (amt > 0.05 ? 1 : 0);
-    const s = Math.sin(this.walkPhase);
-
-    // Defaults: walk cycle.
-    h.legL.rotation.x = s * 0.8 * amt;
-    h.legR.rotation.x = -s * 0.8 * amt;
-    h.armL.rotation.set(-s * 0.5 * amt, 0, 0.08);
-    h.armR.rotation.set(s * 0.5 * amt - (this.sword.visible ? 0.35 : 0), 0, -0.08);
-    h.pivot.position.y = 0.9 + Math.abs(s) * 0.07 * amt;
-    h.pivot.rotation.set(0, 0, 0);
-    this.sword.rotation.x = -1.1;
     this.trail.fade(dt);
-
-    if (!this.body.grounded) {
-      h.legL.rotation.x = -0.6;
-      h.legR.rotation.x = 0.3;
+    const swing = this.state === 'attack' ? clamp(this.t / SWINGS[this.combo].dur, 0, 1) : 0;
+    if (this.alive && this.state === 'attack' && swing > 0.15 && swing < 0.7) {
+      this.trail.show(this.pos, this.combo === 2 ? 1.5 : 1.2, this.facing, this.combo === 2);
     }
-
-    if (!this.alive) {
-      this.deathT += dt;
-      h.pivot.rotation.x = (-Math.min(1, this.deathT * 2) * Math.PI) / 2;
-      h.pivot.position.y = 0.3;
-      h.legL.rotation.x = h.legR.rotation.x = 0;
-    } else if (this.state === 'attack') {
-      const sw = SWINGS[this.combo];
-      const p = clamp(this.t / sw.dur, 0, 1);
-      const e = easeOut(clamp((p - 0.12) / 0.6, 0, 1));
-      this.sword.rotation.x = 0;
-      if (this.combo === 2) {
-        h.armR.rotation.set(mix(-3.1, -0.5, e), 0, 0);
-        h.pivot.rotation.x = mix(-0.1, 0.25, e);
-      } else {
-        const from = this.combo === 0 ? -1.7 : 1.4;
-        const to = this.combo === 0 ? 1.4 : -1.7;
-        h.armR.rotation.set(-1.45, mix(from, to, e), 0);
-        h.pivot.rotation.y = mix(-0.4, 0.4, this.combo === 0 ? e : 1 - e);
-      }
-      h.legL.rotation.x = 0.4;
-      h.legR.rotation.x = -0.3;
-      if (p > 0.15 && p < 0.7) {
-        this.trail.show(this.pos, this.combo === 2 ? 1.5 : 1.2, this.facing, this.combo === 2);
-      }
-    } else if (this.state === 'hurt') {
-      h.pivot.rotation.x = -0.35;
-      h.armL.rotation.x = h.armR.rotation.x = -0.8;
-    }
-
-    // Throwing the glove: the left arm thrown straight out ahead.
-    if (this.throwT > 0 && this.state === 'move') h.armL.rotation.set(-1.6, 0, 0.12);
-    // Lowered, the shield rides on the outside of the forearm, its face turned out to Wren's left.
-    this.shield.position.copy(SHIELD_REST_POS);
-    this.shield.rotation.set(0, SHIELD_REST_YAW, 0);
-    if (this.shielding) {
-      // Raised: square in front of the chest, facing straight ahead whatever the arm is doing
-      // (placed in body space, then expressed in the arm's frame).
-      h.armL.rotation.set(-1.25, -0.6, 0);
-      h.armL.updateMatrix();
-      const inv = h.armL.quaternion.clone().invert();
-      this.shield.quaternion.copy(inv);
-      this.shield.position.copy(SHIELD_BLOCK_POS).sub(h.armL.position).applyQuaternion(inv);
-    }
-    if (this.surfing) {
-      // Riding: turned half side-on like a board rider (enough to read from the chase camera), a low
-      // crouch leaning into the ride, feet apart, arms up and out for balance, a little sway.
-      const sway = Math.sin(this.t * 3) * 0.06;
-      h.pivot.position.y = 0.9 + SURF_LIFT - 0.12;
-      h.pivot.rotation.set(0.22, -0.8, sway);
-      h.legL.rotation.set(-0.35, 0, 0.3);
-      h.legR.rotation.set(0.25, 0, -0.3);
-      h.armL.rotation.set(-0.5, 0, 1.35 - sway);
-      h.armR.rotation.set(-0.5, 0, -1.35 - sway);
-      h.armL.updateMatrix();
-      const inv = h.armL.quaternion.clone().invert();
-      this.shield.quaternion.copy(inv).multiply(SHIELD_SURF_ROT);
-      this.shield.position.copy(SHIELD_SURF_POS).sub(h.armL.position).applyQuaternion(inv);
-    }
-    // Guard broken: the shield arm hangs, the shield droops and flashes red until it recovers.
-    const broken = this.guard.broken;
-    if (broken > 0) {
-      h.armL.rotation.set(0.35, 0, 0.45 + Math.sin(broken * 18) * 0.05);
-      this.shield.rotation.set(0.5, SHIELD_REST_YAW - 0.3, 0.3);
-    }
-    const flash = broken > 0 && Math.floor(broken * 6) % 2 === 0 ? 1 : 0;
-    this.shieldMat.color.setHex(flash ? 0xc0392b : 0x8b5a2b);
-
+    this.rig.update(dt, {
+      alive: this.alive,
+      action: this.state,
+      t: this.t,
+      combo: this.combo,
+      swing,
+      speed: this.speedXZ,
+      run: clamp(this.speedXZ / RUN_SPEED, 0, 1),
+      grounded: this.body.grounded,
+      shielding: this.shielding,
+      surfing: this.surfing,
+      throwing: this.throwT > 0,
+      broken: this.guard.broken,
+      hasSword: this.sword.visible,
+    });
     h.root.visible = this.invuln <= 0 || Math.floor(this.invuln * 16) % 2 === 0;
   }
 }

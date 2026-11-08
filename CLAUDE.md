@@ -97,6 +97,7 @@ visuals → `/wrap` (checks, docs, commit, the next ticket's Run line) → `/cle
   line, then build (auto) or plan (plan mode).
 - `/wrap`: Definition of done, doc updates, delete the finished ticket, commit and push, and
   name the next ticket with its Run line.
+- `/final-pass`: the recipe for a model's Final pass (before renders, kit, rig, tests, renders to the owner, the golden set).
 - `/add-enemy`, `/add-npc`, `/add-quest-beat`: recipes for the repeated content work. Each opens
   with what it assumes; if the game's direction changes, rewrite or delete it.
 

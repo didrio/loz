@@ -187,12 +187,13 @@ No inventory to manage: sword and shield upgrades are automatic, there's no craf
 
 A few finished, owner-approved assets that define the style by example; written rules drift, reference renders don't.
 Every later asset is compared against them (the contact sheet, T34). **Order** (each a Final-pass ticket, locked only when
-the owner approves): a Thornling (the common enemy; cheapest place to shake out the pipeline) → Wren with her full
+the owner approves): a Thornling (the common enemy; cheapest place to shake out the pipeline) → Wren with their full
 animation set → the starter-area entrance vignette → the prop set (chest, door, jar, crate, sign) → Pip (the NPC) → the
 Hollow Lamplighter → Gravelheart → one shrine room. Each approved member gets front, three-quarter, side and one in-game
 render, stored and listed here. If the style changes, update the golden set first, then everything else.
 
-*Members approved so far:* none.
+*Members approved so far:* the chest (2026-11-08). *Built and waiting on the owner:* the Thornling (T49), Wren (T50; reference
+renders: the `wren` look scene, `wren-model-*` and the in-game states).
 
 ## Escape hatch
 

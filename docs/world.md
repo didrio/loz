@@ -118,6 +118,8 @@ change them.
   Hollow Lamplighter), a gate of floating stone sealed the Northpass, and **the blight** settled
   over Emberfield: violet-black air and sky, thornlings, wisps, homes in ruins. Odo, a traveling
   peddler, was passing through and is shut in with the village.
+- **Wren** is deliberately neither boy nor girl (owner, 2026-11-08): the model says nothing either way, docs and code
+  say "they", and player text uses the name, never a pronoun.
 - **The village** is afraid and paranoid. Nobody leaves the fence. Wren is one of them: everyone
   but Odo knows Wren well, and the exact relationships stay vague (even Lark's).
 - **He waits in the shrine** and writes to Wren in floating magic symbols (code name **sigils**):
@@ -248,7 +250,7 @@ vanished adults, the Lightless Cut ([sallowmere.md](sallowmere.md)).
   the bed sleeps to the next 06:00/18:00 and fully heals. The two standing cottages' doors are locked ("The
   door is locked.", no hint of a key): they open in a later chapter.
 - **Lark**: a small kid by the well (breathless, conspiratorial). Points Wren at the shield in the ruined cottage. Secretly rides Tobin's flour tray down
-  the bank behind the mill and talks Wren into riding her shield (`village.surfIdea`, then the how-to line;
+  the bank behind the mill and talks Wren into riding the shield (`village.surfIdea`, then the how-to line;
   see shield surfing in [combat.md](combat.md)). After her first ride (`village.surfTried`) Lark brags about
   seeing it, by day or night.
 - **Odo the Peddler** (gone after the prism; his stall runs on trust): warm, wry (he remarks on a sword without armor, and on the tunic by day or night); a stall beside the well. Refills empty flasks and sells the **Stoneward Tunic**

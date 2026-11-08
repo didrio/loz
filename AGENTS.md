@@ -22,7 +22,7 @@ As of 2026-11-08: Emberfield plays start to finish: a wordless start, the shield
 **Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell; **the blight** lies on the valley until then. Every gate is data (`content/progression.ts`, checked by a test).
 Everything is built in code: flat-shaded, faceted, on one master palette, generated crisp textures (a Dev-tab resolution slider), a Display setting (Native / Performance / N64), optional sun **Shadows**, an atmosphere per place, **baked light** world-wide in background workers (live Dev-tab sliders; awaiting the owner's keep/strengthen/drop), the N64 sound chain, talking **blips**, and **touch controls** in a playtest on GitHub Pages.
 The UI has its period surface: the code-built **Embervale** font and the `bold` theme (`ui/font/`, `ui/theme.ts`, the `/ui.html` bench); the title and pause layouts wait for the UI pass. **Sallowmere** stands empty while the owner redesigns it.
-**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)): the foundations are built (including the pause menu's **Gear** tab with icons drawn from `gear-*` models); the golden set is under way: the **Thornling** is final (kit-built, posed by its rig; waiting on the owner's approval to lock it), next Wren and on through T56 ([docs/tickets.md](docs/tickets.md)). Every model is a pure builder in `render/models/`, registered (`rough` but the chest and the Thornling, built with the modeling kit `render/kit.ts`) and checked by a validator (`npm run assets`). Dev server: port 5273.
+**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)): the foundations are built (including the pause menu's **Gear** tab with icons drawn from `gear-*` models); the golden set is under way: the **Thornling** and **Wren** are final (kit-built, each posed by its rig; waiting on the owner's approval to lock them; the recipe is `/final-pass`), next the entrance vignette and on through T56 ([docs/tickets.md](docs/tickets.md)). Every model is a pure builder in `render/models/`, registered (`rough` but the chest, the Thornling and Wren, built with the modeling kit `render/kit.ts`) and checked by a validator (`npm run assets`). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -137,7 +137,7 @@ src/
     menu.ts, menuDriver.ts MenuStack (rows, submenus, toggles, body text); MenuDriver (input → menu → HUD), ChoiceMenu (api.choose)
     pauseMenu.ts           the pause menu (P / Start): tabs Settings, Hints, Messages, Dev (sprint, invincible, save states)
     murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, sounds, the gauge)
-    player.ts, guard.ts, surf.ts, lunge.ts   Wren (movement, sword, shield, stagger); the guard; surfing; whether a swing may step forward
+    player.ts, guard.ts, surf.ts, lunge.ts   Wren (movement, sword, shield, stagger; hands the rig its state); the guard; surfing; whether a swing may step forward
     enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
     sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
     blight.ts              the blight's rules (where it lies, the lift, the strays, its songs, THORN_ATTACK)

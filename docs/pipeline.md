@@ -60,7 +60,14 @@ Lamplighter's `Pose` in `game/bosses/lamplighter.ts`). **Regular enemies adopt i
 windup, moving })`) and its death (`rig.die(deathT / 0.35)` from a `dying` override). The rig's `target(cue)` is where each
 state's look lives (anticipation, overshoot, the hit reaction), all inside the windows behaviour already has; idle life (a
 seeded blink, breathing, the hop's squash and stretch) is added on top. A timing the rig must end on (the windup) becomes a
-named constant in the behaviour file. Enemies without a final pass still pose inline. State names: `idle`, `move`,
+named constant in the behaviour file. **A humanoid: Wren (`render/models/wren.ts`, T50).** `WrenRig.update(dt, cue)` takes the
+player's facts (alive, action and its time, the combo and how far through the swing, speed, grounded, shield, surf, glove,
+broken guard); `target(cue)` layers them as the old inline code did (run cycle, then death / swing / hurt, then glove, guard,
+surf, broken guard). A change of *kind* of pose crossfades over 0.12 s (a swing and a death start at once: they have their
+own curves); swings keep their key angles at the ends of the ease (p 0.12 and 0.72) with a pull-back before and an overshoot
+after that are zero there. The
+shield is placed from the arm's *applied* pose, so the guard's shield stands exactly where it always did. The pose constants
+(shield positions, `SURF_LIFT`) live in the model's file. Enemies without a final pass still pose inline. State names: `idle`, `move`,
 `anticipate`, `attack`, `recover`, `hurt`, `death`, plus extras per creature; bosses use the move system's
 windup/active/recover ([combat.md](combat.md)). Pose data stays separate from geometry, so a model can be re-detailed
 without breaking its animation. `bakeRig` merges each joint's parts into one mesh with one material (fewer
@@ -157,7 +164,9 @@ smoother cylinders.
 Kit colours are palette colours; `crevice` and the lighting then darken them, as in the scenery. The kit material (white, vertex-coloured) is a swatch, so the validator accepts it.
 The chest (`render/models/props.ts`, 272 of its 300 triangles) is the first model built this way; the Thornling
 (`render/models/thornling.ts`, 800 of 1,200: an 80-face ball, thorns as `extrudePath` spikes curving back, a face of glow eyes, brows and a
-hinged jaw, five joints) the first creature.
+hinged jaw, five joints) the first creature; Wren (`render/models/wren.ts`, ten joints) the first person: the coat,
+blade and shield wood are `uniqueSurf(..., { vertexColors: true })` materials of their own in `animated`, the vertices painted white, so the
+game can still recolour, glow and flash them after the bake. **The recipe for every final pass: `/final-pass`.**
 
 ## Visual checks
 

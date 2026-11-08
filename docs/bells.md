@@ -106,9 +106,9 @@ leads back to the entry, and hanging it there wakes the network.
 ### How the platforming works
 
 - **Jump feel** (`game/player.ts`): `COYOTE_TIME` and `JUMP_BUFFER` (0.12 s each). A blob shadow
-  (`GroundShadow`, 0.4 m) under Wren, indoors and out; she casts no sun shadow (owner's call).
+  (`GroundShadow`, 0.4 m) under Wren, indoors and out; Wren casts no sun shadow (owner's call).
 - **Edge stickiness** (`Player.edgeAssist`, `EDGE_HOLD` 0.05 s; on only inside trial rooms, set each
-  frame by `shrineContent`): if the next step of a walk would put Wren's feet over nothing, she holds
+  frame by `shrineContent`): if the next step of a walk would put Wren's feet over nothing, Wren holds
   at the lip until she has pushed `EDGE_HOLD` seconds, then walks off. Only her *displacement* is held,
   never her speed (her run has no ramp-up), so a jump at the lip, or within coyote time, launches at
   full run speed. If it ever feels like an aid, shorten `EDGE_HOLD`. No acceleration tweaks: her instant

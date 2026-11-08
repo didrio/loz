@@ -13,7 +13,7 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   (`game/combat.ts`) turns that into sound, sparks and hit-stop.
 - **Guards are diegetic** (owner's call, 2026-11-02: no tint or invulnerability timers). An
   enemy's weapon or shell is an **armor** hurtbox (`armor: true`) placed on the model; the
-  sword bounces off it only when it's nearer to Wren than the part she'd otherwise hit. So
+  sword bounces off it only when it's nearer to Wren than the part the sword would otherwise hit. So
   a swing straight at the maul clanks, one that gets past it from an angle lands. Keep
   armor spheres tight to the mesh, and answer `guarded` for that part in `hurt`.
 - **Defense is the shield, nothing else** (no dodge roll, no stamina). The shield has a
@@ -68,7 +68,7 @@ before touching `game/player.ts`, `game/guard.ts`, `game/enemies.ts`, `game/haza
   territory, or when the enemy strays 24 m from home (the leash); it walks home and won't
   Dungeon ground enemies also have a *walkable* check (`setWalkable`, `GroundEnemy`): the room minus its stairs. They never step onto stairs (a chaser stops at the foot) but still notice Wren standing on them.
   notice Wren again for 3 s. **Safe ground** (`Area.safeGround`, the village ring + 6 m: `inVillageGuard`, owner's call
-  2026-11-04): an enemy ignores Wren standing on it (no notice, a chase drops at once), and night wisps won't chase her
+  2026-11-04): an enemy ignores Wren standing on it (no notice, a chase drops at once), and night wisps won't chase Wren
   there either; field spawns already keep 10 m out. Attacks only land at the same height. Before this, a
   thornling one floor below the shrine's nave chased Wren from under the floor and hit
   through it (`game/thornling.test.ts` reproduces it).

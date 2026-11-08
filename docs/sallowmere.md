@@ -94,7 +94,7 @@ z -343 ^^^^^^^^^^^^^^^^^^^^ overlook (-10,-343), y 12 ^^^^^^^^^^^^^^^^^^
 
 A small iron lantern with a coal of the old fire, found mid-dungeon like the glove. **It's passive: no button and no item
 selector.**
-- **Light:** hung on Wren's belt, it lights dark rooms and the Lightless Cut around her. It's one constant point light,
+- **Light:** hung on Wren's belt, it lights dark rooms and the Lightless Cut around Wren. It's one constant point light,
   so the light count stays fixed (see the perf note in [roadmap.md](roadmap.md)).
 - **Kindle:** at a brazier, Interact says "Kindle". Braziers are a new switch style with `needs: lantern`. A lit brazier
   stays lit (saved) unless a puzzle says otherwise.
