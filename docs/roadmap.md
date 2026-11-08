@@ -115,7 +115,7 @@ enemy randomness.
 
 ## Known quirks and tech debt
 
-- **Baked light is parked** (owner, 2026-11-07: "I don't really see a difference; revisit later"). The village trial stays as
+- **Baked light** (T48 bakes it everywhere to be judged; before that it was parked, owner, 2026-11-07: "I don't really see a difference; revisit later"). The village trial stays as
   built (`render/bakeLight.ts`, engine.md "Baked light", Dev toggle) and costs ~1 s at load. On revisit: stronger settings
   (`BAKE.occlusion` above 1, a lower floor) or drop it; if kept, the whole valley, baked in a worker or cached, not on the main
   thread. Sun shadows (done, a Settings option) are the bigger visible change and may be what the owner was missing.
