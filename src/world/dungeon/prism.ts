@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
-import { mat, uniqueMat } from '../../render/materials';
+import { surf, uniqueMat } from '../../render/materials';
+import { faceted } from '../../render/textures';
 import type { AreaBuilder } from '../area';
 import { STONE } from './pieces';
 
@@ -54,9 +55,9 @@ export class Prism {
     this.group.position.set(x, y, z);
     this.center.set(x, y + HOVER, z);
 
-    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.3, 0.8, 8), mat(STONE.trim));
+    const plinth = new THREE.Mesh(faceted(new THREE.CylinderGeometry(1.0, 1.3, 0.8, 8)), surf('stone', STONE.trim));
     plinth.position.y = 0.4;
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.0, 0.18, 8), mat(STONE.pillar));
+    const cap = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.8, 1.0, 0.18, 8)), surf('stone', STONE.pillar));
     cap.position.y = 0.89;
     this.group.add(plinth, cap);
     b.cylinder(x, y + 0.45, z, 0.45, 1.2, Layer.Prop);
@@ -70,7 +71,7 @@ export class Prism {
     const up = new THREE.Vector3(0, 1, 0);
     for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
       const px = sx * pylonX, pz = sz * pylonZ, top = 5.2;
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.5, top, 6), mat(STONE.pillar));
+      const post = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.32, 0.5, top, 6)), surf('stone', STONE.pillar));
       post.position.set(px, top / 2, pz);
       const tip = new THREE.Mesh(new THREE.OctahedronGeometry(0.4), uniqueMat(0x6fd8ff, { emissive: 0x2a8a8a }));
       tip.position.set(px, top + 0.4, pz);

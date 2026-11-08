@@ -51,7 +51,7 @@ interface SurfaceDef {
 }
 
 export const SURFACES: Record<SurfaceId, SurfaceDef> = {
-  plaster: { top: 'plaster', side: 'plaster', strength: 0.4 },
+  plaster: { top: 'plaster', side: 'plaster', strength: 0.55 },
   stone: { top: 'stone', side: 'stone', strength: 0.6 },
   wood: { top: 'planks', side: 'planks', strength: 0.6 },
   shingle: { top: 'shingle', side: 'shingle', strength: 0.6 },

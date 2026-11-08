@@ -108,7 +108,7 @@ export function buildShrine(b: AreaBuilder) {
  */
 export function buildSign(b: AreaBuilder, x: number, z: number) {
   const y = terrainHeight(x, z);
-  const wood = mat(0xb07a44, 0x6a4824), dark = mat(0x8a5e34, 0x4a3016), paper = mat(0xfaf0d2, 0xbeb28c), ink = mat(0x3a2a1e), seal = mat(0xc23b2a, 0x5a1a10);
+  const wood = surf('wood', 0xb07a44, 0x6a4824), dark = surf('wood', 0x8a5e34, 0x4a3016), paper = mat(0xfaf0d2, 0xbeb28c), ink = mat(0x3a2a1e), seal = mat(0xc23b2a, 0x5a1a10);
   // (Emissive, because a sign faces the spawn, often away from the sun, and would sit in gloom.)
   const g = new THREE.Group();
   g.position.set(x, y, z);

@@ -14,7 +14,7 @@ export function buildHollow(b: AreaBuilder) {
   const rand = regionRng('hollow');
   const { x: cx, z: cz, r: R, floor } = HOLLOW;
   const entrance = Math.atan2(HOLLOW_ENTRANCE.z - cz, HOLLOW_ENTRANCE.x - cx);
-  const bark = surf('bark', 0x2b2520), barkLight = surf('bark', 0x3a3029);
+  const bark = surf('bark', 0x3d342c), barkLight = surf('bark', 0x4d4238);
 
   // Bare, twisted trees around the rim, leaving the road's way in open.
   for (let i = 0; i < 18; i++) {

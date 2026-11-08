@@ -114,11 +114,11 @@ export class DungeonDoor {
           hole.position.set(0, 1.25, face * 0.26);
           leaf.add(plate, hole);
         } else if (style === 'boss') {
-          const ring = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.1, 6, 18), mat(STONE.gold));
+          const ring = new THREE.Mesh(faceted(new THREE.TorusGeometry(0.75, 0.1, 6, 18)), surf('metal', STONE.gold));
           ring.position.set(0, 1.8, face * 0.22);
           leaf.add(ring);
           for (const sx of [-1, 1]) for (const sy of [0.5, DOOR_HEIGHT - 0.5]) {
-            const stud = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 4), mat(STONE.gold));
+            const stud = new THREE.Mesh(faceted(new THREE.SphereGeometry(0.1, 6, 4)), surf('metal', STONE.gold));
             stud.position.set(sx * (width / 2 - 0.3), sy, face * 0.22);
             leaf.add(stud);
           }
@@ -362,8 +362,8 @@ export function buildTablet(b: AreaBuilder, parent: THREE.Object3D, x: number, y
 /** A wall sconce: a little iron cup with a flame, for light you can see the source of. */
 export function buildSconce(parent: THREE.Object3D, x: number, y: number, z: number, yaw: number) {
   const g = new THREE.Group();
-  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.1, 0.22, 6), mat(STONE.iron));
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.35), mat(STONE.iron));
+  const cup = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.18, 0.1, 0.22, 6)), surf('metal', STONE.iron));
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.35), surf('metal', STONE.iron));
   arm.position.set(0, -0.05, -0.18);
   const flame = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 5), new THREE.MeshBasicMaterial({ color: 0xffb35a }));
   flame.position.y = 0.25;

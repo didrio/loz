@@ -30,12 +30,13 @@ export function mat(color: number, emissive = 0) {
  * A shared material in `color`, textured as `surface` (render/textures.ts): plaster walls, stone,
  * wood, roof shingles. Same rules as `mat()`: shared per colour and surface, never mutate it.
  */
-export function surf(surface: SurfaceId, color: number) {
+export function surf(surface: SurfaceId, color: number, emissive = 0) {
   color = snap(color);
-  const key = `${color}:0:${surface}`;
+  if (emissive) emissive = snap(emissive);
+  const key = `${color}:${emissive}:${surface}`;
   let m = cache.get(key);
   if (!m) {
-    m = applySurface(new THREE.MeshLambertMaterial({ color, flatShading: true }), surface);
+    m = applySurface(new THREE.MeshLambertMaterial({ color, emissive, flatShading: true }), surface);
     cache.set(key, m);
   }
   return m;

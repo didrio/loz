@@ -23,7 +23,7 @@ As of 2026-11-07: Emberfield plays start to finish: a wordless start, the shield
 after it only Lark and Pip remain in the village. Every gate is data (`content/progression.ts`, checked by a test). Everything is built in code; the
 look is flat-shaded and faceted (owner's call), colours snapped to one master palette and baked into vertices on merged scenery, generated crisp textures on terrain, buildings, dungeons, trees and
 props (one global resolution slider in the Dev tab, default 32; characters still plain), and a Display setting (Native / Performance / N64). There are no shadow maps (blob shadows only), and each place has its own atmosphere (`render/atmosphere.ts`). NPCs talk in **blips**; **touch controls** are in a playtest on GitHub Pages; **Sallowmere** stands empty while the owner redesigns it.
-**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T43 (the last plain static things), T41 (characters, enemies and bosses), T42 (a failing smoke step), T32–T39. Dev server: port 5273.
+**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)), foundations in [docs/tickets.md](docs/tickets.md): T41 (characters, enemies and bosses), T42 (a failing smoke step), T32–T39. Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 

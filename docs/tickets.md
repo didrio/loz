@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T43**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T44**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -39,18 +39,6 @@ implementation.
 the workflow. These build the shared infrastructure; the golden set and the rebuild of everything else follow
 ([roadmap.md](roadmap.md) "The N64 look rebuild"), each written as a ticket when it's near. Behaviour never changes:
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
-
-### T43: Texture the leftovers of the static world
-**Run:** auto · sonnet · medium
-**Why:** T40 textured most of the places (trees, rocks, ruins, camp, doors, props, tents/awning/sacks with the `cloth` tile). The owner's call (2026-11-07): the rest is a later pass.
-**Done when:**
-- Rocks still plain (find them: Grep `DodecahedronGeometry|IcosahedronGeometry|SphereGeometry` with `mat(` in `src/world`), signs and notice boards (they use emissive `mat(color, emissive)`: give `surf` an emissive option or a textured variant), the camp tent door, the prism and iron fittings in `world/dungeon/{prism,pieces}.ts` (dynamic: `faceNormals`).
-- The village plaster is faint and very dark colours (the hollow's dead trunks) show almost no grain: lighter base colours or a stronger tile. Thatch is not yet seen in a shot; the pink walls need a look.
-- Stiltwick and Sallowmere wait for the redesign: don't touch.
-- Look scenes before/after in Native and N64; baselines re-approved.
-**Read first:** engine.md "Textures"; art.md "Rendering rules"; `render/materials.ts` (`surf`), `render/textures.ts`.
-**Verify:** `npm run check`; look `village villageDetails camp ruins grove hollow dungeon`.
-**Notes:** Behaviour never changes. Characters, enemies and bosses are T41.
 
 ### T41: Texture the living: characters, enemies, bosses
 **Run:** auto · sonnet · high

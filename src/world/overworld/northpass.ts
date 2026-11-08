@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
-import { mat } from '../../render/materials';
+import { surf } from '../../render/materials';
 import { AreaBuilder } from '../area';
 import { BEYOND, PASS, passFrame, passPoint, PASS_LENGTH, regionRng, terrainHeight } from './layout';
 import type { BuiltRegion, RegionDef } from './region';
@@ -12,7 +12,7 @@ export const NORTHPASS_RECT: TerrainRect = { x0: -150, x1: 150, z0: -330, z1: -2
 /** The pass's boulders: along both foot-walls of the corridor and scattered in the camp. */
 function buildRocks(b: AreaBuilder) {
   const rand = regionRng('pass');
-  const rock = mat(0x8a8478), rockDark = mat(0x6e695f);
+  const rock = surf('rock', 0x8a8478), rockDark = surf('rock', 0x6e695f);
   for (let i = 0; i < 70; i++) {
     const s = rand() * PASS_LENGTH;
     const lat = (rand() < 0.5 ? -1 : 1) * (PASS.halfWidth - 3 + rand() * 2.5);

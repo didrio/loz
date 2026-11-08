@@ -125,7 +125,7 @@ export function buildCamp(b: AreaBuilder) {
     const tent = b.mesh(new THREE.ConeGeometry(2.1, 2.3, 4), surf('cloth', color), x, y + 1.15, z);
     tent.rotation.y = yaw + Math.PI / 4;
     tent.scale.set(1, 1, 1.25);
-    const door = b.mesh(new THREE.BoxGeometry(0.9, 1.3, 0.1), mat(0x2e2620), x + Math.sin(yaw) * 1.35, y + 0.65, z + Math.cos(yaw) * 1.35);
+    const door = b.mesh(new THREE.BoxGeometry(0.9, 1.3, 0.1), surf('wood', 0x4a3a2c), x + Math.sin(yaw) * 1.35, y + 0.65, z + Math.cos(yaw) * 1.35);
     door.rotation.y = yaw;
     b.box(x, y + 1, z, 1.4, 1, 1.4, yaw, Layer.Prop);
   }

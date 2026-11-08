@@ -124,8 +124,8 @@
     "triangles": 217000
   },
   "northpass": {
-    "calls": 390,
-    "triangles": 319000
+    "calls": 250,
+    "triangles": 286000
   },
   "opening": {
     "calls": 890,
@@ -188,7 +188,7 @@
     "triangles": 215000
   },
   "villageDetails": {
-    "calls": 360,
+    "calls": 350,
     "triangles": 211000
   },
   "wardenIntro": {

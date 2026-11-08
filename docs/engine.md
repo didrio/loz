@@ -80,12 +80,12 @@ send effect on a channel, not a new instrument.
   blotches and leaf clumps, low strength), `metal` (brushed plates with rivets), `thatch` (straw bands), `cloth` (a plain weave: tents, awnings, sacks). `faceted(geo)` readies a dynamic cone/cylinder/sphere for a tile. Each sets a top tile, a side tile and a `strength`.
   Tiles are pure `(size, seed) → Uint8Array` drawings (`drawTile`), unit-tested for determinism, mean (no colour shift),
   spread and seamless wrap.
-- **Use**: `surf('plaster', 0xeadcbc)` instead of `mat(0xeadcbc)`. It's shared and cached like `mat`, so never mutate it.
+- **Use**: `surf('plaster', 0xeadcbc)` instead of `mat(0xeadcbc)`; `surf(kind, colour, emissive)` for a glowing textured thing (the signs). It's shared and cached like `mat`, so never mutate it.
   `applySurface(material, kind)` is for materials of your own: the terrain's vertex-colour material (so **all terrain**,
   valley and regions, is textured) and the mill's BackSide inside. Small bits stay plain: flowers, knobs, glows, windows.
 - **Cost**: six tiles under 100 KB with mips, and one shader program shared by every textured material (`customProgramCacheKey
   'surface'`). Since T30 merged scenery batches by kind (plain / each surface / emissive), not by colour, so using a colour both
-  plain and textured no longer costs a draw call. Done: the village, all terrain and the dungeons' structure (floors, walls, ceilings, stairs, pillars). To do: T40 (the rest of the world), T41 (characters, enemies, bosses).
+  plain and textured no longer costs a draw call. Done: the village, all terrain and the dungeons' structure (floors, walls, ceilings, stairs, pillars). T43 did the leftovers (signs, tent door, Northpass rocks, prism and iron fittings). To do: T41 (characters, enemies, bosses).
 - **Look baselines barely see a texture**: they're shrunk 4× by averaging, and a tile averages to grey. Judge a texture
   change on the full-size shots in `look-output/`, by eye.
 - **A new tile**: a drawing function in `DRAW` (periodic noise via `periodicNoise`/`fbmTile`; structure like `cuts` for courses
