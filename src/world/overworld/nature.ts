@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { fbm } from '../../core/math';
 import { Layer } from '../../core/physics';
-import { mat, surf } from '../../render/materials';
-import { faceted } from '../../render/textures';
+import { kitMat, mat } from '../../render/materials';
+import { pal } from '../../render/palette';
+import { buildLoneOak as buildLoneOakModel, FLOWER_COLOURS, grassTuft, pineCrown, pineTint, rockShape, roundCrown, roundTint, treeTrunk, tuftTint } from '../../render/models/nature';
 import type { AreaBuilder } from '../area';
 import { GROVE, LONE_OAK, inGate, inGorge, inRuin, inHollow, inPass, isOpen, onVillageStep, pathDist, placementHeight, riverZ, SHRINE, terrainHeight, VILLAGE } from './layout';
 
@@ -34,10 +35,10 @@ export function buildTrees(b: AreaBuilder) {
     trunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 1.2 * s, z), q, new THREE.Vector3(s, s, s)));
     if (kind === 'round') {
       round.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 3.6 * s, z), q, new THREE.Vector3(s * 2.2, s * 2, s * 2.2)));
-      roundC.push(new THREE.Color().setHSL(0.26 + c1 * 0.06, 0.5, 0.3 + c2 * 0.1));
+      roundC.push(new THREE.Color(roundTint(c1, c2)));
     } else {
       pine.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 4.2 * s, z), q, new THREE.Vector3(s, s, s)));
-      pineC.push(new THREE.Color().setHSL(0.33 + c1 * 0.04, 0.45, 0.2 + c2 * 0.07));
+      pineC.push(new THREE.Color(pineTint(c1, c2)));
     }
     b.cylinder(x, y + 1.5, z, 1.5, 0.45 * s, Layer.Prop);
   };
@@ -66,19 +67,19 @@ export function buildTrees(b: AreaBuilder) {
     hill++;
   }
   // Trees block the baked light (render/bakeLight.ts): soft shade under their crowns where a region is baked.
-  instanced(b, faceted(new THREE.CylinderGeometry(0.22, 0.35, 2.4, 6)), surf('bark', 0x6b4423), trunks).userData.bakeLight = 'occlude';
-  instanced(b, new THREE.IcosahedronGeometry(1, 0), surf('foliage', 0xffffff), round, roundC).userData.bakeLight = 'occlude';
-  instanced(b, faceted(new THREE.ConeGeometry(1.6, 5, 7)), surf('foliage', 0xffffff), pine, pineC).userData.bakeLight = 'occlude';
+  // The final models (render/models/nature.ts): white-painted, shaded geometry; each instance's colour is its palette tint.
+  instanced(b, treeTrunk(), kitMat('bark'), trunks).userData.bakeLight = 'occlude';
+  instanced(b, roundCrown(), kitMat('foliage'), round, roundC).userData.bakeLight = 'occlude';
+  instanced(b, pineCrown(), kitMat('foliage'), pine, pineC).userData.bakeLight = 'occlude';
 }
 
 /** The lone oak at the grove road's bend: twice a field tree's size, broad and dark, so it reads from the crossroads. */
 export function buildLoneOak(b: AreaBuilder) {
   const { x, z } = LONE_OAK;
   const y = terrainHeight(x, z);
-  b.mesh(new THREE.CylinderGeometry(0.55, 0.9, 6, 7), surf('bark', 0x5a3a1e), x, y + 3, z);
-  for (const [dx, dy, dz, r, c] of [[0, 7.6, 0, 3.6, 0x2f5a26], [2.4, 6.6, 1, 2.6, 0x37662c], [-2.2, 6.9, -0.8, 2.8, 0x2a5222], [0.4, 9.4, -0.4, 2.4, 0x3b6e30]] as const) {
-    b.mesh(new THREE.IcosahedronGeometry(r, 0), surf('foliage', c), x + dx, y + dy, z + dz);
-  }
+  const oak = buildLoneOakModel().root;
+  oak.position.set(x, y, z);
+  b.staticGroup.add(oak);
   b.cylinder(x, y + 3, z, 3, 0.8, Layer.Prop);
 }
 
@@ -97,7 +98,9 @@ export function buildRocks(b: AreaBuilder) {
     ms.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(s, s * 0.75, s)));
     if (s > 0.9) b.ball(x, y, z, s * 0.8, s > 1.6 ? Layer.World : Layer.Prop);
   }
-  instanced(b, new THREE.DodecahedronGeometry(1, 0), surf('rock', 0x8e8a82), ms).userData.bakeLight = 'occlude';
+  const rocks = instanced(b, rockShape(), kitMat('rock'), ms);
+  rocks.userData.bakeLight = 'occlude';
+  rocks.name = 'rocks'; // the look scene `vignette` finds one by this
 }
 
 /** Grass tufts and flowers: pure decoration, no collision. */
@@ -105,7 +108,7 @@ export function buildGrass(b: AreaBuilder) {
   const { rand } = b;
   const tufts: THREE.Matrix4[] = [], tuftC: THREE.Color[] = [];
   const flowers: THREE.Matrix4[] = [], flowerC: THREE.Color[] = [];
-  const palette = [0xffffff, 0xffd84a, 0xf28bb0, 0xa6b8ff];
+  const palette = FLOWER_COLOURS;
   let tries = 0, placed = 0;
   while (placed < 3200 && tries++ < 20000) {
     const x = (rand() - 0.5) * 340, z = (rand() - 0.5) * 340;
@@ -120,14 +123,14 @@ export function buildGrass(b: AreaBuilder) {
     const petal = flower ? palette[Math.floor(rand() * palette.length)] : 0;
     if (inHollow(x, z, 3) || inGorge(x, z, 1) || inGate(x, z) || inPass(x, z, 1) || inRuin(x, z) || onVillageStep(x, z)) continue; // the hollow has its own dead grass
     tufts.push(new THREE.Matrix4().compose(new THREE.Vector3(x, y + 0.25 * s, z), q, new THREE.Vector3(s, s, s)));
-    tuftC.push(new THREE.Color().setHSL(0.24 + hue * 0.07, 0.55, 0.32 + light * 0.12));
+    tuftC.push(new THREE.Color(tuftTint(hue, light)));
     if (flower) {
       flowers.push(new THREE.Matrix4().compose(new THREE.Vector3(x + 0.4, y + 0.35, z + 0.2), q, new THREE.Vector3(1, 1, 1)));
       flowerC.push(new THREE.Color(petal));
     }
   }
-  instanced(b, faceted(new THREE.ConeGeometry(0.18, 0.6, 3)), surf('foliage', 0xffffff), tufts, tuftC);
-  instanced(b, new THREE.OctahedronGeometry(0.12), mat(0xffffff), flowers, flowerC);
+  instanced(b, grassTuft(), kitMat('foliage'), tufts, tuftC);
+  instanced(b, new THREE.OctahedronGeometry(0.12), mat(pal('chalk', 3)), flowers, flowerC); // white, so each petal is its instance colour
 }
 
 /** Where cuttable bushes go: around the village fence and along the roads. */

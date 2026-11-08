@@ -52,8 +52,8 @@
     "triangles": 277000
   },
   "contact": {
-    "calls": 480,
-    "triangles": 19000
+    "calls": 500,
+    "triangles": 20000
   },
   "door": {
     "calls": 60,
@@ -77,7 +77,7 @@
   },
   "field": {
     "calls": 680,
-    "triangles": 277000
+    "triangles": 328000
   },
   "gate": {
     "calls": 230,
@@ -104,8 +104,8 @@
     "triangles": 178000
   },
   "grove": {
-    "calls": 70,
-    "triangles": 241000
+    "calls": 80,
+    "triangles": 293000
   },
   "guard": {
     "calls": 710,
@@ -199,9 +199,13 @@
     "calls": 670,
     "triangles": 292000
   },
+  "vignette": {
+    "calls": 470,
+    "triangles": 316000
+  },
   "village": {
     "calls": 380,
-    "triangles": 266000
+    "triangles": 316000
   },
   "villageDetails": {
     "calls": 320,

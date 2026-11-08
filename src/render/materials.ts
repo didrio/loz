@@ -129,12 +129,14 @@ export const BAKED_SHADE = { underside: 0.7, foot: 0.82, footHeight: 1.5 };
 
 /**
  * Writes `color` into `g`'s `color` attribute (linear, like a material's), darkened per `BAKED_SHADE`. `g` is
- * non-indexed and in world space; each triangle's own normal decides which rule applies.
+ * non-indexed and in world space; each triangle's own normal decides which rule applies. With `color` null, the
+ * vertex colours `g` already has (a kit piece's paint) are the colour, darkened the same way.
  */
-export function bakeColor(g: THREE.BufferGeometry, color: THREE.Color) {
+export function bakeColor(g: THREE.BufferGeometry, color: THREE.Color | null) {
   g.computeBoundingBox();
   const minY = g.boundingBox!.min.y;
   const pos = g.attributes.position;
+  const painted = color ? null : (g.attributes.color as THREE.BufferAttribute);
   const out = new Float32Array(pos.count * 3);
   const shade = new Float32Array(pos.count);
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
@@ -150,7 +152,8 @@ export function bakeColor(g: THREE.BufferGeometry, color: THREE.Color) {
         const t = Math.min(1, Math.max(0, (pos.getY(i + k) - minY) / BAKED_SHADE.footHeight));
         f = BAKED_SHADE.foot + (1 - BAKED_SHADE.foot) * t;
       }
-      out.set([color.r * f, color.g * f, color.b * f], (i + k) * 3);
+      if (painted) out.set([painted.getX(i + k) * f, painted.getY(i + k) * f, painted.getZ(i + k) * f], (i + k) * 3);
+      else out.set([color!.r * f, color!.g * f, color!.b * f], (i + k) * 3);
       shade[i + k] = f;
     }
   }
@@ -168,6 +171,14 @@ function isBakeable(m: THREE.Material): m is THREE.MeshLambertMaterial {
   if (m.transparent || m.opacity !== 1 || m.side !== THREE.FrontSide || m.vertexColors || m.map || m.alphaTest > 0) return false;
   if (!m.fog || !m.depthWrite || !m.depthTest || m.wireframe || m.emissiveIntensity !== 1) return false;
   return !Object.prototype.hasOwnProperty.call(m, 'onBeforeCompile') || !!m.userData.surface;
+}
+
+/** A kit piece: one of the shared vertex-coloured materials (`kitMat`) and a geometry carrying its paint. */
+function isKitPiece(o: THREE.Mesh) {
+  const m = o.material as THREE.Material;
+  if (!(m instanceof THREE.MeshLambertMaterial) || !m.vertexColors || !o.geometry.attributes.color) return false;
+  for (const v of baked.values()) if (v === m && !v.emissive.getHex()) return true;
+  return false;
 }
 
 /**
@@ -200,20 +211,24 @@ export function mergeStatic(src: THREE.Object3D, cellSize = 80, keepShade = fals
   src.traverse((o) => {
     if (!(o instanceof THREE.Mesh) || o instanceof THREE.InstancedMesh) return;
     const material = o.material as THREE.Material;
-    const bake = isBakeable(material);
+    // A kit piece (render/kit.ts) is already in a baked material: its paint is in its vertex colours.
+    const kit = isKitPiece(o);
+    const bake = kit || isBakeable(material);
     let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
     if (!g.attributes.normal) g.computeVertexNormals();
-    for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
+    for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal' && !(kit && name === 'color')) g.deleteAttribute(name);
     g.applyMatrix4(o.matrixWorld);
     if (material.userData.surface) faceNormals(g); // the texture's projection reads them (textures.ts)
-    if (bake) bakeColor(g, material.color);
+    if (bake) bakeColor(g, kit ? null : (material as THREE.MeshLambertMaterial).color);
     g.computeBoundingBox();
     g.boundingBox!.getCenter(center);
     if (mergeAudit.on && bake && !material.userData.surface) {
-      mergeAudit.plain.push({ geometry: o.geometry.type, color: material.color.getHex(), emissive: material.emissive.getHex(), at: center.clone(), size: g.boundingBox!.getSize(new THREE.Vector3()) });
+      const color = kit ? new THREE.Color().fromBufferAttribute(o.geometry.attributes.color as THREE.BufferAttribute, 0).getHex() : (material as THREE.MeshLambertMaterial).color.getHex();
+      const emissive = kit ? 0 : (material as THREE.MeshLambertMaterial).emissive.getHex();
+      mergeAudit.plain.push({ geometry: kit ? 'kit' : o.geometry.type, color, emissive, at: center.clone(), size: g.boundingBox!.getSize(new THREE.Vector3()) });
     }
     const surface = material.userData.surface as SurfaceId | undefined;
-    const emissive = bake ? material.emissive.getHex() : 0;
+    const emissive = bake && !kit ? (material as THREE.MeshLambertMaterial).emissive.getHex() : 0;
     const kind = bake ? `baked:${surface ?? ''}:${emissive}` : material.uuid;
     const key = `${kind}:${Math.floor(center.x / cellSize)}:${Math.floor(center.z / cellSize)}`;
     let b = buckets.get(key);

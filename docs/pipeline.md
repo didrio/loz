@@ -47,7 +47,17 @@ model in place: there is never a rough and a final model side by side.
 - **Rough:** blockout geometry, collision, puzzle logic, enemy placement, rough lighting. The playable layout is the
   deliverable. Dungeons are data first ([dungeons.md](dungeons.md)).
 - **Final:** set dressing from the prop library, landmark shapes, the area's sub-palette, fog and light mood, particles,
-  textures, merged static geometry, a phone performance check. Layout and puzzle logic stay frozen (`npm run map` unchanged).
+  textures, merged static geometry, a phone performance check. Layout and puzzle logic stay frozen (`npm run map` unchanged;
+  outdoors, `world/overworld/colliders.test.ts` snapshots every collider and passes unedited).
+- **Kit scenery** (T51a): a kit model can stand in the merged static scenery (`b.staticGroup.add(model.root)`). `mergeStatic`
+  keeps a kit piece's paint and darkens it with the same `BAKED_SHADE` as every plain mesh (the light bake then replaces that
+  shade as usual), in the same bucket as the plain meshes of its surface, so it costs no extra draw call. So **scenery
+  models skip `crevice`** (the merge shades them); a model that stands alone (`b.dynamic`, a prop) keeps it. Name a surface
+  (`kitMesh(g, 'wood')`): the texture audit flags a kit piece without one.
+- **Instanced nature** (T51a, `render/models/nature.ts`): one geometry per kind, painted white with its own shade
+  (`crevice`), coloured per instance by a palette swatch the layout's existing random draws pick (`roundTint(c1, c2)`), so
+  the placement's random sequence never moves. A part keeps the rough's frame (size and centre), so the instance matrices
+  stay byte-identical.
 
 ## The rig convention
 
@@ -85,9 +95,9 @@ return them beside the `Model` (the Shellback's `eyes` and `legs`, Wren's `coatM
 **The registry** (`render/models/registry.ts`): `ASSETS`, one entry per model: `id`, `kind` (`player`, `enemy`, `miniboss`, `boss`,
 `npc`, `prop`, `piece`), `tier` (`rough` or `final`) and `build()`. A test fails if a `build…` function in `render/models/` is not
 used in the registry, so a new model cannot be forgotten. **Adding a model:** write `render/models/<name>.ts`, register it
-(`tier: 'rough'`), run `npm run assets`. `piece` (dungeon rooms and set pieces) is defined but empty: those join with the dungeon
-look ticket. Not models, so not registered: `BossArena` (a sealing flame ring, an effect) and the terrain and buildings (merged static
-scenery, [art.md](art.md)). Every NPC is `buildHumanoid` with its own colours; the registry holds one stand-in (`villager`).
+(`tier: 'rough'`), run `npm run assets`. `piece` is scenery bigger than a prop (buildings, landmarks; dungeon rooms join with the dungeon look ticket):
+no triangle budget yet (T51b sets one). Not models, so not registered: `BossArena` (a sealing flame ring, an effect) and the terrain. Scenery joins the registry as it gets
+its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledown's buildings (T51b, `piece`). Every NPC is `buildHumanoid` with its own colours; the registry holds one stand-in (`villager`).
 
 **The validator** (`render/models/validate.ts`) builds every entry in Node and checks it:
 

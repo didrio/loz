@@ -3,6 +3,7 @@ import { buildGloomwisp } from './gloomwisp';
 import { buildBellItem, buildDoll, buildFlask, buildKeyItem, buildShieldItem, buildSwordItem, buildTetherGlove, buildTunicItem } from './gear';
 import { buildGravelheart } from './gravelheart';
 import { buildLamplighter } from './lamplighter';
+import { buildGrassTuft, buildLoneOak, buildPine, buildRock, buildRoundTree } from './nature';
 import { buildBush, buildChest, buildGreatLantern, buildHeartVessel, buildHingedDoor, buildShieldPickup, buildStoneDoor } from './props';
 import { pal } from '../palette';
 import { buildSentinel } from './sentinel';
@@ -36,7 +37,7 @@ export interface AssetEntry {
 export const GOLDEN_SET: readonly string[] = ['chest', 'thornling', 'wren'];
 
 export const ASSETS: readonly AssetEntry[] = [
-  { id: 'wren', kind: 'player', tier: 'final', build: () => buildWren(1), note: 'tunic, sword and shield; posed by her rig' },
+  { id: 'wren', kind: 'player', tier: 'final', build: () => buildWren(1), note: 'tunic, sword and shield; posed by their rig' },
   { id: 'villager', kind: 'npc', tier: 'rough', build: () => buildPerson(VILLAGER_COLORS), note: 'the humanoid every NPC shares (Maren\'s colours)' },
   { id: 'thornling', kind: 'enemy', tier: 'final', build: buildThornling },
   { id: 'gloomwisp', kind: 'enemy', tier: 'rough', build: buildGloomwisp },
@@ -52,6 +53,12 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'shield-pickup', kind: 'prop', tier: 'rough', build: buildShieldPickup },
   { id: 'great-lantern', kind: 'prop', tier: 'rough', build: buildGreatLantern },
   { id: 'bush', kind: 'prop', tier: 'rough', build: buildBush },
+  // The valley's nature (T51a): instanced across the whole valley, tinted per instance (render/models/nature.ts).
+  { id: 'tree', kind: 'prop', tier: 'final', build: buildRoundTree, note: 'the field tree, instanced' },
+  { id: 'pine', kind: 'prop', tier: 'final', build: buildPine, note: 'instanced' },
+  { id: 'rock', kind: 'prop', tier: 'final', build: buildRock, note: 'instanced' },
+  { id: 'grass-tuft', kind: 'prop', tier: 'final', build: buildGrassTuft, note: 'instanced, ~3,000' },
+  { id: 'lone-oak', kind: 'piece', tier: 'final', build: buildLoneOak, note: 'the landmark at the grove road, merged scenery' },
   // The gear (the Gear tab and the HUD's icons: render/icons.ts).
   { id: 'gear-sword', kind: 'prop', tier: 'rough', build: buildSwordItem, note: 'icon' },
   { id: 'gear-shield', kind: 'prop', tier: 'rough', build: buildShieldItem, note: 'icon' },

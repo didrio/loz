@@ -515,6 +515,51 @@ const SCENES = {
     await h.shot('village');
   },
   /**
+   * The entrance vignette (golden set 3, T51; docs/art.md): Thistledown's road in, standing where the `village` shot stands.
+   * Blighted at noon (how a new game first sees it), then restored at noon, dusk and night; a close look at the grove's
+   * trees and at a field rock.
+   */
+  async vignette(h) {
+    await h.newGame();
+    const hours = (n) => h.game((n) => (window.embervale.state.hours = n), n);
+    const roadIn = () => h.teleport(-50, -42, Math.atan2(-12, -16));
+    await h.game(() => (window.embervale.player.invuln = 1e6)); // the grove's thornlings stay off Wren
+    await hours(12);
+    await roadIn();
+    await h.wait(3500);
+    await h.shot('vignette-blight');
+    await h.game(() => window.embervale.state.set('valleyOpen'));
+    await h.until(() => window.embervale.sky.blight === 0, 60000);
+    for (const [when, n] of [['noon', 12], ['dusk', 18], ['night', 22.5]]) {
+      await hours(n);
+      await roadIn();
+      await h.wait(3500); // the atmosphere eases across in ~2 s, the baked light lands in a few
+      await h.shot(`vignette-${when}`);
+    }
+    await hours(12);
+    await h.teleport(76, -68, Math.atan2(6, -10));
+    await h.wait(5000); // wait out the grove's name card
+    await h.shot('vignette-trees');
+    // The field rock nearest the road in that stands about knee high.
+    const rock = await h.game(() => {
+      let best = null;
+      window.embervale.area.root.traverse((o) => {
+        if (o.name !== 'rocks') return;
+        const a = o.instanceMatrix.array;
+        for (let i = 0; i < o.count; i++) {
+          const e = a.subarray(i * 16, i * 16 + 16);
+          const x = e[12], z = e[14], s = Math.hypot(e[0], e[1], e[2]);
+          const d = Math.hypot(x + 30, z + 20);
+          if (s > 0.8 && s < 1.6 && (!best || d < best.d)) best = { x, z, d };
+        }
+      });
+      return best;
+    });
+    await h.teleport(rock.x + 2.5, rock.z + 2.5, Math.atan2(-1, -1));
+    await h.wait(1500);
+    await h.shot('vignette-rock');
+  },
+  /**
    * The baked light (render/bakeLight.ts, T48) on and off in each kind of place, the restored valley at noon: Thistledown,
    * the open field, a ruin, the grove, the gorge, the camp and a shrine room (the indoor profile). Prints each bake's cost.
    */

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { BAKED_SHADE, bakeColor, isSharedMaterial, mat, mergeStatic, surf, uniqueMat } from './materials';
+import { BAKED_SHADE, bakeColor, isSharedMaterial, kitMat, mat, mergeAudit, mergeStatic, surf, uniqueMat } from './materials';
+import { bevelBox, kitMesh, paint, paintRegion, place } from './kit';
+import { pal } from './palette';
 import { drawTile, faceNormals, SURFACES, DEFAULT_TEXTURE_RESOLUTION, downsampleTile, setTextureResolution, TILE_METRES, TILE_SIZE, textureResolution, tileSizeAt, TILE_SPREAD, tileTexture, type TileId } from './textures';
 
 const TILES = Object.keys(TILE_SIZE) as TileId[];
@@ -292,6 +294,42 @@ describe('mergeStatic bakes colour into vertices (T30)', () => {
       else if (ny < -0.5) expect(v).toBeCloseTo(BAKED_SHADE.underside, 5);
       else if (y < 0.001) expect(v).toBeCloseTo(BAKED_SHADE.foot, 5); // wall foot
       else if (y > BAKED_SHADE.footHeight) expect(v).toBeCloseTo(1, 5);
+    }
+  });
+
+  it('a kit piece joins the plain meshes of its surface: its paint survives, darkened like theirs (T51)', () => {
+    const src = new THREE.Group();
+    const red = pal('clay', 2), green = pal('grass', 2);
+    // A two-colour kit box (a red top, green sides and bottom) beside a plain plaster box.
+    const piece = kitMesh(paintRegion(paint(place(bevelBox(1, 1, 1, 0), 0, 0.5, 0), green), (_c, n) => (n.y > 0.5 ? red : undefined)), 'plaster');
+    piece.position.x = 3;
+    src.add(piece, box(surf('plaster', 0xaa8866)));
+    const out = mergeStatic(src, 80, true).children as THREE.Mesh[];
+    expect(out).toHaveLength(1); // the same bucket: no extra draw call
+    expect(out[0].material).toBe(kitMat('plaster'));
+    const g = out[0].geometry, pos = g.attributes.position, nor = g.attributes.normal, col = g.attributes.color, shade = g.attributes.shade;
+    expect(shade).toBeDefined(); // so the light bake can replace the shade, as for plain meshes
+    const r = new THREE.Color(red), gr = new THREE.Color(green);
+    let seen = 0;
+    for (let i = 0; i < pos.count; i++) {
+      if (pos.getX(i) < 2) continue; // the kit box only
+      seen++;
+      const want = nor.getY(i) > 0.5 ? r : pos.getY(i) < 0.001 && Math.abs(nor.getY(i)) < 0.5 ? gr.clone().multiplyScalar(BAKED_SHADE.foot) : null;
+      if (nor.getY(i) < -0.5) expect(col.getY(i)).toBeCloseTo(gr.g * BAKED_SHADE.underside, 5);
+      if (want) expect([col.getX(i), col.getY(i), col.getZ(i)].map((v) => +v.toFixed(5))).toEqual([want.r, want.g, want.b].map((v) => +v.toFixed(5)));
+      expect(col.getX(i) / shade.getX(i)).toBeGreaterThan(0); // shade is the factor, not zero
+    }
+    expect(seen).toBe(36);
+  });
+
+  it('a kit piece without a surface is reported to the texture audit (T51)', () => {
+    mergeAudit.on = true;
+    mergeAudit.plain = [];
+    try {
+      mergeStatic(new THREE.Group().add(kitMesh(paint(bevelBox(1, 1, 1, 0), pal('stone', 2)))));
+      expect(mergeAudit.plain.map((p) => p.geometry)).toEqual(['kit']);
+    } finally {
+      mergeAudit.on = false;
     }
   });
 });

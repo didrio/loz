@@ -45,16 +45,31 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **"The behaviour file untouched"** in every ticket below means (owner's call, 2026-11-08, T49): its posing lines move into the model's rig (pipeline.md "The rig convention", the Thornling as example) and the behaviour file then only hands the rig its state; stats, timings, AI and hurtboxes stay byte-identical, and the existing tests pass unedited.
 - **Renders:** before touching the model, add a look scene for it (like `thornling`: in-game states, then the viewer with `angle=0/45/90`) and capture it in Native and `--display n64`. Copy the shots to the scratchpad as the "before" set.
 
-### T51: Final pass: the starter-area entrance vignette (golden set 3)
-**Run:** plan · opusplan · high
-**Why:** One composed view (the village approach or the grove) proves the environment style: textures, props, atmosphere and light together, and phone frame rate.
+**The entrance vignette (golden set 3), owner's calls (2026-11-08, T51's plan):** the vignette is **Thistledown's road in** (the road from the field through the southeast fence gap to the square; the `village` look shot's frame, standing at -50,-42 facing the well). The final **tree, pine, rock and grass replace the rough ones valley-wide at once** (same placement, same `rand()` sequence, same colliders). **Baked light stays as is.** Cottages get **gable roofs with deep eaves** (walls, footprint and colliders unchanged). Three parts, each leaving the game working; the lock comes after T51c on the owner's approval.
+- **Kit scenery in the merge:** `mergeStatic` (`render/materials.ts`) drops every attribute but position and normal, so before T51a a kit-painted model in `b.staticGroup` would lose its colours. `kitMat(surface)` *is* `bakedMat(surface, 0)`, so kit meshes join the same merge buckets (no new draw calls) once the merge keeps their `color` and gives them the plain meshes' `BAKED_SHADE` (multiplied in, plus `shade` for the light bake). So **scenery pieces skip `crevice`** (the merge shades them); standalone props keep it.
+- **Layout frozen** is proven by `world/overworld/colliders.test.ts` (every collider of the overworld, Thistledown's listed one by one): it must pass unedited after each part.
+- **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
+
+### T51b: Thistledown's cottages, well, fence and lanterns
+**Run:** auto · sonnet · high
+**Why:** The architecture and props of the vignette's frame: the style every later building follows.
 **Done when:**
-- One vignette chosen with the owner, rebuilt as a Final-pass area (sub-palette, set dressing, atmosphere, merged statics); layout and collision frozen (`npm run map` unchanged where it applies); a phone performance check noted.
-- `tier: 'final'` in the registry; within budget; every colour a `pal()` name; built with the kit and `bakeRig`; the behaviour file untouched in the diff (silhouette, scale, joints, hurtboxes, timings frozen; ask the owner first if one must change).
-- Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
-**Read first:** pipeline.md "Rooms and areas"; art.md atmosphere and budgets; the area's file under `world/overworld/`; engine.md "Areas".
-**Verify:** `npm run check`; smoke for the area; look scenes for it, Native and N64, before and after.
-**Notes:** Ask the owner up front which vignette, and for the baked-light verdict (T48 shipped it world-wide; keep, strengthen or drop) since it changes how the area is lit. The model lines of "Done when" apply to any props it rebuilds; the area itself follows pipeline.md "Rooms and areas". The `/final-pass` skill's before-renders step applies: a look scene for the vignette first.
+- `render/models/village.ts`: `buildCottage(style)` (gable roof, deep eaves, timber gable ends, a tapered chimney, a stone plinth, the door and frame) with each house's touches (east: green shutters, flower boxes, a bench; southwest: timber framing, a porch roof, a woodpile, herbs); the well, a fence section, the lantern post, a barrel and a crate. Windows stay separate unique meshes at the same spots (they glow at night).
+- `buildVillage` places them in the static group; every collider call unchanged (the freeze test passes unedited).
+- The validator gets a real `piece` budget (3,000 triangles; Infinity today); cottages register as `piece`, the rest as `prop`, all `final`.
+- The village atmosphere (`render/atmosphere.ts` VILLAGE) tuned for the frame; day motes only if they read well in both modes; `AREA_PALETTES.village` gains any swatch it lacks.
+**Read first:** the notes above; `world/overworld/village.ts` (Grep `house(`, the well, fence and lantern blocks); `render/models/nature.ts` (T51a's kit scenery pattern); art.md "Atmosphere".
+**Verify:** `npm run check`; `npm run smoke -- village`; looker on `vignette`, `village`, `villageDetails`, `village-cottages`' scene, `contact` (Native and N64).
+
+### T51c: The windmill, Odo's stall and the ruins; the phone check; renders for the owner
+**Run:** auto · sonnet · high
+**Why:** Finishes the frame and hands the vignette to the owner for the lock.
+**Done when:**
+- The mill's exterior and sails rebuilt (Tobin's room keeps its layout, bed and door: `MILL_TOWER`, `MILL_BED` frozen), Odo's stall, and the ruined homes in `ruins.ts` rebuilt to match the cottages valley-wide (jars and their flags untouched).
+- Phone check: draw calls and triangles of `vignette` and `village`, before/after, Native and Performance, noted in art.md "Budgets".
+- Before/after renders (the vignette frame at three times of day, a cottage front/three-quarter/side, Native and N64) shown to the owner. **Locked into the golden set only on "approve"** (`GOLDEN_SET`, art.md's list, the look baselines approved).
+**Read first:** the notes above; `world/overworld/village.ts` (the mill and stall blocks), `world/overworld/ruins.ts`, `render/models/village.ts`.
+**Verify:** `npm run check`; `npm run smoke -- village jars`; looker on `vignette`, `village`, `opening`, `contact` (Native and N64).
 
 ### T52: Final pass: the prop set, rest of it (golden set 4)
 **Run:** auto · sonnet · high
@@ -65,7 +80,7 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
 **Read first:** props.ts `buildChest`, world/objects.ts and world/jars.ts (placement and joints used)
 **Verify:** `npm run check`; smoke `village jars shrine-keys`; contact sheet before and after.
-**Notes:** A crate and a sign may not exist as models yet: add them as rough first (the pipeline) only if something already places them; otherwise skip and say so.
+**Notes:** The crate is done in T51b (Thistledown's clutter). A sign may not exist as a model yet: add it as rough first (the pipeline) only if something already places it; otherwise skip and say so.
 
 ### T53: Final pass: Pip, the NPC (golden set 5)
 **Run:** plan · opusplan · high
@@ -118,4 +133,4 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - The biggest cheap wins are done, with before/after numbers, and the look unchanged (looker, Native and N64); what's left is a line in roadmap.md.
 **Read first:** render.md "Display modes" and shadows; `render/shadows.ts`, `render/retro.ts`; `game/game.ts` (`frame`, `resize`; Grep, then ranges)
 **Verify:** `npm run check`; smoke `touch`; look scenes before and after.
-**Notes:** Already done: Native on touch capped at 2× (`pixelRatioFor`), antialias off on dense touch screens (`Game` constructor), shadow map 1024 on touch (`shadowMapSize`). Undecided: a "Resolution scale" slider between Performance (1) and Native, so the owner picks the trade.
+**Notes:** The valley's final nature (T51a) added ~40k triangles a scene (instanced trees ~120 each, ~3,200 three-blade tufts); its approval reset the look budgets on top of that (the grove 193k → 234k): a cheaper far tree (an LOD) or fewer tufts are candidates. Already done: Native on touch capped at 2× (`pixelRatioFor`), antialias off on dense touch screens (`Game` constructor), shadow map 1024 on touch (`shadowMapSize`). Undecided: a "Resolution scale" slider between Performance (1) and Native, so the owner picks the trade.
