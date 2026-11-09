@@ -91,6 +91,25 @@ const SCENES = {
     }
   },
   /**
+   * The Hall of Sleepers' things alone in the viewer (T56b): the wakestone (light and heavy), the tablet, the bell post and its bell,
+   * a carved sleeping face and a kneeling keeper, each from the front, three-quarter and side. The in-game shots: `shrineHall`.
+   */
+  async shrineModels(h) {
+    const mode = ['native', 'performance', 'n64'][display] ?? 'native';
+    await h.page.setViewportSize({ width: 1000, height: 900 });
+    const assets = (process.env.LOOK_SHRINE ?? 'wakestone,wakestone-heavy,dungeon-tablet,bell-post,bell,shrine-face,shrine-keeper').split(',');
+    for (const asset of assets) {
+      for (const [name, deg] of [['front', 0], ['three-quarter', 45], ['side', 90]]) {
+        const url = new URL('viewer.html', h.page.url() === 'about:blank' ? env.url : h.page.url());
+        url.search = `?asset=${asset}&panel=0&angle=${deg}&display=${mode}`;
+        await h.page.goto(url.href);
+        await h.until(() => window.embervale?.mode === 'viewer', 30000);
+        await h.wait(300);
+        await h.shot(`${asset}-${name}`);
+      }
+    }
+  },
+  /**
    * The prop set alone in the viewer (T52, golden set 4): the hinged door, the stone door, a jar and a sign, front, three-quarter
    * and side. The in-game shots are the `mill` (its door and the sign), `door` (the shrine's) and `ruins` (jars) scenes.
    */

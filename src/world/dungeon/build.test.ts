@@ -4,6 +4,7 @@ import { initPhysics, Layer, Physics } from '../../core/physics';
 import { NO_CONTROLS, Player, type PlayerEnv } from '../../game/player';
 import type { Area } from '../area';
 import { DungeonArea, EXIT_OFFSET, subtractRects } from './build';
+import { FACE_CLEARANCE } from './decor';
 import { SHRINE } from './defs/shrine';
 import { DROP_SIZE, PIT_DEPTH, stairPlacement, type DungeonDef } from './format';
 
@@ -414,5 +415,22 @@ describe('dungeon lighting', () => {
     const wallX = t.x + EXIT_OFFSET;
     for (const dz of [-1.5, -1, 0, 1, 1.5]) for (const out of [0, 0.5, 1.5, 2]) expect(inside(wallX - out, t.z + dz), `dz ${dz}, out ${out}`).toBe(true);
     expect(inside(area.spawn.x, area.spawn.z)).toBe(false);
+  });
+});
+
+describe('the sandstone wing\'s carvings (T56b)', () => {
+  it('keeps every carved face clear of every sconce, and still carves some', () => {
+    const { area } = setup();
+    expect(area.faceSpots.length).toBeGreaterThan(0);
+    expect(area.sconceSpots.length).toBeGreaterThan(0);
+    for (const f of area.faceSpots) {
+      for (const c of area.sconceSpots.filter((c) => c.room === f.room)) expect(Math.hypot(c.x - f.x, c.z - f.z), `${f.room} face at ${f.x},${f.z} vs sconce at ${c.x},${c.z}`).toBeGreaterThanOrEqual(FACE_CLEARANCE);
+    }
+  });
+
+  it('the Hall\'s north wall: no face under the sconce that rose into its cup', () => {
+    const { area } = setup();
+    const hall = area.faceSpots.filter((f) => f.room === 'entry' && f.z < 1);
+    for (const f of hall) expect(Math.abs(f.x - 7)).toBeGreaterThan(0.5);
   });
 });

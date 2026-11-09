@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Layer } from '../../core/physics';
 import { SHRINE, type FogLook } from '../../render/atmosphere';
 import { mat, surf } from '../../render/materials';
+import { buildKneelingKeeper, buildSleepingFace } from '../../render/models/shrineThings';
 import type { SurfaceId } from '../../render/textures';
 import { pal } from '../../render/palette';
 import type { AreaBuilder } from '../area';
@@ -67,14 +68,29 @@ function onWall(s: WallSpot, along: number, out: number) {
   return { x: s.x + ox * out + sx * along, z: s.z + oz * out + sz * along };
 }
 
+/** How far a carved face keeps from a sconce along its wall: half the face, the sconce's cup and a hand of air. */
+export const FACE_CLEARANCE = 1.3;
+
+/** Whether a wall spot is clear of every sconce in the room (a face on top of a sconce rises into its cup). */
+export const clearOfSconces = (s: WallSpot, sconces: readonly { x: number; z: number }[]) => sconces.every((c) => Math.hypot(c.x - s.x, c.z - s.z) >= FACE_CLEARANCE);
+
+/** Puts a model standing on a wall's inner face (its origin at the spot, +z into the room) into the merged scenery. */
+function putOnWall(solid: THREE.Group, root: THREE.Object3D, s: WallSpot, fy: number) {
+  root.position.set(s.x, fy, s.z);
+  root.rotation.y = s.yaw;
+  solid.add(root);
+}
+
 /**
  * Decorates one room. `spots(spacing)` gives evenly spaced wall spots clear of doorways;
  * `solid` gets static meshes (merged), `glowing` gets additive light shafts.
  */
 export function decorateRoom(
   b: AreaBuilder, solid: THREE.Group, glowing: THREE.Group, room: RoomDef, fy: number, height: number,
-  spots: (spacing: number) => WallSpot[], hasStones: boolean, rand: () => number,
+  spots: (spacing: number) => WallSpot[], hasStones: boolean, rand: () => number, sconces: readonly { x: number; z: number }[] = [],
 ) {
+  /** The wall spots that got a carved face (the build keeps them to test that none crowds a sconce). */
+  const faces: WallSpot[] = [];
   const p = THEMES[themeOf(room)];
   // Ground haze: a faint pale sheet just under the lip of each pit, so the drop reads as deep.
   for (const f of room.features ?? []) {
@@ -89,25 +105,14 @@ export function decorateRoom(
     case 'sandstone': {
       for (const s of spots(4)) {
         if (!hasStones) {
-          // A keeper, kneeling against the wall, asleep: blocky body, bowed head, closed eyes.
+          // A keeper, kneeling against the wall, asleep (render/models/shrineThings.ts, T56b).
           const at = onWall(s, 0, 0.75);
-          add(solid, new THREE.BoxGeometry(1.2, 0.5, 0.9), p.trim, at.x, fy + 0.25, at.z, s.yaw, 0, 'stone');
-          add(solid, new THREE.BoxGeometry(0.9, 1.1, 0.7), p.pillar, at.x, fy + 1.05, at.z, s.yaw, 0, 'stone');
-          const head = onWall(s, 0, 0.95);
-          add(solid, new THREE.BoxGeometry(0.55, 0.55, 0.55), p.pillar, head.x, fy + 1.85, head.z, s.yaw, 0, 'stone');
-          for (const side of [-0.13, 0.13]) {
-            const eye = onWall(s, side, 1.23);
-            add(solid, new THREE.BoxGeometry(0.14, 0.03, 0.02), p.trim, eye.x, fy + 1.88, eye.z, s.yaw, 0, 'stone');
-          }
+          putOnWall(solid, buildKneelingKeeper().root, s, fy);
           b.box(at.x, fy + 1, at.z, 0.6, 1, 0.5, s.yaw, Layer.Prop);
-        } else {
-          // A sleeping face carved into the wall: flat, so stones slide past it.
-          const at = onWall(s, 0, 0.3);
-          add(solid, new THREE.BoxGeometry(1.1, 1.4, 0.1), p.trim, at.x, fy + 2.4, at.z, s.yaw, 0, 'stone');
-          for (const side of [-0.22, 0.22]) {
-            const eye = onWall(s, side, 0.36);
-            add(solid, new THREE.BoxGeometry(0.28, 0.05, 0.03), p.pillar, eye.x, fy + 2.6, eye.z, s.yaw, 0, 'stone');
-          }
+        } else if (clearOfSconces(s, sconces)) {
+          // A sleeping face carved into the wall, above the tallest stone, so stones slide past it.
+          putOnWall(solid, buildSleepingFace().root, s, fy);
+          faces.push(s);
         }
       }
       break;
@@ -163,4 +168,5 @@ export function decorateRoom(
       break;
     }
   }
+  return { faces };
 }

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { easeInOut } from '../core/math';
 import { Layer } from '../core/physics';
-import { fadeInFog, uniqueSurf, surf } from '../render/materials';
-import { faceted } from '../render/textures';
+import { fadeInFog, surf } from '../render/materials';
+import { buildBell, buildBellPost, BELL_HOOK } from '../render/models/shrineThings';
 import { glow } from '../render/shapes';
 import type { AreaBuilder } from './area';
 
@@ -27,29 +27,11 @@ const LOOKS: Record<BellId, { bronze: number; ring: number }> = {
 };
 
 /** How high above the post's foot the hook is, and how far out along the arm. */
-const HOOK_Y = 2.55;
-const ARM_OUT = 1.0;
+const HOOK_Y = BELL_HOOK.y;
+const ARM_OUT = BELL_HOOK.out;
 /** Seconds for a bell to float from Wren's hands onto the hook. */
 const HANG_TIME = 1.2;
 const RING_LIFE = 1.8;
-
-/** A bell model (about 0.65 m tall), its origin at the hanging loop on top. */
-function bellModel(bronze: THREE.Material) {
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.17, 0.3, 0.42, 10)), bronze);
-  body.position.y = -0.33;
-  const dome = new THREE.Mesh(faceted(new THREE.SphereGeometry(0.17, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2)), bronze);
-  dome.position.y = -0.12;
-  const lip = new THREE.Mesh(faceted(new THREE.TorusGeometry(0.3, 0.035, 5, 14)), bronze);
-  lip.rotation.x = Math.PI / 2;
-  lip.position.y = -0.54;
-  const loop = new THREE.Mesh(faceted(new THREE.TorusGeometry(0.055, 0.02, 4, 8)), surf('metal', 0x3a3530));
-  loop.position.y = -0.03;
-  const clapper = new THREE.Mesh(faceted(new THREE.SphereGeometry(0.06, 6, 4)), surf('metal', 0x3a3530));
-  clapper.position.y = -0.58;
-  g.add(body, dome, lip, loop, clapper);
-  return g;
-}
 
 /** A unit circle in the xz plane: a ring drawn as a line stays thin however wide it grows. */
 const ringGeometry = () => new THREE.BufferGeometry().setFromPoints(
@@ -104,7 +86,7 @@ export class BellPost {
   canHang = false;
   /** True while the bell is floating up to the hook. */
   hanging = false;
-  private readonly pivot = new THREE.Group();
+  private readonly pivot: THREE.Group;
   private readonly bellMat: THREE.MeshLambertMaterial;
   private readonly halo: THREE.Mesh;
   private readonly rings: RingPool;
@@ -115,37 +97,19 @@ export class BellPost {
   private t = 0;
 
   constructor(b: AreaBuilder, readonly bell: BellId, readonly x: number, readonly y: number, readonly z: number, readonly yaw: number) {
-    const wood = surf('wood', 0x5e4a36), dark = surf('wood', 0x3d3026), stone = surf('stone', 0x8d877c), iron = surf('metal', 0x34302c);
-    const add = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number, rz = 0, rx = 0) => {
-      const mesh = new THREE.Mesh(geo, m);
-      mesh.position.set(px, py, pz);
-      mesh.rotation.set(rx, 0, rz);
-      this.group.add(mesh);
-      return mesh;
-    };
-    add(faceted(new THREE.CylinderGeometry(0.4, 0.5, 0.3, 7)), stone, 0, 0.15, 0);
-    // Crooked like a heron's leg: the lower post leans one way, the upper the other.
-    add(new THREE.BoxGeometry(0.22, 1.5, 0.22), wood, 0.04, 1.02, 0, -0.06);
-    add(new THREE.BoxGeometry(0.26, 0.16, 0.26), dark, 0.08, 1.78, 0, 0.1);
-    add(new THREE.BoxGeometry(0.19, 0.95, 0.19), wood, 0.06, 2.25, 0, 0.09);
-    // The arm, drooping a little, with a brace and the name plate carved into its side.
-    add(new THREE.BoxGeometry(ARM_OUT + 0.35, 0.14, 0.14), wood, ARM_OUT / 2 + 0.05, HOOK_Y + 0.17, 0, -0.05);
-    add(new THREE.BoxGeometry(0.1, 0.75, 0.1), dark, 0.38, 2.28, 0, -0.8);
-    add(new THREE.BoxGeometry(0.46, 0.1, 0.03), surf('wood', 0x7d6650), 0.62, HOOK_Y + 0.18, 0.075, -0.05);
-    for (let i = 0; i < 4; i++) add(new THREE.BoxGeometry(0.03, 0.06, 0.02), dark, 0.45 + i * 0.11, HOOK_Y + 0.18, 0.09);
-    const hook = add(faceted(new THREE.TorusGeometry(0.06, 0.018, 4, 8, Math.PI * 1.4)), iron, ARM_OUT, HOOK_Y + 0.04, 0);
-    hook.rotation.y = Math.PI / 2;
-
+    // The look is a kit model (render/models/shrineThings.ts, T56b): the post, its arm and hook, and the pivot the bell swings on.
+    const post = buildBellPost(null);
+    this.group.add(post.root);
+    this.pivot = post.joints.pivot;
     const look = LOOKS[bell];
-    this.bellMat = uniqueSurf('metal', look.bronze, { emissive: 0x000000 });
-    this.pivot.position.set(ARM_OUT, HOOK_Y, 0);
-    this.pivot.add(bellModel(this.bellMat));
+    const hung = buildBell(look.bronze);
+    this.bellMat = hung.bellMat;
+    this.pivot.add(hung.root);
     this.pivot.visible = false;
     // A small, faint glow inside the bell's mouth (a big one reads as a flat disc).
     this.halo = glow(look.ring, 0.26, 0);
     this.halo.position.y = -0.42;
     this.pivot.add(this.halo);
-    this.group.add(this.pivot);
     this.rings = new RingPool(this.group, look.ring, ARM_OUT, HOOK_Y - 0.35);
 
     this.group.position.set(x, y, z);
@@ -244,7 +208,7 @@ export class BellPost {
 export class BellPickup {
   readonly group = new THREE.Group();
   present = true;
-  private readonly bellGroup: THREE.Group;
+  private readonly bellGroup: THREE.Object3D;
   private readonly halo: THREE.Object3D;
   private readonly rings: RingPool;
   private beat = 0;
@@ -255,7 +219,7 @@ export class BellPickup {
    */
   constructor(b: AreaBuilder, readonly bell: BellId, readonly x: number, readonly y: number, readonly z: number, ground = false) {
     const look = LOOKS[bell];
-    this.bellGroup = bellModel(uniqueSurf('metal', look.bronze, { emissive: new THREE.Color(look.ring).multiplyScalar(0.15) }));
+    this.bellGroup = buildBell(look.bronze, new THREE.Color(look.ring).multiplyScalar(0.15).getHex()).root;
     this.bellGroup.position.y = ground ? 0.6 : 0.7 + 0.6;
     this.halo = glow(look.ring, 0.26, 0.12);
     this.halo.position.y = ground ? 0.3 : 0.85;

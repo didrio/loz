@@ -4,6 +4,7 @@ import { mat, surf, uniqueMat, uniqueSurf } from '../../render/materials';
 import { faceted } from '../../render/textures';
 import { kitMesh } from '../../render/kit';
 import { doorFrameGeometry } from '../../render/models/shrineProps';
+import { buildDungeonTablet, buildWakestone, WAKESTONE_SIZE } from '../../render/models/shrineThings';
 import { pal } from '../../render/palette';
 import { glow, GroundShadow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
@@ -202,27 +203,10 @@ export class Wakestone {
    * shared by the area so it can pulse them all).
    */
   constructor(b: AreaBuilder, parent: THREE.Object3D, readonly id: string, x: number, y: number, z: number, readonly heavy: boolean, glowMat?: THREE.Material) {
-    const size = heavy ? 1.96 : 1.84;
+    const size = heavy ? WAKESTONE_SIZE.heavy : WAKESTONE_SIZE.light;
     this.size = size;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), surf('stone', heavy ? 0x3a2f4f : 0x9b9486));
-    body.position.y = size / 2;
-    this.group.add(body);
-    const glyph = heavy && glowMat ? glowMat : mat(0x4fb8a4);
-    for (let i = 0; i < 4; i++) {
-      const a = (i * Math.PI) / 2;
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.07, 5, 14), glyph);
-      ring.position.set(Math.sin(a) * (size / 2 + 0.01), size / 2, Math.cos(a) * (size / 2 + 0.01));
-      ring.rotation.y = a;
-      this.group.add(ring);
-    }
-    if (heavy) {
-      // Bronze bands round the top and bottom.
-      for (const by of [0.18, size - 0.18]) {
-        const band = new THREE.Mesh(new THREE.BoxGeometry(size + 0.06, 0.16, size + 0.06), surf('metal', 0x9a6a2e));
-        band.position.y = by;
-        this.group.add(band);
-      }
-    }
+    // The look is a kit model (render/models/shrineThings.ts, T56b); this class keeps the sliding, the collider and the blob.
+    this.group.add(buildWakestone(heavy, heavy ? glowMat : undefined).root);
     this.group.position.set(x, y, z);
     parent.add(this.group);
     this.collider = b.box(x, y + size / 2, z, size / 2, size / 2, size / 2, 0, Layer.Prop);
@@ -335,20 +319,10 @@ export class DungeonSwitch {
   }
 }
 
-/** A carved stone tablet on a plinth, for dungeon signs. */
+/** A carved stone tablet on a plinth, for dungeon signs (the model: render/models/shrineThings.ts). */
 export function buildTablet(b: AreaBuilder, parent: THREE.Object3D, x: number, y: number, z: number, yaw: number) {
   const g = new THREE.Group();
-  const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.3, 0.6), surf('stone', STONE.trim));
-  plinth.position.y = 0.15;
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.2), surf('stone', 0xa29b8d));
-  slab.position.y = 0.9;
-  const lines = mat(0x4a463f);
-  for (let i = 0; i < 3; i++) {
-    const l = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.05, 0.02), lines);
-    l.position.set(0, 1.2 - i * 0.22, 0.11);
-    g.add(l);
-  }
-  g.add(plinth, slab);
+  g.add(buildDungeonTablet().root);
   g.position.set(x, y, z);
   g.rotation.y = yaw;
   parent.add(g);

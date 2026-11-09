@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../../core/math';
 import { Layer, type Physics } from '../../core/physics';
-import { disposeTree, mat, mergeStatic, surf } from '../../render/materials';
+import { disposeTree, mat, mergeStatic, surf, uniqueSurf } from '../../render/materials';
+import { pal } from '../../render/palette';
 import { BAKE, collectBakeSet, EVERYWHERE, queueBake } from '../../render/bakeLight';
 import { kitMesh, place } from '../../render/kit';
 import { ceilingBeams, cornerPiers, course, floorTiles, innerOf, pillar, plinth, roomCornice, SANDSTONE, SHELL, type WallOrient } from '../../render/models/shrine';
@@ -145,7 +146,7 @@ export class DungeonArea implements Area {
    */
   onStone: ((id: string, result: StoneResult, from: THREE.Vector3) => void) | null = null;
   /** The glow on heavy stones' spirals (pulses). */
-  private readonly heavyGlow = new THREE.MeshLambertMaterial({ color: 0x6ff6e6, emissive: 0x1fb8a8 });
+  private readonly heavyGlow = uniqueSurf('stone', pal('teal', 3), { emissive: pal('teal', 1) });
   private readonly stoneState = new Map<string, StoneState>();
   private readonly grids = new Map<string, RoomGrid>();
   /** Pits filled by stones, by room: `i,j` cell keys. */
@@ -168,6 +169,9 @@ export class DungeonArea implements Area {
   private readonly courses: { update(t: number): void; dispose(): void }[] = [];
   /** The sconces' flames and their dust (render/sconceGlow.ts). */
   private readonly sconceGlow = new SconceGlow();
+  /** Where each room's sconces hang (the cup's spot) and which wall spots got a carved face: kept to test that none crowds a sconce. */
+  readonly sconceSpots: { room: string; x: number; z: number }[] = [];
+  readonly faceSpots: { room: string; x: number; z: number }[] = [];
 
   constructor(physics: Physics, readonly def: DungeonDef) {
     this.id = def.id;
@@ -530,7 +534,8 @@ export class DungeonArea implements Area {
     for (const r of def.rooms) {
       const hasStones = def.things.some((t) => t.room === r.id && (t.kind === 'stone' || (t.kind === 'switch' && t.style === 'plate')));
       const rand = mulberry32(r.x * 7919 + r.z * 104729 + r.floor * 31);
-      decorateRoom(b, part(r.floor).src.solid, part(r.floor).src.solid, r, floorY(def, r.floor), roomHeight(def, r), (sp) => this.wallSpots(def, r, gapsBy, sp, !hasStones), hasStones, rand);
+      const { faces } = decorateRoom(b, part(r.floor).src.solid, part(r.floor).src.solid, r, floorY(def, r.floor), roomHeight(def, r), (sp) => this.wallSpots(def, r, gapsBy, sp, !hasStones), hasStones, rand, this.sconceSpots.filter((c) => c.room === r.id));
+      for (const f of faces) this.faceSpots.push({ room: r.id, x: f.x, z: f.z });
     }
 
     this.spawn = { x: ex, y: floorY(def, er.floor) + 0.05, z: ez, facing: yawOf[def.entrance.facing] };
@@ -661,8 +666,9 @@ export class DungeonArea implements Area {
         const [a0, a1] = alongX ? [r.x, r.x + r.w] : [r.z, r.z + r.d];
         const at = [0.5, 0.3, 0.7].map((f) => a0 + (a1 - a0) * f).find((v) => !gaps.some(([g0, g1]) => v > g0 - 1 && v < g1 + 1));
         if (at === undefined) continue;
-        if (alongX) sconce(r.floor, p.dynamic, at, fy + 3.2, line, yaw);
-        else sconce(r.floor, p.dynamic, line, fy + 3.2, at, yaw);
+        const [sx, sz] = alongX ? [at, line] : [line, at];
+        sconce(r.floor, p.dynamic, sx, fy + 3.2, sz, yaw);
+        this.sconceSpots.push({ room: r.id, x: sx, z: sz });
       }
     }
   }

@@ -229,8 +229,26 @@ The shrine's look rebuild starts with **the Hall of Sleepers** as the golden roo
   pale flame and a two-layer glow that flicker on their own phases, a few warm specks of dust rising through it, all of
   it one `SconceGlow` in `render/sconceGlow.ts`, the dust a single draw call). The flame is unlit: the room's pooled
   point light still does the lighting.
-- **Still rough:** the other wings' shells, the stairs and railings, plates, crystals, the prism, locked door slabs,
-  wakestones, tablets, the bell post, the sleeping faces and keepers (T56b), and the Hall's dressing (T56c).
+- **The Hall's things** (T56b, `render/models/shrineThings.ts`; each keeps the rough's frame, the colliders were measured from it):
+  - **Wakestone** (`buildWakestone(heavy, glow?)`; `Wakestone` adds its `root` and keeps the slide, the collider and the blob;
+    the sizes are `WAKESTONE_SIZE`, 1.84 and 1.96 m): a chamfered cube a hair under the collider's size (the wobble never lifts
+    the top above it), a raised panel on each side with the spiral ridge on it. Light: pale stone, sand panels, a teal inlay.
+    Heavy: plum stone, bronze bands and rivets, and its spirals are the area's shared pulsing material
+    (`heavyGlow`, now a `stone`-tiled unique material so nothing is one flat colour), left unbaked in `animated`.
+  - **Tablet** (`buildDungeonTablet`): two plinth courses, an arched slab to 1.5 m, three rows of runes and a small spiral on the face.
+  - **Bell post and bell** (`buildBellPost(bell | null)`, `buildBell(bronze, emissive)`): the post keeps its crooked posts, arm,
+    brace and name plate, and gains a footing, rope bindings, an iron hook and faded cloth ties. `pivot` stays at the hook
+    (`BELL_HOOK`), the joint `BellPost` swings; the world hangs its own bell on it (one unique, white-painted `bellMat` per bell,
+    in `animated`, so ringing can still glow it). `BellPickup` uses the same bell.
+  - **Carvings** (built in the wall's frame: origin on the wall's inner face at floor level, +z into the room; `decorateRoom`
+    turns them with `putOnWall`): the **sleeping face** is a pale oval on an arch panel from 2.08 to 3.18 m, above the tallest
+    stone, 14 cm proud of the wall (the rough's panel hung 25 cm off it); the **kneeling keeper** is a hooded figure on a plinth,
+    robe pooled, head bowed, hands folded, the spiral on its chest. Its collider call is unchanged.
+  - **Faces keep clear of sconces** (`clearOfSconces`, `FACE_CLEARANCE` 1.3 m along the wall): a spot within it gets no face (a
+    face on a sconce rose into its cup). Keepers are not filtered (their colliders are frozen). `DungeonArea.sconceSpots` and
+    `faceSpots` hold both for the test.
+- **Still rough:** the other wings' shells, the stairs and railings, plates, crystals, the prism, locked door slabs, and the
+  Hall's dressing (T56c).
 
 ## Build plan (milestones)
 

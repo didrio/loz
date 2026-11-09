@@ -10,6 +10,7 @@ import { pal } from '../palette';
 import { buildSentinel } from './sentinel';
 import { buildShrineCorner, buildShrinePillar } from './shrine';
 import { buildDoorFrame, buildSconce } from './shrineProps';
+import { buildBell, buildBellPost, buildDungeonTablet, buildKneelingKeeper, buildSleepingFace, buildWakestone } from './shrineThings';
 import { buildShellback } from './shellback';
 import { buildThornling } from './thornling';
 import type { Model } from './types';
@@ -102,6 +103,14 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'shrine-pillar', kind: 'piece', tier: 'final', build: buildShrinePillar, note: 'the sandstone wing\'s pillar (the Nave\'s, 7 m)' },
   { id: 'shrine-door-frame', kind: 'prop', tier: 'final', build: () => buildDoorFrame(), note: 'every dungeon doorway; its wing\'s trim colour' },
   { id: 'sconce', kind: 'prop', tier: 'final', build: buildSconce, note: 'the iron is merged scenery; the flame flickers (render/sconceGlow.ts)' },
+  // The Hall's things (T56b): the wakestones, the tablet, the bell post and its bell, the wing's carved faces and keepers.
+  { id: 'wakestone', kind: 'piece', tier: 'final', build: () => buildWakestone(false), note: 'a light wakestone: pale sandstone, teal inlay (1.84 m)' },
+  { id: 'wakestone-heavy', kind: 'piece', tier: 'final', build: () => buildWakestone(true), note: 'a heavy wakestone: violet, bronze bands, glowing spirals (1.96 m; the area\'s shared pulse in the world)' },
+  { id: 'dungeon-tablet', kind: 'prop', tier: 'final', build: buildDungeonTablet, note: 'the dungeon\'s carved tablet on its plinth' },
+  { id: 'bell', kind: 'prop', tier: 'final', build: () => buildBell(), note: 'a keepers\' bell (its own bronze per bell in the world)' },
+  { id: 'bell-post', kind: 'piece', tier: 'final', build: () => buildBellPost(), note: 'every bell site, the overworld\'s too; the pivot is the hook the bell swings from' },
+  { id: 'shrine-face', kind: 'prop', tier: 'final', build: buildSleepingFace, note: 'the sandstone wing\'s carved sleeping face (wall frame: the origin on the wall\'s face)' },
+  { id: 'shrine-keeper', kind: 'piece', tier: 'final', build: buildKneelingKeeper, note: 'the sandstone wing\'s kneeling keeper (wall frame)' },
 
   { id: 'gear-sword', kind: 'prop', tier: 'rough', build: buildSwordItem, note: 'icon' },
   { id: 'gear-shield', kind: 'prop', tier: 'rough', build: buildShieldItem, note: 'icon' },

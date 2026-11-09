@@ -8,12 +8,12 @@
     "triangles": 334000
   },
   "bells": {
-    "calls": 1400,
-    "triangles": 261000
+    "calls": 1160,
+    "triangles": 332000
   },
   "bellShaft": {
     "calls": 250,
-    "triangles": 172000
+    "triangles": 233000
   },
   "blight": {
     "calls": 680,
@@ -128,8 +128,8 @@
     "triangles": 4100
   },
   "landmarks": {
-    "calls": 500,
-    "triangles": 227000
+    "calls": 480,
+    "triangles": 246000
   },
   "lostBell": {
     "calls": 600,
@@ -184,8 +184,12 @@
     "triangles": 216000
   },
   "shrineHall": {
-    "calls": 1010,
-    "triangles": 232000
+    "calls": 950,
+    "triangles": 252000
+  },
+  "shrineModels": {
+    "calls": 20,
+    "triangles": 2000
   },
   "stairs": {
     "calls": 270,
