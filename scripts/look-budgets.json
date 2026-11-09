@@ -5,7 +5,7 @@
   },
   "bake": {
     "calls": 1400,
-    "triangles": 299000
+    "triangles": 334000
   },
   "bells": {
     "calls": 1400,
@@ -52,8 +52,8 @@
     "triangles": 277000
   },
   "contact": {
-    "calls": 530,
-    "triangles": 25000
+    "calls": 560,
+    "triangles": 33000
   },
   "door": {
     "calls": 60,
@@ -128,8 +128,8 @@
     "triangles": 258000
   },
   "mill": {
-    "calls": 350,
-    "triangles": 328000
+    "calls": 340,
+    "triangles": 336000
   },
   "night": {
     "calls": 450,
@@ -140,8 +140,8 @@
     "triangles": 363000
   },
   "opening": {
-    "calls": 680,
-    "triangles": 277000
+    "calls": 650,
+    "triangles": 350000
   },
   "orbs": {
     "calls": 560,
@@ -152,8 +152,8 @@
     "triangles": 266000
   },
   "ruins": {
-    "calls": 460,
-    "triangles": 264000
+    "calls": 500,
+    "triangles": 338000
   },
   "sallowmere": {
     "calls": 820,
@@ -200,16 +200,20 @@
     "triangles": 292000
   },
   "vignette": {
-    "calls": 450,
-    "triangles": 328000
+    "calls": 460,
+    "triangles": 339000
+  },
+  "vignetteModels": {
+    "calls": 20,
+    "triangles": 3700
   },
   "village": {
-    "calls": 380,
-    "triangles": 330000
+    "calls": 350,
+    "triangles": 338000
   },
   "villageDetails": {
-    "calls": 320,
-    "triangles": 324000
+    "calls": 300,
+    "triangles": 332000
   },
   "wardenIntro": {
     "calls": 830,

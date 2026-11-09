@@ -64,6 +64,14 @@ model in place: there is never a rough and a final model side by side.
   a lantern's core and halo) stays the world's own unique mesh at the same spot, and the model carries only its trim or cage,
   with a test that the trim leaves the pane's volume clear. A fence and the like (many copies along a path) export the
   geometry (`fencePost()`, `fenceRail(len)`) and the world places one mesh each.
+- **The mill, the stall and the ruins** (T51c, `render/models/mill.ts`, `ruins.ts`): same `Parts` pattern. The **mill** is the tower's outside
+  (a 32-sided shell from a `lathe`, its doorway cut by dropping the triangles either side of +x below the door's top: `cutDoorway`), the
+  foot, bands, windows, cap, the door's stone frame and step, the lamp bracket and the axle, and it takes `MILL_TOWER` as an argument
+  (render never imports `world`; a test keeps `MILL_DEFAULT` equal). The room inside, the door that swings and the glowing lamp core
+  stay the world's. The **sails** are their own model because the world rotates its root about x (`index.ts`); they clear the wall at
+  the lowest tip and the door's lintel (tested). **Odo's stall** is a model with the rough's frame (the counter's collider unchanged).
+  A **ruined home** is built from `RUIN_WALLS`, the same list the world's colliders are made from, for any `scale` and `flip`
+  (rubble and wall-tops are seeded from those two numbers, never from the global random numbers).
 
 ## The rig convention
 
@@ -103,7 +111,7 @@ return them beside the `Model` (the Shellback's `eyes` and `legs`, Wren's `coatM
 used in the registry, so a new model cannot be forgotten. **Adding a model:** write `render/models/<name>.ts`, register it
 (`tier: 'rough'`), run `npm run assets`. `piece` is scenery bigger than a prop (buildings, landmarks; dungeon rooms join with the dungeon look ticket):
 budget 3,000 triangles (T51b). Not models, so not registered: `BossArena` (a sealing flame ring, an effect) and the terrain. Scenery joins the registry as it gets
-its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledown's cottages (T51b, two `piece`s) and its well, fence section, lantern post, barrel and crate (`prop`s). Every NPC is `buildHumanoid` with its own colours; the registry holds one stand-in (`villager`).
+its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledown's cottages (T51b, two `piece`s) and its well, fence section, lantern post, barrel and crate (`prop`s), then the mill, its sails, Odo's stall and a ruined home (T51c, four `piece`s). Every NPC is `buildHumanoid` with its own colours; the registry holds one stand-in (`villager`).
 
 **The validator** (`render/models/validate.ts`) builds every entry in Node and checks it:
 

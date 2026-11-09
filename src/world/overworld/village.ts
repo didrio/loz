@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Layer } from '../../core/physics';
 import { fadeInFog, mat, surf, uniqueMat } from '../../render/materials';
 import { kitMesh } from '../../render/kit';
+import { buildMill, buildMillSails, buildStall, MILL_AXLE_Y, MILL_DOOR_TOP, millHub, millLamp } from '../../render/models/mill';
 import { buildBarrel, buildCottage, buildCrate, buildLanternPost, buildWell, COTTAGE, COTTAGE_WINDOW, fencePost, fenceRail, FENCE_RAILS, type CottageStyle } from '../../render/models/village';
 import { applySurface } from '../../render/textures';
 import type { AreaBuilder } from '../area';
@@ -71,28 +72,25 @@ export function buildVillage(b: AreaBuilder) {
   const wx = MILL.x, wz = MILL.z;
   const wy = terrainHeight(wx, wz);
   const { outer: RO, inner: RI, top: RT, height: MH, ceiling: CEIL, sides: SIDES, gap: GAP } = MILL_TOWER;
-  const DOOR_TOP = 2.6;
+  const DOOR_TOP = MILL_DOOR_TOP;
   const outerAt = (h: number) => RO + (RT - RO) * (h / MH);
-  const millWall = surf('plaster', 0xe2d6bf), inside = applySurface(uniqueMat(0xd8c8a6, { side: THREE.BackSide }), 'plaster');
-  // Outside: a band with the doorway cut out, then the rest of the tower; the door faces +x (theta pi/2).
+  const inside = applySurface(uniqueMat(0xd8c8a6, { side: THREE.BackSide }), 'plaster');
+  // Outside: the final model (render/models/mill.ts): the tower with its doorway cut out, a stone foot, timber bands, windows, the
+  // cap, the door's stone frame and step, the lamp bracket and the sails' axle. The door faces +x (theta pi/2).
   const around = [Math.PI / 2 + GAP, Math.PI * 2 - GAP * 2] as const;
-  b.mesh(new THREE.CylinderGeometry(outerAt(DOOR_TOP), RO, DOOR_TOP, SIDES - 2, 1, true, ...around), millWall, wx, wy + DOOR_TOP / 2, wz);
-  b.mesh(new THREE.CylinderGeometry(RT, outerAt(DOOR_TOP), MH - DOOR_TOP, SIDES, 1, true), millWall, wx, wy + DOOR_TOP + (MH - DOOR_TOP) / 2, wz);
-  b.mesh(new THREE.ConeGeometry(RT + 0.5, 3.2, 12), surf('shingle', 0x8a3b28), wx, wy + MH + 1.6, wz);
+  const mill = buildMill(MILL_TOWER).root;
+  mill.position.set(wx, wy, wz);
+  b.staticGroup.add(mill);
   // Inside: the same cut, the wall up to the ceiling, plank floor and ceiling, two beams.
   b.mesh(new THREE.CylinderGeometry(RI, RI, DOOR_TOP, SIDES - 2, 1, true, ...around), inside, wx, wy + DOOR_TOP / 2, wz);
   b.mesh(new THREE.CylinderGeometry(RI, RI, CEIL - DOOR_TOP, SIDES, 1, true), inside, wx, wy + (DOOR_TOP + CEIL) / 2, wz);
   b.mesh(new THREE.CircleGeometry(RI, 24).rotateX(-Math.PI / 2), surf('wood', 0x8a6a44), wx, wy + 0.03, wz);
   b.mesh(new THREE.CircleGeometry(RI, 24).rotateX(Math.PI / 2), surf('wood', 0x6d5236), wx, wy + CEIL, wz);
   for (const dz of [-1.4, 1.4]) b.mesh(new THREE.BoxGeometry(RI * 2 - 0.6, 0.25, 0.3), surf('wood', 0x5e3d20), wx, wy + CEIL - 0.13, wz + dz);
-  // The doorway's reveal (the wall's thickness each side and above), a stone frame outside and a doorstep.
+  // The doorway's reveal (the wall's thickness each side and above); the stone frame and step outside are the model's.
   const depth = RO - RI + 0.1, mid = (RO + RI) / 2;
-  const frame = surf('stone', 0x7d6e60);
   for (const s of [-1, 1]) b.mesh(new THREE.BoxGeometry(depth, DOOR_TOP, 0.22), surf('plaster', 0xd8c8a6), wx + mid, wy + DOOR_TOP / 2, wz + s * 0.86);
   b.mesh(new THREE.BoxGeometry(depth, 0.26, 1.94), surf('plaster', 0xd8c8a6), wx + mid, wy + 2.47, wz);
-  for (const s of [-1, 1]) b.mesh(new THREE.BoxGeometry(0.3, 2.5, 0.24), frame, wx + RO + 0.05, wy + 1.25, wz + s * 0.96);
-  b.mesh(new THREE.BoxGeometry(0.3, 0.3, 2.16), frame, wx + RO + 0.05, wy + 2.6, wz);
-  b.mesh(new THREE.BoxGeometry(0.9, 0.18, 2.0), surf('stone', 0x9a958c), wx + RO + 0.45, wy + 0.05, wz);
   const millDoor = new HingedDoor(b, wx + mid, wy + 0.06, wz, Math.PI / 2, 1.44, 2.32);
   // The wall's colliders: a ring of blocks with a gap at the door, and the tower above the ceiling as one solid.
   const SEGS = 22, span = Math.PI * 2 - 2 * GAP, segStep = span / SEGS;
@@ -132,45 +130,19 @@ export function buildVillage(b: AreaBuilder) {
   millLight.position.set(wx, wy + CEIL - 0.6, wz);
   b.dynamic(millLight);
 
-  // Sails on an axle that clears the tower: the lowest tip passes in front of the wall.
-  const blades = new THREE.Group();
-  const hub = outerAt(9.5) + 0.9;
-  blades.position.set(wx + hub, wy + 9.5, wz);
-  const sail = surf('cloth', 0xf2ead8), sailFrame = surf('wood', 0x5e3d20);
-  const axle = b.mesh(new THREE.CylinderGeometry(0.25, 0.25, 1.6, 6), sailFrame, wx + hub - 0.8, wy + 9.5, wz);
-  axle.rotation.z = Math.PI / 2;
-  for (let i = 0; i < 4; i++) {
-    const arm = new THREE.Group();
-    arm.rotation.x = (i * Math.PI) / 2;
-    const spar = new THREE.Mesh(new THREE.BoxGeometry(0.18, 7, 0.24), sailFrame);
-    spar.position.y = 3.5;
-    const cloth = new THREE.Mesh(new THREE.BoxGeometry(0.06, 5.2, 1.6), sail);
-    cloth.position.set(0, 4.1, 0.85);
-    arm.add(spar, cloth);
-    blades.add(arm);
-  }
-  blades.add(new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 6), sailFrame));
+  // The sails (render/models/mill.ts) turn on the axle the mill model carries; the lowest tip clears the tower and the door's lintel.
+  const blades = buildMillSails().root as THREE.Group;
+  blades.position.set(wx + millHub(MILL_TOWER), wy + MILL_AXLE_Y, wz);
   b.dynamic(blades);
 
-  // Odo's stall: a counter with an awning, wares laid out on it.
+  // Odo's stall (render/models/mill.ts): a counter with a striped awning, a shelf and his wares. The counter's collider is the rough's.
   {
     const { x: sx, z: sz } = STALL;
     const sy = terrainHeight(sx, sz);
-    const counter = surf('wood', 0x8a5a2b), cloth = surf('cloth', 0x3f6f8a), stripe = surf('cloth', 0xe8dfc4);
-    b.mesh(new THREE.BoxGeometry(0.9, 1, 2.6), counter, sx, sy + 0.5, sz);
-    b.mesh(new THREE.BoxGeometry(1.0, 0.1, 2.8), wood, sx, sy + 1.02, sz);
+    const stall = buildStall().root;
+    stall.position.set(sx, sy, sz);
+    b.staticGroup.add(stall);
     b.box(sx, sy + 0.55, sz, 0.5, 0.55, 1.4, 0, Layer.Prop);
-    for (const dz of [-1.35, 1.35]) for (const dx of [-1.9, 0.6]) {
-      b.mesh(new THREE.BoxGeometry(0.12, 2.9, 0.12), wood, sx + dx, sy + 1.45, sz + dz);
-    }
-    b.mesh(new THREE.BoxGeometry(3.4, 0.12, 3.2), cloth, sx - 0.65, sy + 2.95, sz);
-    for (const dz of [-1.0, 0, 1.0]) b.mesh(new THREE.BoxGeometry(3.42, 0.13, 0.4), stripe, sx - 0.65, sy + 2.96, sz + dz);
-    // Wares: a folded slate-blue tunic, jars and a loaf.
-    b.mesh(new THREE.BoxGeometry(0.5, 0.14, 0.6), surf('cloth', 0x6b8296), sx, sy + 1.14, sz - 0.7);
-    b.mesh(new THREE.BoxGeometry(0.46, 0.1, 0.56), surf('cloth', 0x7d93a6), sx, sy + 1.26, sz - 0.7);
-    for (const [dz, c] of [[0.1, 0xb4532a], [0.45, 0x4f7d4a], [0.8, 0xd9a531]] as const) {
-      b.mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.3, 7), surf('plaster', c), sx, sy + 1.2, sz + dz);
-    }
   }
 
   // Fence ring with gaps for the two roads.
@@ -222,14 +194,13 @@ export function buildVillage(b: AreaBuilder) {
     lights.push(b.dynamic(l));
   };
   {
-    // A lamp on a bracket beside the mill door.
-    const lx = wx + outerAt(2.35) + 0.35, lz = wz + 1.45;
-    b.mesh(new THREE.BoxGeometry(0.6, 0.08, 0.08), wood, lx - 0.2, wy + 2.6, lz);
+    // The lamp beside the mill door: its bracket and cage are the mill model's; the glowing core is this box.
+    const { x: lx, y: ly, z: lz } = millLamp(MILL_TOWER);
     const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.38, 0.3), lanternMat);
-    lamp.position.set(lx, wy + 2.35, lz);
+    lamp.position.set(wx + lx, wy + ly, wz + lz);
     b.dynamic(lamp);
-    halo(lx, wy + 2.35, lz);
-    light(lx, wy + 2.35, lz, 11);
+    halo(wx + lx, wy + ly, wz + lz);
+    light(wx + lx, wy + ly, wz + lz, 11);
   }
   for (const a of [Math.PI / 4 - 0.28, Math.PI / 4 + 0.28, -Math.PI / 2 - 0.28, -Math.PI / 2 + 0.28, 0.6, 2.9, -1.9]) {
     const inSquare = a === 0.6 || a === 2.9 || a === -1.9;

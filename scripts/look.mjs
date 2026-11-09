@@ -73,6 +73,24 @@ const SCENES = {
     await h.shot('sheet');
   },
   /**
+   * The entrance vignette's buildings alone in the viewer (T51b, T51c): an east cottage, a southwest cottage, the windmill, its
+   * sails, Odo's stall and a ruined home, each from the front, three-quarter and side.
+   */
+  async vignetteModels(h) {
+    const mode = ['native', 'performance', 'n64'][display] ?? 'native';
+    await h.page.setViewportSize({ width: 1000, height: 900 });
+    for (const asset of ['cottage-east', 'cottage-southwest', 'mill', 'mill-sails', 'odo-stall', 'ruined-home']) {
+      for (const [name, deg] of [['front', 0], ['three-quarter', 45], ['side', 90]]) {
+        const url = new URL('viewer.html', h.page.url() === 'about:blank' ? env.url : h.page.url());
+        url.search = `?asset=${asset}&panel=0&angle=${deg}&display=${mode}`;
+        await h.page.goto(url.href);
+        await h.until(() => window.embervale?.mode === 'viewer', 30000);
+        await h.wait(300);
+        await h.shot(`${asset}-${name}`);
+      }
+    }
+  },
+  /**
    * The Thornling (the golden set's first enemy, T49; docs/art.md): in the field idle, at the end of its windup (the tell),
    * mid-lunge, staggered and dying; then the model alone in the viewer from the front, three-quarter and side.
    */

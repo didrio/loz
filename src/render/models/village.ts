@@ -17,7 +17,7 @@ import type { Model } from './types';
  */
 
 /** Pieces gathered by surface; `model()` builds one kit mesh per surface and bakes them (they merge again in the world). */
-class Parts {
+export class Parts {
   private bins = new Map<SurfaceId | '', THREE.BufferGeometry[]>();
 
   add(surface: SurfaceId | '', ...pieces: THREE.BufferGeometry[]) {
@@ -34,11 +34,11 @@ class Parts {
 }
 
 /** A painted box (`bevel` 0 is a plain 12-triangle one) at (x, y, z), optionally turned. */
-const box = (w: number, h: number, d: number, color: number, x: number, y: number, z: number, rotation: Vec3 = [0, 0, 0], bevel = 0) =>
+export const box = (w: number, h: number, d: number, color: number, x: number, y: number, z: number, rotation: Vec3 = [0, 0, 0], bevel = 0) =>
   place(paint(bevelBox(w, h, d, bevel), color), x, y, z, rotation);
 
 /** A solid triangle (or any convex outline `[x, y]`) of thickness `depth`, standing across `axis`, centred on `at` along it. */
-function slab(outline: readonly (readonly [number, number])[], axis: 'x' | 'z', at: number, depth: number, color: number) {
+export function slab(outline: readonly (readonly [number, number])[], axis: 'x' | 'z', at: number, depth: number, color: number) {
   const a = at - depth / 2, b = at + depth / 2;
   return paint(extrudePath(outline, axis === 'x' ? [[a, 0, 0], [b, 0, 0]] : [[0, 0, a], [0, 0, b]]), color);
 }

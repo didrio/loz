@@ -10,6 +10,8 @@ import { buildSentinel } from './sentinel';
 import { buildShellback } from './shellback';
 import { buildThornling } from './thornling';
 import type { Model } from './types';
+import { buildMill, buildMillSails, buildStall } from './mill';
+import { buildRuin } from './ruins';
 import { buildBarrel, buildCottage, buildCrate, buildFenceSection, buildLanternPost, buildWell } from './village';
 import { buildPerson, buildWren, VILLAGER_COLORS } from './wren';
 
@@ -68,6 +70,11 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'lantern-post', kind: 'prop', tier: 'final', build: buildLanternPost, note: 'the glowing core is the world\'s' },
   { id: 'barrel', kind: 'prop', tier: 'final', build: buildBarrel },
   { id: 'crate', kind: 'prop', tier: 'final', build: buildCrate },
+  // The rest of the vignette (T51c): the windmill and its sails, Odo's stall, a ruined home (merged scenery).
+  { id: 'mill', kind: 'piece', tier: 'final', build: () => buildMill(), note: 'the tower\'s outside, door frame, lamp bracket, axle; the inside and the glowing lamp are the world\'s' },
+  { id: 'mill-sails', kind: 'piece', tier: 'final', build: buildMillSails, note: 'four lattice sails, turned about the hub by the world' },
+  { id: 'odo-stall', kind: 'piece', tier: 'final', build: buildStall, note: 'counter, striped awning, shelf, wares' },
+  { id: 'ruined-home', kind: 'piece', tier: 'final', build: () => buildRuin(1.3, 1), note: 'broken walls, a fallen shingle roof, charred rafters; jars are the world\'s' },
   // The gear (the Gear tab and the HUD's icons: render/icons.ts).
   { id: 'gear-sword', kind: 'prop', tier: 'rough', build: buildSwordItem, note: 'icon' },
   { id: 'gear-shield', kind: 'prop', tier: 'rough', build: buildShieldItem, note: 'icon' },
