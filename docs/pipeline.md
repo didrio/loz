@@ -111,7 +111,7 @@ return them beside the `Model` (the Shellback's `eyes` and `legs`, Wren's `coatM
 used in the registry, so a new model cannot be forgotten. **Adding a model:** write `render/models/<name>.ts`, register it
 (`tier: 'rough'`), run `npm run assets`. `piece` is scenery bigger than a prop (buildings, landmarks; dungeon rooms join with the dungeon look ticket):
 budget 3,000 triangles (T51b). Not models, so not registered: `BossArena` (a sealing flame ring, an effect) and the terrain. Scenery joins the registry as it gets
-its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledown's cottages (T51b, two `piece`s) and its well, fence section, lantern post, barrel and crate (`prop`s), then the mill, its sails, Odo's stall and a ruined home (T51c, four `piece`s). Every NPC is `buildHumanoid` with its own colours; the registry holds one stand-in (`villager`).
+its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledown's cottages (T51b, two `piece`s) and its well, fence section, lantern post, barrel and crate (`prop`s), then the mill, its sails, Odo's stall and a ruined home (T51c, four `piece`s). Every NPC is `buildVillager` (`render/models/villager.ts`, T53) with its own look: Pip (`pip`, final) and one stand-in for the adults (`villager`, Maren's look, rough until the villagers' group passes).
 
 **The validator** (`render/models/validate.ts`) builds every entry in Node and checks it:
 
@@ -167,6 +167,7 @@ parts per joint. Forms stand on y = 0 and are centred on x and z (a box on all t
 | `creaseNormals(g, deg)` | smooth normals inside the crease angle, hard edges beyond it | `creaseNormals(dome, 50)` |
 | `paint(g, colour)` | one palette colour into the vertices (anything else snaps to a swatch) | `paint(g, pal('wood'))` |
 | `paintRegion(g, pick)` | colour breakup: `pick(centre, normal)` returns a colour or `undefined` | `paintRegion(g, (c, n) => n.y > 0.8 ? pal('moss') : undefined)` |
+| `gradient(g, low, high, from?, to?)` | a smooth ramp of light over the height (multiplies, per vertex; paint first): no surface one flat colour | `gradient(paint(coat, c), 0.8, 1.06)` |
 | `crevice(g, shade)` | darkens undersides and wall feet; defaults are the scenery's `BAKED_SHADE` | `crevice(paint(g, c))` (paint first: it multiplies) |
 | `triangleCount(g or object)` | triangles in a geometry or under an object | `triangleCount(model.root)` |
 | `kitMesh(g, surface?)` | a mesh in the shared vertex-colour material (`kitMat`), optionally textured | `kitMesh(g, 'wood')` |
@@ -190,7 +191,7 @@ The chest (`render/models/props.ts`, 272 of its 300 triangles) is the first mode
 (`render/models/thornling.ts`, 800 of 1,200: an 80-face ball, thorns as `extrudePath` spikes curving back, a face of glow eyes, brows and a
 hinged jaw, five joints) the first creature; Wren (`render/models/wren.ts`, ten joints) the first person: the coat,
 blade and shield wood are `uniqueSurf(..., { vertexColors: true })` materials of their own in `animated`, the vertices painted white, so the
-game can still recolour, glow and flash them after the bake. **The recipe for every final pass: `/final-pass`.**
+game can still recolour, glow and flash them after the bake; the villagers (`render/models/villager.ts`, T53; Pip is the final one) the first NPCs: one body made of Wren's pieces (`person.ts`: the head, ears and nose, mitten hands, cuffed boots, eyes and brows; `k` scales them), an adult frame (the old humanoid's joints) and a child frame (a head 1.3× bigger, the same height), baked with the shared materials (a villager never flashes), every mesh tiled and graded; `VillagerRig` takes the `Npc`'s facts (`{ near, holding }`): the calm idle the villagers always had plus blinks, or Pip's shy one (hands clasped, eyes down, a peek at Wren every few seconds while near; hugging Button once returned). The `Npc` keeps turning to face Wren, its collider and blob. **The recipe for every final pass: `/final-pass`.**
 
 ## Visual checks
 

@@ -23,11 +23,11 @@ when it's near.
   1. **Foundations:** done (T39, the Gear tab and icons, 2026-11-08; T38, the period UI; T27–T33 are done: effects presets, look loop, Display setting, palette, shading and textures, atmosphere and blob shadows, the model registry and validator, T34 the viewer and contact sheet, T35 the modeling kit and `bakeRig`, T36 the N64 sound chain, T37 touch controls refined, proven on the chest; T40 and T43 textured the static world; T41 the living).
   2. **The golden set**, one Final-pass ticket each, locked only when the owner approves (the first ones
      plan · opusplan · high, as they define the style): a Thornling → Wren with their full animation set → the starter-area
-     entrance vignette (phone frame rate checked) → the prop set (chest, crate, doors, jar, sign: done and approved 2026-11-08) → Pip → the Hollow
+     entrance vignette (phone frame rate checked) → the prop set (chest, crate, doors, jar, sign: done and approved 2026-11-08) → Pip (done and approved 2026-11-08, T53) → the Hollow
      Lamplighter → Gravelheart → one shrine room (puzzles unchanged). Each captures its reference renders (art.md
      "The golden set"). After the second final pass, write a `/final-pass` skill (CLAUDE.md: recipes the second time).
   3. **Everything else, final passes** (auto · sonnet, following the golden set): each remaining enemy (Gloomwisp, Dozing
-     Sentinel, Shellback, Cragstalker, the blight's strays, Murmurbuds); the NPCs, grouped (they share `buildHumanoid`);
+     Sentinel, Shellback, Cragstalker, the blight's strays, Murmurbuds); the NPCs, grouped (they share `buildVillager`, T53; Pip is final, the others wait on their own touches);
      props, interactables and pickups (doors, wakestones, switches, plates, jars, signs, keys, hearts, gems, the bells and
      posts, the doll, the glove, the shield, the Heart Vessel, the prism); each valley sub-region with its atmosphere
      (Thistledown and the mill, the ruins, the grove and bridge, the hollow, the gorge, the camp and the Northpass, the

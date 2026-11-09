@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T59**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T60**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -41,7 +41,7 @@ the workflow. These build the shared infrastructure; the golden set and the rebu
 every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere waits for its redesign.
 
 **The golden set** (owner, 2026-11-08; [roadmap.md](roadmap.md) "The N64 look rebuild" step 2): each is a Final pass, in this order, locked only when the owner approves. Written ahead at the owner's request: when starting one, re-read it against what the previous one taught.
-- **Every later final pass:** follow `/final-pass` (`.claude/skills/final-pass/SKILL.md`).
+- **Every later final pass:** follow `/final-pass` (`.claude/skills/final-pass/SKILL.md`). **No surface one flat colour** (owner, 2026-11-08, T53; art.md "Rendering rules" → Textures): every kit mesh names a surface tile, and the big forms get the kit's `gradient`.
 - **"The behaviour file untouched"** in every ticket below means (owner's call, 2026-11-08, T49): its posing lines move into the model's rig (pipeline.md "The rig convention", the Thornling as example) and the behaviour file then only hands the rig its state; stats, timings, AI and hurtboxes stay byte-identical, and the existing tests pass unedited.
 - **Renders:** before touching the model, add a look scene for it (like `thornling`: in-game states, then the viewer with `angle=0/45/90`) and capture it in Native and `--display n64`. Copy the shots to the scratchpad as the "before" set.
 
@@ -52,16 +52,16 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
 
-### T53: Final pass: Pip, the NPC (golden set 5)
-**Run:** plan · opusplan · high
-**Why:** One NPC on the shared humanoid shows how every villager gets finished; groups follow.
+### T59: No flat colour: tile and grade the golden set and the props
+**Run:** auto · sonnet · medium
+**Why:** The owner's rule (2026-11-08, T53): no object is one flat solid colour; every surface looks textured and/or softly graded, props included (the bricks read well; plain kit pieces don't). The villagers already follow it; the earlier golden set and the props were made before it.
 **Done when:**
-- Pip's look by colours, proportions and a readable face and prop; her idle life; the humanoid's changes keep every other NPC working.
-- `tier: 'final'` in the registry; within budget; every colour a `pal()` name; built with the kit and `bakeRig`; the behaviour file untouched in the diff (silhouette, scale, joints, hurtboxes, timings frozen; ask the owner first if one must change).
-- Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
-**Read first:** render/characters.ts, render/models/wren.ts `buildPerson`, content/village.ts (Pip); pipeline.md "Final pass", "The rig convention" and "The modeling kit"; art.md "The golden set" and the style rules; the model's file in `render/models/` and its behaviour file; `render/models/props.ts` `buildChest` (the approved example of the kit).
-**Verify:** `npm run check` (the validator fails a final asset's findings); the unit tests and smoke scenarios for it pass **unchanged**; `npm run look -- contact` and the asset viewer in Native and N64 mode, before and after (looker). smoke `village`.
-**Notes:** Wren (T50) left `buildHumanoid` alone and got their own kit builder. Build the new NPC body from Wren's pieces and rig (proportions, mitten hands, cuffed boots, the geometry face, the blink and idle breathing in `WrenRig`) rather than a second design, so the cast matches; every NPC still poses inline in `world/objects.ts` `Npc`, which then hands a small rig its state.
+- Every kit mesh in the finished models names a surface (`kitMesh(g, '<surface>')`; the eyes and small dark details too), and the big forms carry the kit's `gradient` (a few percent, darker toward the foot): the chest, the Thornling, Wren, the vignette's pieces (`nature.ts`, `village.ts`, `mill.ts`, `ruins.ts`), the prop set (`props.ts`, `doors.ts`).
+- A test per file (or one sweep over the registry's `final` entries, like `livingTextures.test.ts` "people") proves no mesh is untextured; glows and recoloured `animated` materials are the only exceptions, named.
+- Layout, silhouettes, colliders and triangle counts unchanged (`world/overworld/colliders.test.ts` passes unedited); behaviour untouched.
+- No new draw calls: `bakeRig` makes one mesh per joint per surface, so a newly tiled piece takes a surface its joint already has where it can (`npm run assets` mesh counts, the look scenes' draw-call budgets).
+**Read first:** art.md "Rendering rules" (Textures); pipeline.md "The modeling kit" (`gradient`, `kitMesh`); `render/models/villager.ts` (the example: every `kitMesh` with a surface, `gradient` on the big forms); `game/livingTextures.test.ts` "people".
+**Verify:** `npm run check`; `looker` on `chest`, `thornling`, `wren`, `vignette`, `vignetteModels`, `props`, `contact` (Native and N64) against their baselines: the change is texture and shading only, so the owner approves the new baselines.
 
 ### T54: Final pass: the Hollow Lamplighter (golden set 6)
 **Run:** plan · opusplan · high

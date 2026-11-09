@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { clamp, easeOut, mix, mulberry32 } from '../../core/math';
 import { bakeRig } from '../bakeRig';
-import { buildHumanoid, type Humanoid, type HumanoidColors } from '../characters';
 import { bevelBox, crevice, kitMesh, lathe, lowSphere, merge, paint, paintRegion, place, taper, wobble } from '../kit';
+import { browPieces, cuffedBoot, earsAndNose, eyePieces, mittenHand, notch, skull, squeeze } from './person';
 import { uniqueSurf } from '../materials';
 import { pal } from '../palette';
 import type { SurfaceId } from '../textures';
@@ -38,16 +38,6 @@ export const SHIELD_SURF_ROT = new THREE.Quaternion().setFromEuler(new THREE.Eul
 export const SURF_LIFT = 0.12;
 /** Where the pivot (hips) rests above the feet. */
 export const PIVOT_Y = 0.9;
-
-/** A villager's look: Maren's (the registry's stand-in for every NPC; each NPC is `buildHumanoid` with its own colours). */
-export const VILLAGER_COLORS: HumanoidColors = { skin: 0xe8b98f, hair: 0xc9c3b8, coat: 0x6b4c8a, pants: 0x3b3040, boots: 0x3a2a1e, accent: 0xd9a531 };
-
-/** A person for the registry: the humanoid, its joints named. */
-export function buildPerson(colors: HumanoidColors, scale = 1): Model<{ pivot: THREE.Group; head: THREE.Group; armL: THREE.Group; armR: THREE.Group; legL: THREE.Group; legR: THREE.Group }> & { humanoid: Humanoid } {
-  const humanoid = buildHumanoid(colors, scale);
-  const { root, pivot, head, armL, armR, legL, legR } = humanoid;
-  return { root, joints: { pivot, head, armL, armR, legL, legR }, flashMats: [], humanoid };
-}
 
 export type WrenJoints = {
   pivot: THREE.Group;
@@ -85,29 +75,6 @@ const C = {
   grip: pal('earth', 0),
   plank: pal('wood', 1),
 };
-
-/** Squeezes a piece along z (a chest is not round), keeping its faces flat. */
-function squeeze(g: THREE.BufferGeometry, z: number) {
-  const out = place(g);
-  out.scale(1, 1, z);
-  out.computeVertexNormals();
-  return out;
-}
-
-/** Raises every other vertex on the ring at height `y` by `depth`: a notched (tabbed) hem. */
-function notch(g: THREE.BufferGeometry, y: number, depth: number, sides: number) {
-  const out = place(g);
-  const pos = out.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    if (Math.abs(pos.getY(i) - y) > 1e-4) continue;
-    const x = pos.getX(i), z = pos.getZ(i);
-    if (x * x + z * z < 1e-6) continue;
-    const k = Math.round(Math.atan2(z, x) / ((Math.PI * 2) / sides));
-    if (((k % 2) + 2) % 2 === 1) pos.setY(i, y + depth);
-  }
-  out.computeVertexNormals();
-  return out;
-}
 
 /** A mesh in one of Wren's own materials (the coat, the blade, the shield's wood): vertex colours times the material's. */
 function own(g: THREE.BufferGeometry, material: THREE.MeshLambertMaterial, surface?: SurfaceId) {
@@ -181,10 +148,8 @@ export function buildWren(seed?: number): Model<WrenJoints> & {
     const g = new THREE.Group();
     g.position.set(s * 0.14, 0.85, 0);
     const pants = paint(place(taper(0.09, 0.11, 0.62, 6), 0, -0.62, 0), C.pants);
-    const boot = paintRegion(paint(place(bevelBox(0.24, 0.29, 0.38, 0.055), s * 0.01, -0.71, 0.05), C.boots), (c) => (c.y < -0.82 ? C.sole : undefined));
-    const cuff = paint(place(bevelBox(0.265, 0.08, 0.29, 0.025), s * 0.01, -0.55, 0.0), C.cuff);
     g.add(kitMesh(crevice(merge(pants), { foot: 1 }), 'cloth'));
-    g.add(kitMesh(crevice(merge(boot, cuff), { foot: 0.8, footHeight: 0.3 }), 'leather'));
+    g.add(kitMesh(cuffedBoot(s, C), 'leather'));
     body.add(g);
     return g;
   };
@@ -201,9 +166,7 @@ export function buildWren(seed?: number): Model<WrenJoints> & {
     g.add(own(crevice(paintRegion(paint(merge(shoulder, sleeve), C.white), (c) => (c.y < -0.33 ? C.coatShade : undefined)), { foot: 1 }), coatMat, 'cloth'));
     const undershirt = paint(place(taper(0.075, 0.083, 0.2, 6), 0, -0.52, 0), C.under);
     g.add(kitMesh(crevice(merge(undershirt, paint(place(taper(0.095, 0.088, 0.15, 6), 0, -0.6, 0), C.leather)), { foot: 1 }), 'leather'));
-    const hand = place(bevelBox(0.145, 0.19, 0.155, 0.04), 0, -0.69, 0);
-    const thumb = place(bevelBox(0.055, 0.085, 0.065, 0), -s * 0.068, -0.64, 0.06);
-    g.add(kitMesh(crevice(paint(merge(hand, thumb), C.skin), { foot: 1 }), 'skin'));
+    g.add(kitMesh(mittenHand(s, C.skin), 'skin'));
     body.add(g);
     return g;
   };
@@ -214,14 +177,11 @@ export function buildWren(seed?: number): Model<WrenJoints> & {
   const head = new THREE.Group();
   head.position.y = 1.88;
   body.add(head);
-  const skull = squeeze(lathe([[0, -0.355], [0.2, -0.325], [0.31, -0.2], [0.345, -0.02], [0.33, 0.12], [0.26, 0.245], [0.14, 0.32], [0, 0.335]], 10), 0.95);
-  const face = paintRegion(paint(skull, C.skin), (c, n) => {
+  const face = paintRegion(paint(skull(), C.skin), (c, n) => {
     if (c.y > 0.15 || (n.z < -0.2 && c.y > -0.25)) return C.hair;
     return undefined;
   });
-  const ears = [-1, 1].map((s) => paint(place(squeeze(lowSphere(0.065, 6, 4), 0.6), s * 0.335, -0.04, -0.01), C.skin));
-  const nose = paint(place(taper(0.035, 0, 0.045, 4, 0.8), 0, -0.08, 0.315, [Math.PI / 2, 0, 0]), C.cheek);
-  head.add(kitMesh(crevice(merge(face, ...ears, nose), { foot: 1 }), 'skin'));
+  head.add(kitMesh(crevice(merge(face, ...earsAndNose(C.skin, C.cheek)), { foot: 1 }), 'skin'));
   const cap = place(lathe([[0.37, 0], [0.355, 0.12], [0.29, 0.25], [0.16, 0.34], [0, 0.37]], 10, false), 0, 0, -0.03, [-0.45, 0, 0]);
   const fringe = [[-0.15, 0.17, 0.22], [-0.04, 0.15, 0.26], [0.07, 0.15, 0.24], [0.17, 0.12, 0.18]].map(([x, len, tilt], i) =>
     place(taper(0.075, 0.005, len, 4, 0.6), x, 0.27 - (i % 2) * 0.02, 0.255, [Math.PI - tilt - 0.35, 0, -x * 0.9]),
@@ -232,20 +192,11 @@ export function buildWren(seed?: number): Model<WrenJoints> & {
   const eyes = new THREE.Group();
   eyes.position.set(0, -0.02, 0.305);
   head.add(eyes);
-  eyes.add(
-    kitMesh(
-      merge(
-        ...[-1, 1].flatMap((s) => [
-          paint(place(bevelBox(0.075, 0.125, 0.04, 0), s * 0.125, 0, -0.012, [0, s * 0.32, 0]), C.eye),
-          paint(place(bevelBox(0.024, 0.03, 0.02, 0), s * 0.125 + 0.016, 0.03, 0.012, [0, s * 0.32, 0]), C.glint),
-        ]),
-      ),
-    ),
-  );
+  eyes.add(kitMesh(eyePieces(C.eye, C.glint)));
   const brows = new THREE.Group();
   brows.position.set(0, 0.11, 0.295);
   head.add(brows);
-  brows.add(kitMesh(merge(...[-1, 1].map((s) => paint(place(bevelBox(0.12, 0.035, 0.045, 0), s * 0.125, 0, -0.01, [0, s * 0.3, -s * 0.1]), C.hair))), 'hide'));
+  brows.add(kitMesh(browPieces(C.hair), 'hide'));
 
   // ---- the sword, in the right hand, the blade continuing the line of the arm.
   const sword = new THREE.Group();

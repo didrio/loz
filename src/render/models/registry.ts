@@ -14,7 +14,8 @@ import type { Model } from './types';
 import { buildMill, buildMillSails, buildStall } from './mill';
 import { buildRuin } from './ruins';
 import { buildBarrel, buildCottage, buildCrate, buildFenceSection, buildLanternPost, buildWell } from './village';
-import { buildPerson, buildWren, VILLAGER_COLORS } from './wren';
+import { buildVillager, VILLAGERS } from './villager';
+import { buildWren } from './wren';
 
 /**
  * Every model in the game (docs/pipeline.md, "The registry and validator"). One entry per model: an id, what kind of thing
@@ -46,11 +47,14 @@ export const GOLDEN_SET: readonly string[] = [
   'mill', 'mill-sails', 'odo-stall', 'ruined-home',
   // The rest of the prop set (T52); the chest and the crate are above.
   'hinged-door', 'stone-door', 'jar', 'sign',
+  // Pip, the first NPC (T53): the villagers' body and rig.
+  'pip',
 ];
 
 export const ASSETS: readonly AssetEntry[] = [
   { id: 'wren', kind: 'player', tier: 'final', build: () => buildWren(1), note: 'tunic, sword and shield; posed by their rig' },
-  { id: 'villager', kind: 'npc', tier: 'rough', build: () => buildPerson(VILLAGER_COLORS), note: 'the humanoid every NPC shares (Maren\'s colours)' },
+  { id: 'pip', kind: 'npc', tier: 'final', build: () => buildVillager(VILLAGERS.pip, 1), note: 'the child frame; Button shown in her arms once returned' },
+  { id: 'villager', kind: 'npc', tier: 'rough', build: () => buildVillager(VILLAGERS.maren, 1), note: 'the body every adult villager shares (Maren\'s look)' },
   { id: 'thornling', kind: 'enemy', tier: 'final', build: buildThornling },
   { id: 'gloomwisp', kind: 'enemy', tier: 'rough', build: buildGloomwisp },
   { id: 'dozing-sentinel', kind: 'enemy', tier: 'rough', build: buildSentinel },

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { bevelBox, capsule, creaseNormals, crevice, extrudePath, kitMesh, lathe, lowSphere, merge, mirror, paint, paintRegion, place, taper, triangleCount, wobble } from './kit';
+import { bevelBox, capsule, creaseNormals, crevice, extrudePath, gradient, kitMesh, lathe, lowSphere, merge, mirror, paint, paintRegion, place, taper, triangleCount, wobble } from './kit';
 import { isSharedMaterial } from './materials';
 import { pal, snap } from './palette';
 
@@ -192,6 +192,25 @@ describe('colour', () => {
     expect(bottom).toBeLessThan(base * 0.75);
     expect(wallFoot).toBeLessThan(wallHead);
     expect(wallHead).toBeCloseTo(base, 5);
+  });
+
+  it('gradient ramps the light from the foot to the top, smoothly and keeping each region\'s colour', () => {
+    const painted = paintRegion(paint(bevelBox(1, 2, 1, 0), pal('chalk', 2)), (c) => (c.x > 0.4 ? pal('rose', 2) : undefined));
+    const g = gradient(painted, 0.8, 1.1);
+    const p = g.attributes.position, before = painted.attributes.color, after = g.attributes.color;
+    for (let i = 0; i < p.count; i++) {
+      const k = 0.8 + 0.3 * ((p.getY(i) + 1) / 2);
+      expect(after.getX(i)).toBeCloseTo(before.getX(i) * k, 5);
+      expect(after.getZ(i)).toBeCloseTo(before.getZ(i) * k, 5);
+    }
+    // An explicit range clamps outside it.
+    const r = gradient(paint(bevelBox(1, 2, 1, 0), pal('chalk', 2)), 0.5, 1, 0, 0.5);
+    const base = new THREE.Color(pal('chalk', 2)).r;
+    for (let i = 0; i < r.attributes.position.count; i++) {
+      const y = r.attributes.position.getY(i);
+      if (y < 0) expect(r.attributes.color.getX(i)).toBeCloseTo(base * 0.5, 5);
+      if (y > 0.5) expect(r.attributes.color.getX(i)).toBeCloseTo(base, 5);
+    }
   });
 });
 

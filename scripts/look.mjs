@@ -722,6 +722,75 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('pip-night');
   },
+  /**
+   * The villagers (golden set 5, T53; docs/art.md): Pip close up with Wren far off (her idle), with Wren near (the peek),
+   * holding Button (once returned), and the five of them in the square; then the models alone in the viewer
+   * (`LOOK_VILLAGERS=id,id` picks which).
+   */
+  async villagers(h) {
+    await h.newGame();
+    await h.game(() => {
+      window.embervale.player.invuln = 1e6;
+      window.embervale.state.hours = 12;
+    });
+    // Pip's spot, and a camera `dist` in front of her (along her base facing toward the square), `side` to her left.
+    const pip = await h.game(() => {
+      const n = window.embervale.area.npcs.pip;
+      return { x: n.x, y: n.y, z: n.z, yaw: n.baseYaw };
+    });
+    const f = { x: Math.sin(pip.yaw), z: Math.cos(pip.yaw) };
+    const view = (dist, side, height, look = 0.62) =>
+      h.game(([pip, f, dist, side, height, look]) => {
+        const g = window.embervale, T = g.player.pos.constructor;
+        g.rig.shot(new T(pip.x + f.x * dist - f.z * side, pip.y + height, pip.z + f.z * dist + f.x * side), new T(pip.x, pip.y + look, pip.z), true);
+      }, [pip, f, dist, side, height, look]);
+    // Wren far behind the camera: Pip keeps her base facing and her idle.
+    await h.teleport(pip.x + f.x * 12, pip.z + f.z * 12, pip.yaw + Math.PI);
+    await h.wait(4500); // the area's name card
+    await view(3.1, 1.0, 1.0);
+    await h.wait(400);
+    await h.shot('pip-idle');
+    // Wren close in front of her: she turns to them and peeks.
+    await h.teleport(pip.x + f.x * 2.6 + f.z * 1.2, pip.z + f.z * 2.6 - f.x * 1.2, pip.yaw + Math.PI);
+    await h.wait(1500);
+    await view(2.8, -2.0, 1.1);
+    await h.wait(300);
+    await h.shot('pip-near');
+    // Button returned: she hugs her doll.
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.set('village.dollFound');
+      g.state.set('village.dollReturned');
+      g.area.npcs.pip.hold?.(true);
+    });
+    await h.teleport(pip.x + f.x * 12, pip.z + f.z * 12, pip.yaw + Math.PI);
+    await h.wait(1500);
+    await view(3.1, 1.0, 1.0);
+    await h.wait(400);
+    await h.shot('pip-doll');
+    // The five of them around the well, from above the square's southeast side.
+    await h.teleport(-50, -45, Math.atan2(-12, -13));
+    await h.wait(1200);
+    await h.game(() => {
+      const g = window.embervale, T = g.player.pos.constructor, y = g.player.pos.y;
+      g.rig.shot(new T(-49, y + 6, -44), new T(-61, y + 0.5, -56), true);
+    });
+    await h.wait(400);
+    await h.shot('square');
+
+    const mode = ['native', 'performance', 'n64'][display] ?? 'native';
+    await h.page.setViewportSize({ width: 900, height: 900 });
+    for (const asset of (process.env.LOOK_VILLAGERS ?? 'pip,villager').split(',')) {
+      for (const [name, deg] of [['front', 0], ['three-quarter', 45], ['side', 90]]) {
+        const url = new URL('viewer.html', h.page.url());
+        url.search = `?asset=${asset}&panel=0&angle=${deg}&display=${mode}`;
+        await h.page.goto(url.href);
+        await h.until(() => window.embervale?.mode === 'viewer', 30000);
+        await h.wait(400);
+        await h.shot(`${asset}-${name}`);
+      }
+    }
+  },
   /** The bigger cottages from the square, Odo's stall, Wren in the Stoneward Tunic, the mill's door and its room (the ground floor). */
   async mill(h) {
     await h.newGame();

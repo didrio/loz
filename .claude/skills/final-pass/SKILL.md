@@ -11,7 +11,8 @@ opusplan · high for a golden-set member or a boss; auto · sonnet · high for t
 **Read first:** docs/pipeline.md "Final pass", "The rig convention", "The modeling kit"; docs/art.md "Rendering rules",
 "Shape language", "The golden set"; the model's file and its behaviour file (grep the pose code if it is big). The
 examples: `render/models/thornling.ts` (a creature: `ThornlingRig`, its test) and `render/models/wren.ts` (a
-humanoid: `WrenRig`, the crossfade, its own recoloured materials, its test).
+humanoid: `WrenRig`, the crossfade, its own recoloured materials, its test); `render/models/villager.ts` (an NPC: the shared
+`person.ts` pieces, `VillagerRig`, the `Npc` handing it `{ near, holding }`).
 
 1. **Ask the owner first** (one AskUserQuestion, up front) whatever is a design call: the look of a character
    (hair, face, outfit, who they are: Wren's gender is deliberately undecided), how far to push proportions toward art.md's chunky shapes, which details to add. The frozen
@@ -21,7 +22,7 @@ humanoid: `WrenRig`, the crossfade, its own recoloured materials, its test).
    `update` for its pose method alone and set the state's fields by hand (the `wren` scene). Capture Native and
    `--display n64`; copy `look-output/<scene>-*.png` to the scratchpad as "before". Wait out the area's name card.
 3. **The model** with the kit: forms first (`lathe`, `taper`, `capsule`, `lowSphere`, `bevelBox`, `extrudePath`), then
-   `paint`/`paintRegion` with `pal()` names, `wobble` the big forms a little, `crevice` last (`{ foot: 1 }` for parts
+   `paint`/`paintRegion` with `pal()` names, `wobble` the big forms a little, `gradient` them (no surface is one flat colour, and every `kitMesh` names a surface tile: owner, 2026-11-08), `crevice` last (`{ foot: 1 }` for parts
    that don't stand on the ground). Round forms get more facets, never smooth normals. Keep every joint the behaviour
    uses, at the same place, with the same rotation order; new joints only the rig touches are fine (eyes, brows, a jaw). `bakeRig` at the end. Materials the game recolours, glows or flashes by hand stay unique
    (`uniqueSurf(surface, pal(...), { vertexColors: true })`, the vertices painted white) and go in `animated`, so the

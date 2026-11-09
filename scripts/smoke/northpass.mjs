@@ -125,7 +125,7 @@ export default async function run(t) {
   await step('Thistledown without its grown-ups: only the kids, Pip asks, Odo\'s stall takes the gems on trust', async () => {
     const v = await game(() => {
       const g = window.embervale, n = g.area.npcs;
-      return { gone: ['maren', 'tobin', 'odo'].filter((k) => !n[k].present && !n[k].h.root.visible), kids: n.lark.present && n.pip.present };
+      return { gone: ['maren', 'tobin', 'odo'].filter((k) => !n[k].present && !n[k].model.root.visible), kids: n.lark.present && n.pip.present };
     });
     check(v.gone.length === 3 && v.kids, `gone ${v.gone}, kids ${v.kids}`);
     const pip = await game(() => window.embervale.area.interactables.find((i) => i.id === 'npc.pip'));

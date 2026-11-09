@@ -1,29 +1,35 @@
 import * as THREE from 'three';
 import { damp, lerpAngle } from '../core/math';
 import { Layer, type RAPIER } from '../core/physics';
-import { buildHumanoid, type Humanoid, type HumanoidColors } from '../render/characters';
 import { fadeInFog, uniqueSurf } from '../render/materials';
 import { buildHingedDoor, buildStoneDoor } from '../render/models/doors';
 import { buildBush, buildChest, buildGreatLantern, buildHeartVessel, buildShieldPickup } from '../render/models/props';
+import type { Model } from '../render/models/types';
+import { buildVillager, type VillagerJoints, type VillagerLook, type VillagerRig } from '../render/models/villager';
 import { GroundShadow } from '../render/shapes';
 import type { AreaBuilder } from './area';
 
-/** A villager who stands in place, breathes, and turns to face you when you come close. */
+/** A villager who stands in place, breathes, and turns to face you when you come close (their look and idle: `VillagerRig`). */
 export class Npc {
-  readonly h: Humanoid;
+  readonly model: Model<VillagerJoints>;
+  private readonly rig: VillagerRig;
   private yaw: number;
   private t = Math.random() * 10;
   private readonly collider: RAPIER.Collider;
   /** False once the villager is gone (content decides who and when). */
   present = true;
+  /** Holding their doll (Pip, once Button is back: content/village.ts). */
+  holding = false;
   private readonly blob: GroundShadow;
 
-  constructor(b: AreaBuilder, colors: HumanoidColors, readonly x: number, readonly z: number, private readonly y: number, private readonly baseYaw: number, scale = 1) {
-    this.h = buildHumanoid(colors, scale);
+  constructor(b: AreaBuilder, look: VillagerLook, readonly x: number, readonly z: number, private readonly y: number, private readonly baseYaw: number, scale = 1) {
+    const m = buildVillager(look, this.t, scale);
+    this.model = m;
+    this.rig = m.rig;
     this.yaw = baseYaw;
-    this.h.root.position.set(x, y, z);
-    this.h.root.rotation.y = baseYaw;
-    b.dynamic(this.h.root);
+    this.model.root.position.set(x, y, z);
+    this.model.root.rotation.y = baseYaw;
+    b.dynamic(this.model.root as THREE.Group);
     this.collider = b.cylinder(x, y + 0.9, z, 0.9, 0.45, Layer.Prop);
     // Villagers never leave the spot they stand on: one blob, placed again each frame only so it can give way to the sun's shadow.
     this.blob = new GroundShadow(b.dynamicGroup, 0.5 * scale, 'character');
@@ -32,23 +38,24 @@ export class Npc {
 
   setPresent(on: boolean) {
     this.present = on;
-    this.h.root.visible = on;
+    this.model.root.visible = on;
     if (on) this.blob.place(this.x, this.y, this.z, this.y);
     else this.blob.mesh.visible = false;
     this.collider.setEnabled(on);
   }
 
+  /** Holds (or puts down) their doll. */
+  hold(on: boolean) {
+    this.holding = on;
+  }
+
   update(dt: number, player: THREE.Vector3) {
-    this.t += dt;
     if (this.present) this.blob.place(this.x, this.y, this.z, this.y);
     const near = Math.hypot(player.x - this.x, player.z - this.z) < 7;
     const target = near ? Math.atan2(player.x - this.x, player.z - this.z) : this.baseYaw;
     this.yaw = lerpAngle(this.yaw, target, damp(5, dt));
-    this.h.root.rotation.y = this.yaw;
-    this.h.pivot.position.y = 0.9 + Math.sin(this.t * 2) * 0.015;
-    this.h.armL.rotation.x = Math.sin(this.t * 1.3) * 0.08;
-    this.h.armR.rotation.x = -Math.sin(this.t * 1.3) * 0.08;
-    this.h.head.rotation.z = Math.sin(this.t * 0.7) * 0.06;
+    this.model.root.rotation.y = this.yaw;
+    this.rig.update(dt, { near, holding: this.holding });
   }
 }
 

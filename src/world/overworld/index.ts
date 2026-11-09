@@ -20,6 +20,7 @@ import { buildRuins } from './ruins';
 import { buildBlightGrowths, scarTouch, thornTouch } from './blight';
 import { buildBounds, buildTerrain, buildWater, rectBakeRegion, VALLEY_RECT } from './terrain';
 import { buildVillage } from './village';
+import { VILLAGERS } from '../../render/models/villager';
 
 /**
  * Emberfield, the valley at the center of the game: the field, Thistledown Village, the
@@ -144,22 +145,17 @@ export class Overworld implements Area {
     this.sigil = new SigilLook(b, 'sigil.hollow', HOLLOW.x + 4, HOLLOW.floor, HOLLOW.z) // beside the Heart Vessel, not inside it;
     this.sigil.setPresent(false);
 
-    const npc = (x: number, z: number, yaw: number, scale: number, colors: ConstructorParameters<typeof Npc>[1]) =>
-      new Npc(b, colors, x, z, terrainHeight(x, z), yaw, scale);
+    const npc = (x: number, z: number, yaw: number, scale: number, look: ConstructorParameters<typeof Npc>[1]) =>
+      new Npc(b, look, x, z, terrainHeight(x, z), yaw, scale);
     this.npcs = {
-      maren: npc(VILLAGE.x + 3.5, VILLAGE.z + 2.5, Math.PI * 0.25, 0.94,
-        { skin: 0xe8b98f, hair: 0xc9c3b8, coat: 0x6b4c8a, pants: 0x3b3040, boots: 0x3a2a1e, accent: 0xd9a531 }),
-      tobin: npc(VILLAGE.x - 17, VILLAGE.z + 4, Math.PI / 2, 1.06,
-        { skin: 0xd99a6c, hair: 0xb8662a, coat: 0x8a6b3a, pants: 0x4a3a2a, boots: 0x2e2018, accent: 0xe8dfc4 }),
+      maren: npc(VILLAGE.x + 3.5, VILLAGE.z + 2.5, Math.PI * 0.25, 0.94, VILLAGERS.maren),
+      tobin: npc(VILLAGE.x - 17, VILLAGE.z + 4, Math.PI / 2, 1.06, VILLAGERS.tobin),
       // Behind his counter, facing east to the square.
-      odo: npc(STALL.x - 1.3, STALL.z, Math.PI / 2, 1.0,
-        { skin: 0xc98a5e, hair: 0x2e2a28, coat: 0x3f6f8a, pants: 0x3a3a48, boots: 0x2e2018, accent: 0xd9a531 }),
+      odo: npc(STALL.x - 1.3, STALL.z, Math.PI / 2, 1.0, VILLAGERS.odo),
       // A small kid on the far side of the well from Maren, facing the square (shield surfing).
-      lark: npc(VILLAGE.x - 3, VILLAGE.z + 4.5, Math.PI * 0.8, 0.66,
-        { skin: 0xf0c49a, hair: 0x7a4a24, coat: 0x5e8a4a, pants: 0x6b5a3a, boots: 0x3a2a1e, accent: 0xe0b84a }),
+      lark: npc(VILLAGE.x - 3, VILLAGE.z + 4.5, Math.PI * 0.8, 0.66, VILLAGERS.lark),
       // Smaller still, east of the well by the standing cottage, looking across the square (her doll: content/village.ts).
-      pip: npc(VILLAGE.x + 10.2, VILLAGE.z + 2.6, Math.atan2(-10.2, -2.6), 0.58,
-        { skin: 0xe6b48c, hair: 0x2a1c14, coat: 0xb5566a, pants: 0x5a4048, boots: 0x3a2a1e, accent: 0xf0d9a0 }),
+      pip: npc(VILLAGE.x + 10.2, VILLAGE.z + 2.6, Math.atan2(-10.2, -2.6), 0.58, VILLAGERS.pip),
     };
     // Its front faces down the grove road (which arrives from the southwest), locked until
     // Maren hands over the key.

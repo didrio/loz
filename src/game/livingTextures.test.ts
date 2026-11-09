@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics } from '../core/physics';
-import { buildHumanoid } from '../render/characters';
-import { cloneMaterial, isSharedMaterial, mat, surf, uniqueMat, uniqueSurf } from '../render/materials';
+import { cloneMaterial, isSharedMaterial, surf, uniqueMat, uniqueSurf } from '../render/materials';
+import { buildVillager, VILLAGERS } from '../render/models/villager';
 import { Cragstalker } from './cragstalker';
 import { Thornling } from './enemies';
 import { flatGround } from './enemyTestEnv';
@@ -61,19 +61,20 @@ describe('textured materials of their own (T41)', () => {
 });
 
 describe('people', () => {
-  const h = buildHumanoid({ skin: 0xf0c49c, hair: 0x2e2018, coat: 0x3a5a8a, pants: 0x4a4038, boots: 0x5a3a22, accent: 0x2aa198 });
+  const villagers = Object.values(VILLAGERS).map((look) => buildVillager(look, 1).root);
 
-  it('wear cloth, leather, skin and hair, with only the eyes left plain', () => {
-    const surfaces = new Set(textured(h.root).map((m) => (m.material as THREE.Material).userData.surface));
-    expect([...surfaces].sort()).toEqual(['cloth', 'hide', 'leather', 'skin']);
-    const plain: THREE.Mesh[] = [];
-    h.root.traverse((o) => o instanceof THREE.Mesh && !(o.material as THREE.Material).userData.surface && plain.push(o));
-    expect(plain.length).toBe(2); // the two eyes
-    expect(plain.every((m) => (m.material as THREE.MeshLambertMaterial).color.getHex() === mat(0x1b1410).color.getHex())).toBe(true);
+  it('wear cloth, leather, skin and hair, and nothing is one flat colour: every mesh wears a tile (owner, 2026-11-08)', () => {
+    for (const root of villagers) {
+      const surfaces = new Set(textured(root).map((m) => (m.material as THREE.Material).userData.surface));
+      expect([...surfaces].sort()).toEqual(['cloth', 'hide', 'leather', 'skin']);
+      const plain: THREE.Mesh[] = [];
+      root.traverse((o) => o instanceof THREE.Mesh && !(o.material as THREE.Material).userData.surface && plain.push(o));
+      expect(plain).toEqual([]);
+    }
   });
 
   it('can be projected: every curved piece carries its faces\' normals', () => {
-    expectProjectable(textured(h.root));
+    for (const root of villagers) expectProjectable(textured(root));
   });
 });
 

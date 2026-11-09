@@ -296,6 +296,28 @@ describe('overworld content', () => {
     area.dispose();
   });
 
+  it('Pip holds Button once Wren brings her back, and still does after a load', async () => {
+    const area = new Overworld(physics);
+    const st = new GameState();
+    const { api } = fakeApi(area, physics, st);
+    const { scripts, restore } = overworldContent(area);
+    restore(st);
+    expect(area.npcs.pip.holding).toBe(false);
+    st.set('hasSword');
+    await scripts['jar.doll'](api);
+    expect(area.npcs.pip.holding).toBe(false); // found, not yet given back
+    await scripts['npc.pip'](api);
+    expect(st.has('village.dollReturned')).toBe(true);
+    expect(area.npcs.pip.holding).toBe(true);
+    expect(area.npcs.lark.holding).toBe(false);
+    area.dispose();
+
+    const loaded = new Overworld(physics);
+    overworldContent(loaded).restore(st);
+    expect(loaded.npcs.pip.holding).toBe(true);
+    loaded.dispose();
+  });
+
   it('no one names kin: villagers are neighbors, not family', () => {
     const kin = /\b(mum|mom|mother|father|dad|papa|mama|grand\w*|sister|brother|aunt\w*|uncle|cousin|son|daughter|husband|wife|niece|nephew|parents?)\b/i;
     const files = import.meta.glob('./*.ts', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;

@@ -382,6 +382,24 @@ export function crevice(g: THREE.BufferGeometry, shade: Partial<typeof BAKED_SHA
   return out;
 }
 
+/**
+ * A gentle ramp of light over a piece's height (owner, 2026-11-08: no object is one flat colour): multiplies the colours by
+ * `low` at `from` (default: the piece's lowest point) up to `high` at `to` (its highest), per vertex, so the shade slides
+ * smoothly across faces while painted regions keep their colours. Paint first; `crevice` after.
+ */
+export function gradient(g: THREE.BufferGeometry, low = 0.85, high = 1.05, from?: number, to?: number): THREE.BufferGeometry {
+  const out = kitShaped(g);
+  out.computeBoundingBox();
+  const y0 = from ?? out.boundingBox!.min.y, y1 = to ?? out.boundingBox!.max.y;
+  const span = Math.max(1e-6, y1 - y0);
+  const pos = out.attributes.position, col = out.attributes.color;
+  for (let i = 0; i < pos.count; i++) {
+    const f = low + (high - low) * Math.min(1, Math.max(0, (pos.getY(i) - y0) / span));
+    col.setXYZ(i, col.getX(i) * f, col.getY(i) * f, col.getZ(i) * f);
+  }
+  return out;
+}
+
 // ------------------------------------------------------ count, meshes
 
 /** Triangles in one mesh (instances counted). */

@@ -186,6 +186,7 @@ export function villageContent(ow: Overworld) {
           ...P.found.map((text) => ({ who, text })),
         ]);
         state.set('village.dollReturned');
+        ow.npcs.pip.hold(true);
         state.addGems(DOLL_REWARD);
         api.sfx.gem();
         await api.say([{ text: P.reward }]);
@@ -321,6 +322,7 @@ export function villageContent(ow: Overworld) {
     restore(state: GameState) {
       if (state.has('hasShield')) ow.shield.take();
       for (const v of VANISHED) ow.npcs[v].setPresent(!adultsGone(state));
+      ow.npcs.pip.hold(state.has('village.dollReturned'));
     },
   };
 }

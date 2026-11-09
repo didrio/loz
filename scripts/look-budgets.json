@@ -52,8 +52,8 @@
     "triangles": 277000
   },
   "contact": {
-    "calls": 550,
-    "triangles": 33000
+    "calls": 570,
+    "triangles": 35000
   },
   "door": {
     "calls": 50,
@@ -148,8 +148,8 @@
     "triangles": 267000
   },
   "pip": {
-    "calls": 520,
-    "triangles": 266000
+    "calls": 390,
+    "triangles": 336000
   },
   "props": {
     "calls": 10,
@@ -218,6 +218,10 @@
   "villageDetails": {
     "calls": 300,
     "triangles": 332000
+  },
+  "villagers": {
+    "calls": 280,
+    "triangles": 335000
   },
   "wardenIntro": {
     "calls": 830,
