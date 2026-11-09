@@ -79,7 +79,7 @@ const all = (h: Hue): [Hue, Shade][] => [[h, 0], [h, 1], [h, 2], [h, 3]];
 
 export const AREA_PALETTES: Record<AreaLook, readonly [Hue, Shade][]> = {
   valley: [...all('grass'), ...all('leaf'), ...all('earth'), ...all('stone'), ...all('water'), ['sand', 2], ['sand', 3], ['bark', 1], ['bark', 2], ['chalk', 3]],
-  village: [...all('plaster'), ...all('wood'), ...all('straw'), ...all('clay'), ...all('stone'), ['bark', 1], ['bark', 2], ['grass', 2], ['grass', 3], ['flame', 2], ['flame', 3]],
+  village: [...all('plaster'), ...all('wood'), ...all('straw'), ...all('clay'), ...all('stone'), ['bark', 1], ['bark', 2], ['grass', 1], ['grass', 2], ['grass', 3], ['leaf', 2], ['slate', 0], ['slate', 1], ['slate', 2], ['ink', 3], ['amber', 2], ['amber', 3], ['rose', 3], ['chalk', 3], ['moon', 2], ['flame', 2], ['flame', 3]],
   hollow: [...all('stone'), ...all('moss'), ['ink', 2], ['ink', 3], ['bark', 0], ['bark', 1], ['spirit', 2], ['spirit', 3], ['flame', 2]],
   blight: [...all('blight'), ...all('night'), ['moss', 0], ['moss', 1], ['stone', 0], ['stone', 1], ['violet', 2], ['violet', 3]],
   northpass: [...all('stone'), ...all('slate'), ...all('earth'), ['grass', 1], ['grass', 2], ['leaf', 1], ['chalk', 2], ['chalk', 3]],

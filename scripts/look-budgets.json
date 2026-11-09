@@ -52,8 +52,8 @@
     "triangles": 277000
   },
   "contact": {
-    "calls": 500,
-    "triangles": 20000
+    "calls": 530,
+    "triangles": 25000
   },
   "door": {
     "calls": 60,
@@ -129,7 +129,7 @@
   },
   "mill": {
     "calls": 350,
-    "triangles": 263000
+    "triangles": 328000
   },
   "night": {
     "calls": 450,
@@ -200,16 +200,16 @@
     "triangles": 292000
   },
   "vignette": {
-    "calls": 470,
-    "triangles": 316000
+    "calls": 450,
+    "triangles": 328000
   },
   "village": {
     "calls": 380,
-    "triangles": 316000
+    "triangles": 330000
   },
   "villageDetails": {
     "calls": 320,
-    "triangles": 259000
+    "triangles": 324000
   },
   "wardenIntro": {
     "calls": 830,

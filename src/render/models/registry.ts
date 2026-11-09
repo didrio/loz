@@ -10,6 +10,7 @@ import { buildSentinel } from './sentinel';
 import { buildShellback } from './shellback';
 import { buildThornling } from './thornling';
 import type { Model } from './types';
+import { buildBarrel, buildCottage, buildCrate, buildFenceSection, buildLanternPost, buildWell } from './village';
 import { buildPerson, buildWren, VILLAGER_COLORS } from './wren';
 
 /**
@@ -59,6 +60,14 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'rock', kind: 'prop', tier: 'final', build: buildRock, note: 'instanced' },
   { id: 'grass-tuft', kind: 'prop', tier: 'final', build: buildGrassTuft, note: 'instanced, ~3,000' },
   { id: 'lone-oak', kind: 'piece', tier: 'final', build: buildLoneOak, note: 'the landmark at the grove road, merged scenery' },
+  // Thistledown's frame (T51b): the cottages, the well and the village props, merged scenery (render/models/village.ts).
+  { id: 'cottage-east', kind: 'piece', tier: 'final', build: () => buildCottage('east'), note: 'green shutters, flower boxes, a bench' },
+  { id: 'cottage-southwest', kind: 'piece', tier: 'final', build: () => buildCottage('southwest'), note: 'timber framing, a porch, a woodpile, herbs' },
+  { id: 'well', kind: 'prop', tier: 'final', build: buildWell, note: 'the shaft\'s inside and water are the world\'s' },
+  { id: 'fence-section', kind: 'prop', tier: 'final', build: buildFenceSection, note: 'a post and two rails' },
+  { id: 'lantern-post', kind: 'prop', tier: 'final', build: buildLanternPost, note: 'the glowing core is the world\'s' },
+  { id: 'barrel', kind: 'prop', tier: 'final', build: buildBarrel },
+  { id: 'crate', kind: 'prop', tier: 'final', build: buildCrate },
   // The gear (the Gear tab and the HUD's icons: render/icons.ts).
   { id: 'gear-sword', kind: 'prop', tier: 'rough', build: buildSwordItem, note: 'icon' },
   { id: 'gear-shield', kind: 'prop', tier: 'rough', build: buildShieldItem, note: 'icon' },

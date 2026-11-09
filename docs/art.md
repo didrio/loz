@@ -99,7 +99,7 @@ performance pass and go here.
 | Boss | 1,500–4,000 | 1–3 |
 | NPC | 600–1,200 | face + 0–1 |
 | Prop | 30–300 | 0–1, a shared tile |
-| Environment | big simple shapes | the area's shared tile set |
+| Environment (`piece`: a building, a landmark) | up to 3,000 (a cottage is ~1,400) | the area's shared tile set |
 
 On phones, **draw calls and transparent overdraw** (particles, glows, fog planes) matter more than triangles. Today's
 scenes run about 90–700 draw calls, the dungeons about 1,200 (`scripts/look-budgets.json`; T30's vertex-colour merge took the village from 720 to 490); dungeons and dynamic objects are the next to trim. **Shadows On** add the sun's depth pass: measured 2026-11-07 on the village, about +70 to +210 draw calls and +140k triangles (the big merged scenery cells are drawn again), so the village runs about 500 and the field about 660-700 calls, inside that range; the look budgets are for Shadows Off. Touch devices default to Off. Habits: build a

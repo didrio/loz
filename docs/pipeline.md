@@ -58,6 +58,12 @@ model in place: there is never a rough and a final model side by side.
   (`crevice`), coloured per instance by a palette swatch the layout's existing random draws pick (`roundTint(c1, c2)`), so
   the placement's random sequence never moves. A part keeps the rough's frame (size and centre), so the instance matrices
   stay byte-identical.
+- **Scenery buildings** (T51b, `render/models/village.ts`): a model collects its kit pieces by surface (a `Parts` bin) into one
+  mesh per surface, in a local frame that matches the rough's (a cottage: centred, plinth on y = 0, door on +z); the world
+  places `model.root` in `b.staticGroup` and keeps every collider call as it was. Anything that glows at night (a window's pane,
+  a lantern's core and halo) stays the world's own unique mesh at the same spot, and the model carries only its trim or cage,
+  with a test that the trim leaves the pane's volume clear. A fence and the like (many copies along a path) export the
+  geometry (`fencePost()`, `fenceRail(len)`) and the world places one mesh each.
 
 ## The rig convention
 
@@ -96,8 +102,8 @@ return them beside the `Model` (the Shellback's `eyes` and `legs`, Wren's `coatM
 `npc`, `prop`, `piece`), `tier` (`rough` or `final`) and `build()`. A test fails if a `build…` function in `render/models/` is not
 used in the registry, so a new model cannot be forgotten. **Adding a model:** write `render/models/<name>.ts`, register it
 (`tier: 'rough'`), run `npm run assets`. `piece` is scenery bigger than a prop (buildings, landmarks; dungeon rooms join with the dungeon look ticket):
-no triangle budget yet (T51b sets one). Not models, so not registered: `BossArena` (a sealing flame ring, an effect) and the terrain. Scenery joins the registry as it gets
-its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledown's buildings (T51b, `piece`). Every NPC is `buildHumanoid` with its own colours; the registry holds one stand-in (`villager`).
+budget 3,000 triangles (T51b). Not models, so not registered: `BossArena` (a sealing flame ring, an effect) and the terrain. Scenery joins the registry as it gets
+its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledown's cottages (T51b, two `piece`s) and its well, fence section, lantern post, barrel and crate (`prop`s). Every NPC is `buildHumanoid` with its own colours; the registry holds one stand-in (`villager`).
 
 **The validator** (`render/models/validate.ts`) builds every entry in Node and checks it:
 

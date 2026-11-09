@@ -11,8 +11,8 @@ import { ASSETS, type AssetEntry, type AssetKind } from './registry';
  * `npm run assets` prints the table.
  */
 
-/** Triangle budget by kind (art.md "Budgets"): the top of each range. A `piece` is environment (big simple shapes): no cap. */
-export const TRIANGLE_BUDGET: Record<AssetKind, number> = { player: 2000, enemy: 1200, miniboss: 2500, boss: 4000, npc: 1200, prop: 300, piece: Infinity };
+/** Triangle budget by kind (art.md "Budgets"): the top of each range. A `piece` is environment (a building, a landmark): 3,000. */
+export const TRIANGLE_BUDGET: Record<AssetKind, number> = { player: 2000, enemy: 1200, miniboss: 2500, boss: 4000, npc: 1200, prop: 300, piece: 3000 };
 
 /** The longest side a bounding box may have (m): a sanity check on scale, not a design limit. */
 export const MAX_EXTENT: Record<AssetKind, number> = { player: 4, enemy: 6, miniboss: 9, boss: 12, npc: 4, prop: 10, piece: 60 };

@@ -1,22 +1,12 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
 import { fadeInFog, mat, surf, uniqueMat } from '../../render/materials';
+import { kitMesh } from '../../render/kit';
+import { buildBarrel, buildCottage, buildCrate, buildLanternPost, buildWell, COTTAGE, COTTAGE_WINDOW, fencePost, fenceRail, FENCE_RAILS, type CottageStyle } from '../../render/models/village';
 import { applySurface } from '../../render/textures';
 import type { AreaBuilder } from '../area';
 import { HOMES, MILL, MILL_BED, MILL_TOWER, STALL, terrainHeight, VILLAGE } from './layout';
 import { HingedDoor } from '../objects';
-
-/** A door the size of the mill's (1.44 × 2.3 m): a stone frame and lintel, plank door, straps and a knob. Faces +z in `g`. */
-function door(g: THREE.Group, z: number, wood: number, part: (geo: THREE.BufferGeometry, m: THREE.Material, x: number, y: number, z: number) => THREE.Mesh) {
-  const frame = surf('stone', 0x7d6e60), strap = surf('leather', 0x33200f);
-  for (const s of [-1, 1]) part(new THREE.BoxGeometry(0.22, 2.5, 0.3), frame, s * 0.83, 1.25, z);
-  part(new THREE.BoxGeometry(1.88, 0.3, 0.32), frame, 0, 2.55, z);
-  part(new THREE.BoxGeometry(1.44, 2.26, 0.14), surf('wood', wood), 0, 1.27, z + 0.04);
-  for (const px of [-0.36, 0, 0.36]) part(new THREE.BoxGeometry(0.04, 2.26, 0.16), strap, px, 1.27, z + 0.05);
-  for (const py of [0.5, 2.0]) part(new THREE.BoxGeometry(1.2, 0.08, 0.17), strap, 0, py, z + 0.05);
-  part(new THREE.SphereGeometry(0.07, 6, 5), surf('metal', 0xc9a227), 0.5, 1.1, z + 0.14);
-  part(new THREE.BoxGeometry(2.0, 0.18, 0.8), surf('stone', 0x9a958c), 0, 0.09, z + 0.4);
-}
 
 /** Thistledown: four cottages (two standing here, two ruined ones in `RUINS`) around a well, a windmill, a fence ring and lanterns. */
 export function buildVillage(b: AreaBuilder) {
@@ -24,100 +14,56 @@ export function buildVillage(b: AreaBuilder) {
   const windowMat = uniqueMat(0x2a2a3a);
   const lanternMat = new THREE.MeshBasicMaterial({ color: 0x664422 });
 
-  /** `extra` adds the house's own touches; `at(lx, lz)` turns a spot in the house's frame (front = +z) into world x, z. */
-  const house = (x: number, z: number, wall: number, roof: number, extra: (part: (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => THREE.Mesh, at: (lx: number, lz: number) => [number, number], yaw: number, y: number) => void, w = 10.5, d = 9, h = 3.6) => {
+  /**
+   * A standing cottage: the final model (`render/models/village.ts`) placed on its spot, facing the square. `colliders(at, yaw, y)`
+   * adds the house's own touches' colliders; `at(lx, lz)` turns a spot in the house's frame (front = +z) into world x, z.
+   */
+  const house = (x: number, z: number, style: CottageStyle, colliders: (at: (lx: number, lz: number) => [number, number], yaw: number, y: number) => void) => {
+    const { w, d, h } = COTTAGE;
     const y = terrainHeight(x, z) - 0.2;
     const yaw = Math.atan2(cx - x, cz - z);
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    g.rotation.y = yaw;
-    const part = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
-      const me = new THREE.Mesh(geo, m);
-      me.position.set(px, py, pz);
-      g.add(me);
-      return me;
-    };
-    part(new THREE.BoxGeometry(w, h, d), surf('plaster', wall), 0, h / 2, 0);
-    part(new THREE.BoxGeometry(w + 0.3, 0.4, d + 0.3), surf('stone', 0x6d6258), 0, 0.2, 0);
-    part(new THREE.ConeGeometry(Math.max(w, d) * 0.8, 2.8, 4), surf('shingle', roof), 0, h + 1.4, 0).rotation.y = Math.PI / 4;
-    door(g, d / 2 + 0.1, 0x4a2e18, part);
-    // Windows glow at night, so they stay out of the static merge.
-    const win = (px: number) => {
-      const me = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.1), windowMat);
-      me.position.set(px, 1.9, d / 2 + 0.05);
-      me.applyMatrix4(g.matrix.compose(g.position, g.quaternion, g.scale));
+    const model = buildCottage(style).root;
+    model.position.set(x, y, z);
+    model.rotation.y = yaw;
+    b.staticGroup.add(model);
+    // Windows glow at night, so they stay out of the static merge (the model carries only their trim).
+    const frame = new THREE.Matrix4().compose(model.position, model.quaternion, model.scale);
+    for (const px of [-COTTAGE_WINDOW.x, COTTAGE_WINDOW.x]) {
+      const me = new THREE.Mesh(new THREE.BoxGeometry(COTTAGE_WINDOW.size, COTTAGE_WINDOW.size, 0.1), windowMat);
+      me.position.set(px, COTTAGE_WINDOW.y, d / 2 + 0.05);
+      me.applyMatrix4(frame);
       b.dynamic(me);
-    };
-    win(-w / 3.2);
-    win(w / 3.2);
-    part(new THREE.BoxGeometry(0.7, 1.8, 0.7), surf('stone', 0x7d6e60), w / 4, h + 1.6, -d / 5);
+    }
     const cos = Math.cos(yaw), sin = Math.sin(yaw);
-    extra(part, (lx, lz) => [x + lx * cos + lz * sin, z - lx * sin + lz * cos], yaw, y);
-    b.staticGroup.add(g);
+    colliders((lx, lz) => [x + lx * cos + lz * sin, z - lx * sin + lz * cos], yaw, y);
     b.box(x, y + h / 2, z, w / 2 + 0.15, h / 2 + 0.2, d / 2 + 0.15, yaw);
   };
 
   // The east and southwest homes still stand; the northeast and northwest ones are ruins (ruins.ts).
-  // East: a tidy, cheerful house: green shutters, flower boxes under the windows, a bench by the door.
-  house(HOMES[0].x, HOMES[0].z, 0xeadcbc, 0xa5452f, (part, at, yaw, y) => {
-    const shutter = surf('wood', 0x4f7d4a), box = surf('wood', 0x7a5230);
-    for (const s of [-1, 1]) {
-      const wx = s * (10.5 / 3.2);
-      for (const side of [-1, 1]) part(new THREE.BoxGeometry(0.4, 1.0, 0.08), shutter, wx + side * 0.68, 1.9, 4.58);
-      part(new THREE.BoxGeometry(1.2, 0.28, 0.4), box, wx, 1.32, 4.72);
-      for (let i = 0; i < 5; i++) {
-        part(new THREE.OctahedronGeometry(0.11), mat([0xf28bb0, 0xffd84a, 0xffffff, 0xf28bb0, 0xa6b8ff][i]), wx - 0.44 + i * 0.22, 1.56, 4.72);
-      }
-    }
-    // A bench to the right of the door.
-    part(new THREE.BoxGeometry(1.8, 0.1, 0.5), box, 2.0, 0.5, 5.05);
-    for (const s of [-1, 1]) part(new THREE.BoxGeometry(0.1, 0.45, 0.4), box, 2.0 + s * 0.75, 0.25, 5.05);
-    const [bx, bz] = at(2.0, 5.05);
+  house(HOMES[0].x, HOMES[0].z, 'east', (at, yaw, y) => {
+    const [bx, bz] = at(2.0, 5.05); // the bench to the right of the door
     b.box(bx, y + 0.3, bz, 0.9, 0.3, 0.25, yaw, Layer.Prop);
   });
-  // Southwest: an older, busier house: dark timber framing, a little porch roof, a woodpile, herbs drying.
-  house(HOMES[1].x, HOMES[1].z, 0xdcc8a4, 0x5b6f9a, (part, at, yaw, y) => {
-    const beam = surf('wood', 0x5e3d20);
-    part(new THREE.BoxGeometry(10.6, 0.2, 0.08), beam, 0, 3.0, 4.56);
-    part(new THREE.BoxGeometry(10.6, 0.2, 0.08), beam, 0, 0.55, 4.56);
-    for (const px of [-5.1, -1.6, 1.6, 5.1]) part(new THREE.BoxGeometry(0.2, 2.5, 0.08), beam, px, 1.8, 4.56);
-    for (const s of [-1, 1]) part(new THREE.BoxGeometry(0.16, 2.2, 0.08), beam, s * 4.55, 1.8, 4.57).rotation.z = s * 0.62;
-    // The porch: a slanted plank roof on two posts.
-    part(new THREE.BoxGeometry(2.9, 0.12, 1.6), surf('wood', 0x5b6f9a), 0, 2.95, 5.3).rotation.x = 0.25;
-    for (const s of [-1, 1]) part(new THREE.BoxGeometry(0.14, 2.8, 0.14), beam, s * 1.3, 1.4, 6.0);
-    for (const s of [-1, 1]) {
+  house(HOMES[1].x, HOMES[1].z, 'southwest', (at, yaw, y) => {
+    for (const s of [-1, 1]) { // the porch posts
       const [px, pz] = at(s * 1.3, 6.0);
       b.cylinder(px, y + 1.4, pz, 1.4, 0.12, Layer.Prop);
     }
-    // Herbs drying under the porch roof.
-    for (const px of [-0.9, -0.55, 0.9]) {
-      part(new THREE.BoxGeometry(0.03, 0.3, 0.03), beam, px, 2.55, 5.6);
-      part(new THREE.ConeGeometry(0.12, 0.32, 5), surf('foliage', px < 0 ? 0x6f8f3a : 0x9a7a3a), px, 2.25, 5.6).rotation.x = Math.PI;
-    }
-    // A woodpile against the east side wall.
-    const log = surf('wood', 0x8a5a2b);
-    for (let row = 0; row < 3; row++) {
-      for (let i = 0; i < 4 - row; i++) {
-        part(new THREE.CylinderGeometry(0.18, 0.18, 1.6, 6), log, 6.1, 0.2 + row * 0.33, -1.2 + (i + row * 0.5) * 0.38).rotation.z = Math.PI / 2;
-      }
-    }
-    const [wpx, wpz] = at(6.1, -0.6);
+    const [wpx, wpz] = at(6.1, -0.6); // the woodpile against the east side wall
     b.box(wpx, y + 0.5, wpz, 0.8, 0.5, 0.8, yaw, Layer.Prop);
   });
 
   // Well in the square.
-  const stone = surf('stone', 0x9a958c), wood = surf('wood', 0x6b4423);
+  const wood = surf('wood', 0x6b4423);
   const y0 = terrainHeight(cx, cz);
-  // A stone ring over a shaft (terrain.ts opens the ground under it), dark water far down, on a
-  // paved apron that hides the hole's edge. The ring's collider (and the ground's) is the lid, so
-  // nobody falls in yet.
-  b.mesh(new THREE.RingGeometry(1.15, 3.1, 12).rotateX(-Math.PI / 2), surf('stone', 0x8a857c), cx, y0 + 0.05, cz);
-  b.mesh(new THREE.CylinderGeometry(1.4, 1.5, 1, 12, 1, true), stone, cx, y0 + 0.5, cz);
-  b.mesh(new THREE.RingGeometry(1.12, 1.42, 12).rotateX(-Math.PI / 2), stone, cx, y0 + 1, cz);
+  // The well's visible parts are the final model (render/models/village.ts): a paved apron, the curb, the posts and roof.
+  // Under them, a shaft (terrain.ts opens the ground under it) with dark water far down. The curb's collider (and the
+  // ground's) is the lid, so nobody falls in yet.
+  const well = buildWell().root;
+  well.position.set(cx, y0, cz);
+  b.staticGroup.add(well);
   b.mesh(new THREE.CylinderGeometry(1.15, 1.15, 3.6, 12, 1, true), applySurface(uniqueMat(0x4a4640, { side: THREE.BackSide }), 'stone'), cx, y0 - 0.8, cz);
   b.mesh(new THREE.CircleGeometry(1.15, 12).rotateX(-Math.PI / 2), mat(0x0e1c26), cx, y0 - 2.5, cz);
-  for (const s of [-1, 1]) b.mesh(new THREE.BoxGeometry(0.2, 2.4, 0.2), wood, cx + s * 1.2, y0 + 1.7, cz);
-  b.mesh(new THREE.ConeGeometry(2, 1.1, 4), surf('shingle', 0xa5452f), cx, y0 + 3.3, cz).rotation.y = Math.PI / 4;
   b.cylinder(cx, y0 + 0.5, cz, 0.6, 1.55);
 
   // Windmill on the west side, sails facing the square. Its ground floor is Tobin's room, walked
@@ -230,8 +176,8 @@ export function buildVillage(b: AreaBuilder) {
   // Fence ring with gaps for the two roads.
   const gaps = [Math.PI / 4, -Math.PI / 2];
   const R = VILLAGE.r - 2;
-  const postMat = surf('wood', 0x7a5230);
   const step = 2.6 / R;
+  const post = fencePost();
   let prev: THREE.Vector3 | null = null;
   for (let a = -Math.PI; a < Math.PI; a += step) {
     const inGap = gaps.some((g) => Math.abs(Math.atan2(Math.sin(a - g), Math.cos(a - g))) < 0.2);
@@ -241,14 +187,18 @@ export function buildVillage(b: AreaBuilder) {
       prev = null;
       continue;
     }
-    b.mesh(new THREE.BoxGeometry(0.22, 1.3, 0.22), postMat, x, y + 0.55, z);
+    const postMesh = kitMesh(post, 'wood');
+    postMesh.position.set(x, y, z);
+    b.staticGroup.add(postMesh);
     const cur = new THREE.Vector3(x, y, z);
     if (prev) {
       const mid = cur.clone().add(prev).multiplyScalar(0.5);
       const len = cur.distanceTo(prev);
-      for (const hgt of [0.5, 1.0]) {
-        const rail = b.mesh(new THREE.BoxGeometry(0.1, 0.12, len), postMat, mid.x, mid.y + hgt, mid.z);
+      for (const hgt of FENCE_RAILS) {
+        const rail = kitMesh(fenceRail(len), 'wood');
+        rail.position.set(mid.x, mid.y + hgt, mid.z);
         rail.lookAt(cur.x, mid.y + hgt, cur.z);
+        b.staticGroup.add(rail);
       }
       b.box(mid.x, mid.y + 0.7, mid.z, 0.12, 0.8, len / 2 + 0.1, Math.atan2(cur.x - prev.x, cur.z - prev.z), Layer.Prop);
     }
@@ -286,24 +236,27 @@ export function buildVillage(b: AreaBuilder) {
     const r = inSquare ? 9 : R - 1.5;
     const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
     const y = terrainHeight(x, z);
-    b.mesh(new THREE.BoxGeometry(0.18, 2.6, 0.18), wood, x, y + 1.3, z);
+    const lampPost = buildLanternPost().root; // the post, its cage and hood; the glowing core is the box below
+    lampPost.position.set(x, y, z);
+    b.staticGroup.add(lampPost);
     const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.55, 0.45), lanternMat);
     lantern.position.set(x, y + 2.75, z);
     b.dynamic(lantern);
     halo(x, y + 2.75, z);
     light(x, y + 2.75, z, inSquare ? 15 : 11); // the gate lanterns too, a smaller reach
-    b.mesh(new THREE.ConeGeometry(0.4, 0.3, 4), surf('shingle', 0x3a2a1e), x, y + 3.15, z);
     b.cylinder(x, y + 1.3, z, 1.3, 0.2, Layer.Prop);
   }
-  const barrel = surf('wood', 0x8a5a2b), crate = surf('wood', 0xa47a48);
+  const barrel = buildBarrel().root, crate = buildCrate().root;
   const clutter = [[4, 9], [5.2, 9.6], [-9, -5], [8, -8], [-4, 10], [12, 2]];
   clutter.forEach(([dx, dz], i) => {
     const x = cx + dx, z = cz + dz, y = terrainHeight(x, z);
+    const piece = (i % 2 === 0 ? barrel : crate).clone();
+    piece.position.set(x, y, z);
+    b.staticGroup.add(piece);
     if (i % 2 === 0) {
-      b.mesh(new THREE.CylinderGeometry(0.45, 0.4, 1, 8), barrel, x, y + 0.5, z);
       b.cylinder(x, y + 0.5, z, 0.5, 0.45, Layer.Prop);
     } else {
-      b.mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), crate, x, y + 0.45, z).rotation.y = i;
+      piece.rotation.y = i;
       b.box(x, y + 0.45, z, 0.45, 0.45, 0.45, i, Layer.Prop);
     }
   });

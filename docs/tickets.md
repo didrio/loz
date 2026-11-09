@@ -48,18 +48,8 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 **The entrance vignette (golden set 3), owner's calls (2026-11-08, T51's plan):** the vignette is **Thistledown's road in** (the road from the field through the southeast fence gap to the square; the `village` look shot's frame, standing at -50,-42 facing the well). The final **tree, pine, rock and grass replace the rough ones valley-wide at once** (same placement, same `rand()` sequence, same colliders). **Baked light stays as is.** Cottages get **gable roofs with deep eaves** (walls, footprint and colliders unchanged). Three parts, each leaving the game working; the lock comes after T51c on the owner's approval.
 - **Kit scenery in the merge:** `mergeStatic` (`render/materials.ts`) drops every attribute but position and normal, so before T51a a kit-painted model in `b.staticGroup` would lose its colours. `kitMat(surface)` *is* `bakedMat(surface, 0)`, so kit meshes join the same merge buckets (no new draw calls) once the merge keeps their `color` and gives them the plain meshes' `BAKED_SHADE` (multiplied in, plus `shade` for the light bake). So **scenery pieces skip `crevice`** (the merge shades them); standalone props keep it.
 - **Layout frozen** is proven by `world/overworld/colliders.test.ts` (every collider of the overworld, Thistledown's listed one by one): it must pass unedited after each part.
+- **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
-
-### T51b: Thistledown's cottages, well, fence and lanterns
-**Run:** auto · sonnet · high
-**Why:** The architecture and props of the vignette's frame: the style every later building follows.
-**Done when:**
-- `render/models/village.ts`: `buildCottage(style)` (gable roof, deep eaves, timber gable ends, a tapered chimney, a stone plinth, the door and frame) with each house's touches (east: green shutters, flower boxes, a bench; southwest: timber framing, a porch roof, a woodpile, herbs); the well, a fence section, the lantern post, a barrel and a crate. Windows stay separate unique meshes at the same spots (they glow at night).
-- `buildVillage` places them in the static group; every collider call unchanged (the freeze test passes unedited).
-- The validator gets a real `piece` budget (3,000 triangles; Infinity today); cottages register as `piece`, the rest as `prop`, all `final`.
-- The village atmosphere (`render/atmosphere.ts` VILLAGE) tuned for the frame; day motes only if they read well in both modes; `AREA_PALETTES.village` gains any swatch it lacks.
-**Read first:** the notes above; `world/overworld/village.ts` (Grep `house(`, the well, fence and lantern blocks); `render/models/nature.ts` (T51a's kit scenery pattern); art.md "Atmosphere".
-**Verify:** `npm run check`; `npm run smoke -- village`; looker on `vignette`, `village`, `villageDetails`, `village-cottages`' scene, `contact` (Native and N64).
 
 ### T51c: The windmill, Odo's stall and the ruins; the phone check; renders for the owner
 **Run:** auto · sonnet · high
@@ -68,7 +58,7 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - The mill's exterior and sails rebuilt (Tobin's room keeps its layout, bed and door: `MILL_TOWER`, `MILL_BED` frozen), Odo's stall, and the ruined homes in `ruins.ts` rebuilt to match the cottages valley-wide (jars and their flags untouched).
 - Phone check: draw calls and triangles of `vignette` and `village`, before/after, Native and Performance, noted in art.md "Budgets".
 - Before/after renders (the vignette frame at three times of day, a cottage front/three-quarter/side, Native and N64) shown to the owner. **Locked into the golden set only on "approve"** (`GOLDEN_SET`, art.md's list, the look baselines approved).
-**Read first:** the notes above; `world/overworld/village.ts` (the mill and stall blocks), `world/overworld/ruins.ts`, `render/models/village.ts`.
+**Read first:** the notes above; `world/overworld/village.ts` (the mill and stall blocks), `world/overworld/ruins.ts`, `render/models/village.ts` (`COTTAGE`, `buildCottage`: the ruins reuse its roof, trim and plinth pieces; `Parts` is the pattern). The mill's lamp bracket and the stall's wares are still rough boxes.
 **Verify:** `npm run check`; `npm run smoke -- village jars`; looker on `vignette`, `village`, `opening`, `contact` (Native and N64).
 
 ### T52: Final pass: the prop set, rest of it (golden set 4)
@@ -80,7 +70,7 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
 **Read first:** props.ts `buildChest`, world/objects.ts and world/jars.ts (placement and joints used)
 **Verify:** `npm run check`; smoke `village jars shrine-keys`; contact sheet before and after.
-**Notes:** The crate is done in T51b (Thistledown's clutter). A sign may not exist as a model yet: add it as rough first (the pipeline) only if something already places it; otherwise skip and say so.
+**Notes:** The crate is done in T51b (`buildCrate`, `render/models/village.ts`). A sign may not exist as a model yet: add it as rough first (the pipeline) only if something already places it; otherwise skip and say so.
 
 ### T53: Final pass: Pip, the NPC (golden set 5)
 **Run:** plan · opusplan · high
