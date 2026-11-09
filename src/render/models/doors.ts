@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { bakeRig } from '../bakeRig';
-import { bevelBox, crevice, kitMesh, lowSphere, merge, paint, paintRegion, place, taper } from '../kit';
+import { bevelBox, crevice, gradient, kitMesh, lowSphere, merge, paint, paintRegion, place, taper } from '../kit';
 import { pal } from '../palette';
 import type { Model } from './types';
 import { box } from './village';
@@ -52,7 +52,7 @@ export function buildHingedDoor(width = 1.44, height = 2.3, color = pal('wood', 
 
 /** Adds a kit mesh to the pivot, shifted so the door's hinge edge (x = -width/2 in the piece) sits on the pivot. */
 function part(pivot: THREE.Group, width: number, g: THREE.BufferGeometry, surface: 'wood' | 'metal') {
-  const m = kitMesh(crevice(g, { foot: 0.9 }), surface);
+  const m = kitMesh(gradient(crevice(g, { foot: 0.9 }), 0.9, 1.04), surface);
   m.position.x = width / 2;
   pivot.add(m);
 }
@@ -80,7 +80,7 @@ export function buildStoneDoor(width = 4, height = 6.3): Model<{ slab: THREE.Gro
   ];
 
   const slab = new THREE.Group();
-  slab.add(kitMesh(crevice(merge(face, ...border)), 'stone'));
+  slab.add(kitMesh(gradient(crevice(merge(face, ...border)), 0.82, 1.05), 'stone'));
 
   // The glyph: a spiral of short bars (1.75 turns, out from a centre stone), in y and z on the -x face.
   const cy = 0.3, turns = 1.75, steps = 14, bars: THREE.BufferGeometry[] = [];

@@ -52,17 +52,6 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
 
-### T59: No flat colour: tile and grade the golden set and the props
-**Run:** auto · sonnet · medium
-**Why:** The owner's rule (2026-11-08, T53): no object is one flat solid colour; every surface looks textured and/or softly graded, props included (the bricks read well; plain kit pieces don't). The villagers already follow it; the earlier golden set and the props were made before it.
-**Done when:**
-- Every kit mesh in the finished models names a surface (`kitMesh(g, '<surface>')`; the eyes and small dark details too), and the big forms carry the kit's `gradient` (a few percent, darker toward the foot): the chest, the Thornling, Wren, the vignette's pieces (`nature.ts`, `village.ts`, `mill.ts`, `ruins.ts`), the prop set (`props.ts`, `doors.ts`).
-- A test per file (or one sweep over the registry's `final` entries, like `livingTextures.test.ts` "people") proves no mesh is untextured; glows and recoloured `animated` materials are the only exceptions, named.
-- Layout, silhouettes, colliders and triangle counts unchanged (`world/overworld/colliders.test.ts` passes unedited); behaviour untouched.
-- No new draw calls: `bakeRig` makes one mesh per joint per surface, so a newly tiled piece takes a surface its joint already has where it can (`npm run assets` mesh counts, the look scenes' draw-call budgets).
-**Read first:** art.md "Rendering rules" (Textures); pipeline.md "The modeling kit" (`gradient`, `kitMesh`); `render/models/villager.ts` (the example: every `kitMesh` with a surface, `gradient` on the big forms); `game/livingTextures.test.ts` "people".
-**Verify:** `npm run check`; `looker` on `chest`, `thornling`, `wren`, `vignette`, `vignetteModels`, `props`, `contact` (Native and N64) against their baselines: the change is texture and shading only, so the owner approves the new baselines.
-
 ### T54: Final pass: the Hollow Lamplighter (golden set 6)
 **Run:** plan · opusplan · high
 **Why:** The first boss, at about twice its mini-boss budget today: finish it and bring it into budget.

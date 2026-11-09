@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { damp, mulberry32 } from '../../core/math';
 import { bakeRig } from '../bakeRig';
-import { bevelBox, crevice, extrudePath, kitMesh, lowSphere, merge, paint, paintRegion, place, taper, wobble, type Vec3 } from '../kit';
+import { bevelBox, crevice, extrudePath, gradient, kitMesh, lowSphere, merge, paint, paintRegion, place, taper, wobble, type Vec3 } from '../kit';
 import { pal } from '../palette';
 import type { Model } from './types';
 
@@ -45,7 +45,7 @@ export function buildThornling(): Model<ThornlingJoints> & { rig: ThornlingRig }
   const slit = paint(place(bevelBox(0.4, 0.11, 0.16, 0.02), 0, -0.14, 0.57), mouth);
   const throat = paint(place(bevelBox(0.32, 0.16, 0.16, 0.02), 0, -0.24, 0.54), mouth);
   const fangs = [-1, 1].map((s) => paint(place(taper(0.045, 0, 0.13, 4), s * 0.11, -0.09, 0.63, [Math.PI, 0, 0]), tooth));
-  body.add(kitMesh(crevice(merge(ball, slit, throat, ...fangs)), 'hide'));
+  body.add(kitMesh(gradient(crevice(merge(ball, slit, throat, ...fangs)), 0.84, 1.06), 'hide'));
 
   // The thorns: from the same ten directions as ever (none on the face), each a five-sided spike curving toward its back,
   // a darker collar at the root. Between them a ruff of short ones.
@@ -74,14 +74,14 @@ export function buildThornling(): Model<ThornlingJoints> & { rig: ThornlingRig }
     g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(up, dir));
     small.push(place(g, n.x * 0.44, n.y * 0.44, n.z * 0.44));
   }
-  shell.add(kitMesh(merge(...big, ...small), 'bark'));
+  shell.add(kitMesh(gradient(merge(...big, ...small), 0.86, 1.06), 'bark'));
 
   // The eyes: two glowing amber balls where they always were (set a touch deeper, so they sit in the hide), each with a
   // slit pupil. `eyes` squashes to blink.
   eyes.position.set(0, 0.12, 0.545);
   const eyeBall = lowSphere(0.11, 6, 4);
   eyes.add(new THREE.Mesh(merge(place(eyeBall, -0.22, 0, 0), place(eyeBall, 0.22, 0, 0)), new THREE.MeshBasicMaterial({ color: pal('amber', 3) })));
-  eyes.add(kitMesh(merge(...[-1, 1].map((s) => paint(place(bevelBox(0.035, 0.13, 0.03, 0), s * 0.22, 0, 0.1), mouth)))));
+  eyes.add(kitMesh(merge(...[-1, 1].map((s) => paint(place(bevelBox(0.035, 0.13, 0.03, 0), s * 0.22, 0, 0.1), mouth))), 'hide'));
 
   // The brows: two heavy ridges over the eyes, inner ends low (it always looks a little cross). `brows` lowers to scowl.
   brows.position.set(0, 0.27, 0.48);
@@ -91,7 +91,7 @@ export function buildThornling(): Model<ThornlingJoints> & { rig: ThornlingRig }
   jaw.position.set(0, -0.17, 0.41);
   const chin = paint(place(bevelBox(0.42, 0.09, 0.28, 0.03), 0, -0.02, 0.15), hide);
   const teeth = [-1, 1].map((s) => paint(place(taper(0.03, 0, 0.07, 4), s * 0.06, 0.02, 0.25), tooth));
-  jaw.add(kitMesh(crevice(merge(chin, ...teeth)), 'hide'));
+  jaw.add(kitMesh(gradient(crevice(merge(chin, ...teeth)), 0.9, 1.04), 'hide'));
 
   const model = bakeRig({ root, joints: { body, shell, eyes, brows, jaw }, flashMats: [] });
   return { ...model, rig: new ThornlingRig(model.joints) };

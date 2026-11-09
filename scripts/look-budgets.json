@@ -41,7 +41,7 @@
   },
   "chest": {
     "calls": 60,
-    "triangles": 240000
+    "triangles": 291000
   },
   "chestOpen": {
     "calls": 60,
@@ -188,8 +188,8 @@
     "triangles": 277000
   },
   "thornling": {
-    "calls": 320,
-    "triangles": 250000
+    "calls": 210,
+    "triangles": 301000
   },
   "thorns": {
     "calls": 600,
@@ -204,8 +204,8 @@
     "triangles": 292000
   },
   "vignette": {
-    "calls": 460,
-    "triangles": 339000
+    "calls": 320,
+    "triangles": 337000
   },
   "vignetteModels": {
     "calls": 20,
@@ -228,7 +228,7 @@
     "triangles": 203000
   },
   "wren": {
-    "calls": 180,
-    "triangles": 227000
+    "calls": 120,
+    "triangles": 281000
   }
 }

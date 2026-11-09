@@ -53,7 +53,7 @@ model in place: there is never a rough and a final model side by side.
   keeps a kit piece's paint and darkens it with the same `BAKED_SHADE` as every plain mesh (the light bake then replaces that
   shade as usual), in the same bucket as the plain meshes of its surface, so it costs no extra draw call. So **scenery
   models skip `crevice`** (the merge shades them); a model that stands alone (`b.dynamic`, a prop) keeps it. Name a surface
-  (`kitMesh(g, 'wood')`): the texture audit flags a kit piece without one.
+  (`kitMesh(g, 'wood')`): the texture audit flags a kit piece without one. **No flat colour** (owner, 2026-11-08): every `final` model's meshes name a surface (`render/models/noFlat.test.ts` sweeps the registry; glows, which are unlit `MeshBasicMaterial`s, are the only exceptions). Standalone models and instanced nature also carry `gradient`; merged scenery (`Parts`, the lone oak) does not, because `mergeStatic`'s `bakeColor` already ramps it foot to top (an extra `gradient` there cost the look scenes +19 draw calls and +20k triangles for no visible gain).
 - **Instanced nature** (T51a, `render/models/nature.ts`): one geometry per kind, painted white with its own shade
   (`crevice`), coloured per instance by a palette swatch the layout's existing random draws pick (`roundTint(c1, c2)`), so
   the placement's random sequence never moves. A part keeps the rough's frame (size and centre), so the instance matrices

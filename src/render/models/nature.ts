@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../../core/math';
 import { bakeRig } from '../bakeRig';
-import { crevice, kitMesh, lathe, lowSphere, merge, paint, paintRegion, place, wobble } from '../kit';
+import { crevice, gradient, kitMesh, lathe, lowSphere, merge, paint, paintRegion, place, wobble } from '../kit';
 import { pal } from '../palette';
 import type { Model } from './types';
 
@@ -96,7 +96,7 @@ function tinted(g: THREE.BufferGeometry, hex: number) {
 
 /** A part as the world places it: at `y`, scaled like its instances at scale 1. */
 function part(root: THREE.Group, g: THREE.BufferGeometry, surface: 'bark' | 'foliage' | 'rock', y: number, scale: [number, number, number] = [1, 1, 1]) {
-  const m = kitMesh(g, surface);
+  const m = kitMesh(gradient(g, 0.9, 1.05), surface);
   m.position.y = y;
   m.scale.set(...scale);
   root.add(m);

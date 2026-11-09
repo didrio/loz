@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { bakeRig } from '../bakeRig';
-import { bevelBox, crevice, extrudePath, kitMesh, lathe, merge, paint, paintRegion, place, type Vec3 } from '../kit';
+import { bevelBox, crevice, extrudePath, gradient, kitMesh, lathe, merge, paint, paintRegion, place, type Vec3 } from '../kit';
 import { uniqueMat, uniqueSurf, surf } from '../materials';
 import { pal } from '../palette';
 import { glow, heartGeometry, shieldModel } from '../shapes';
@@ -25,7 +25,7 @@ export function buildChest(locked = false): Model<{ lid: THREE.Group; padlock: T
     for (let i = 0; i <= steps; i++) profile.push([Math.cos((i / steps) * Math.PI) * r, Math.sin((i / steps) * Math.PI) * r]);
     return place(extrudePath(profile, [[x - length / 2, 0, 0], [x + length / 2, 0, 0]]), 0, 0, 0.47);
   };
-  const part = (parent: THREE.Object3D, g: THREE.BufferGeometry, surface: 'wood' | 'metal') => parent.add(kitMesh(g, surface));
+  const part = (parent: THREE.Object3D, g: THREE.BufferGeometry, surface: 'wood' | 'metal') => parent.add(kitMesh(gradient(g, 0.88, 1.04), surface));
 
   const root = new THREE.Group();
   const lid = new THREE.Group();
@@ -116,7 +116,7 @@ export function buildJar(): Model {
   });
   const lugs = [-1, 1].map((s) => place(paint(bevelBox(0.1, 0.12, 0.07, 0), clayDark), s * 0.23, 0.9, 0));
   const root = new THREE.Group();
-  root.add(kitMesh(crevice(merge(painted, ...lugs), { foot: 0.9 }), 'plaster'));
+  root.add(kitMesh(gradient(crevice(merge(painted, ...lugs), { foot: 0.9 }), 0.86, 1.05), 'plaster'));
   return bakeRig({ root, joints: {}, flashMats: [] }, { shared: true });
 }
 
@@ -134,7 +134,7 @@ export function buildSign(seed = 7): Model {
   const cap = [-1, 1].map((s) => place(paint(bevelBox(1.95, 0.08, 0.16, 0), woodDark), 0, 2.24, s * 0.07, [s * 0.45, 0, 0]));
   const nails = [-1, 1].flatMap((sx) => [-1, 1].map((sy) => place(paint(bevelBox(0.07, 0.07, 0.03, 0), nail), sx * 0.8, 1.6 + sy * 0.46, 0.09)));
   const root = new THREE.Group();
-  root.add(kitMesh(merge(post, ...planks, ...cap, ...nails), 'wood'));
+  root.add(kitMesh(gradient(merge(post, ...planks, ...cap, ...nails), 0.88, 1.05), 'wood'));
 
   // The notice: a sheet, and its scribbles (two triangles each) from a hash of the seed.
   const paperMat = uniqueSurf('plaster', pal('plaster', 3), { emissive: pal('plaster', 1) });
@@ -158,6 +158,6 @@ export function buildSign(seed = 7): Model {
   // Stones heaped round the post's foot.
   const stones = [[-0.22, 0.1, 0.12, 0.3], [0.25, 0.08, 0.05, 0.5], [0.05, 0.07, 0.2, 0.15], [-0.05, 0.08, -0.26, 0.7]].map(([x, y, z, r], i) =>
     place(paint(bevelBox(0.3, 0.2, 0.26, 0), i % 2 ? stone : stoneDark), x, y, z, [0.1, r, 0.08]));
-  root.add(kitMesh(crevice(merge(...bars, ...stones), { foot: 0.9 }), 'plaster'));
+  root.add(kitMesh(gradient(crevice(merge(...bars, ...stones), { foot: 0.9 }), 0.86, 1.05), 'plaster'));
   return bakeRig({ root, joints: {}, flashMats: [], animated: [paperMat] }, { shared: true });
 }

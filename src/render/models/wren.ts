@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { clamp, easeOut, mix, mulberry32 } from '../../core/math';
 import { bakeRig } from '../bakeRig';
-import { bevelBox, crevice, kitMesh, lathe, lowSphere, merge, paint, paintRegion, place, taper, wobble } from '../kit';
+import { bevelBox, crevice, gradient, kitMesh, lathe, lowSphere, merge, paint, paintRegion, place, taper, wobble } from '../kit';
 import { browPieces, cuffedBoot, earsAndNose, eyePieces, mittenHand, notch, skull, squeeze } from './person';
 import { uniqueSurf } from '../materials';
 import { pal } from '../palette';
@@ -134,7 +134,7 @@ export function buildWren(seed?: number): Model<WrenJoints> & {
 
   // ---- the torso (body space): tunic, belt and pouch, a neck under the head.
   const tunic = notch(squeeze(lathe([[0.44, 0.6], [0.41, 0.8], [0.37, 0.97], [0.34, 1.2], [0.36, 1.38], [0.31, 1.53], [0.17, 1.6]], 10), 0.9), 0.6, 0.07, 10);
-  body.add(own(crevice(paintRegion(paint(tunic, C.white), (c) => (c.y < 0.72 ? C.coatShade : undefined)), { foot: 0.85, footHeight: 0.9 }), coatMat, 'cloth'));
+  body.add(own(gradient(crevice(paintRegion(paint(tunic, C.white), (c) => (c.y < 0.72 ? C.coatShade : undefined)), { foot: 0.85, footHeight: 0.9 }), 0.84, 1.06), coatMat, 'cloth'));
   const belt = squeeze(lathe([[0.385, 0.91], [0.4, 0.94], [0.4, 1.0], [0.38, 1.03]], 10, false), 0.9);
   const buckle = place(bevelBox(0.12, 0.1, 0.04, 0), 0, 0.97, 0.365);
   const pouch = merge(paint(bevelBox(0.14, 0.15, 0.09, 0.03), C.pouch), paint(place(bevelBox(0.155, 0.055, 0.105, 0), 0, 0.055, 0), C.leather));
@@ -148,7 +148,7 @@ export function buildWren(seed?: number): Model<WrenJoints> & {
     const g = new THREE.Group();
     g.position.set(s * 0.14, 0.85, 0);
     const pants = paint(place(taper(0.09, 0.11, 0.62, 6), 0, -0.62, 0), C.pants);
-    g.add(kitMesh(crevice(merge(pants), { foot: 1 }), 'cloth'));
+    g.add(kitMesh(gradient(crevice(merge(pants), { foot: 1 }), 0.84, 1.03), 'cloth'));
     g.add(kitMesh(cuffedBoot(s, C), 'leather'));
     body.add(g);
     return g;
@@ -163,7 +163,7 @@ export function buildWren(seed?: number): Model<WrenJoints> & {
     g.rotation.order = 'YXZ';
     const shoulder = place(lowSphere(0.125, 8, 4), 0, -0.05, 0);
     const sleeve = place(taper(0.13, 0.115, 0.3, 8), 0, -0.36, 0);
-    g.add(own(crevice(paintRegion(paint(merge(shoulder, sleeve), C.white), (c) => (c.y < -0.33 ? C.coatShade : undefined)), { foot: 1 }), coatMat, 'cloth'));
+    g.add(own(gradient(crevice(paintRegion(paint(merge(shoulder, sleeve), C.white), (c) => (c.y < -0.33 ? C.coatShade : undefined)), { foot: 1 }), 0.86, 1.04), coatMat, 'cloth'));
     const undershirt = paint(place(taper(0.075, 0.083, 0.2, 6), 0, -0.52, 0), C.under);
     g.add(kitMesh(crevice(merge(undershirt, paint(place(taper(0.095, 0.088, 0.15, 6), 0, -0.6, 0), C.leather)), { foot: 1 }), 'leather'));
     g.add(kitMesh(mittenHand(s, C.skin), 'skin'));
@@ -181,18 +181,18 @@ export function buildWren(seed?: number): Model<WrenJoints> & {
     if (c.y > 0.15 || (n.z < -0.2 && c.y > -0.25)) return C.hair;
     return undefined;
   });
-  head.add(kitMesh(crevice(merge(face, ...earsAndNose(C.skin, C.cheek)), { foot: 1 }), 'skin'));
+  head.add(kitMesh(gradient(crevice(merge(face, ...earsAndNose(C.skin, C.cheek)), { foot: 1 }), 0.92, 1.04), 'skin'));
   const cap = place(lathe([[0.37, 0], [0.355, 0.12], [0.29, 0.25], [0.16, 0.34], [0, 0.37]], 10, false), 0, 0, -0.03, [-0.45, 0, 0]);
   const fringe = [[-0.15, 0.17, 0.22], [-0.04, 0.15, 0.26], [0.07, 0.15, 0.24], [0.17, 0.12, 0.18]].map(([x, len, tilt], i) =>
     place(taper(0.075, 0.005, len, 4, 0.6), x, 0.27 - (i % 2) * 0.02, 0.255, [Math.PI - tilt - 0.35, 0, -x * 0.9]),
   );
   const locks = [-1, 1].map((s) => place(taper(0.06, 0.015, 0.12, 4, 0.6), s * 0.315, 0.12, 0.08, [Math.PI, 0, s * 0.12]));
-  head.add(kitMesh(crevice(paintRegion(paint(wobble(merge(cap, ...fringe, ...locks), 0.01, 3), C.hair), (_c, n) => (n.y > 0.6 ? C.hairLight : undefined)), { foot: 1 }), 'hide'));
+  head.add(kitMesh(gradient(crevice(paintRegion(paint(wobble(merge(cap, ...fringe, ...locks), 0.01, 3), C.hair), (_c, n) => (n.y > 0.6 ? C.hairLight : undefined)), { foot: 1 }), 0.82, 1.1), 'hide'));
 
   const eyes = new THREE.Group();
   eyes.position.set(0, -0.02, 0.305);
   head.add(eyes);
-  eyes.add(kitMesh(eyePieces(C.eye, C.glint)));
+  eyes.add(kitMesh(eyePieces(C.eye, C.glint), 'skin'));
   const brows = new THREE.Group();
   brows.position.set(0, 0.11, 0.295);
   head.add(brows);
