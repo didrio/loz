@@ -247,8 +247,25 @@ The shrine's look rebuild starts with **the Hall of Sleepers** as the golden roo
   - **Faces keep clear of sconces** (`clearOfSconces`, `FACE_CLEARANCE` 1.3 m along the wall): a spot within it gets no face (a
     face on a sconce rose into its cup). Keepers are not filtered (their colliders are frozen). `DungeonArea.sconceSpots` and
     `faceSpots` hold both for the test.
-- **Still rough:** the other wings' shells, the stairs and railings, plates, crystals, the prism, locked door slabs, and the
-  Hall's dressing (T56c).
+- **The Hall's dressing** (T56c, `render/models/shrineDressing.ts`; laid out by `world/dungeon/hallDressing.ts`, only in the
+  shrine's `entry`). Visual only: no colliders, nothing to interact with. The plan (`planHallDressing`, pure) puts it where a
+  test proves it clear; a piece that does not fit is dropped, never moved.
+  - **On the walls**, all above the string course (`WALL_PIECE_LOW` 2.62 m, over the tallest stone and the course's top):
+    two **spiral reliefs** (a framed panel, the shrine's spiral cut in dark stone, a faint teal glow in the cut), a **carved
+    lintel** over each of the Hall's three doorways (east to the Nave, south to the Gallery, and the dungeon's entrance in the
+    west wall: three spirals on a band above the door frame's keystone), two **offering niches** (a surround with an arched
+    head, a dark back, a shelf with four candles and a bowl of offerings; the flames are unlit tongues and halos, no new real
+    lights) and four faded **banners** (dusty rose cloth, torn into tails, on a rod; the one added swatch, `rose 1`, is in
+    `shrine.sandstone`). They keep clear of the doorways (0.6 m from a jamb), the corner pilasters (0.95 m) and the sleeping
+    faces and sconces on the same wall.
+  - **On the floor:** **rubble** at the walls' feet and **sand drifts** along them, never more than `FOOT_BAND` (0.15 m) from
+    the wall: a stone already sinks 0.17 m into a wall's face, so the foot is part of the wall (a heap is pushed back into the wall
+    until it fits). **Cracked and sunken flags** are flat decals (within 1.2 cm of the floor) on flags no stone starts on, no
+    door opens onto, and neither the bell post, the tablet nor Wren's first step uses.
+  - **Mood:** the glows are four unlit meshes merged by material (spirals, flame tongues, candle halos, the cluster's wide halo),
+    breathing in `HallDressing.update`; the room's **dust** (`render/roomDust.ts`, 28 specks, one draw call; in N64 each is one big low-res pixel, so there are few) drifts up through the
+    whole Hall, beyond the sconces' own. The room's pooled point light is untouched.
+- **Still rough:** the other wings' shells, the stairs and railings, plates, crystals, the prism and locked door slabs.
 
 ## Build plan (milestones)
 

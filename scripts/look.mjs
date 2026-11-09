@@ -91,13 +91,13 @@ const SCENES = {
     }
   },
   /**
-   * The Hall of Sleepers' things alone in the viewer (T56b): the wakestone (light and heavy), the tablet, the bell post and its bell,
-   * a carved sleeping face and a kneeling keeper, each from the front, three-quarter and side. The in-game shots: `shrineHall`.
+   * The Hall of Sleepers' things alone in the viewer (T56b, T56c): the wakestone (light and heavy), the tablet, the bell post and its bell,
+   * a carved sleeping face and a kneeling keeper, and the dressing (relief, lintel, niche, banner, rubble, drift), each from the front, three-quarter and side. The in-game shots: `shrineHall`.
    */
   async shrineModels(h) {
     const mode = ['native', 'performance', 'n64'][display] ?? 'native';
     await h.page.setViewportSize({ width: 1000, height: 900 });
-    const assets = (process.env.LOOK_SHRINE ?? 'wakestone,wakestone-heavy,dungeon-tablet,bell-post,bell,shrine-face,shrine-keeper').split(',');
+    const assets = (process.env.LOOK_SHRINE ?? 'wakestone,wakestone-heavy,dungeon-tablet,bell-post,bell,shrine-face,shrine-keeper,shrine-relief,shrine-lintel,shrine-niche,shrine-banner,shrine-rubble,shrine-drift').split(',');
     for (const asset of assets) {
       for (const [name, deg] of [['front', 0], ['three-quarter', 45], ['side', 90]]) {
         const url = new URL('viewer.html', h.page.url() === 'about:blank' ? env.url : h.page.url());
@@ -1039,7 +1039,7 @@ const SCENES = {
   /**
    * The Hall of Sleepers, the golden set's shrine room (T56): from the way in, toward the bell post, the tablet's corner,
    * the whole room from high in a corner, a door frame and sconce close up; then the sandstone wing's shell in the Nave
-   * (pillars) and the Gallery of Statues (kneeling keepers). The models alone: `shrineModels`.
+   * (pillars) and the Gallery of Statues (kneeling keepers); T56c adds the dressing's shots (east, west, niche, banners, floor). The models alone: `shrineModels`.
    */
   async shrineHall(h) {
     await h.newGame();
@@ -1066,6 +1066,11 @@ const SCENES = {
     await view('hall-high', [13.2, 11.3, 5.5], [4, 2, 0.5]); // the whole room from high in a corner: walls, ceiling, floor
     await view('hall-frame', [9.5, 10.6, 2.3], [14, 7, 2.6]); // the nave door's frame, the stone before it
     await view('hall-sconce', [8.6, 2.4, 3], [7, 0.3, 3.3]); // a sconce on the north wall, close
+    await view('hall-east', [1.5, 9, 2.2], [14, 3.5, 3.2]); // the east wall: the relief, the face, the doorway and its lintel, the niche beyond
+    await view('hall-west', [12.5, 6, 2.2], [0, 6, 3.4]); // the west wall: the entrance's lintel, the relief, the niche and its banner
+    await view('hall-niche', [4.6, 8.7, 3.0], [0.3, 8.7, 3.2]); // an offering niche close: candles and the bowl
+    await view('hall-banners', [7, 8, 2.8], [7, 0, 3.6]); // the north wall: banners either side of the sconce
+    await view('hall-floor', [7, 11.5, 6.5], [7, 4.5, 0]); // from high: cracked and sunken flags, drifts, rubble at the feet
     await view('hall-nave', [15.5, -2.5, 2], [26, 12, 3], [22, 6]); // the wing next door: the nave's pillars
     await view('hall-gallery', [7, 13.5, 2], [7, 24, 2.2], [4, 17]); // the Gallery of Statues: kneeling keepers along the walls
   },

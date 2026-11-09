@@ -24,7 +24,7 @@ when it's near.
   2. **The golden set**, one Final-pass ticket each, locked only when the owner approves (the first ones
      plan · opusplan · high, as they define the style): a Thornling → Wren with their full animation set → the starter-area
      entrance vignette (phone frame rate checked) → the prop set (chest, crate, doors, jar, sign: done and approved 2026-11-08) → Pip (done and approved 2026-11-08, T53) → the Hollow
-     Lamplighter → Gravelheart → one shrine room (puzzles unchanged). Each captures its reference renders (art.md
+     Lamplighter → Gravelheart → one shrine room (puzzles unchanged; done and approved 2026-11-08, T56). Each captures its reference renders (art.md
      "The golden set"). After the second final pass, write a `/final-pass` skill (CLAUDE.md: recipes the second time).
   3. **Everything else, final passes** (auto · sonnet, following the golden set): each remaining enemy (Gloomwisp, Dozing
      Sentinel, Shellback, Cragstalker, the blight's strays, Murmurbuds); the NPCs, grouped (they share `buildVillager`, T53; Pip is final, the others wait on their own touches);

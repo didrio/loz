@@ -24,6 +24,7 @@ import { FallenColumn } from './bridge';
 import { PULL_RANGE } from './puzzle';
 import type { FogLook } from '../../render/sky';
 import { decorateRoom, DUNGEON_FOG, THEMES, themeOf, type WallSpot } from './decor';
+import { HALL, HallDressing, planHallDressing } from './hallDressing';
 import { WardenHearth } from './hearth';
 import { buildTablet, doorStyle, DungeonDoor, DungeonSwitch, Wakestone } from './pieces';
 
@@ -172,6 +173,10 @@ export class DungeonArea implements Area {
   /** Where each room's sconces hang (the cup's spot) and which wall spots got a carved face: kept to test that none crowds a sconce. */
   readonly sconceSpots: { room: string; x: number; z: number }[] = [];
   readonly faceSpots: { room: string; x: number; z: number }[] = [];
+  /** The Hall of Sleepers' dressing (T56c): reliefs, niches, banners, rubble, drifts, cracked flags, dust (hallDressing.ts). */
+  hallDressing: HallDressing | null = null;
+  /** Each wall's doorways by `floor:axis:line` (the Hall's dressing and its test read them). */
+  private doorGaps = new Map<string, [number, number][]>();
 
   constructor(physics: Physics, readonly def: DungeonDef) {
     this.id = def.id;
@@ -312,6 +317,7 @@ export class DungeonArea implements Area {
     /** `side`: which way the room's inside lies from this wall line (+1 / -1 along the perpendicular axis). */
     type Edge = { a: number; b: number; top: number; room: RoomDef; side: 1 | -1 };
     const gapsBy = new Map<string, [number, number][]>();
+    this.doorGaps = gapsBy;
     const gap = (key: string, c: number, w: number) => {
       const list = gapsBy.get(key) ?? [];
       list.push([c - w / 2, c + w / 2]);
@@ -536,6 +542,10 @@ export class DungeonArea implements Area {
       const rand = mulberry32(r.x * 7919 + r.z * 104729 + r.floor * 31);
       const { faces } = decorateRoom(b, part(r.floor).src.solid, part(r.floor).src.solid, r, floorY(def, r.floor), roomHeight(def, r), (sp) => this.wallSpots(def, r, gapsBy, sp, !hasStones), hasStones, rand, this.sconceSpots.filter((c) => c.room === r.id));
       for (const f of faces) this.faceSpots.push({ room: r.id, x: f.x, z: f.z });
+      if (def.id === HALL.dungeon && r.id === HALL.room) {
+        const plan = planHallDressing(def, r, (k) => gapsBy.get(k) ?? [], this.sconceSpots.filter((c) => c.room === r.id), this.faceSpots.filter((f) => f.room === r.id));
+        this.hallDressing = new HallDressing(plan, r, floorY(def, r.floor), roomHeight(def, r), { solid: part(r.floor).src.solid, live: part(r.floor).dynamic });
+      }
     }
 
     this.spawn = { x: ex, y: floorY(def, er.floor) + 0.05, z: ez, facing: yawOf[def.entrance.facing] };
@@ -671,6 +681,11 @@ export class DungeonArea implements Area {
         this.sconceSpots.push({ room: r.id, x: sx, z: sz });
       }
     }
+  }
+
+  /** The doorways along a wall (`floor:axis:line`), as [from, to] spans along it. */
+  hallDoorGaps(key: string): readonly [number, number][] {
+    return this.doorGaps.get(key) ?? [];
   }
 
   nameAt() {
@@ -1073,12 +1088,14 @@ export class DungeonArea implements Area {
     for (const post of this.bellPosts.values()) post.update(dt);
     for (const bell of this.bellPickups.values()) bell.update(dt);
     this.sconceGlow.update(this.t);
+    this.hallDressing?.update(this.t);
     this.heavyGlow.emissive.setRGB(0.1, 0.55 + Math.sin(this.t * 2.4) * 0.2, 0.5 + Math.sin(this.t * 2.4) * 0.18);
     if (_env.playerPos) this.updateLights(dt, _env.playerPos);
   }
 
   dispose() {
     for (const c of this.courses) c.dispose();
+    this.hallDressing?.dispose();
     this.disposer();
   }
 }

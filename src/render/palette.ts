@@ -83,7 +83,7 @@ export const AREA_PALETTES: Record<AreaLook, readonly [Hue, Shade][]> = {
   hollow: [...all('stone'), ...all('moss'), ['ink', 2], ['ink', 3], ['bark', 0], ['bark', 1], ['spirit', 2], ['spirit', 3], ['flame', 2]],
   blight: [...all('blight'), ...all('night'), ['moss', 0], ['moss', 1], ['stone', 0], ['stone', 1], ['violet', 2], ['violet', 3]],
   northpass: [...all('stone'), ...all('slate'), ...all('earth'), ['grass', 1], ['grass', 2], ['leaf', 1], ['chalk', 2], ['chalk', 3]],
-  'shrine.sandstone': [...all('sand'), ...all('stone'), ['ink', 2], ['ink', 3], ['flame', 2], ['flame', 3]],
+  'shrine.sandstone': [...all('sand'), ...all('stone'), ['ink', 2], ['ink', 3], ['flame', 2], ['flame', 3], ['rose', 1]],
   'shrine.marble': [...all('slate'), ...all('chalk'), ['ink', 2], ['moon', 2], ['moon', 3], ['sky', 3]],
   'shrine.moss': [...all('moss'), ...all('leaf'), ['bark', 0], ['bark', 1], ['water', 0], ['ink', 2], ['jade', 3]],
   'shrine.basalt': [...all('ink'), ['stone', 0], ['stone', 1], ['ember', 1], ['ember', 2], ['ember', 3], ['flame', 2]],

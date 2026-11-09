@@ -10,6 +10,7 @@ import { pal } from '../palette';
 import { buildSentinel } from './sentinel';
 import { buildShrineCorner, buildShrinePillar } from './shrine';
 import { buildDoorFrame, buildSconce } from './shrineProps';
+import { buildBanner, buildLintelCarving, buildOfferingNiche, buildRubble, buildSandDrift, buildSpiralRelief } from './shrineDressing';
 import { buildBell, buildBellPost, buildDungeonTablet, buildKneelingKeeper, buildSleepingFace, buildWakestone } from './shrineThings';
 import { buildShellback } from './shellback';
 import { buildThornling } from './thornling';
@@ -56,6 +57,10 @@ export const GOLDEN_SET: readonly string[] = [
   'hollow-lamplighter',
   // Gravelheart, the shrine's boss (T55): the kit model and its rig.
   'gravelheart',
+  // The Hall of Sleepers, the shrine room (T56a-c): the sandstone wing's shell, shared pieces, things and the Hall's dressing.
+  'shrine-corner', 'shrine-pillar', 'shrine-door-frame', 'sconce',
+  'wakestone', 'wakestone-heavy', 'dungeon-tablet', 'bell', 'bell-post', 'shrine-face', 'shrine-keeper',
+  'shrine-relief', 'shrine-lintel', 'shrine-niche', 'shrine-banner', 'shrine-rubble', 'shrine-drift',
 ];
 
 export const ASSETS: readonly AssetEntry[] = [
@@ -111,6 +116,13 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'bell-post', kind: 'piece', tier: 'final', build: () => buildBellPost(), note: 'every bell site, the overworld\'s too; the pivot is the hook the bell swings from' },
   { id: 'shrine-face', kind: 'prop', tier: 'final', build: buildSleepingFace, note: 'the sandstone wing\'s carved sleeping face (wall frame: the origin on the wall\'s face)' },
   { id: 'shrine-keeper', kind: 'piece', tier: 'final', build: buildKneelingKeeper, note: 'the sandstone wing\'s kneeling keeper (wall frame)' },
+  // The Hall of Sleepers' dressing (T56c): visual only, wall frame (origin on the wall's face, +z into the room).
+  { id: 'shrine-relief', kind: 'piece', tier: 'final', build: buildSpiralRelief, note: 'a carved spiral panel for the Hall\'s walls (the glow in the cut is unbaked)' },
+  { id: 'shrine-lintel', kind: 'piece', tier: 'final', build: () => buildLintelCarving(3), note: 'the carved band over a Hall doorway (3 m opening)' },
+  { id: 'shrine-niche', kind: 'piece', tier: 'final', build: buildOfferingNiche, note: 'an offering niche: candles and a bowl on a shelf (unlit flames and halos)' },
+  { id: 'shrine-banner', kind: 'piece', tier: 'final', build: () => buildBanner(0), note: 'a faded, torn banner on a rod (three tears)' },
+  { id: 'shrine-rubble', kind: 'piece', tier: 'final', build: () => buildRubble(0), note: 'fallen blocks at a wall\'s foot (no deeper than 0.15 m)' },
+  { id: 'shrine-drift', kind: 'piece', tier: 'final', build: () => buildSandDrift(2), note: 'a drift of sand along a wall\'s foot (2 m)' },
 
   { id: 'gear-sword', kind: 'prop', tier: 'rough', build: buildSwordItem, note: 'icon' },
   { id: 'gear-shield', kind: 'prop', tier: 'rough', build: buildShieldItem, note: 'icon' },
