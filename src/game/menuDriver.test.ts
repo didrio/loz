@@ -19,6 +19,59 @@ function io() {
   return { fake, press, view: () => view };
 }
 
+describe('MenuDriver hide key', () => {
+  const rows = () => [{ kind: 'toggle' as const, label: 'Shadows', get: () => true, set: () => {} }];
+
+  it('holding it makes the view a live one (the camera may turn), releasing ends it', () => {
+    const { fake, view } = io();
+    const driver = new MenuDriver(fake);
+    driver.open({ title: 'Paused', rows: rows() });
+    expect(driver.liveView).toBe(false);
+    driver.setPeek(true);
+    expect(driver.liveView).toBe(true);
+    expect(view()!.peeking).toBe(true);
+    driver.setPeek(false);
+    expect(view()!.peeking).toBeUndefined();
+  });
+
+  it('closing forgets it', () => {
+    const { fake } = io();
+    const driver = new MenuDriver(fake);
+    driver.open({ title: 'Paused', rows: rows() });
+    driver.setPeek(true);
+    driver.close();
+    driver.open({ title: 'Paused', rows: rows() });
+    expect(driver.liveView).toBe(false);
+  });
+
+  it('the reset key and the mouse put the selected / named row back to its default', () => {
+    const { fake, press, view } = io();
+    const driver = new MenuDriver(fake);
+    let a = 3;
+    let b = 5;
+    driver.open({ title: 'S', rows: [
+      { kind: 'slider', label: 'A', def: 1, min: 0, max: 9, step: 1, get: () => a, set: (v) => (a = v), format: String },
+      { kind: 'slider', label: 'B', def: 2, min: 0, max: 9, step: 1, get: () => b, set: (v) => (b = v), format: String },
+    ] });
+    press('menuReset');
+    driver.update();
+    expect(a).toBe(1);
+    expect(view()!.rows[0].changed).toBe(false);
+    driver.reset(1);
+    expect(b).toBe(2);
+  });
+
+  it('a mouse pick on a choice row goes through', () => {
+    const { fake, view } = io();
+    const driver = new MenuDriver(fake);
+    let at = 0;
+    driver.open({ title: 'Paused', rows: [{ kind: 'choice', label: 'Display', options: ['A', 'B', 'C'], get: () => at, set: (i) => (at = i) }] });
+    driver.pick(0, 2);
+    expect(at).toBe(2);
+    expect(view()!.rows[0].index).toBe(2);
+  });
+});
+
 describe('ChoiceMenu', () => {
   it('shows the options and resolves with the one chosen', async () => {
     const { fake, press, view } = io();

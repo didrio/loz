@@ -424,6 +424,68 @@ const SCENES = {
     await h.wait(200);
     await h.shot('gear-glove');
   },
+  /**
+   * The new controls and the dev panel (T63): the Settings tab with its Display capsule and switches; the dev panel (backtick) down the
+   * right edge over the live world, after a drag has turned the camera, and with its hide key held; then the Settings tab on a phone.
+   */
+  async devMenu(h) {
+    await h.newGame();
+    await h.wait(1000);
+    await h.press('KeyP');
+    await h.wait(300);
+    await h.shot('dev-0-settings');
+    for (let i = 0; i < 7; i++) await h.press('ArrowDown'); // Display
+    await h.press('ArrowRight');
+    await h.wait(400);
+    await h.shot('dev-1-display-moved');
+    await h.press('ArrowLeft');
+    await h.press('KeyP');
+    await h.wait(300);
+    await h.press('Backquote');
+    await h.wait(300);
+    await h.shot('dev-2-panel');
+    await h.game(() => window.embervale.input.drag(260, 40));
+    for (let i = 0; i < 5; i++) await h.press('ArrowDown'); // Texture resolution
+    await h.wait(400);
+    await h.shot('dev-3-turned');
+    await h.page.keyboard.down('Tab');
+    await h.wait(300);
+    await h.shot('dev-4-hidden');
+    await h.page.keyboard.up('Tab');
+    for (let i = 0; i < 10; i++) await h.press('ArrowDown'); // into the look experiment
+    await h.wait(300);
+    await h.shot('dev-5-look');
+    await h.game(() => window.embervale.devPanel.menu.hover(document.querySelectorAll('.devmenu .gmenu-row').length - 1)); // Default, pinned under the list
+    await h.press('ArrowRight'); // on: the visual rows show the defaults, locked
+    await h.game(() => window.embervale.devPanel.menu.hover(document.querySelectorAll('.devmenu .gmenu-row').length - 13)); // a row that moved
+    await h.wait(300);
+    await h.shot('dev-5b-default');
+    await h.press('Backquote');
+    // The performance meter (bottom right; the harness has it off, so switch it on).
+    await h.game(() => { window.embervale.showPerf = true; });
+    await h.wait(1500);
+    await h.shot('dev-5c-perf-meter');
+    await h.press('Backquote');
+    await h.wait(300);
+    await h.shot('dev-5d-perf-with-panel');
+    await h.press('Backquote');
+
+    const url = h.page.url().split('?')[0];
+    await h.game(() => window.embervale.save());
+    await h.page.setViewportSize({ width: 844, height: 390 });
+    await h.page.goto(`${url}?touch=1`);
+    await h.until(() => window.embervale?.mode === 'title', 60000);
+    await h.game(() => window.embervale.input.touch.tap('confirm'));
+    await h.until(() => window.embervale.mode === 'play', 60000);
+    await h.game(() => { window.embervale.showPerf = true; });
+    await h.wait(1200);
+    await h.shot('dev-6b-phone-perf');
+    await h.game(() => window.embervale.input.touch.tap('pause'));
+    await h.until(() => window.embervale.pauseMenu.isOpen, 5000);
+    await h.game(() => window.embervale.pauseMenu.menu.hover(7)); // Display
+    await h.wait(400);
+    await h.shot('dev-6-phone');
+  },
   /** The HUD's sky dial (ui/skyDial.ts) through the day, and the compass strip (ui/compass.ts) at two headings. */
   async hud(h) {
     await h.newGame();
@@ -681,7 +743,8 @@ const SCENES = {
       const g = window.embervale;
       g.state.set('valleyOpen');
       g.player.invuln = 1e6;
-      Object.assign(window.embervaleLook.LOOK, { barrels: true, lighting: false, smooth: false });
+      // T62's comparison as it was measured: corner shade, bloom and 4× anti-aliasing on (they are off by default since).
+      Object.assign(window.embervaleLook.LOOK, { barrels: true, lighting: false, smooth: false, ao: 1, bloom: 0.25, aa: 2 });
     });
     const set = (patch) => h.game((p) => Object.assign(window.embervaleLook.LOOK, p), patch);
     const variants = [['off', { lighting: false, smooth: false }], ['on', { lighting: true, smooth: false }], ['smooth', { lighting: true, smooth: true }]];
@@ -721,10 +784,11 @@ const SCENES = {
       ['+ corner shade', { ao: 1 }],
       ['+ bloom (all on)', { bloom: 0.25 }],
       ['+ smooth shading', { smooth: true }],
+      ['anti-aliasing off', { aa: 0 }],
     ];
     for (const [w, ht, label] of [[1280, 720, 'look window'], [1920, 1080, 'desktop 1080p'], [1688, 780, 'phone landscape, ratio 2']]) {
       await h.page.setViewportSize({ width: w, height: ht });
-      await set({ lighting: false, smooth: false, ao: 1, bloom: 0.25 });
+      await set({ lighting: false, smooth: false, ao: 1, bloom: 0.25, aa: 2 });
       await h.wait(600);
       console.log(`      ${label} (${w}×${ht}):`);
       for (const [name, patch] of costs) {
@@ -736,7 +800,7 @@ const SCENES = {
     }
     const smoothMs = await h.game(() => window.embervaleLook.smoothMs());
     console.log(`      smooth shading's one-off cost when flipped: ${smoothMs.toFixed(0)} ms`);
-    await set({ barrels: false, lighting: false, smooth: false, ao: 1, bloom: 0.25 });
+    await set({ barrels: false, lighting: false, smooth: false, ao: 0, bloom: 0, aa: 0 });
     await h.page.setViewportSize({ width: 1280, height: 720 });
   },
   /** After the prism: the blight gone and Thistledown with only Lark and Pip; Odo's stall unattended. */

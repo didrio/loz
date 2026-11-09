@@ -13,7 +13,9 @@ import { Icons } from '../render/icons';
 import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
 import { ShadowRig } from '../render/shadows';
-import { RetroPipeline, renderStill, internalSize, pixelRatioFor, DISPLAY_NATIVE, DISPLAY_PERFORMANCE, DISPLAY_N64 } from '../render/retro';
+import { RetroPipeline, renderStill, internalSize, pixelRatioFor, DISPLAY_NAMES, DISPLAY_NATIVE, DISPLAY_PERFORMANCE, DISPLAY_N64 } from '../render/retro';
+import { bakedLightOn } from '../render/bakeLight';
+import { overlayLines, PerfMeter, perfReport, type PerfFacts } from './perf';
 import type { AtmosphereId } from '../render/atmosphere';
 import { Sky } from '../render/sky';
 import { ModernLook } from '../render/experiments/modernLook';
@@ -31,6 +33,7 @@ import { Dialog } from './dialog';
 import { EnemyManager, type Enemy } from './enemies';
 import { Hazards } from './hazards';
 import { ATTACK_BOOST_SECONDS, MAX_FLASKS } from './flasks';
+import { DevPanel } from './devPanel';
 import { PauseMenu } from './pauseMenu';
 import { Pickups } from './pickups';
 import { NO_CONTROLS, Player, type Controls } from './player';
@@ -92,6 +95,8 @@ export class Game implements ScriptApi {
   private readonly saveSlot: SaveSlot;
   /** Player-chosen options (the pause menu's Settings tab); change them through `changeSettings`. */
   readonly settings: Settings;
+  /** What a fresh install gets (touch devices: Performance, no shadows): the Settings tab's reset buttons go back to these. */
+  readonly defaultSettings: Settings;
   private readonly timer = new THREE.Timer();
   private readonly debug: Debug | null;
   private areaName = '';
@@ -104,11 +109,17 @@ export class Game implements ScriptApi {
   /** The on-screen controls (phones and tablets only; ui/touch.ts). */
   private readonly touch: TouchControls;
   readonly pauseMenu: PauseMenu;
+  readonly devPanel: DevPanel;
+  /** Frame timing for the performance meter (bottom right), and whether the dev panel has it on (it starts on). */
+  readonly perf = new PerfMeter();
+  readonly perfByDefault = !(globalThis as { __embervaleNoPerf?: boolean }).__embervaleNoPerf; // the test harness turns it off
+  showPerf = this.perfByDefault;
+  private perfShownAt = 0;
   /** Icons drawn from the registered models (the Gear tab, the HUD's flasks and glove). */
   readonly icons: Icons;
   readonly buds: BudSystem;
   /** Script menus (`choose`): the bells' travel menu. */
-  private readonly choice: ChoiceMenu;
+  readonly choice: ChoiceMenu;
   /** Slow motion for cutscenes (1 = normal). */
   private timeScale = 1;
   private interactBuffer = 0;
@@ -141,7 +152,8 @@ export class Game implements ScriptApi {
     this.combat = new Combat(this);
 
     this.saveSlot = new SaveSlot(store);
-    this.settings = decodeSettings(store.get(SETTINGS_KEY), { ...DEFAULT_SETTINGS, display: wantsTouch() ? DISPLAY_PERFORMANCE : DISPLAY_NATIVE, shadows: !wantsTouch() });
+    this.defaultSettings = { ...DEFAULT_SETTINGS, display: wantsTouch() ? DISPLAY_PERFORMANCE : DISPLAY_NATIVE, shadows: !wantsTouch() };
+    this.settings = decodeSettings(store.get(SETTINGS_KEY), this.defaultSettings);
     this.applySettings();
     this.loadArea('overworld');
 
@@ -154,6 +166,7 @@ export class Game implements ScriptApi {
     this.hud.icon = (id) => this.icons.get(id);
     this.icons.warm(['gear-glove', 'gear-flask', 'gear-flask-life', 'gear-flask-attack']);
     this.pauseMenu = new PauseMenu(this);
+    this.devPanel = new DevPanel(this);
     this.buds = new BudSystem(this);
     this.choice = new ChoiceMenu(this);
     // The mouse works whichever menu is open.
@@ -165,6 +178,11 @@ export class Game implements ScriptApi {
     this.hud.onMenuAdjust = (i, dir) => openMenu()?.adjust(i, dir);
     this.hud.onMenuSlide = (i, fraction) => openMenu()?.slide(i, fraction);
     this.hud.onMenuTab = (i) => this.pauseMenu.setTab(i);
+    this.hud.onMenuLook = (dx, dy, finger) => this.input.drag(dx, dy, finger);
+    this.hud.onMenuPick = (i, opt) => openMenu()?.pick(i, opt);
+    const dev = () => this.devPanel.menu;
+    this.hud.devHandlers = { hover: (i) => dev().hover(i), click: (i) => dev().click(i), adjust: (i, dir) => dev().adjust(i, dir), slide: (i, f) => dev().slide(i, f), pick: (i, opt) => dev().pick(i, opt), reset: (i) => dev().reset(i) };
+    this.hud.onMenuReset = (i) => openMenu()?.reset(i);
     this.hud.onTitleClick = (i) => this.title.click(i);
     this.hud.onTap = (a) => this.input.touch?.tap(a);
   }
@@ -258,6 +276,7 @@ export class Game implements ScriptApi {
   // ---------------------------------------------------------------------------
 
   private frame = (now: number) => {
+    const started = performance.now();
     this.resizeIfChanged();
     this.timer.update(now);
     const rawDt = Math.min(this.timer.getDelta(), 0.05);
@@ -265,7 +284,7 @@ export class Game implements ScriptApi {
     this.combat.hitStop -= rawDt;
     this.input.poll();
     this.hud.setDevice(this.input.device);
-    const paused = this.touch.blocked || this.pauseMenu.update();
+    const paused = this.touch.blocked || this.devPanel.update() || this.pauseMenu.update();
     const dt = frozen || paused ? 0 : rawDt * this.timeScale;
     this.director.update(dt);
     // Platforms move before the player updates, so a rider takes the step along (core/physics.ts carryDelta).
@@ -292,8 +311,39 @@ export class Game implements ScriptApi {
     this.updateWorld(dt, rawDt);
     this.input.endFrame();
     this.drawFrame();
+    this.perf.frame(now, performance.now() - started);
+    if (now - this.perfShownAt >= 250) {
+      this.perfShownAt = now;
+      this.hud.setPerf(this.devTab && this.showPerf && this.mode !== 'title' ? overlayLines(this.perf.stats(), this.perfFacts()).join('\n') : null);
+    }
     requestAnimationFrame(this.frame);
   };
+
+  /** What the renderer says about the frame just drawn (the pipelines count their own passes: `renderer.info`). */
+  private perfFacts(): PerfFacts {
+    const { info } = this.renderer;
+    const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+    return {
+      calls: info.render.calls, triangles: info.render.triangles, pixelRatio: this.renderer.getPixelRatio(),
+      width: size.x, height: size.y, display: DISPLAY_NAMES[this.settings.display], modern: this.modern.active,
+    };
+  }
+
+  /** The dev panel's "Copy performance": the meter's numbers, the scene and the machine, as text. */
+  performanceReport(): string {
+    const { info } = this.renderer;
+    const gl = this.renderer.getContext();
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const gpu = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : 'unknown';
+    const p = this.player.pos;
+    return perfReport(this.perf.stats(), this.perfFacts(), {
+      area: this.area.id, hours: this.state.hours, position: `${p.x.toFixed(0)}, ${p.y.toFixed(0)}, ${p.z.toFixed(0)}`, gpu,
+      windowSize: `${window.innerWidth}×${window.innerHeight}`, devicePixelRatio: window.devicePixelRatio,
+      geometries: info.memory.geometries, textures: info.memory.textures, programs: info.programs?.length ?? 0,
+      lines: info.render.lines, points: info.render.points, shadows: this.settings.shadows && !this.area.indoor, bakedLight: bakedLightOn(),
+      changed: this.devPanel.changedText(),
+    });
+  }
 
   /** Draws the frame through the Display mode's pipeline (or the T62 experiment's). Public for the look scene's cost measure. */
   drawFrame() {
@@ -506,7 +556,9 @@ export class Game implements ScriptApi {
 
     if (this.mode !== 'title') {
       const canLook = this.mode === 'play';
-      this.rig.update(dt, canLook ? input.look(dt) : { yaw: 0, pitch: 0 }, player.pos, this.combat.lockAt);
+      // The dev panel, or the pause menu while its hide key is held (T63): game time is stopped but the camera orbits Wren (no lock-on pull, no arrow keys: they move the menu's cursor).
+      if (this.pauseMenu.liveView || this.devPanel.isOpen) this.rig.update(rawDt, input.look(rawDt, false), player.pos, null);
+      else this.rig.update(dt, canLook ? input.look(dt) : { yaw: 0, pitch: 0 }, player.pos, this.combat.lockAt);
       player.setOpacity(this.hiddenIn ? 0 : this.rig.playerOpacity);
     }
     const look = this.camera.getWorldDirection(this.lookDir);

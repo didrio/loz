@@ -129,7 +129,7 @@ leads back to the entry, and hanging it there wakes the network.
   movers by their per-frame path, never teleport them far in one frame.
 - **Falls** (`game/trialFalls.ts`): `TrialFalls(checkpoints, fallY, start)` remembers the last
   checkpoint ledge stood on; `recover(api)` fades and returns her. `TRIAL_RULES.fallDamage` is 1
-  (half a heart; owner's call; the pause menu's Dev tab can switch it off). Dungeon rooms take `trial: true` and
+  (half a heart; owner's call; the dev panel can switch it off). Dungeon rooms take `trial: true` and
   `platforms` (see [dungeons.md](dungeons.md): the validator checks the room, the doorways, the
   ceiling and runs `checkCourse` with **first platform = start, last = goal**); `shrineContent`
   applies the trial rule. The gorge will use `TrialFalls` directly.

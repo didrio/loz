@@ -19,10 +19,11 @@ built almost entirely by AI agents. Build everything as if it will ship.
 ## Where things stand (current state only, ≤ 8 lines; history lives in git)
 
 As of 2026-11-09: Emberfield plays start to finish: a wordless start, the shield, the village, the Lamplighter, **the Waking Shrine** through
-**Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell; **the blight** lies on the valley until then. Every gate is data (`content/progression.ts`, checked by a test).
-Everything is built in code: flat-shaded, faceted, on one master palette, generated crisp textures (a Dev-tab resolution slider), a Display setting (Native / Performance / N64), optional sun **Shadows**, an atmosphere per place, **baked light** world-wide in background workers (live Dev-tab sliders; kept as is), the N64 sound chain, talking **blips**, and **touch controls** in a playtest on GitHub Pages.
-The UI has its period surface: the code-built **Embervale** font and the `bold` theme (`ui/font/`, `ui/theme.ts`, the `/ui.html` bench); the title and pause layouts wait for the UI pass. **Sallowmere** stands empty while the owner redesigns it.
-**Next:** the **N64 look rebuild** of the starter zone ([art.md](docs/art.md), [pipeline.md](docs/pipeline.md)): the foundations are built (including the pause menu's **Gear** tab with icons drawn from `gear-*` models) and **the golden set is complete and approved**: the chest, **Thornling**, **Wren**, the **entrance vignette** (Thistledown's road in), the **prop set**, **Pip**, both bosses (every look in a rig, each fight proven unchanged by a trace test; Gravelheart's body also has a keyed dip and rebound, zero at its key frames) and the shrine room, **the Hall of Sleepers**, with the whole sandstone wing (shell, door frames, sconces, things and the Hall's dressing; layout frozen by a collider snapshot). **No object is one flat colour** (owner's call). Left: the rest of the game's final passes (roadmap.md "The N64 look rebuild" step 3). **A look-direction question is open:** the owner wants a more modern look; Dev → Look experiment (T62, render.md "Look experiment") stages today's, a modern-stylized and a photoreal barrel and a modern-lighting switch, to decide on; art.md stands until they do. Next: T63 (a live view for visual settings), then T58 ([docs/tickets.md](docs/tickets.md)). **Textures** are drawn to the pixel-art bar (art.md "Texture recipe"): stone, planks, shingle, metal, rock, scales, foliage, ground, thatch and cloth are redrawn; plaster, bark, hide, leather and skin were judged fine. Every model is a pure builder in `render/models/`, registered (`rough` until its final pass with the modeling kit `render/kit.ts`) and checked by a validator (`npm run assets`). Dev server: port 5273.
+**Gravelheart** and the **prism**, which opens the Northpass, **Wayfarers' Camp** and the Waybell; **the blight** lies on the valley until then. Every gate is data (`content/progression.ts`, checked by a test). **Sallowmere** stands empty while the owner redesigns it.
+Everything is built in code: faceted low-poly on one master palette, pixel-art textures generated in code (art.md "Texture recipe"), **baked light** world-wide in background workers, a Display setting (Native / Performance / N64), optional sun **Shadows**, an atmosphere per place, the N64 sound chain, talking **blips**, **touch controls** in a playtest on GitHub Pages. Every model is a pure builder in `render/models/`, registered and checked by a validator (`npm run assets`); final ones use the kit (`render/kit.ts`).
+**The look** (owner's call, 2026-11-09): the game starts in **modern lighting** (render.md "Look experiment": Standard-material twins lit by the sky, Neutral tone mapping, saturation 0.9, no corner shade, bloom or anti-aliasing, for 120 fps); N64 mode keeps the classic look, and look shots still render the classic look until T66. The **golden set** is final and approved (chest, Thornling, Wren, the entrance vignette, the prop set, Pip, both bosses, the Hall of Sleepers); the rest of the final passes wait (roadmap.md "The N64 look rebuild" step 3). **No object is one flat colour** (owner's call).
+**The UI**: the **Embervale** font and `bold` theme; the pause menu (Settings, Gear, Hints, Messages) draws on/off as switches and every choice as a capsule of all its options, each setting with a reset; the **dev panel** (backtick) is a plain list down the right edge with the world live behind it, a **Default** switch and a **performance meter** (engine.md "The pause menu").
+**Next:** T65 (barrels between the modern-stylized and the photoreal one: a direction for modern props), then T66 (look shots in the modern look), T58 (frame cost), T64 (exposure per time and place): [docs/tickets.md](docs/tickets.md). Dev server: port 5273.
 
 ## Docs: read the one for the area you're touching
 
@@ -114,33 +115,29 @@ src/
   core/                    engine-level, no game knowledge
     physics.ts, input.ts   Rapier wrapper (layers, colliders, Character, queries); actions, bindings, glyphs
     touch.ts               touch controls' logic: fingers → stick, camera drag, buttons (pure)
-    director.ts, save.ts   game-time waits/tweens for scripts; save format, migrations, KeyValueStore, settings
-    audio.ts, math.ts      sound effects + the song per mood; noise, easing, angles, seeded RNG
+    director.ts, save.ts, audio.ts, math.ts   game-time waits/tweens for scripts; save format, migrations, KeyValueStore, settings; sound effects + the song per mood; noise, easing, angles, seeded RNG
     music.ts, synth.ts, tracks.ts   music notation → events; synth + scheduler; the themes (DAY_SONGS picks the day song; the alternate is kept)
     midiFile.ts, midiImport.ts, valleyTheme.ts   MIDI reader; MIDI → notation (npm run midi); the owner's day theme; imported/ (generated, never edit)
-    n64chain.ts            the N64 sound chain: sample-rate reducer, low-pass, note cap, reverb per place (audio.md)
-    blips.ts               talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
+    n64chain.ts, blips.ts  the N64 sound chain: sample-rate reducer, low-pass, note cap, reverb per place (audio.md); talking blips: blipAt (letter → note, pure), BlipVoice presets, BlipPlayer, ROOMS
   render/                  the look: palette (the master palette: `pal`, `snap`), materials, textures, shapes, kit + bakeRig (the modeling kit), effects, atmosphere, sky, shadows, retro (the Display modes), particles, motes, sconceGlow (the dungeon's flames), roomDust (a room's drifting dust), characters (the `Humanoid` joints type); every file: render.md "Render files"
     models/                every model as a pure builder (no physics, no game; people: `person.ts` pieces, `wren.ts`, `villager.ts`; the shrine's shell `shrine.ts`, its door frame and sconce `shrineProps.ts`, its wakestone, tablet, bell post, face and keeper `shrineThings.ts`, the Hall's dressing `shrineDressing.ts`), `registry.ts` (id, kind, tier, `build()`), `validate.ts` (budgets, palette); docs/pipeline.md
-    experiments/           T62's look experiment, off by default, outside every art rule (render.md "Look experiment"): `modernLook.ts` (the Dev tab's modern lighting, smooth shading), `modernBarrel.ts`, `realBarrel.ts` + `realBarrelGlsl.ts`, `skyEnv.ts`
+    experiments/           the modern look (`modernLook.ts`: on by default since 2026-11-09, render.md "Look experiment") and T62's barrels (`modernBarrel.ts`, `realBarrel.ts` + `realBarrelGlsl.ts`, `skyEnv.ts`), outside the classic art rules
   world/
     area.ts                Area interface, Interactable, Trigger, AreaBuilder
     objects.ts             Npc, Chest (padlockable), StoneDoor (asleep/awake), HingedDoor (a house door), BushField, BossArena, HeartVessel, GreatLantern
     jars.ts, sigil.ts, bell.ts, murmurbud.ts   JarField (ruins' jars: gem/heart/empty, `jar.<id>` flags); SigilLook; BellPost, BellPickup; MurmurbudLook
     platforming.ts         platform courses: PlatformDef/CourseDef, checkCourse (reachability), buildCourse (moving ledges)
     overworld/             the overworld: the valley, its landmarks, the streamed regions (Northpass, Sallowmere); files: engine.md "Overworld files"
-    dungeon/               data format, validator, softlock solver, text map, DUNGEONS; defs/ the dungeons; build.ts + pieces.ts
-                           (data → 3D Area); grid.ts + puzzle.ts (2 m grids, wakestone checker); landmarks.ts (statues);
+    dungeon/               data format, validator, softlock solver, text map, DUNGEONS; defs/ the dungeons; build.ts + pieces.ts (data → 3D Area); grid.ts + puzzle.ts (2 m grids, wakestone checker); landmarks.ts (statues);
                            hearth.ts (Gravelheart's arena, causeway, Heart Vessel); hallDressing.ts (the Hall's dressing: plan + build); prism.ts (the Keepers' Seal's prism); decor.ts (each wing's palette and light)
   game/
     game.ts, script.ts     Game: owns systems, frame loop, modes, implements ScriptApi; ScriptApi + Script + Page (content's contract)
     combat.ts, title.ts    lock-on, glove throw, hit feedback both ways, hit-stop; the title menu
     menu.ts, menuDriver.ts MenuStack (rows, submenus, toggles, body text); MenuDriver (input → menu → HUD), ChoiceMenu (api.choose)
-    pauseMenu.ts           the pause menu (P / Start): tabs Settings, Hints, Messages, Dev (sprint, invincible, save states)
+    pauseMenu.ts, devPanel.ts, perf.ts the pause menu (P / Start): tabs Settings, Gear, Hints, Messages; the dev panel (backtick / L3: sprint, invincible, render and look tuning, save states, Copy performance); the performance meter's frame timing and report text
     murmurbud.ts, buds.ts  a Murmurbud's rule (gauge, growth, overload); BudSystem (runs the area's buds, sounds, the gauge)
     player.ts, guard.ts, surf.ts, lunge.ts   Wren (movement, sword, shield, stagger; hands the rig its state); the guard; surfing; whether a swing may step forward
-    enemies.ts, hazards.ts Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs
-    sentinel.ts, shellback.ts, cragstalker.ts   the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
+    enemies.ts, hazards.ts, sentinel.ts, shellback.ts, cragstalker.ts   Enemy, GroundEnemy, Thornling, Gloomwisp, EnemyManager; shockwaves/orbs; the shrine's Dozing Sentinel and Shellback; the Northpass's Cragstalker
     blight.ts              the blight's rules (where it lies, the lift, the strays, its songs, THORN_ATTACK)
     boss.ts, bosses/       Boss base (phases, move system); the Hollow Lamplighter; gravelheart/ (moves, the boss; its model is render/models/gravelheart.ts); dungeonQuiet.ts (no music once beaten)
     lockon.ts, trialFalls.ts, flasks.ts, water.ts   lock-on's pick; trials' fall rule; the two flasks; dry/shallow/deep at Wren's feet (WaterFalls)
@@ -150,12 +147,10 @@ src/
     overworld.ts           scripts for every overworld interactable/trigger, save restore
     text/                  the player's words, one typed module per area or topic (`text/village.ts`: `V.maren.bell`; also `news`, `overworld`, `bells`, `hints`, `sigils`, `shrine`, `gravelheart`); scripts keep the logic
     village.ts, shop.ts    Thistledown: villagers, mill door and bed, locked cottages, Odo's stall, the opening, Pip's doll; offerWares (the buy menu)
-    bells.ts, hints.ts     bell registry (BELLS) + scripts; the keepers' notes (HINTS): reading one, restore, foundHints
-    sigils.ts, villageNews.ts   the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)
-    gorge.ts, northpass.ts the Hushing Gorge (monsters, fall rule); the canyon past the camp (Cragstalkers, fall rule)
-    shrine.ts, gravelheart.ts  the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
+    bells.ts, hints.ts, sigils.ts, villageNews.ts   bell registry (BELLS) + scripts; the keepers' notes (HINTS: reading, restore, foundHints); the sigils (SIGILS: texts, reading, foundSigils); villagers' one-time reactions (withNews)
+    gorge.ts, northpass.ts, shrine.ts, gravelheart.ts   the Hushing Gorge and the canyon past the camp (monsters, fall rules); the Waking Shrine (chests, keys, doors, rooms, switches, exit); its boss encounter and the Seal vision
     progression.ts         the world progression solver: every gate as data, a walk from a new save to the end (dungeons.md)
-    devStates.ts, fakeApi.ts   the Dev tab's save states; the fake ScriptApi content tests run against
+    devStates.ts, fakeApi.ts   the dev panel's save states; the fake ScriptApi content tests run against
   ui/  hud.ts, style.css, richText.ts, theme.ts, font/   DOM HUD (hearts, gems, keys, clock, prompt, gauges, dialog, cards, menus, title); text tags `[gear]…[/]`; the look as `--ui-*` variables; the Embervale font (skeletons → TrueType → FontFace)
        touch.ts, skyDial.ts, compass.ts   on-screen controls (phones/tablets); the clock's sky dial; the compass strip
 scripts/

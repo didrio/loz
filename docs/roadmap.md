@@ -17,6 +17,7 @@ when it's near.
 
 - **Next region:** Sallowmere's map and Stiltwick are built and empty; its story and mechanics are being redesigned by
   the owner (2026-11-06: the old design in [sallowmere.md](sallowmere.md) is shelved, not the plan).
+- **Modern lighting is the default look** (owner's call, 2026-11-09): the final passes still build N64-style assets (faceted, palette, pixel textures), now lit by the modern pipeline. Next steps: T66 (look shots, budgets and art.md in the modern look), T65 (how far props can go toward the photoreal barrel within a phone's budget), T58 (phones in modern lighting).
 - **The N64 look rebuild** (owner, 2026-11-07; replaces the shelved PS2 "look pass", old T20–T26 in git history): the
   starter zone rebuilt on the new pipeline ([art.md](art.md), [pipeline.md](pipeline.md)) before any new area. Behaviour
   never changes. In order, each written as a ticket when it's near (at the previous one's `/wrap`):
@@ -118,7 +119,7 @@ enemy randomness.
 - **Kit `wobble` splits a lathe's seam.** It welds vertices by a rounded `toFixed(4)` key, and a lathe's last ring lands on `-0.0000` where its first is `0.0000`, so the two halves move apart (a slit down the model). The jar skips `wobble` and a test checks it is closed. Fix: key with `Math.round(v * 1e4)`; it shifts the approved Thornling and Wren, so do it inside a final pass that re-approves them, and check any other lathe + `wobble` model (`npm run look -- contact`).
 - **Baked light: awaiting the owner's verdict.** Before T48 it was parked (owner, 2026-11-07: "I don't really see a difference;
   revisit later"). T48 (2026-11-08) turned it on across the whole world in background workers, with live strength sliders in
-  the Dev tab (engine.md "Baked light"). Next is the owner's call: keep (and fix the defaults to the slider values they like),
+  the dev panel (engine.md "Baked light"). Next is the owner's call: keep (and fix the defaults to the slider values they like),
   strengthen, or drop it. If it's kept:
   - **Load cost:** the valley's main-thread prep is ~0.3–0.5 s at load, and its colours land ~5–8 s later. Sallowmere's
     ~0.12 s prep runs in one streaming step mid-play (split it across steps if it hitches). A dropped job (an area left

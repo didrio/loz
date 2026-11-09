@@ -2,6 +2,16 @@ import { glyph, type Action, type Device } from '../core/input';
 import { POTIONS } from '../game/flasks';
 import type { BudGaugeView } from '../game/buds';
 import type { MenuView } from '../game/menu';
+
+/** What a menu's mouse and touch do (the pause menu's and the dev panel's are separate sets). */
+export interface MenuHandlers {
+  hover(i: number): void;
+  click(i: number): void;
+  adjust(i: number, dir: -1 | 1): void;
+  slide(i: number, fraction: number): void;
+  pick(i: number, opt: number): void;
+  reset(i: number): void;
+}
 import { KEY_HEX, type KeyColor, type Potion } from '../world/dungeon/format';
 import { Compass } from './compass';
 import { richHtml } from './richText';
@@ -104,11 +114,27 @@ export class Hud {
   onMenuAdjust: (i: number, dir: -1 | 1) => void = () => {};
   onMenuSlide: (i: number, fraction: number) => void = () => {};
   onMenuTab: (i: number) => void = () => {};
+  /** The hide button (touch) went down / up; a drag over the live view (pixels; `finger` for touch). */
+  onMenuPeek: (on: boolean) => void = () => {};
+  onMenuLook: (dx: number, dy: number, finger: boolean) => void = () => {};
+  /** The dev panel's mouse handlers (game/devPanel.ts); the pause menu's are the `onMenu*` fields. */
+  devHandlers: MenuHandlers = { hover: () => {}, click: () => {}, adjust: () => {}, slide: () => {}, pick: () => {}, reset: () => {} };
+  onMenuReset: (i: number) => void = () => {};
+  onMenuPick: (i: number, opt: number) => void = () => {};
+  private devmenu: HTMLElement;
+  private perfEl: HTMLElement;
+  private perfText = '';
+  private devmenuHtml = '';
+  private devSelected = -1;
+  /** What each animated control showed when last drawn (a toggle's state, a capsule's option), so a change can slide. */
+  private shown = new Map<string, number>();
+  private lookDrag: { id: number; x: number; y: number } | null = null;
+  private peekId: number | null = null;
   /** A tap on a title row; a tap on a HUD icon that stands for a button (☰, a flask, the glove, a menu's ✕). */
   onTitleClick: (i: number) => void = () => {};
   onTap: (a: Action) => void = () => {};
   /** The slider being dragged: its row and the track's box when the drag began. */
-  private drag: { row: number; left: number; width: number } | null = null;
+  private drag: { row: number; left: number; width: number; slide: (row: number, fraction: number) => void } | null = null;
   private bossTitle: HTMLElement;
   private bossBar: HTMLElement;
   private bossFill: HTMLElement;
@@ -167,7 +193,9 @@ export class Hud {
           <div><b>☰</b> pause</div><div><b>Tap</b> read on</div>
         </div>
       </div>
+      <div class="perf hidden"></div>
       <div class="gmenu hidden"></div>
+      <div class="devmenu hidden" data-lookdrag></div>
       <div class="debug hidden"></div>`;
     const q = (s: string) => this.el.querySelector<HTMLElement>(s)!;
     this.hearts = q('.hearts');
@@ -217,43 +245,78 @@ export class Hud {
     this.toast = q('.toast');
     this.debug = q('.debug');
     this.gmenu = q('.gmenu');
+    this.devmenu = q('.devmenu');
+    this.perfEl = q('.perf');
     const rowOf = (e: Event) => (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
-    // Hover follows the mouse's own movement, not rows scrolling under a resting cursor (a trackpad
-    // fling would otherwise redraw the menu mid-scroll, stop its momentum and snap back to the selection).
-    this.gmenu.addEventListener('mousemove', (e) => {
-      if (e.movementX === 0 && e.movementY === 0) return;
-      const r = rowOf(e);
-      if (!r || r.classList.contains('selected')) return;
-      this.hoverDraw = true;
-      try { this.onMenuHover(Number(r.dataset.row)); } finally { this.hoverDraw = false; }
-    });
-    this.gmenu.addEventListener('click', (e) => {
-      const el = e.target as HTMLElement;
-      const close = el.closest<HTMLElement>('[data-close]');
-      if (close) return this.onTap(close.dataset.close as Action);
-      const tab = el.closest<HTMLElement>('[data-tab]');
-      if (tab) return this.onMenuTab(Number(tab.dataset.tab));
-      const arrow = el.closest<HTMLElement>('[data-dir]');
-      const r = rowOf(e);
-      if (arrow && r) return this.onMenuAdjust(Number(r.dataset.row), Number(arrow.dataset.dir) < 0 ? -1 : 1);
-      if (el.closest('[data-track]')) return; // the press already set the slider
-      if (r) this.onMenuClick(Number(r.dataset.row));
-    });
-    // A slider's track: press and drag along it. The box is measured once, so redraws mid-drag don't matter.
-    const slideTo = (x: number) => {
-      const d = this.drag;
-      if (d) this.onMenuSlide(d.row, (x - d.left) / d.width);
+    /** Mouse and touch on a menu element: hover, click, a slider's track, an option, a drag on the world, the hide button. */
+    const bind = (el: HTMLElement, h: () => MenuHandlers) => {
+      // Hover follows the mouse's own movement, not rows scrolling under a resting cursor (a trackpad
+      // fling would otherwise redraw the menu mid-scroll, stop its momentum and snap back to the selection).
+      el.addEventListener('mousemove', (e) => {
+        if (e.movementX === 0 && e.movementY === 0) return;
+        const r = rowOf(e);
+        if (!r || r.classList.contains('selected')) return;
+        this.hoverDraw = true;
+        try { h().hover(Number(r.dataset.row)); } finally { this.hoverDraw = false; }
+      });
+      el.addEventListener('click', (e) => {
+        const t = e.target as HTMLElement;
+        const close = t.closest<HTMLElement>('[data-close]');
+        if (close) return this.onTap(close.dataset.close as Action);
+        const tab = t.closest<HTMLElement>('[data-tab]');
+        if (tab) return this.onMenuTab(Number(tab.dataset.tab));
+        const r = rowOf(e);
+        if (r && t.closest('[data-reset]')) return h().reset(Number(r.dataset.row));
+        const opt = t.closest<HTMLElement>('[data-opt]');
+        if (opt && r) return h().pick(Number(r.dataset.row), Number(opt.dataset.opt));
+        const arrow = t.closest<HTMLElement>('[data-dir]');
+        if (arrow && r) return h().adjust(Number(r.dataset.row), Number(arrow.dataset.dir) < 0 ? -1 : 1);
+        if (t.closest('[data-track]')) return; // the press already set the slider
+        if (r) h().click(Number(r.dataset.row));
+      });
+      el.addEventListener('pointerdown', (e) => {
+        const t = e.target as HTMLElement;
+        const track = t.closest<HTMLElement>('[data-track]');
+        const r = rowOf(e);
+        if (track && r) {
+          // A slider's track: press and drag along it. The box is measured once, so redraws mid-drag don't matter.
+          const box = track.getBoundingClientRect();
+          this.drag = { row: Number(r.dataset.row), left: box.left, width: box.width, slide: (row, f) => h().slide(row, f) };
+          this.drag.slide(this.drag.row, (e.clientX - box.left) / box.width);
+        } else if (t.hasAttribute('data-lookdrag') || t === el) {
+          // The world behind a menu that lets it show (the dev panel): a drag turns the camera.
+          if (el === this.devmenu) this.lookDrag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+        } else if (t.closest('[data-peek]')) {
+          this.peekId = e.pointerId;
+          this.onMenuPeek(true);
+        }
+      });
     };
-    this.gmenu.addEventListener('pointerdown', (e) => {
-      const track = (e.target as HTMLElement).closest<HTMLElement>('[data-track]');
-      const r = rowOf(e);
-      if (!track || !r) return;
-      const box = track.getBoundingClientRect();
-      this.drag = { row: Number(r.dataset.row), left: box.left, width: box.width };
-      slideTo(e.clientX);
+    bind(this.gmenu, () => ({
+      hover: (i) => this.onMenuHover(i), click: (i) => this.onMenuClick(i), adjust: (i, d) => this.onMenuAdjust(i, d),
+      slide: (i, f) => this.onMenuSlide(i, f), pick: (i, o) => this.onMenuPick(i, o), reset: (i) => this.onMenuReset(i),
+    }));
+    bind(this.devmenu, () => this.devHandlers);
+    window.addEventListener('pointermove', (e) => {
+      const d = this.drag;
+      if (d) d.slide(d.row, (e.clientX - d.left) / d.width);
+      const l = this.lookDrag;
+      if (l && l.id === e.pointerId) {
+        this.onMenuLook(e.clientX - l.x, e.clientY - l.y, e.pointerType === 'touch');
+        l.x = e.clientX;
+        l.y = e.clientY;
+      }
     });
-    window.addEventListener('pointermove', (e) => slideTo(e.clientX));
-    window.addEventListener('pointerup', () => (this.drag = null));
+    const release = (e: PointerEvent) => {
+      this.drag = null;
+      if (this.lookDrag?.id === e.pointerId) this.lookDrag = null;
+      if (this.peekId === e.pointerId) {
+        this.peekId = null;
+        this.onMenuPeek(false);
+      }
+    };
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
     this.bossTitle = q('.boss-title');
     this.bossBar = q('.boss-bar');
     this.bossFill = q('.boss-fill');
@@ -303,28 +366,65 @@ export class Hud {
       .join('');
   }
 
+  /** One row of a menu: a label and its control (a slider's track, a switch, a capsule of all the options, a value). */
+  private menuRow(r: MenuView['rows'][number], i: number, anyReset: boolean) {
+    const cls = `gmenu-row${r.selected ? ' selected' : ''}${r.space ? ' space' : ''}${r.exit ? ' exit' : ''}${r.locked ? ' locked' : ''}`;
+    const head = r.group ? `<div class="gmenu-group">${escape(r.group)}</div>` : '';
+    // A reset button (↺) closes a setting's row; dim when it is already at its default. Rows without one keep the space, so the controls line up.
+    const reset = r.resettable ? `<i class="reset${r.changed && !r.locked ? '' : ' off'}" data-reset title="Reset to default"><svg viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5.2 3 9.6 0.4v5.2z" fill="currentColor"/></svg></i>` : anyReset && (r.kind === 'slider' || r.kind === 'toggle' || r.kind === 'choice') ? '<i class="reset none"></i>' : '';
+    if (r.kind === 'slider') {
+      const pct = Math.round((r.fill ?? 0) * 100);
+      return `${head}<div class="${cls}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-slider"><i class="gmenu-arrow" data-dir="-1">◂</i><b class="gmenu-track" data-track><b class="gmenu-fill" style="width:${pct}%"></b><b class="gmenu-knob" style="left:${pct}%"></b></b><i class="gmenu-arrow" data-dir="1">▸</i></span><span class="gmenu-value">${escape(r.value ?? '')}</span>${reset}</div>`;
+    }
+    let control: string;
+    if (r.kind === 'toggle') {
+      control = `<span class="sw${r.on ? ' on' : ''}" data-anim="${i}" data-to="${r.on ? 1 : 0}"><i class="sw-knob"></i></span>`;
+    } else if (r.kind === 'choice' && r.options) {
+      const n = r.options.length;
+      const at = r.index ?? 0;
+      control = `<span class="seg" style="--n:${n}"><i class="seg-pill" data-anim="${i}" data-to="${at}" style="left:${(at * 100) / n}%"></i>${r.options
+        .map((o, k) => `<i class="seg-opt${k === at ? ' on' : ''}" data-opt="${k}">${escape(o)}</i>`)
+        .join('')}</span>`;
+    } else {
+      const icon = r.icon ? `<img class="gmenu-icon" src="${r.icon}" alt="" draggable="false">` : '';
+      return `${head}<div class="${cls}" data-row="${i}"><span>${icon}${escape(r.label)}</span><span class="gmenu-value">${escape(r.value ?? '')}</span></div>`;
+    }
+    return `${head}<div class="${cls}" data-row="${i}"><span>${escape(r.label)}</span>${control}${reset}</div>`;
+  }
+
+  /** After a redraw: a switch or capsule whose state changed starts from where it was and slides to where it is. */
+  private slideControls(root: HTMLElement, ns: string) {
+    for (const el of root.querySelectorAll<HTMLElement>('[data-anim]')) {
+      const key = `${ns}|${el.dataset.anim}`;
+      const to = Number(el.dataset.to);
+      const from = this.shown.get(key);
+      this.shown.set(key, to);
+      if (from === undefined || from === to) continue;
+      const pill = el.classList.contains('seg-pill');
+      const n = Number(el.parentElement?.style.getPropertyValue('--n')) || 1;
+      el.style.transition = 'none';
+      if (pill) el.style.left = `${(from * 100) / n}%`;
+      else el.classList.toggle('on', from === 1);
+      void el.offsetWidth;
+      el.style.transition = '';
+      if (pill) el.style.left = `${(to * 100) / n}%`;
+      else el.classList.toggle('on', to === 1);
+    }
+  }
+
   /** Draws the open menu (see game/menu.ts), or hides it when null. */
   setMenu(view: MenuView | null) {
     this.gmenu.classList.toggle('hidden', !view);
+    this.gmenu.classList.toggle('peeking', !!view?.peeking);
     let html = '';
     if (view) {
-      const row = (r: MenuView['rows'][number], i: number) => (r.group ? `<div class="gmenu-group">${escape(r.group)}</div>` : '') + rowHtml(r, i);
-      const rowHtml = (r: MenuView['rows'][number], i: number) => {
-        const cls = `gmenu-row${r.selected ? ' selected' : ''}${r.space ? ' space' : ''}${r.exit ? ' exit' : ''}`;
-        if (r.kind === 'slider') {
-          const pct = Math.round((r.fill ?? 0) * 100);
-          return `<div class="${cls}" data-row="${i}"><span>${escape(r.label)}</span><span class="gmenu-slider"><i class="gmenu-arrow" data-dir="-1">◂</i><b class="gmenu-track" data-track><b class="gmenu-fill" style="width:${pct}%"></b><b class="gmenu-knob" style="left:${pct}%"></b></b><i class="gmenu-arrow" data-dir="1">▸</i></span><span class="gmenu-value">${escape(r.value ?? '')}</span></div>`;
-        }
-        const value = r.kind === 'choice' ? `<i class="gmenu-arrow" data-dir="-1">◂</i> ${escape(r.value ?? '')} <i class="gmenu-arrow" data-dir="1">▸</i>` : escape(r.value ?? '');
-        const icon = r.icon ? `<img class="gmenu-icon" src="${r.icon}" alt="" draggable="false">` : '';
-        return `<div class="${cls}" data-row="${i}"><span>${icon}${escape(r.label)}</span><span class="gmenu-value">${value}</span></div>`;
-      };
       const tabs = view.tabs
         ? `<div class="gmenu-tabs"><span class="gmenu-tabkey">${this.key('tabPrev')}</span>${view.tabs.labels
             .map((t, i) => `<span class="gmenu-tab${i === view.tabs!.active ? ' active' : ''}" data-tab="${i}">${escape(t)}</span>`)
             .join('')}<span class="gmenu-tabkey">${this.key('tabNext')}</span></div>`
         : `<div class="gmenu-title">${escape(view.title)}</div>`;
-      const list = view.rows.map(row).join('');
+      const anyReset = view.rows.some((r) => r.resettable);
+      const list = view.rows.map((r, i) => this.menuRow(r, i, anyReset)).join('');
       const split = view.rows.some((r) => r.kind === 'entry');
       const body = view.body ? `<div class="gmenu-body">${escape(view.body)}</div>` : '';
       const content = split
@@ -332,11 +432,11 @@ export class Hud {
             view.detail ? `${view.detail.icon ? `<img class="gmenu-detail-icon" src="${view.detail.icon}" alt="" draggable="false">` : ''}<div class="gmenu-detail-title">${escape(view.detail.title)}</div><div class="gmenu-detail-text">${escape(view.detail.text)}</div>` : ''
           }</div></div>`
         : `${body}<div class="gmenu-list">${list}</div>`;
-      const help = `${view.tabs && view.tabs.labels.length > 1 ? `${this.key('tabPrev')}${this.key('tabNext')} tabs · ` : ''}${this.key('menuUp')}${this.key('menuDown')} move · ${
+      const help = `${view.tabs ? `${this.key('hideMenu')} hold to hide · ` : ''}${view.tabs && view.tabs.labels.length > 1 ? `${this.key('tabPrev')}${this.key('tabNext')} tabs · ` : ''}${this.key('menuUp')}${this.key('menuDown')} move · ${
         view.adjustable ? `${this.key('menuLeft')}${this.key('menuRight')} change · ` : ''
-      }${view.tabs ? `${this.key('pause')} close` : `${this.key('confirm')} choose · ${this.key('cancel')} back`}`;
+      }${view.resettable ? `${this.key('menuReset')} reset · ` : ''}${view.tabs ? `${this.key('pause')} close` : `${this.key('confirm')} choose · ${this.key('cancel')} back`}`;
       // Touch has no back key: a ✕ in the corner (closes the pause menu, or backs out of anything else).
-      const close = `<div class="gmenu-close" data-close="${view.tabs ? 'pause' : 'cancel'}">✕</div>`;
+      const close = `<div class="gmenu-close" data-close="${view.tabs ? 'pause' : 'cancel'}">✕</div><div class="gmenu-peek" data-peek>Hold<br>to hide</div>`;
       html = `<div class="gmenu-panel${view.tabs ? ' wide' : ''}${view.compact ? ' compact' : ''}">${close}${tabs}${content}<div class="gmenu-help">${help}</div></div>`;
     }
     if (html === this.gmenuHtml) return;
@@ -344,6 +444,7 @@ export class Hud {
     const oldScroll = oldList?.scrollTop ?? 0;
     const oldDetail = this.gmenu.querySelector<HTMLElement>('.gmenu-detail')?.scrollTop ?? 0;
     this.gmenu.innerHTML = this.gmenuHtml = html;
+    this.slideControls(this.gmenu, `${view?.title}|${view?.tabs?.active ?? ''}`);
     const list = this.gmenu.querySelector<HTMLElement>('.gmenu-list');
     // Only the selection moving (keys, pad, a new menu) scrolls to it. Any other redraw (a value
     // ticking, the mouse) leaves the player's own scrolling alone.
@@ -356,6 +457,36 @@ export class Hud {
       if (detail) detail.scrollTop = oldDetail;
       if (moved && !this.hoverDraw) this.gmenu.querySelector('.gmenu-row.selected')?.scrollIntoView({ block: 'nearest' });
     }
+  }
+
+  /** The performance meter's text (game/perf.ts), or null to hide it. */
+  setPerf(text: string | null) {
+    this.perfEl.classList.toggle('hidden', text === null);
+    if (text === null || text === this.perfText) return;
+    this.perfText = text;
+    this.perfEl.textContent = text;
+  }
+
+  /** Draws the dev panel (game/devPanel.ts): plain rows down the right edge, or nothing when null. */
+  setDevMenu(view: MenuView | null) {
+    this.devmenu.classList.toggle('hidden', !view);
+    this.devmenu.classList.toggle('peeking', !!view?.peeking);
+    const anyReset = view?.rows.some((r) => r.resettable) ?? false;
+    const rows = (pinned: boolean) => view!.rows.map((r, i) => (!!r.pinned === pinned ? this.menuRow(r, i, anyReset) : '')).join('');
+    const html = view
+      ? `<div class="devmenu-panel"><div class="devmenu-title">${escape(view.title)}</div><div class="gmenu-list">${rows(false)}</div><div class="devmenu-pinned">${rows(true)}</div><div class="devmenu-help">${this.key('devMenu')} close · ${this.key('menuReset')} reset · ${this.key('hideMenu')} hold to hide · drag to turn</div></div>`
+      : '';
+    if (html === this.devmenuHtml) return;
+    const scroll = this.devmenu.querySelector<HTMLElement>('.gmenu-list')?.scrollTop ?? 0;
+    this.devmenu.innerHTML = this.devmenuHtml = html;
+    this.slideControls(this.devmenu, 'dev');
+    const list = this.devmenu.querySelector<HTMLElement>('.gmenu-list');
+    if (!list) return;
+    list.scrollTop = scroll;
+    const sel = view!.rows.findIndex((r) => r.selected);
+    const moved = sel !== this.devSelected;
+    this.devSelected = sel;
+    if (moved && !this.hoverDraw) this.devmenu.querySelector('.gmenu-row.selected')?.scrollIntoView({ block: 'nearest' });
   }
 
   setHearts(hp: number, max: number) {

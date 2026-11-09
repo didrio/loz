@@ -22,21 +22,62 @@ import type { Sky } from '../sky';
 export const TONE_MAPS = ['Neutral', 'AgX', 'ACES'];
 const TONE_MAPPING = [THREE.NeutralToneMapping, THREE.AgXToneMapping, THREE.ACESFilmicToneMapping];
 
-/** The Dev tab's switches and sliders (remembered by the pause menu). */
+/**
+ * Puts the grade into three's output pass (`OutputShader`): after tone mapping, before the screen's colour encoding, so it costs
+ * nothing (no extra pass). A power on each channel deepens the darks while white stays white (contrast), then the colour is pushed
+ * away from (or toward) its own grey (saturation). AgX's colours are the natural ones, but its curve lifts the darks and drains the
+ * brightest colours toward white, so the two dials give back the depth and the vividness. Throws if three's shader has changed
+ * shape, so an upgrade can't silently drop the grade.
+ */
+export function withGrade(fragmentShader: string): string {
+  const uniform = 'uniform sampler2D tDiffuse;';
+  const before = '// color space';
+  if (!fragmentShader.includes(uniform) || !fragmentShader.includes(before)) throw new Error('withGrade: three\'s OutputShader changed shape');
+  return fragmentShader
+    .replace(uniform, `${uniform}\n\t\tuniform float gradeContrast;\n\t\tuniform float gradeSaturation;`)
+    .replace(
+      before,
+      `// grade (render/experiments/modernLook.ts \`withGrade\`)
+			gl_FragColor.rgb = pow( max( gl_FragColor.rgb, vec3( 0.0 ) ), vec3( gradeContrast ) );
+			float gradeGrey = dot( gl_FragColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
+			gl_FragColor.rgb = max( mix( vec3( gradeGrey ), gl_FragColor.rgb, gradeSaturation ), vec3( 0.0 ) );
+
+			${before}`,
+    );
+}
+
+/** The modern pipeline's anti-aliasing: samples per pixel in its half-float buffers. 4× is today's look; it is also most of the pipeline's cost. */
+export const AA_NAMES = ['Off', '2×', '4×'];
+const AA_SAMPLES = [0, 2, 4];
+/** Samples for choice `i`; none where the canvas itself has no anti-aliasing (dense touch screens: `Game`'s constructor). */
+export const aaSamples = (canvasAntialias: boolean, i: number) => (canvasAntialias ? (AA_SAMPLES[i] ?? 4) : 0);
+
+/**
+ * The dev panel's switches and sliders, at their defaults: the game's look (owner's call, 2026-11-09: modern lighting on, Neutral,
+ * contrast 1, saturation 0.9, exposure 1, sky light 1, no corner shade, bloom or anti-aliasing). Never remembered: only a page load
+ * resets tweaks to these (game/devPanel.ts; its Default switch shows these while on). The look and smoke harness keeps the classic look
+ * (`__embervaleClassicLook`, scripts/browser.mjs) until the baselines move over (docs/tickets.md).
+ */
 export const LOOK = {
   /** The two experiment barrels beside today's in Thistledown. */
   barrels: false,
-  lighting: false,
+  lighting: !(globalThis as { __embervaleClassicLook?: boolean }).__embervaleClassicLook,
   smooth: false,
   /** Index into `TONE_MAPS`. */
   toneMap: 0,
   exposure: 1,
   /** How strongly the sky's environment map lights and reflects (`scene.environmentIntensity`). */
   sky: 1,
-  /** Corner shade (GTAO blend); 0 turns the pass off. */
-  ao: 1,
-  /** Bloom strength; 0 turns the pass off. */
-  bloom: 0.25,
+  /** Index into `AA_NAMES`. Off by default (owner's call, 2026-11-09: 120 fps only with it and corner shade off). */
+  aa: 0,
+  /** Corner shade (GTAO blend); 0 turns the pass off. Off by default (the same call); 1 is full strength. */
+  ao: 0,
+  /** Bloom strength; 0 turns the pass off. Off by default (the owner tunes with it off); 0.25 was the first try. */
+  bloom: 0,
+  /** The grade after tone mapping (`withGrade`): a power on every channel (above 1: deeper darks, the same white). 1 leaves it alone. */
+  contrast: 1,
+  /** The grade's saturation around each pixel's own grey. 1 leaves it alone; 0.9 is the owner's. Blender's AgX "Punchy" look is contrast 1.35, saturation 1.4. */
+  saturation: 0.9,
 };
 export type LookSettings = typeof LOOK;
 
@@ -192,13 +233,39 @@ void main() {
   gl_FragColor = vec4(c, 1.0);
 }`;
 
+/**
+ * The corner-shade pass's blend step (three's `GTAOBlendShader`) with the effect faded by distance exactly as the scene's fog fades the
+ * scene: full strength up to the fog's near distance, none at its far distance (`smoothstep`, like `THREE.Fog`). The depth is the pass's own.
+ */
+const GTAO_BLEND_FRAG = /* glsl */ `
+	#include <packing>
+	uniform float intensity;
+	uniform sampler2D tDiffuse;
+	uniform sampler2D tDepth;
+	uniform float cameraNear;
+	uniform float cameraFar;
+	uniform float fogNear;
+	uniform float fogFar;
+	varying vec2 vUv;
+
+	void main() {
+		vec4 texel = texture2D( tDiffuse, vUv );
+		float dist = -perspectiveDepthToViewZ( texture2D( tDepth, vUv ).x, cameraNear, cameraFar );
+		float keep = 1.0 - smoothstep( fogNear, fogFar, dist );
+		gl_FragColor = vec4( mix( vec3( 1.0 ), texel.rgb, intensity * keep ), texel.a );
+	}`;
+
 export class ModernLook {
   private composer: EffectComposer | null = null;
   private gtao: GTAOPass | null = null;
   private bloom: UnrealBloomPass | null = null;
+  /** The output pass's uniforms, for the grade (`withGrade`). */
+  private grade: Record<string, THREE.IUniform> | null = null;
   private loading = false;
   private size = { w: 1, h: 1, ratio: 1 };
   private lightingOn = false;
+  /** Samples the composer's buffers have now (`render` follows `LOOK.aa`). */
+  private samples = 0;
   private smoothOn = false;
   private scanT = 0;
   private envT = 0;
@@ -233,6 +300,11 @@ export class ModernLook {
         swapMaterials(this.scene, false);
         this.scene.environment = null;
         this.ownEnvs(true);
+      } else if (this.env) {
+        // Back on: the sky map painted last time is still good. `followSky` only repaints when the sky's colours move (never,
+        // while the game is paused behind the dev panel), so without this the scene would stay unlit by the sky and Sky light would do nothing.
+        this.scene.environment = this.env.texture;
+        this.envT = 0;
       }
     }
     if (LOOK.smooth !== this.smoothOn) {
@@ -340,16 +412,36 @@ export class ModernLook {
         super.setSize(Math.max(1, Math.round(width / 2)), Math.max(1, Math.round(height / 2)));
       }
     }
-    const msaa = this.renderer.getContextAttributes()?.antialias ? 4 : 0;
+    /** Bloom at half the screen's resolution too: it is a blur, so nothing is lost, and its cost falls to a quarter. */
+    class HalfBloomPass extends UnrealBloomPass {
+      setSize(width: number, height: number) {
+        super.setSize(Math.max(1, Math.round(width / 2)), Math.max(1, Math.round(height / 2)));
+      }
+    }
+    const msaa = aaSamples(!!this.renderer.getContextAttributes()?.antialias, LOOK.aa);
+    this.samples = msaa;
     const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: msaa });
     const composer = new EffectComposer(this.renderer, target);
     composer.addPass(new RenderPass(this.scene, this.camera));
     this.gtao = new HalfGTAOPass(this.scene, this.camera, 1, 1);
     this.gtao.updateGtaoMaterial({ radius: 0.7, distanceExponent: 1, thickness: 1, scale: 1, samples: 12, distanceFallOff: 1 });
+    // Corner shade is multiplied over the finished frame, fog included, so it would darken the far trees that fog is hiding: fade it out
+    // with the same fog the scene uses (`GTAO_BLEND_FRAG`; the fog's reach and the camera's planes are set each frame in `render`).
+    const blend = this.gtao.blendMaterial;
+    Object.assign(blend.uniforms, {
+      tDepth: { value: this.gtao.depthTexture }, cameraNear: { value: 0.1 }, cameraFar: { value: 1500 }, fogNear: { value: 1e9 }, fogFar: { value: 1e9 },
+    });
+    blend.fragmentShader = GTAO_BLEND_FRAG;
+    blend.needsUpdate = true;
     composer.addPass(this.gtao);
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), LOOK.bloom, 0.4, 0.85);
+    this.bloom = new HalfBloomPass(new THREE.Vector2(1, 1), LOOK.bloom, 0.4, 0.85);
     composer.addPass(this.bloom);
-    composer.addPass(new OutputPass());
+    const output = new OutputPass();
+    output.material.fragmentShader = withGrade(output.material.fragmentShader);
+    Object.assign(output.uniforms, { gradeContrast: { value: 1 }, gradeSaturation: { value: 1 } });
+    output.material.needsUpdate = true;
+    this.grade = output.uniforms;
+    composer.addPass(output);
     this.composer = composer;
     this.setSize(this.size.w, this.size.h, this.size.ratio);
   }
@@ -367,10 +459,28 @@ export class ModernLook {
       r.render(this.scene, this.camera);
       return;
     }
+    const want = aaSamples(!!r.getContextAttributes()?.antialias, LOOK.aa);
+    if (want !== this.samples) {
+      // A buffer's sample count is fixed when it is made: change it, and let go of it so the next frame makes it again.
+      this.samples = want;
+      for (const t of [this.composer.renderTarget1, this.composer.renderTarget2]) {
+        t.samples = want;
+        t.dispose();
+      }
+    }
     this.gtao!.enabled = LOOK.ao > 0;
     this.gtao!.blendIntensity = LOOK.ao;
+    const blendUniforms = this.gtao!.blendMaterial.uniforms;
+    const fog = this.scene.fog as THREE.Fog | null;
+    const cam = this.camera as THREE.PerspectiveCamera;
+    blendUniforms.cameraNear.value = cam.near;
+    blendUniforms.cameraFar.value = cam.far;
+    blendUniforms.fogNear.value = fog?.near ?? 1e9;
+    blendUniforms.fogFar.value = fog?.far ?? 1e9;
     this.bloom!.enabled = LOOK.bloom > 0;
     this.bloom!.strength = LOOK.bloom;
+    this.grade!.gradeContrast.value = LOOK.contrast;
+    this.grade!.gradeSaturation.value = LOOK.saturation;
     r.toneMapping = TONE_MAPPING[LOOK.toneMap] ?? THREE.NeutralToneMapping;
     r.toneMappingExposure = LOOK.exposure;
     this.composer.render();

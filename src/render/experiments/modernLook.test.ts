@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { surf, uniqueMat } from '../materials';
-import { originalOf, smoothMeshes, swapMaterials, syncTwins, twinOf } from './modernLook';
+import { OutputShader } from 'three/addons/shaders/OutputShader.js';
+import { aaSamples, LOOK, ModernLook, withGrade, originalOf, smoothMeshes, swapMaterials, syncTwins, twinOf } from './modernLook';
 
 describe('modern lighting twins (T62)', () => {
   it('a twin keeps the colour, paint, texture patch and transparency of its Lambert original', () => {
@@ -79,5 +80,71 @@ describe('smooth shading (T62)', () => {
     const after = Array.from(g.attributes.normal.array);
     after.forEach((v, i) => expect(v).toBeCloseTo(before[i], 5));
     smoothMeshes(root, false);
+  });
+});
+
+describe('modern lighting switched off and on again', () => {
+  it('lights the scene from the sky map again at once, even if the sky has not moved (so Sky light has something to scale)', () => {
+    // A stand-in for the GPU: the environment painter hands back a texture without drawing anything.
+    vi.spyOn(THREE.PMREMGenerator.prototype, 'fromScene').mockImplementation(() => ({ texture: new THREE.Texture(), dispose() {} }) as unknown as THREE.WebGLCubeRenderTarget);
+    const scene = new THREE.Scene();
+    const sky = {
+      hemi: new THREE.HemisphereLight(0xffffff, 0x444444, 1),
+      domeColors: { top: new THREE.Color(0x335577), horizon: new THREE.Color(0x889988) },
+    };
+    const look = new ModernLook({} as THREE.WebGLRenderer, scene, new THREE.PerspectiveCamera(), sky as never);
+    const was = { ...LOOK };
+    /** One frame: the real sky resets the hemisphere light every frame, which the update then scales. */
+    const frame = () => {
+      sky.hemi.intensity = 1;
+      look.update(0.016, false, false);
+    };
+    try {
+      LOOK.lighting = true;
+      frame();
+      expect(scene.environment).not.toBeNull();
+      const painted = scene.environment;
+
+      LOOK.lighting = false; // the owner toggles it off in the dev panel...
+      frame();
+      expect(scene.environment).toBeNull();
+
+      LOOK.lighting = true; // ...and on again, the game still paused so the sky has not moved
+      frame();
+      expect(scene.environment).toBe(painted);
+      LOOK.sky = 0.45;
+      frame();
+      expect(scene.environmentIntensity).toBe(0.45);
+    } finally {
+      Object.assign(LOOK, was);
+      vi.restoreAllMocks();
+    }
+  });
+});
+
+describe('the modern pipeline anti-aliasing', () => {
+  it('maps the choices to sample counts, and gives none where the canvas has no anti-aliasing', () => {
+    expect([0, 1, 2].map((i) => aaSamples(true, i))).toEqual([0, 2, 4]);
+    expect([0, 1, 2].map((i) => aaSamples(false, i))).toEqual([0, 0, 0]);
+    expect(LOOK.aa).toBe(0); // off by default (owner's call: 120 fps)
+  });
+});
+
+describe('the grade after tone mapping', () => {
+  it('goes into three\'s output shader after the tone mapping and before the screen encoding, with its two dials', () => {
+    const src = withGrade(OutputShader.fragmentShader);
+    expect(src).toContain('uniform float gradeContrast;');
+    expect(src).toContain('uniform float gradeSaturation;');
+    const grade = src.indexOf('gradeGrey');
+    expect(grade).toBeGreaterThan(src.indexOf('CustomToneMapping( gl_FragColor.rgb )'));
+    expect(grade).toBeLessThan(src.indexOf('sRGBTransferOETF'));
+  });
+
+  it('refuses a shader it does not recognise (a three upgrade), instead of dropping the grade silently', () => {
+    expect(() => withGrade('void main() { gl_FragColor = vec4(1.0); }')).toThrow(/changed shape/);
+  });
+
+  it('starts at the owner\'s look: modern lighting on, Neutral, contrast 1, saturation 0.9, nothing costly', () => {
+    expect(LOOK).toMatchObject({ lighting: true, smooth: false, toneMap: 0, contrast: 1, saturation: 0.9, exposure: 1, sky: 1, ao: 0, bloom: 0, aa: 0 });
   });
 });

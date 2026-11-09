@@ -23,11 +23,25 @@ export class MenuDriver {
   onTab: ((dir: -1 | 1) => void) | null = null;
   /** Frames a left/right button has been held, for repeating (sliders). */
   private held = 0;
+  /** The hide key is held (T63): the HUD draws the menu invisible. */
+  private peeking = false;
 
   constructor(private readonly io: MenuIo) {}
 
   get isOpen() {
     return this.stack.isOpen;
+  }
+
+  /** True while the hide key is held: the world is on show, so the camera may be turned. */
+  get liveView() {
+    return this.peeking;
+  }
+
+  /** The hide key / button down or up. */
+  setPeek(on: boolean) {
+    if (on === this.peeking) return;
+    this.peeking = on;
+    this.draw();
   }
 
   open(menu: Menu) {
@@ -47,12 +61,25 @@ export class MenuDriver {
 
   close() {
     this.stack.close();
+    this.peeking = false;
     this.draw();
   }
 
   /** The mouse on a slider's arrows. */
   adjust(i: number, dir: -1 | 1) {
     if (this.stack.adjust(dir, i)) this.io.sfx.select();
+    this.draw();
+  }
+
+  /** The mouse on a row's reset button. */
+  reset(i: number) {
+    if (this.stack.reset(i)) this.io.sfx.select();
+    this.draw();
+  }
+
+  /** The mouse clicking an option of a choice row. */
+  pick(i: number, opt: number) {
+    if (this.stack.pick(i, opt)) this.io.sfx.select();
     this.draw();
   }
 
@@ -82,6 +109,7 @@ export class MenuDriver {
       sfx.select();
     }
     this.updateAdjust();
+    if (input.pressed('menuReset') && this.stack.reset()) sfx.select();
     // The tab buttons share keys with confirm (E), so they win.
     const tab = input.pressed('tabPrev') ? -1 : input.pressed('tabNext') ? 1 : 0;
     if (tab && this.onTab) this.onTab(tab);
@@ -107,7 +135,8 @@ export class MenuDriver {
   }
 
   private draw() {
-    this.io.hud.setMenu(this.stack.view());
+    const view = this.stack.view();
+    this.io.hud.setMenu(view && this.peeking ? { ...view, peeking: true } : view);
   }
 }
 

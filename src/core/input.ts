@@ -8,7 +8,7 @@ import type { TouchPad } from './touch';
 export type Action =
   | 'attack' | 'shield' | 'jump' | 'lock' | 'interact'
   | 'confirm' | 'cancel' | 'pause' | 'menuUp' | 'menuDown' | 'menuLeft' | 'menuRight' | 'tabPrev' | 'tabNext'
-  | 'flask1' | 'flask2' | 'item';
+  | 'flask1' | 'flask2' | 'item' | 'hideMenu' | 'devMenu' | 'menuReset';
 
 export type Device = 'keyboard' | 'gamepad' | 'touch';
 
@@ -31,6 +31,9 @@ const KEYS: Record<Action, string[]> = {
   flask1: ['Digit1', 'Numpad1'],
   flask2: ['Digit2', 'Numpad2'],
   item: ['KeyF'],
+  hideMenu: ['Tab'],
+  devMenu: ['Backquote'],
+  menuReset: ['KeyR'],
 };
 
 /**
@@ -58,22 +61,25 @@ const PAD: Record<Action, number[]> = {
   flask1: [14],
   flask2: [15],
   item: [3],
+  hideMenu: [3],
+  devMenu: [10],
+  menuReset: [2],
 };
 
 const KEY_GLYPH: Record<Action, string> = {
   attack: 'Click', shield: 'Shift', jump: 'Space', lock: 'Q', interact: 'E',
-  confirm: 'Enter', cancel: 'Esc', pause: 'P', menuUp: 'W', menuDown: 'S', menuLeft: 'A', menuRight: 'D', tabPrev: 'Q', tabNext: 'E', flask1: '1', flask2: '2', item: 'F',
+  confirm: 'Enter', cancel: 'Esc', pause: 'P', menuUp: 'W', menuDown: 'S', menuLeft: 'A', menuRight: 'D', tabPrev: 'Q', tabNext: 'E', flask1: '1', flask2: '2', item: 'F', hideMenu: 'Tab', devMenu: '`', menuReset: 'R',
 };
 
 const PAD_GLYPH: Record<Action, string> = {
   attack: 'X / RT', shield: 'LT / LB', jump: 'A', lock: 'R3', interact: 'A',
-  confirm: 'A', cancel: 'B', pause: 'Start', menuUp: '↑', menuDown: '↓', menuLeft: '←', menuRight: '→', tabPrev: 'LB', tabNext: 'RB', flask1: '←', flask2: '→', item: 'Y',
+  confirm: 'A', cancel: 'B', pause: 'Start', menuUp: '↑', menuDown: '↓', menuLeft: '←', menuRight: '→', tabPrev: 'LB', tabNext: 'RB', flask1: '←', flask2: '→', item: 'Y', hideMenu: 'Y', devMenu: 'L3', menuReset: 'X',
 };
 
 /** Touch: the on-screen buttons' names (ui/touch.ts). Menus are tapped, so their keys never show. */
 const TOUCH_GLYPH: Record<Action, string> = {
   attack: 'Sword', shield: 'Shield', jump: 'Jump', lock: 'Lock', interact: 'Talk',
-  confirm: 'Tap', cancel: '✕', pause: '☰', menuUp: '↑', menuDown: '↓', menuLeft: '←', menuRight: '→', tabPrev: '‹', tabNext: '›', flask1: 'Flask', flask2: 'Flask', item: 'Glove',
+  confirm: 'Tap', cancel: '✕', pause: '☰', menuUp: '↑', menuDown: '↓', menuLeft: '←', menuRight: '→', tabPrev: '‹', tabNext: '›', flask1: 'Flask', flask2: 'Flask', item: 'Glove', hideMenu: 'Hide', devMenu: 'Dev', menuReset: '↺',
 };
 
 /** The button label to show for an action on a device. */
@@ -217,22 +223,37 @@ export class Input {
     return { x, y };
   }
 
-  /** Camera turn this frame, in radians: mouse (when captured), right stick and arrow keys. */
-  look(dt: number) {
+  /** Camera turn this frame, in radians: mouse (when captured), right stick and arrow keys (`keys` false in a menu, where they move the cursor). */
+  look(dt: number, keys = true) {
     const k = (code: string) => (this.keysHeld.has(code) ? 1 : 0);
     const stick = this.stickSensitivity;
-    let yaw = (k('ArrowLeft') - k('ArrowRight')) * 2.2 * dt - this.rightStick.x * 2.8 * dt * stick;
-    let pitch = (k('ArrowDown') - k('ArrowUp')) * 1.2 * dt + this.rightStick.y * 1.6 * dt * stick;
+    const arrows = keys ? 1 : 0;
+    let yaw = (k('ArrowLeft') - k('ArrowRight')) * 2.2 * dt * arrows - this.rightStick.x * 2.8 * dt * stick;
+    let pitch = (k('ArrowDown') - k('ArrowUp')) * 1.2 * dt * arrows + this.rightStick.y * 1.6 * dt * stick;
     if (this.touch) {
       const d = this.touch.look;
       yaw -= d.x * TOUCH_LOOK * stick;
       pitch += d.y * TOUCH_LOOK * 0.7 * stick;
     }
+    // A mouse or finger dragged over the live view of a menu (the HUD sends the pixels).
+    yaw -= this.dragX * this.dragScale.yaw * this.mouseSensitivity;
+    pitch += this.dragY * this.dragScale.pitch * this.mouseSensitivity;
     if (this.locked) {
       yaw -= this.mouseDX * 0.0028 * this.mouseSensitivity;
       pitch += this.mouseDY * 0.002 * this.mouseSensitivity;
     }
     return { yaw, pitch: this.invertY ? -pitch : pitch };
+  }
+
+  private dragX = 0;
+  private dragY = 0;
+  private dragScale = { yaw: 0.0028, pitch: 0.002 };
+
+  /** Pixels of drag over a menu's live view (turns the camera this frame; `finger` uses the touch scale). */
+  drag(dx: number, dy: number, finger = false) {
+    this.dragX += dx;
+    this.dragY += dy;
+    this.dragScale = finger ? { yaw: TOUCH_LOOK, pitch: TOUCH_LOOK * 0.7 } : { yaw: 0.0028, pitch: 0.002 };
   }
 
   requestLock() {
@@ -249,5 +270,7 @@ export class Input {
     this.touch?.endFrame();
     this.mouseDX = 0;
     this.mouseDY = 0;
+    this.dragX = 0;
+    this.dragY = 0;
   }
 }

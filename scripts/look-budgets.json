@@ -48,12 +48,16 @@
     "triangles": 240000
   },
   "choice": {
-    "calls": 680,
-    "triangles": 277000
+    "calls": 440,
+    "triangles": 352000
   },
   "contact": {
     "calls": 550,
     "triangles": 42000
+  },
+  "devMenu": {
+    "calls": 460,
+    "triangles": 354000
   },
   "door": {
     "calls": 50,
@@ -84,8 +88,8 @@
     "triangles": 299000
   },
   "gear": {
-    "calls": 680,
-    "triangles": 277000
+    "calls": 440,
+    "triangles": 352000
   },
   "glove": {
     "calls": 710,
@@ -216,8 +220,8 @@
     "triangles": 287000
   },
   "touch": {
-    "calls": 670,
-    "triangles": 292000
+    "calls": 440,
+    "triangles": 372000
   },
   "vignette": {
     "calls": 320,

@@ -1,4 +1,4 @@
-// The pause menu (P): a Settings tab (and the Dev one) at first, a slider changing and saving a setting, and the keepers' notes: lock-on holds a
+// The pause menu (P): a Settings tab (and Gear) at first, a slider changing and saving a setting, and the keepers' notes: lock-on holds a
 // Murmurbud, mashing overloads it, a strike-and-rest rhythm opens it, its floating note is read (E)
 // and kept, and read again under the pause menu's Hints tab; a read sigil adds a Messages tab.
 export const fixture = 'field-sword';
@@ -32,13 +32,17 @@ export default async function run(t) {
     const after = await game(() => window.embervale.settings.masterVolume);
     check(after < before, `left should lower the master volume (${before} -> ${after})`);
     check(JSON.parse(await game(() => localStorage.getItem('embervale:settings'))).masterVolume === after, 'setting not saved');
-    await press('ArrowRight');
+    const live = await game(() => [...document.querySelectorAll('.gmenu .reset:not(.off):not(.none)')].map((r) => r.closest('.gmenu-row').textContent));
+    check(live.some((t) => t.includes('Master volume')), `the changed row's reset button should be live: ${JSON.stringify(live)}`);
+    await press('KeyR'); // the reset key puts it back to the default
+    check((await game(() => window.embervale.settings.masterVolume)) === before, 'R should reset the master volume');
     await press('KeyE'); // on to the Gear tab
     check((await menu()).open && (await game(() => document.querySelector('.gmenu-tab.active')?.textContent)) === 'Gear', 'E should go to the Gear tab');
-    await press('KeyE'); // and the Dev tab
-    check((await menu()).open && /Dev sprint/.test((await menu()).text), 'E should go on to the Dev tab');
-    await press('KeyQ');
-    await press('KeyQ');
+    await press('KeyE'); // no Dev tab: back round to Settings
+    check((await menu()).open && !/Dev sprint/.test((await menu()).text) && (await game(() => document.querySelector('.gmenu-tab.active')?.textContent)) === 'Settings', 'E should wrap to Settings (the dev tools are not a tab)');
+    // Display shows all three options in a capsule, and the on/off rows are switches with no text.
+    const controls = await game(() => ({ opts: document.querySelectorAll('.gmenu .seg-opt').length, on: document.querySelector('.gmenu .seg-opt.on')?.textContent, switches: document.querySelectorAll('.gmenu .sw').length, onoff: /\b(ON|OFF)\b/.test(document.querySelector('.gmenu')?.textContent ?? '') }));
+    check(controls.opts === 3 && controls.switches >= 2 && !controls.onoff, `controls: ${JSON.stringify(controls)}`);
     await shot('hints-00-settings');
     await press('KeyP');
     await until(() => !window.embervale.pauseMenu.isOpen, 5000);

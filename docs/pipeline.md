@@ -161,8 +161,8 @@ model makes its own from an icosahedron (20 faces, or 80 for a big halo): `halo(
   `--display n64`). Every registered model at one scale (shelves, biggest kinds first; layout in `src/dev/contactLayout.ts`), its id
   under it; the golden set (`GOLDEN_SET` in `registry.ts`: the chest, the Thornling, Wren and the entrance vignette's models so far; art.md lists them) is starred and gold.
   Any model change shows up in this shot, so an outlier is easy to see.
-- **`?state=<id>`** (dev server or `?debug`): boots past the title menu straight into a Dev tab save state. The id is the state's
-  name in lowercase with hyphens (`devStateId`: `?state=waking-shrine-the-entrance`), or its 1-based number in the Dev tab.
+- **`?state=<id>`** (dev server or `?debug`): boots past the title menu straight into a dev panel save state. The id is the state's
+  name in lowercase with hyphens (`devStateId`: `?state=waking-shrine-the-entrance`), or its 1-based number in the dev panel.
 - **`embervale.spawn(id, x?, z?)`**: puts a registered enemy (`thornling`, `gloomwisp`, `dozing-sentinel`, `shellback`,
   `cragstalker`: `game/spawn.ts`) at (x, z) or 3 m in front of Wren. Bosses stay in their arenas: `activeBoss.forceMove(name)`.
 - **`?debug` + `\`** draws the collider wireframe **and** red rings round every live enemy's hurtboxes (`Debug`, `game/debug.ts`).

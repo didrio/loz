@@ -111,6 +111,11 @@ export async function openGame(env, outDir, { fixture, touch = false, stepped = 
     (s) => localStorage.setItem('embervale:settings', JSON.stringify(s)),
     { ...(display !== undefined ? { display } : {}), shadows },
   );
+  // The performance meter (bottom right) shows live numbers: off in every look shot and smoke run, so baselines stay put.
+  await page.addInitScript(() => { window.__embervaleNoPerf = true; });
+  // The game now starts in modern lighting (render/experiments/modernLook.ts); every baseline and budget is the classic look, and the
+  // post-processing modules load at a moment that would shift the seeded shots. Classic here until the baselines move over (docs/tickets.md).
+  await page.addInitScript(() => { window.__embervaleClassicLook = true; });
   if (stepped) await page.addInitScript(steppedClock, STEP_MS);
   const errors = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
