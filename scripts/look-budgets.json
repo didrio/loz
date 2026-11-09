@@ -8,7 +8,7 @@
     "triangles": 334000
   },
   "bells": {
-    "calls": 1160,
+    "calls": 1170,
     "triangles": 332000
   },
   "bellShaft": {
@@ -80,8 +80,8 @@
     "triangles": 328000
   },
   "gate": {
-    "calls": 230,
-    "triangles": 246000
+    "calls": 180,
+    "triangles": 299000
   },
   "gear": {
     "calls": 680,
@@ -128,16 +128,16 @@
     "triangles": 4100
   },
   "landmarks": {
-    "calls": 480,
-    "triangles": 246000
+    "calls": 490,
+    "triangles": 254000
   },
   "lostBell": {
     "calls": 600,
     "triangles": 258000
   },
   "mill": {
-    "calls": 270,
-    "triangles": 337000
+    "calls": 240,
+    "triangles": 338000
   },
   "night": {
     "calls": 450,
@@ -228,12 +228,12 @@
     "triangles": 3700
   },
   "village": {
-    "calls": 350,
-    "triangles": 338000
+    "calls": 240,
+    "triangles": 339000
   },
   "villageDetails": {
-    "calls": 300,
-    "triangles": 332000
+    "calls": 260,
+    "triangles": 334000
   },
   "villagers": {
     "calls": 280,

@@ -58,11 +58,20 @@ and the blight's ash (`BLIGHT_ASH`) wins while it lies on the valley. To add a p
 
 The UI is drawn at screen resolution in every mode. Check visual work in **Native and N64** both (`npm run look -- <scenes> --display n64`).
 
+## Texture recipe (owner's call, 2026-11-09, after the brick redraw)
+
+The textures aim at **well-done, lower-resolution pixel art**: a material should *suggest the real thing* (brick, bark, hide, metal) and still be clearly pixelated and stylized. This is the target for every tile; "N64" now names the optional Display mode and the faceted low-poly geometry, not the texture quality bar. The recipe the stone, planks and shingle tiles follow (`render/textures.ts`):
+- **Every mark has a physical cause:** an edge lit on one side and shaded on the other (light from upper left), a chipped or rounded corner, a worn patch, a crack, a pit, a stain.
+- **Joints, seams and gaps are a mid-dark, gritty tone** about 0.25 below their neighbours, never a black ruled line. They wander or kink a texel, are uneven in width, and break where worn. (`finishTile` normalizes the spread: a near-black line uses all the contrast and flattens everything else.)
+- **Nothing is perfectly regular:** per-block tone, a slow stain across the whole tile, edges that sag a texel. Made things (metal plates) stay straight but worn.
+- **Keep it chunky and calm up close:** texels stay big and crisp (nearest filter), features are 1-3 texels, nothing sits at pure black or white (`textures.test.ts` checks the joints), and a large face seen close (a pillar) must not turn to noise or stair-steps. Tune by looking at a big lit face, not only a wall.
+- Still a grey tile × the material colour: palette, blight and Display modes are unchanged.
+
 ## Shape language
 
 - **Characters:** chunky, simplified proportions; oversized heads, hands and feet; bold silhouettes that read on a phone.
 - **Environments:** big simple forms, compact spaces, landmarks you navigate by. Readability over detail.
-- **Surfaces:** detail from silhouette, colour breakup and small soft textures, never fine high-frequency noise.
+- **Surfaces:** detail from silhouette, colour breakup and **textures drawn like well-done, low-resolution pixel art** (see "Texture recipe" below). Not fine high-frequency noise, and not flat cartoony blobs or ruled lines either.
 - **More detail ≠ more polygons.** Spend the budget on shapes that change the silhouette (horns, plates, belts, chipped
   edges, a slight asymmetry) and on colour breakup, not on smoother cylinders.
 

@@ -165,59 +165,123 @@ function plaster(n: number, rnd: () => number) {
   return f;
 }
 
-/** Coursed stone: rows of blocks (0.25–0.4 m tall at 32 texels/m), staggered, each its own tone, in dark mortar. */
+/**
+ * Coursed stone: rows of blocks (0.25-0.4 m tall at 32 texels/m), staggered, each its own tone. Hand-laid, not ruled (owner's call,
+ * 2026-11-09: perfect dark lines read as a grid): a course's edge sags a texel here and there, a joint kinks a texel halfway down,
+ * the mortar is a gritty mid-dark that thickens where it has worn, and each block has a lit top and left edge, a shaded bottom
+ * and right edge, rounded corners, the odd chipped corner, pits, a few hairline cracks and a wall-wide stain. Mortar is only a
+ * little darker than the stone: it sets how far the rest can spread (`finishTile` normalizes), so a black joint flattens the blocks.
+ */
 function stone(n: number, rnd: () => number) {
-  const grain = fbmTile(n, 8, 8, 2, rnd);
+  const grain = fbmTile(n, 16, 16, 2, rnd);
+  const stain = fbmTile(n, 3, 3, 2, rnd);
+  const wear = fbmTile(n, 8, 8, 2, rnd);
+  const heights = cuts(n, 8, 13, rnd);
+  const tops: number[] = [];
+  let acc = 0;
+  for (const h of heights) { tops.push(acc); acc += h; }
+  const sags = heights.map(() => { // each course's top edge: -1, 0 or +1 texels along u, in slow undulations
+    const s = periodicNoise(n, 3, 1, rnd);
+    return Array.from({ length: n }, (_, x) => (s[x] < 0.33 ? -1 : s[x] > 0.67 ? 1 : 0));
+  });
+  const courses = heights.map(() => {
+    const widths = cuts(n, 12, 24, rnd);
+    const rel = [0];
+    for (const w of widths) rel.push(rel[rel.length - 1] + w);
+    return {
+      offset: Math.floor(rnd() * n),
+      rel,
+      lean: widths.map(() => (rnd() < 0.15 ? (rnd() < 0.5 ? -1 : 1) : 0)), // the joint's lower half sits a texel over
+      blocks: widths.map(() => ({ tone: 0.45 + rnd() * 0.22, tilt: (rnd() - 0.5) * 0.1, chip: rnd() < 0.15 ? Math.floor(rnd() * 4) : -1 })),
+    };
+  });
   const f = new Float32Array(n * n);
-  let y0 = 0;
-  for (const h of cuts(n, 8, 13, rnd)) {
-    const offset = Math.floor(rnd() * n);
-    let x0 = offset;
-    for (const w of cuts(n, 12, 24, rnd)) {
-      const tone = 0.35 + rnd() * 0.5;
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const i = (y0 + y) * n + wrap(x0 + x, n);
-          const mortar = y === 0 || x === 0;
-          const edge = y === 1 || x === 1 || y === h - 1 || x === w - 1;
-          f[i] = mortar ? -0.35 : tone + grain[i] * 0.45 - (edge ? 0.12 : 0) + (y === h - 1 ? 0.05 : 0);
+  for (let x = 0; x < n; x++) {
+    for (let ci = 0; ci < courses.length; ci++) {
+      const top = tops[ci] + sags[ci][x];
+      const next = ci + 1 < courses.length ? tops[ci + 1] + sags[ci + 1][x] : n + tops[0] + sags[0][x];
+      const h = next - top, c = courses[ci], J = c.blocks.length;
+      for (let ly = 0; ly < h; ly++) {
+        const i = wrap(top + ly, n) * n + x;
+        const b = (j: number) => c.rel[j] + c.lean[j % J] * (ly * 2 >= h ? 1 : 0);
+        const xr = wrap(x - c.offset, n);
+        let j = -1, xu = xr;
+        for (const cand of [xr, xr + n, xr - n]) {
+          for (let k = 0; k < J && j < 0; k++) if (b(k) <= cand && cand < b(k + 1)) { j = k; xu = cand; }
         }
+        const lx = xu - b(j), w = b(j + 1) - b(j), blk = c.blocks[j];
+        const right = w - 1 - lx, low = h - 1 - ly;
+        const mortarV = 0.21 + (grain[i] - 0.5) * 0.2 + (stain[i] - 0.5) * 0.15 - (wear[i] > 0.62 ? 0.08 : 0);
+        const joint = ly === 0 || lx === 0 || (wear[i] > 0.72 && (ly === 1 || lx === 1)); // one texel, two where it has worn
+        const corner = (lx <= 1 && ly <= 1) || (right <= 1 && low <= 1) || (lx <= 1 && low <= 1) || (right <= 1 && ly <= 1);
+        const chipped = blk.chip >= 0 && (blk.chip % 2 ? right : lx) + (blk.chip < 2 ? ly : low) <= 2;
+        if (joint) { f[i] = mortarV; continue; }
+        let v = blk.tone + (grain[i] - 0.5) * 0.25 + (stain[i] - 0.5) * 0.2 + blk.tilt + 0.06 - (ly / h) * 0.12;
+        if (ly === 1) v += 0.08; // lit top edge
+        if (lx === 1) v += 0.05; // lit left edge
+        if (low === 0) v -= 0.1; // shaded bottom
+        if (right === 0) v -= 0.07; // shaded right
+        f[i] = corner || chipped ? mortarV + 0.08 : v;
       }
-      x0 += w;
     }
-    y0 += h;
   }
-  return f;
-}
-
-/** Planks running up the tile (v): ~0.2 m wide at 32 texels/m, dark seams, a grain streak along each, the odd butt joint and knot. */
-function planks(n: number, rnd: () => number) {
-  const grain = fbmTile(n, 16, 2, 2, rnd);
-  const f = new Float32Array(n * n);
-  let x0 = 0;
-  for (const w of cuts(n, 6, 8, rnd)) {
-    const tone = 0.35 + rnd() * 0.4;
-    const joint = rnd() < 0.5 ? Math.floor(rnd() * n) : -1;
-    const knot = rnd() < 0.4 ? { x: 2 + rnd() * (w - 4), y: rnd() * n } : null;
-    for (let y = 0; y < n; y++) {
-      for (let x = 0; x < w; x++) {
-        const i = y * n + x0 + x;
-        let v = tone + grain[i] * 0.6;
-        if (x === 0) v = -0.3;
-        else if (x === w - 1) v -= 0.1;
-        if (y === joint) v = -0.25;
-        if (knot && Math.hypot((x - knot.x) * 1.4, wrap(y - Math.floor(knot.y) + n / 2, n) - n / 2) < 1.6) v -= 0.4;
-        f[i] = v;
-      }
+  for (let p = 0; p < n * 0.25; p++) f[Math.floor(rnd() * n * n)] += rnd() < 0.7 ? -0.14 : 0.1; // pits and pale flecks
+  for (let c = 0; c < 3; c++) { // hairline cracks
+    let x = rnd() * n, y = rnd() * n, a = rnd() * Math.PI * 2;
+    const len = 6 + rnd() * 6;
+    for (let s = 0; s < len; s++) {
+      f[wrap(Math.floor(y), n) * n + wrap(Math.floor(x), n)] -= 0.18;
+      a += (rnd() - 0.5) * 0.9;
+      x += Math.cos(a);
+      y += Math.sin(a);
     }
-    x0 += w;
   }
   return f;
 }
 
 /**
- * Overlapping shingles in rows across the slope; v runs downhill. Each row starts in the shadow of
- * the row above's lip, and its own lower edge catches the light; staggered gaps between shingles.
+ * Planks running up the tile (v): ~0.2 m wide at 32 texels/m. Each seam wanders a texel along its length, is a mid-dark gap (not a
+ * black rule) with a lit edge on the plank beside it, the grain streaks run strong, and the odd butt joint and knot.
+ */
+function planks(n: number, rnd: () => number) {
+  const grain = fbmTile(n, 16, 2, 2, rnd);
+  const f = new Float32Array(n * n);
+  const widths = cuts(n, 6, 8, rnd);
+  const starts = [0];
+  for (const w of widths) starts.push(starts[starts.length - 1] + w);
+  const wander = widths.map(() => { // each seam's shift along v: -1, 0 or +1 texels (seam 0 and the wrap share one)
+    const s = periodicNoise(n, 4, 1, rnd);
+    return Array.from({ length: n }, (_, y) => (s[y] < 0.42 ? -1 : s[y] > 0.58 ? 1 : 0));
+  });
+  const seamAt = (j: number, y: number) => starts[j] + wander[j % widths.length][y];
+  for (let j = 0; j < widths.length; j++) {
+    const tone = 0.4 + rnd() * 0.35;
+    const joint = rnd() < 0.5 ? Math.floor(rnd() * n) : -1;
+    const jointSide = rnd() < 0.5 ? 0 : 1; // the butt joint stops short of one edge
+    const w = widths[j];
+    const knot = rnd() < 0.4 ? { x: 2 + rnd() * (w - 4), y: rnd() * n } : null;
+    for (let y = 0; y < n; y++) {
+      const x0 = seamAt(j, y), x1 = j + 1 < widths.length ? seamAt(j + 1, y) : n + seamAt(0, y);
+      for (let x = x0; x < x1; x++) {
+        const k = x - x0, i = y * n + wrap(x, n);
+        let v = tone + (grain[i] - 0.5) * 0.7 + 0.3;
+        if (k === 0) v = 0.3 + grain[i] * 0.15; // the seam
+        else if (k === 1) v += 0.08;
+        else if (x === x1 - 1) v -= 0.08;
+        if (y === joint && (jointSide ? k < x1 - x0 - 2 : k > 1)) v = 0.32 + grain[i] * 0.1;
+        else if (y === (joint + 1) % n && joint >= 0) v += 0.06;
+        if (knot && Math.hypot((k - knot.x) * 1.4, wrap(y - Math.floor(knot.y) + n / 2, n) - n / 2) < 1.6) v -= 0.35;
+        f[i] = v;
+      }
+    }
+  }
+  return f;
+}
+
+/**
+ * Overlapping shingles in rows across the slope; v runs downhill. Each row starts in the shadow of the row above's lip (ragged, a
+ * texel deeper here and there, soft rather than black) and its own lower edge catches the light. The gaps between shingles are
+ * mid-dark and kink a texel halfway down, so no gap is a ruled line.
  */
 function shingle(n: number, rnd: () => number) {
   const grain = fbmTile(n, 8, 8, 2, rnd);
@@ -225,15 +289,21 @@ function shingle(n: number, rnd: () => number) {
   const rowH = 8;
   for (let r = 0; r < n / rowH; r++) {
     const offset = Math.floor(rnd() * n);
+    const lip = periodicNoise(n, 8, 1, rnd); // how deep the shadow under the row above reaches, along u
     let x0 = offset;
     for (const w of cuts(n, 7, 11, rnd)) {
       const tone = 0.4 + rnd() * 0.35;
+      const kink = rnd() < 0.5 ? 1 : 0; // the gap's lower half sits a texel over
       for (let y = 0; y < rowH; y++) {
         for (let x = 0; x < w; x++) {
           const i = (r * rowH + y) * n + wrap(x0 + x, n);
           let v = tone + grain[i] * 0.4 + (y / rowH) * 0.25;
-          if (y < 2) v -= 0.35 - y * 0.15;
-          if (x === 0) v = -0.2;
+          const shade = y < 1 + (lip[wrap(x0 + x, n)] > 0.5 ? 1 : 0);
+          if (shade) v -= 0.3 - y * 0.1;
+          else if (y === 2) v -= 0.08;
+          if (y === rowH - 1) v += 0.08; // the lit lower edge
+          const gap = x === (y >= rowH / 2 ? kink : 0);
+          if (gap && !(y === 3 && rnd() < 0.3)) v = 0.35 + grain[i] * 0.15;
           f[i] = v;
         }
       }
@@ -306,18 +376,21 @@ function foliage(n: number, rnd: () => number) {
   return f;
 }
 
-/** Worked metal: fine brushed streaks along u, plate seams every 1 m with a rivet at each corner, and a few scuffs. */
+/**
+ * Worked metal: fine brushed streaks along u, plate seams every 1 m with a rivet at each corner, and a few scuffs. The plates are
+ * made things, so the seams stay straight, but they are a worn mid-dark with gaps in them, not a black rule, and the rivets sit a texel off.
+ */
 function metal(n: number, rnd: () => number) {
   const streak = fbmTile(n, 2, 24, 2, rnd);
   const f = new Float32Array(n * n);
   for (let i = 0; i < f.length; i++) f[i] = 0.45 + streak[i] * 0.4 + rnd() * 0.05;
   const plate = n / 2;
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    if (x % plate === 0 || y % plate === 0) f[y * n + x] = -0.2;
-    else if (x % plate === 1 || y % plate === 1) f[y * n + x] += 0.15; // the lit edge of a plate
+    if (x % plate === 0 || y % plate === 0) f[y * n + x] = rnd() < 0.15 ? f[y * n + x] - 0.05 : 0.28 + rnd() * 0.12; // the seam, worn through here and there
+    else if (x % plate === 1 || y % plate === 1) f[y * n + x] += 0.12; // the lit edge of a plate
   }
   for (let py = 0; py < 2; py++) for (let px = 0; px < 2; px++) {
-    const cx = px * plate + 4, cy = py * plate + 4;
+    const cx = px * plate + 3 + Math.floor(rnd() * 3), cy = py * plate + 3 + Math.floor(rnd() * 3);
     for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) f[(cy + dy) * n + cx + dx] += dx + dy === 0 ? 0.5 : -0.3;
   }
   for (let s = 0; s < 6; s++) {

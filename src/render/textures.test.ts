@@ -48,6 +48,24 @@ describe('generated tiles', () => {
     expect(step(t, n, all, [n - 1], 0, 1)).toBeLessThanOrEqual(worst(0, 1) + 2);
   });
 
+  // Owner's call, 2026-11-09: perfect dark lines read as a grid and cheap. Joints must wander, wear and stay off the extremes.
+  it.each(['stone', 'planks', 'shingle'] as TileId[])('%s has no ruler-straight dark joint across the whole tile, and no clamped black', (id) => {
+    const n = TILE_SIZE[id], t = drawTile(id);
+    const mean = t.reduce((a, v) => a + v, 0) / t.length;
+    const sd = Math.sqrt(t.reduce((a, v) => a + (v - mean) ** 2, 0) / t.length);
+    const dark = (i: number) => t[i] < mean - 2 * sd;
+    for (let k = 0; k < n; k++) {
+      let row = 0, col = 0;
+      for (let j = 0; j < n; j++) {
+        if (dark(k * n + j)) row++;
+        if (dark(j * n + k)) col++;
+      }
+      expect(row / n).toBeLessThan(0.8);
+      expect(col / n).toBeLessThan(0.8);
+    }
+    expect(t.filter((v) => v === 0 || v === 255).length / t.length).toBeLessThan(0.02);
+  });
+
   it('every surface names tiles that exist and pulls the colour by at most half', () => {
     for (const s of Object.values(SURFACES)) {
       expect(TILES).toContain(s.top);
