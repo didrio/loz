@@ -52,16 +52,6 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
 
-### T54: Final pass: the Hollow Lamplighter (golden set 6)
-**Run:** plan · opusplan · high
-**Why:** The first boss, at about twice its mini-boss budget today: finish it and bring it into budget.
-**Done when:**
-- Under 2500 triangles, `bakeRig` used, its `Pose` data separate from the geometry.
-- `tier: 'final'` in the registry; within budget; every colour a `pal()` name; built with the kit and `bakeRig`; the behaviour file untouched in the diff (silhouette, scale, joints, hurtboxes, timings frozen; ask the owner first if one must change).
-- Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
-**Read first:** render/models/lamplighter.ts; game/bosses/lamplighter.ts (Grep `Pose`, then read ranges; the file is big); combat.md boss fairness rules; pipeline.md "Final pass", "The rig convention" and "The modeling kit"; art.md "The golden set" and the style rules; the model's file in `render/models/` and its behaviour file; `render/models/props.ts` `buildChest` (the approved example of the kit).
-**Verify:** `npm run check` (the validator fails a final asset's findings); the unit tests and smoke scenarios for it pass **unchanged**; `npm run look -- contact` and the asset viewer in Native and N64 mode, before and after (looker). smoke for the Lamplighter fight.
-
 ### T55: Final pass: Gravelheart (golden set 7)
 **Run:** plan · opusplan · high
 **Why:** The shrine's boss, built on the move system; the finished boss pair sets the bar for every later boss.
@@ -69,7 +59,8 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - Within the 4000 triangle boss budget; weak-point hurtboxes and poses unchanged.
 - `tier: 'final'` in the registry; within budget; every colour a `pal()` name; built with the kit and `bakeRig`; the behaviour file untouched in the diff (silhouette, scale, joints, hurtboxes, timings frozen; ask the owner first if one must change).
 - Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
-**Read first:** render/models/gravelheart.ts; game/bosses/gravelheart/; combat.md; pipeline.md "Final pass", "The rig convention" and "The modeling kit"; art.md "The golden set" and the style rules; the model's file in `render/models/` and its behaviour file; `render/models/props.ts` `buildChest` (the approved example of the kit).
+**Read first:** render/models/gravelheart.ts; game/bosses/gravelheart/; combat.md; pipeline.md "Final pass", "The rig convention" and "The modeling kit"; art.md "The golden set" and the style rules; the model's file in `render/models/` and its behaviour file; `render/models/props.ts` `buildChest` (the approved example of the kit); **`render/models/lamplighter.ts` and `game/bosses/lamplighter.trace.test.ts` (T54, the boss example: copy its order).**
+**Notes (from T54):** record a trace test on today's code *first* (hurtboxes, the ember and head, every move, random numbers pinned); move the poses into the rig behind a `posed(move)` wrapper (a step can advance in the same frame before `animate`, so the move's look must be captured as its `update` runs); check the trace passes before touching geometry; ask the owner the same "body exact or keyed polish" question. Its glows: make them from icosahedra (three's sphere is 240 triangles each).
 **Verify:** `npm run check` (the validator fails a final asset's findings); the unit tests and smoke scenarios for it pass **unchanged**; `npm run look -- contact` and the asset viewer in Native and N64 mode, before and after (looker). smoke `gravelheart`.
 
 ### T56: Final pass: one shrine room (golden set 8)

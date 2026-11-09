@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { clamp, damp, easeOut, mix } from '../../core/math';
+import { clamp, easeOut } from '../../core/math';
 import { Layer, type Physics } from '../../core/physics';
-import { buildLamplighter, SHIN, THIGH, type LamplighterArm, type LamplighterModel } from '../../render/models/lamplighter';
+import { buildLamplighter, type LamplighterModel, type LamplighterMoveCue, type LamplighterRig } from '../../render/models/lamplighter';
 import type { BossArena } from '../../world/objects';
-import { Boss, type Move } from '../boss';
+import { Boss, type BossState, type Move } from '../boss';
 import { Gloomwisp, type Attack, type EnemyEnv, type Hurtbox } from '../enemies';
 import { pal } from '../../render/palette';
 
@@ -45,24 +45,6 @@ const ATTACKS = {
   skitter: { damage: 2, guard: 3, knockback: 15 },
 } satisfies Record<string, Attack>;
 
-interface Pose {
-  hipsY: number; lean: number; twist: number; roll: number;
-  headPitch: number; headYaw: number; headRoll: number;
-  rx: number; ry: number; rz: number; relbow: number;
-  lx: number; ly: number; lz: number; lelbow: number;
-  poleX: number; flame: number; eyes: number; flare: number; hook: number; stride: number;
-}
-
-const STAND: Pose = {
-  hipsY: 1.75, lean: 0.28, twist: 0, roll: 0,
-  headPitch: -0.2, headYaw: 0, headRoll: 0,
-  rx: -0.25, ry: 0, rz: -0.12, relbow: -1.25,
-  lx: 0.1, ly: 0, lz: 0.2, lelbow: -0.35,
-  poleX: Math.PI / 2, flame: 1, eyes: 0, flare: 0, hook: 0, stride: 0,
-};
-
-const FLAME_COLD = new THREE.Color(0x7fdcff);
-const FLAME_WARM = new THREE.Color(0xffb35a);
 /** Caught in a fight past dawn, the daylight burns it from full health to nothing in about this long. */
 const BURN_SECONDS = 60;
 /** The burn lands in small bites this far apart, each with a puff of embers. */
@@ -84,37 +66,26 @@ export class HollowLamplighter extends Boss {
   private fading: 'in' | 'out' | null = null;
   private burnT = 0;
 
-  // Rig: the model is render/models/lamplighter.ts; here it is only posed.
+  // The model and its rig are render/models/lamplighter.ts; here the rig is only told what is happening.
+  private readonly rig: LamplighterRig;
   private readonly hips: THREE.Group;
   private readonly torso: THREE.Group;
-  private readonly neck: THREE.Group;
   private readonly head: THREE.Group;
   private readonly cage: THREE.Group;
-  private readonly armR: LamplighterArm;
-  private readonly armL: LamplighterArm;
-  private readonly legs: LamplighterModel['legs'];
+  private readonly hand: THREE.Group;
   private readonly pole: THREE.Group;
   private readonly poleTip: THREE.Object3D;
   private readonly strips: LamplighterModel['strips'];
   private readonly lanterns: LamplighterModel['lanterns'];
-  private readonly flameOuter: THREE.Mesh;
-  private readonly flameInner: THREE.Mesh;
-  private readonly flameGlow: THREE.Mesh;
-  private readonly light: THREE.PointLight;
-  private readonly hookGlow: THREE.Mesh;
-  private readonly flameMat: THREE.MeshBasicMaterial;
-  private readonly eyeMat: THREE.MeshLambertMaterial;
-  private readonly mask: THREE.Mesh;
+  private readonly mask: THREE.Object3D;
+  /** The move running this frame, as its `update` saw it (set by `posed`; the rig reads it). */
+  poseMove: LamplighterMoveCue | null = null;
+  /** The state and its time as this frame began (before the clock ticks): what the state's look reads. */
+  private posing: { state: BossState; t: number } = { state: 'dormant', t: 0 };
+  /** The intro's head turn toward Wren. */
+  private turn = 0;
 
-  // Animation state.
-  private readonly cur: Pose = { ...STAND };
-  private target: Pose = { ...STAND };
-  private rate = 6;
-  private walkPhase = 0;
-  private twitchT = 2;
-  private twitch = 0;
   private introYaw = 0;
-  private breath = 0;
   private torn = false;
   private poleDropped = false;
   private readonly minions: Gloomwisp[] = [];
@@ -125,29 +96,19 @@ export class HollowLamplighter extends Boss {
     this.lockHeight = 2.6;
 
     const m = buildLamplighter();
+    this.rig = m.rig;
     this.hips = m.joints.hips;
     this.torso = m.joints.torso;
-    this.neck = m.joints.neck;
     this.head = m.joints.head;
     this.cage = m.joints.cage;
+    this.hand = m.armR.hand;
     this.pole = m.joints.pole;
     this.poleTip = m.joints.poleTip;
-    this.armR = m.armR;
-    this.armL = m.armL;
-    this.legs = m.legs;
     this.strips = m.strips;
     this.lanterns = m.lanterns;
-    this.flameOuter = m.flameOuter;
-    this.flameInner = m.flameInner;
-    this.flameGlow = m.flameGlow;
-    this.light = m.light;
-    this.hookGlow = m.hookGlow;
-    this.flameMat = m.flameMat;
-    this.eyeMat = m.eyeMat;
-    this.mask = m.mask;
+    this.mask = m.joints.mask;
     this.flashMats.push(...m.flashMats);
     this.root.add(m.root);
-    this.hips.position.y = STAND.hipsY;
 
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.yaw;
@@ -318,7 +279,7 @@ export class HollowLamplighter extends Boss {
     for (const s of this.strips) s.g.visible = true;
     for (const l of this.lanterns) l.g.visible = true;
     if (this.poleDropped) {
-      this.armR.hand.add(this.pole);
+      this.hand.add(this.pole);
       this.pole.position.set(0, -0.12, 0);
       this.pole.rotation.set(0, 0, 0);
       this.poleDropped = false;
@@ -340,13 +301,12 @@ export class HollowLamplighter extends Boss {
   // ---------------------------------------------------------------------------
 
   update(dt: number, env: EnemyEnv) {
-    // Each frame starts from the base pose; the active move then bends it.
-    this.target = { ...STAND };
-    this.rate = 6;
+    // Each frame the rig starts from its standing pose; the state's look and the running move then bend it.
+    this.poseMove = null;
+    this.posing = { state: this.state, t: this.stateT };
     this.gloom = this.state === 'fight' ? (this.phase === 1 ? 0.3 : 0.8) : this.state === 'intro' ? 0.3 : 0;
-    if (this.state === 'dormant') this.poseDormant(dt);
-    if (this.state === 'intro') this.poseIntro(env, dt);
-    if (this.state === 'dying') this.poseDying(env, dt);
+    if (this.state === 'intro') this.introBeats(env, dt);
+    if (this.state === 'dying') this.dyingBeats(env, dt);
     // Kept from going home by the fight, it burns in the daylight.
     if (this.state === 'fight' && !env.night) this.dawnBurn(dt, env);
     if (this.fading && this.state === 'dormant') this.fade(dt, env);
@@ -395,68 +355,34 @@ export class HollowLamplighter extends Boss {
     }
   }
 
-  /** Lets moves bend the pose: `pose({ rx: -1.4 }, 25)` with an optional snappier rate. */
-  pose(p: Partial<Pose>, rate?: number) {
-    Object.assign(this.target, p);
-    if (rate !== undefined) this.rate = rate;
-  }
-
-  private poseDormant(dt: number) {
-    // Hunched like a dead scarecrow, back to the road, head hung. Every so often it twitches.
-    this.twitchT -= dt;
-    if (this.twitchT <= 0) {
-      this.twitchT = 2 + Math.random() * 4;
-      this.twitch = (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.3);
-    }
-    this.twitch *= Math.exp(-dt * 3);
-    this.pose({
-      lean: 0.6, hipsY: 1.7, headPitch: 0.75, headRoll: this.twitch, rx: 0.05, relbow: -1.1, lx: 0.12, lz: 0.08,
-      lelbow: -0.1, flame: 0.3, poleX: Math.PI / 2 + 0.25,
-    });
-  }
-
-  private poseIntro(env: EnemyEnv, dt: number) {
+  /** The intro's beats (the rig plays its look): the head turns to Wren, the body follows, the shriek. */
+  private introBeats(env: EnemyEnv, dt: number) {
     const t = this.stateT;
     const toPlayer = Math.atan2(env.playerPos.x - this.pos.x, env.playerPos.z - this.pos.z);
     const turn = ((toPlayer - this.introYaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    this.turn = turn;
     if (t < 1.3) {
-      // The head turns all the way around first; the body doesn't move.
-      const k = easeOut(t / 1.3);
-      this.pose({ lean: 0.6, hipsY: 1.7, headPitch: mix(0.75, -0.1, k), headYaw: turn * k, flame: mix(0.3, 0.7, k), rx: 0.05, relbow: -1.1, lx: 0.12, lz: 0.08, lelbow: -0.1 }, 20);
       if (t < dt * 1.5) env.sfx.creak();
     } else if (t < 2.4) {
-      // Then the body turns to match and unfolds to its full height.
+      // The body turns to match the head.
       const k = easeOut((t - 1.3) / 1.1);
       this.yaw = this.introYaw + turn * k;
-      this.pose({ headYaw: turn * (1 - k), lean: mix(0.6, -0.15, k), hipsY: mix(1.7, 1.92, k), lz: mix(0.08, 0.9, k), rz: mix(-0.12, -0.6, k), flame: 0.9 }, 10);
     } else if (t < 3.3) {
-      // A shriek: head thrown back, flame flaring, eyes burning.
-      this.pose({ lean: -0.25, hipsY: 1.92, headPitch: -0.65, headRoll: Math.sin(t * 40) * 0.08, lz: 1.1, lx: -0.5, rz: -0.7, flame: 2.2, eyes: 1, flare: 0.5 }, 14);
       if (t - dt < 2.4) {
         env.sfx.shriek();
         env.shake(0.5);
       }
-    } else {
-      this.pose({ flame: 1.2 }, 4);
     }
   }
 
-  private poseDying(env: EnemyEnv, dt: number) {
+  /** The death's beats (the rig plays its look): it lets go of the pole, the cage bursts, the body crumbles. */
+  private dyingBeats(env: EnemyEnv, dt: number) {
     const t = this.stateT;
-    const shake = Math.sin(t * 50) * 0.06;
-    if (t < 0.9) {
-      this.pose({ lean: -0.45, headPitch: -0.5, headRoll: shake * 4, lz: 1.2, rz: -1.0, lx: -1.2, flame: 1.6 + Math.sin(t * 30), eyes: 1 }, 12);
-    } else if (t < 2.1) {
-      this.pose({ hipsY: 0.85, lean: 0.55, headPitch: 0.3, rx: 0.2, relbow: -0.3, lx: 0.25, lelbow: -0.2, lz: 0.3, flame: 1.2 }, 5);
-      if (!this.poleDropped) {
-        // Let go of the pole: it stays behind in the hollow after the body crumbles.
-        this.poleDropped = true;
-        this.root.parent?.attach(this.pole);
-      }
-    } else if (t < 3.5) {
-      // The cage rattles; the cold flame warms.
-      this.pose({ hipsY: 0.85, lean: 0.4, headPitch: -0.4, headRoll: shake * 3, headYaw: shake * 2, flame: 1.5 + (t - 2.1) * 1.2 }, 20);
-    } else {
+    if (t >= 0.9 && t < 2.1 && !this.poleDropped) {
+      // Let go of the pole: it stays behind in the hollow after the body crumbles (the rig tips it over).
+      this.poleDropped = true;
+      this.root.parent?.attach(this.pole);
+    } else if (t >= 3.5) {
       if (!this.shattered) {
         this.shattered = true;
         const at = this.headWorldPos();
@@ -471,79 +397,35 @@ export class HollowLamplighter extends Boss {
       const k = clamp((t - 3.6) / 2.2, 0, 1);
       this.root.scale.set(1 - k * 0.3, Math.max(0.01, 1 - k), 1 - k * 0.3);
       if (Math.random() < dt * 30) env.particles.fx('smoke', this.pos.clone().setY(this.pos.y + 1 + Math.random() * 2 * (1 - k)), { count: 2, life: 1.2 });
-      this.pose({ hipsY: 0.8, lean: 0.9, flame: Math.max(0, 1 - k * 3) }, 3);
-    }
-    if (this.poleDropped) {
-      // The pole tips over and lies in the dust.
-      const k = clamp((t - 0.9) / 0.8, 0, 1);
-      this.pole.rotation.z = mix(this.pole.rotation.z, Math.PI / 2 - 0.1, k * 0.2);
-      this.pole.position.y = mix(this.pole.position.y, this.pos.y + 0.1, k * 0.2);
     }
   }
 
   protected animate(dt: number) {
-    const c = this.cur, tg = this.target;
-    const k = damp(this.rate, dt);
-    for (const key of Object.keys(tg) as (keyof Pose)[]) c[key] += (tg[key] - c[key]) * k;
-
-    // Walking: long, slow strides, with a slight bob.
-    const speed = Math.hypot(this.vel.x, this.vel.z);
-    this.walkPhase += dt * speed * 1.6;
-    const swing = Math.sin(this.walkPhase) * Math.min(1, speed / 3) * 0.45 + c.stride;
-    this.breath += dt;
-
-    this.hips.position.y = c.hipsY + Math.abs(Math.sin(this.walkPhase)) * 0.06 * Math.min(1, speed / 3) + Math.sin(this.breath * 1.3) * 0.02;
-    this.torso.rotation.set(c.lean + Math.sin(this.breath * 1.3) * 0.02, c.twist, c.roll);
-    this.neck.rotation.set(c.headPitch * 0.5, c.headYaw * 0.4, c.headRoll * 0.5);
-    this.head.rotation.set(c.headPitch * 0.5, c.headYaw * 0.6, c.headRoll * 0.5);
-
-    // Legs: two-bone IK keeps the feet on the ground at any hip height.
-    const h = clamp(c.hipsY, 0.6, THIGH + SHIN - 0.02);
-    const kneeIn = Math.acos(clamp((THIGH * THIGH + SHIN * SHIN - h * h) / (2 * THIGH * SHIN), -1, 1));
-    const thighA = Math.acos(clamp((THIGH * THIGH + h * h - SHIN * SHIN) / (2 * THIGH * h), -1, 1));
-    const bend = Math.PI - kneeIn;
-    this.legs.forEach((leg, i) => {
-      const s = (i === 0 ? 1 : -1) * swing;
-      leg.thigh.rotation.x = -thighA + s - c.lean * 0.3;
-      leg.knee.rotation.x = bend;
-      leg.foot.rotation.x = thighA - bend - s + c.lean * 0.3;
+    this.rig.update(dt, {
+      posing: this.posing,
+      state: this.state,
+      stateT: this.stateT,
+      move: this.poseMove,
+      turn: this.turn,
+      speed: Math.hypot(this.vel.x, this.vel.z),
+      yaw: this.yaw,
+      presence: this.presence,
+      shattered: this.shattered,
+      poleDropped: this.poleDropped,
+      floorY: this.pos.y,
     });
-
-    const setArm = (a: typeof this.armR, x: number, y: number, z: number, elbow: number, curl: number) => {
-      a.shoulder.rotation.set(x, y, z);
-      a.elbow.rotation.x = elbow;
-      a.fingers.forEach((f, i) => (f.rotation.x = -curl - (i % 2) * 0.1));
-    };
-    const armSwing = Math.sin(this.walkPhase) * Math.min(1, speed / 3) * 0.2;
-    setArm(this.armR, c.rx, c.ry, c.rz, c.relbow, 0.9);
-    setArm(this.armL, c.lx - armSwing, c.ly, c.lz, c.lelbow, 0.35 + Math.sin(this.breath * 2.1) * 0.15);
-    if (!this.poleDropped) this.pole.rotation.set(c.poleX, 0, 0);
-
-    // The coat sways, and flares out when it moves fast.
-    const flare = c.flare + Math.min(0.4, speed * 0.05);
-    for (const s of this.strips) {
-      s.g.rotation.set(-0.24 - flare - Math.sin(this.breath * 2 + s.ph) * 0.05, s.a, Math.sin(this.breath * 1.3 + s.ph) * 0.04);
-    }
-    for (const l of this.lanterns) {
-      l.g.rotation.set(Math.sin(this.breath * 2.5 + l.ph) * 0.25, 0, Math.cos(this.breath * 2 + l.ph) * 0.2);
-      (l.glow.material as THREE.MeshBasicMaterial).opacity = 0.6 + Math.sin(this.breath * 6 + l.ph) * 0.3;
-    }
-
-    // The stolen flame: flickers, swells with effort, warms as it dies.
-    const flick = 0.85 + Math.sin(this.breath * 17) * 0.08 + Math.sin(this.breath * 29) * 0.07;
-    const f = Math.max(0, c.flame) * flick;
-    this.flameOuter.scale.set(0.8 + Math.min(f, 1.6) * 0.25, Math.max(0.01, Math.min(f, 1.8)), 0.8 + Math.min(f, 1.6) * 0.25);
-    this.flameInner.scale.setScalar(Math.max(0.01, Math.min(f, 1.5) * 0.9));
-    this.flameGlow.scale.setScalar(0.8 + Math.min(f, 1.6) * 0.25);
-    const warmth = this.state === 'dying' ? clamp((this.stateT - 2.1) / 1.4, 0, 1) : 0;
-    const color = FLAME_COLD.clone().lerp(FLAME_WARM, warmth);
-    this.flameMat.color.copy(color);
-    (this.flameGlow.material as THREE.MeshBasicMaterial).color.copy(color);
-    this.light.color.copy(color);
-    this.light.intensity = (this.shattered ? 0 : 7) * f * this.presence;
-    this.eyeMat.emissive.setRGB(c.eyes, 0.05 * c.eyes, 0.02 * c.eyes);
-    (this.hookGlow.material as THREE.MeshBasicMaterial).opacity = c.hook * 0.6;
   }
+}
+
+/** A move whose look the rig plays: each frame its `update` runs, the rig is told which step it is in, and how far. */
+function posed(m: Move<HollowLamplighter>): Move<HollowLamplighter> {
+  return {
+    ...m,
+    update(b, step, t, env, dt) {
+      b.poseMove = { name: m.name, step, t, stepT: b.stepT };
+      m.update?.(b, step, t, env, dt);
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -553,7 +435,7 @@ export class HollowLamplighter extends Boss {
 type L = HollowLamplighter;
 
 /** Hook Sweep: drawn far back (glowing hook), then a wide swing in front. */
-const SWEEP: Move<L> = {
+const SWEEP: Move<L> = posed({
   name: 'sweep',
   timing: (b) => ({ windup: b.phase === 1 ? 0.8 : 0.62, active: 0.24, recover: b.phase === 1 ? 0.85 : 0.6 }),
   weight: (_b, d) => (d < 5.6 ? 3 : d < 7 ? 0.8 : 0),
@@ -565,23 +447,20 @@ const SWEEP: Move<L> = {
   update(b, step, t, env) {
     if (step === 'windup') {
       b.turnRate = 1.4;
-      b.pose({ twist: -0.75 * t, rx: -1.25, ry: -1.9, rz: -0.2, relbow: -0.25, poleX: Math.PI, hook: t, lean: 0.15, lx: -0.4, lz: 0.6 }, 8);
     } else if (step === 'active') {
       b.turnRate = 0;
-      b.pose({ twist: 0.75, rx: -1.35, ry: 1.7, rz: -0.2, relbow: -0.1, poleX: Math.PI, hook: 1, flare: 0.45, lean: 0.25, lx: -0.2, lz: 0.9 }, 28);
       if (t > 0.3 && !b.scratch.hitDone) {
         b.scratch.hitDone = true;
         if (b.inArc(5.6, 1.95)) env.hitPlayer(b.pos, ATTACKS.sweep);
       }
     } else {
       b.turnRate = 0.5;
-      b.pose({ twist: 0.5 * (1 - t), rx: mix(-1.2, -0.25, t), ry: mix(1.5, 0, t), relbow: mix(-0.1, -1.25, t), poleX: mix(Math.PI, Math.PI / 2, t), hook: 0 }, 5);
     }
   },
-};
+});
 
 /** Backhand: phase two's quick return swing after a sweep. */
-const BACKHAND: Move<L> = {
+const BACKHAND: Move<L> = posed({
   name: 'backhand',
   timing: () => ({ windup: 0.34, active: 0.24, recover: 0.9 }),
   weight: () => 0,
@@ -594,27 +473,24 @@ const BACKHAND: Move<L> = {
   update(b, step, t, env) {
     if (step === 'windup') {
       b.turnRate = 2;
-      b.pose({ twist: 0.8, rx: -1.3, ry: 1.9, relbow: -0.2, poleX: Math.PI, hook: t }, 12);
     } else if (step === 'active') {
       b.turnRate = 0;
-      b.pose({ twist: -0.8, rx: -1.35, ry: -1.7, relbow: -0.1, poleX: Math.PI, hook: 1, flare: 0.45 }, 28);
       if (t > 0.3 && !b.scratch.hitDone) {
         b.scratch.hitDone = true;
         if (b.inArc(5.6, 1.95)) env.hitPlayer(b.pos, ATTACKS.backhand);
       }
     } else {
       b.turnRate = 0.5;
-      b.pose({ rx: mix(-1.2, -0.25, t), ry: mix(-1.5, 0, t), relbow: mix(-0.1, -1.25, t), poleX: mix(Math.PI, Math.PI / 2, t), hook: 0 }, 5);
     }
   },
-};
+});
 
 /**
  * Snuffer Slam: rises to full height with the pole overhead, then slams the hook down.
  * A ring of cold fire races out along the ground (two in phase two); the hook sticks and
  * the head comes down within reach.
  */
-const SLAM: Move<L> = {
+const SLAM: Move<L> = posed({
   name: 'slam',
   cooldown: 1.5,
   timing: (b) => ({ windup: b.phase === 1 ? 1.05 : 0.85, active: 0.16, recover: b.phase === 1 ? 2.1 : 1.7 }),
@@ -623,29 +499,19 @@ const SLAM: Move<L> = {
     if (step === 'windup') env.sfx.creak();
     if (step === 'recover') b.impact(env);
   },
-  update(b, step, t) {
+  update(b, step) {
     if (step === 'windup') {
       b.turnRate = 1;
       if (b.distToPlayer > 5) b.vel.copy(b.toPlayer).multiplyScalar(1.8);
-      b.pose({ hipsY: mix(1.75, 1.95, t), lean: -0.3, rx: -3.0, ry: 0, rz: -0.25, relbow: -0.15, lx: -2.7, lz: 0.35, lelbow: -0.3, poleX: Math.PI, hook: t, headPitch: -0.35, flame: 1.4 }, 7);
-    } else if (step === 'active') {
-      b.turnRate = 0;
-      b.pose({ hipsY: 1.3, lean: 0.95, rx: -0.55, rz: -0.15, relbow: -0.05, lx: -0.6, lz: 0.2, lelbow: -0.1, poleX: Math.PI, hook: 1, headPitch: 0.1, flare: 0.3 }, 40);
     } else {
-      // Stuck: tugging at the pole, head low and exposed. Yanks free at the end.
+      // Active, then stuck: tugging at the pole, head low and exposed (the rig), until it yanks free.
       b.turnRate = 0;
-      const free = t > 0.8;
-      const tug = Math.max(0, Math.sin(t * 22)) * 0.12;
-      b.pose(free
-        ? { hook: 0 }
-        : { hipsY: 1.25, lean: 1.12 - tug, rx: -0.5, rz: -0.15, relbow: -0.05, lx: -0.55, lz: 0.2, lelbow: -0.1, poleX: Math.PI, hook: 0.2, headPitch: 0.35, headRoll: Math.sin(t * 9) * 0.15, flame: 0.7 },
-      free ? 5 : 12);
     }
   },
-};
+});
 
 /** Cold Flame Volley: rears back, the flame swells, and a fan of homing orbs flies out. */
-const VOLLEY: Move<L> = {
+const VOLLEY: Move<L> = posed({
   name: 'volley',
   cooldown: 3.2,
   timing: (b) => ({ windup: 0.85, active: b.phase === 1 ? 0.3 : 0.9, recover: 0.7 }),
@@ -660,23 +526,20 @@ const VOLLEY: Move<L> = {
   update(b, step, t, env) {
     if (step === 'windup') {
       b.turnRate = 1.8;
-      b.pose({ headPitch: -0.5, lean: -0.1, flame: 1 + t * 1.2, lx: -1.3, lz: 0.5, lelbow: -0.6 }, 7);
     } else if (step === 'active') {
       b.turnRate = 1.2;
-      b.pose({ headPitch: 0.25, lean: 0.35, flame: 2.2, lx: -1.5, lz: 0.3, lelbow: -0.2 }, 18);
       if (b.phase >= 2 && t > 0.55 && !b.scratch.second) {
         b.scratch.second = true;
         b.volley(env, 4);
       }
     } else {
       b.turnRate = 1;
-      b.pose({ flame: 1 }, 5);
     }
   },
-};
+});
 
 /** Spin: punishes standing behind it. A hiss, a crouch, then a full whirl of the pole. */
-const SPIN: Move<L> = {
+const SPIN: Move<L> = posed({
   name: 'spin',
   timing: () => ({ windup: 0.5, active: 0.38, recover: 0.75 }),
   weight: () => 0,
@@ -689,27 +552,22 @@ const SPIN: Move<L> = {
   },
   update(b, step, t, env, dt) {
     b.turnRate = 0;
-    if (step === 'windup') {
-      b.pose({ hipsY: 1.45, lean: 0.4, rx: -1.3, ry: -1.2, relbow: -0.3, poleX: Math.PI, hook: t, twist: -0.5 }, 12);
-    } else if (step === 'active') {
+    if (step === 'active') {
       b.yaw += (Math.PI * 2 * dt) / 0.38;
-      b.pose({ hipsY: 1.5, lean: 0.3, rx: -1.4, ry: 0.9, relbow: -0.1, poleX: Math.PI, hook: 1, flare: 0.6 }, 25);
       if (t > 0.4 && !b.scratch.hitDone) {
         b.scratch.hitDone = true;
         if (b.distToPlayer < 5.4 && env.playerPos.y - b.pos.y < 1.4) env.hitPlayer(b.pos, ATTACKS.spin);
       }
-    } else {
-      b.pose({ rx: mix(-1.2, -0.25, t), ry: 0, relbow: mix(-0.1, -1.25, t), poleX: mix(Math.PI, Math.PI / 2, t), hook: 0 }, 6);
     }
   },
-};
+});
 
 /**
  * Skitter (phase two): drops onto all fours with its eyes burning red, scuttles at you in a
  * zigzag and lunges. Crushes a whole guard: block with all three slots up, or jump it.
  * Afterward it's low and open.
  */
-const SKITTER: Move<L> = {
+const SKITTER: Move<L> = posed({
   name: 'skitter',
   cooldown: 5,
   timing: () => ({ windup: 0.65, active: 1.6, recover: 1.3 }),
@@ -719,16 +577,12 @@ const SKITTER: Move<L> = {
     if (step === 'active') b.scratch.lunged = false;
   },
   update(b, step, t, env) {
-    const crawl = { hipsY: 1.05, lean: 1.38, headPitch: -1.15, rx: -1.25, rz: -0.25, relbow: -0.15, lx: -1.25, lz: 0.25, lelbow: -0.15, poleX: 0.15, eyes: 1 };
     if (step === 'windup') {
       b.turnRate = 3;
-      b.pose({ ...crawl, eyes: t }, 9);
     } else if (step === 'active') {
       b.turnRate = 5;
       const side = new THREE.Vector3(-b.toPlayer.z, 0, b.toPlayer.x);
       b.vel.copy(b.toPlayer).multiplyScalar(11).addScaledVector(side, Math.sin(b.stepT * 11) * 4);
-      const gallop = Math.sin(b.stepT * 18);
-      b.pose({ ...crawl, rx: -1.25 + gallop * 0.5, lx: -1.25 - gallop * 0.5, stride: gallop * 0.6, flare: 0.5 }, 20);
       if (b.distToPlayer < 2.7 && !b.scratch.lunged) {
         b.scratch.lunged = true;
         env.sfx.shriek();
@@ -738,14 +592,12 @@ const SKITTER: Move<L> = {
     } else {
       // Panting on all fours, head low: the opening.
       b.turnRate = 0.4;
-      const heave = Math.sin(b.stepT * 8) * 0.06;
-      b.pose(t < 0.75 ? { ...crawl, lean: 1.38 + heave, eyes: 1 - t } : { eyes: 0 }, t < 0.75 ? 10 : 4);
     }
   },
-};
+});
 
 /** Howl (half health): clutches its head, then tears open its coat and frees the wisps. */
-const HOWL: Move<L> = {
+const HOWL: Move<L> = posed({
   name: 'howl',
   timing: () => ({ windup: 0.9, active: 1.1, recover: 0.7 }),
   weight: () => 0,
@@ -753,14 +605,7 @@ const HOWL: Move<L> = {
     if (step === 'windup') env.sfx.creak();
     if (step === 'active') b.tearOpen(env);
   },
-  update(b, step, t) {
+  update(b) {
     b.turnRate = 0.5;
-    if (step === 'windup') {
-      b.pose({ rx: -2.7, rz: 0.4, relbow: -1.9, lx: -2.7, lz: -0.4, lelbow: -1.9, poleX: 0.3, lean: 0.5, headPitch: 0.4, headRoll: Math.sin(t * 40) * 0.2, flame: 0.5 + Math.random() }, 10);
-    } else if (step === 'active') {
-      b.pose({ rx: -0.7, rz: -1.2, relbow: -0.2, lx: -0.7, lz: 1.2, lelbow: -0.2, poleX: Math.PI, lean: -0.3, hipsY: 1.95, headPitch: -0.75, flame: 2.4, eyes: 1, flare: 0.7 }, 14);
-    } else {
-      b.pose({ flame: 1.2 }, 5);
-    }
   },
-};
+});

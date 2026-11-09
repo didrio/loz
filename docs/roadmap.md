@@ -158,8 +158,9 @@ enemy randomness.
 - Variable time step. If we add dynamic bodies (pushable blocks, physics props), move to a
   fixed 60 Hz physics step with interpolation. (Pushable blocks are a classic dungeon
   puzzle: this may come up with the first dungeon.)
-- Characters are ~20 small meshes each (many draw calls), and the Lamplighter ~150: the kit's `bakeRig` (built in T35, used by the chest) merges
-  rigid parts per joint, and each model adopts it in its final pass. Bosses carry a PointLight; adding/removing
+- Rough characters are ~20 small meshes each (many draw calls): the kit's `bakeRig` (built in T35) merges rigid parts per joint,
+  and each model adopts it in its final pass (the Lamplighter went from 120 meshes to 60 in T54; most of what's left is its
+  13 swaying coat strips and 8 fingers, each a joint of its own). Bosses carry a PointLight; adding/removing
   lights recompiles shaders once (a small hitch at spawn and death, hidden by cutscenes).
 - Sword hits, lock-on and interact ranges are distance/angle checks, not physics shapes.
 - One save slot; position isn't saved.

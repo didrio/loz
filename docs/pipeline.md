@@ -77,8 +77,15 @@ model in place: there is never a rough and a final model side by side.
 
 Characters are rigid parts on a hierarchy of joints (`THREE.Group`s): no skinning, so nothing distorts. Animation is
 code: a **`Pose`**, a flat set of numbers (joint angles, heights, glow amounts) that moves and states blend toward, and
-one `pose(p)` that applies it to the joints. Both bosses already work this way (`render/models/gravelheart.ts`, the
-Lamplighter's `Pose` in `game/bosses/lamplighter.ts`). **Regular enemies adopt it in their final passes; the Thornling
+one `pose(p)` that applies it to the joints. **A boss: the Hollow Lamplighter (`render/models/lamplighter.ts`, T54).** Its
+`LamplighterRig.target(cue)` holds every look: the dormant slump, the intro, the death and each move's windup/active/recover
+pose (`MOVES`, by move name); the behaviour's moves keep only turning, movement, hits and sounds. A move's look must come
+from the step its `update` saw, but `Boss.fight` can advance the step in the same frame before `animate` runs, so each move
+is wrapped in `posed(move)`, which records `{ name, step, t, stepT }` for the rig as the move runs. Its body follows the
+rough's motion exactly (owner's call: hurtboxes ride those joints), proven frame by frame by
+`game/bosses/lamplighter.trace.test.ts` (a snapshot of the hurtboxes, the hook and the head recorded on the old inline code);
+polish is only on parts no hurtbox rides (coat springs, fingers, candles, eyes). Gravelheart (`render/models/gravelheart.ts`)
+still takes its pose from its moves until its own pass (T55: copy the Lamplighter). **Regular enemies adopt it in their final passes; the Thornling
 (`render/models/thornling.ts`, T49) is the example to copy:** the model exports its `Pose`, a `REST` pose, `blendPose` and a
 `ThornlingRig`; the behaviour file keeps every timing and only hands the rig its state each frame (`rig.update(dt, { state, t,
 windup, moving })`) and its death (`rig.die(deathT / 0.35)` from a `dying` override). The rig's `target(cue)` is where each
@@ -126,8 +133,9 @@ its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledo
 **Findings warn for `rough` and fail for `final`.** `registry.test.ts` runs it inside `npm run check`: any finding on a `final` asset fails,
 and a rough asset's findings print as one warning line. `npm run assets` prints the table (triangles against budget, size, textures,
 status) and every finding. Reading the table: today's rough models mostly hold glow colours that are not swatches (eyes, embers, halos:
-`MeshBasicMaterial`s written as hex) and a few props over the 300-triangle budget (the heart vessel's extruded heart); the
-Lamplighter is at about twice its mini-boss budget. A final pass fixes these; it never changes gameplay.
+`MeshBasicMaterial`s written as hex) and a few props over the 300-triangle budget (the heart vessel's extruded heart). A final pass
+fixes these; it never changes gameplay. **Glows count:** three's `SphereGeometry(r, 12, 10)` (`glow()`) is 240 triangles; a final
+model makes its own from an icosahedron (20 faces, or 80 for a big halo), as the Lamplighter's `halo()` does.
 
 ## The viewer, contact sheet and dev shortcuts
 
@@ -191,7 +199,11 @@ The chest (`render/models/props.ts`, 272 of its 300 triangles) is the first mode
 (`render/models/thornling.ts`, 800 of 1,200: an 80-face ball, thorns as `extrudePath` spikes curving back, a face of glow eyes, brows and a
 hinged jaw, five joints) the first creature; Wren (`render/models/wren.ts`, ten joints) the first person: the coat,
 blade and shield wood are `uniqueSurf(..., { vertexColors: true })` materials of their own in `animated`, the vertices painted white, so the
-game can still recolour, glow and flash them after the bake; the villagers (`render/models/villager.ts`, T53; Pip is the final one) the first NPCs: one body made of Wren's pieces (`person.ts`: the head, ears and nose, mitten hands, cuffed boots, eyes and brows; `k` scales them), an adult frame (the old humanoid's joints) and a child frame (a head 1.3× bigger, the same height), baked with the shared materials (a villager never flashes), every mesh tiled and graded; `VillagerRig` takes the `Npc`'s facts (`{ near, holding }`): the calm idle the villagers always had plus blinks, or Pip's shy one (hands clasped, eyes down, a peek at Wren every few seconds while near; hugging Button once returned). The `Npc` keeps turning to face Wren, its collider and blob. **The recipe for every final pass: `/final-pass`.**
+game can still recolour, glow and flash them after the bake; the villagers (`render/models/villager.ts`, T53; Pip is the final one) the first NPCs: one body made of Wren's pieces (`person.ts`: the head, ears and nose, mitten hands, cuffed boots, eyes and brows; `k` scales them), an adult frame (the old humanoid's joints) and a child frame (a head 1.3× bigger, the same height), baked with the shared materials (a villager never flashes), every mesh tiled and graded; `VillagerRig` takes the `Npc`'s facts (`{ near, holding }`): the calm idle the villagers always had plus blinks, or Pip's shy one (hands clasped, eyes down, a peek at Wren every few seconds while near; hugging Button once returned). The `Npc` keeps turning to face Wren, its collider and blob. The Hollow Lamplighter (`render/models/lamplighter.ts`,
+T54, 2,444 of 2,500) is the first boss: every group the rig moves on its own (13 coat strips, 8 fingers, 3 lanterns, the limbs) is passed to
+`bakeRig` as a joint so it keeps moving; ribs, hook, fingers and strap are `extrudePath`; the collar and snuffer bell are `lathe` shells whose
+profile turns back inside (no double-sided material); wax, soot, worn hems and patches are `paintRegion`; the mask is a joint of its own (the
+behaviour hides it when the cage bursts) with an unbaked eye mesh in `animated`. **The recipe for every final pass: `/final-pass`.**
 
 ## Visual checks
 

@@ -20,12 +20,12 @@
     "triangles": 277000
   },
   "boss": {
-    "calls": 1080,
-    "triangles": 281000
+    "calls": 690,
+    "triangles": 356000
   },
   "boss-moves": {
-    "calls": 250,
-    "triangles": 229000
+    "calls": 180,
+    "triangles": 276000
   },
   "buds": {
     "calls": 460,
@@ -52,8 +52,8 @@
     "triangles": 277000
   },
   "contact": {
-    "calls": 570,
-    "triangles": 35000
+    "calls": 490,
+    "triangles": 31000
   },
   "door": {
     "calls": 50,
@@ -118,6 +118,10 @@
   "hud": {
     "calls": 680,
     "triangles": 277000
+  },
+  "lamplighter": {
+    "calls": 80,
+    "triangles": 4100
   },
   "landmarks": {
     "calls": 530,

@@ -1409,6 +1409,22 @@ const SCENES = {
     await h.wait(1200);
     await h.shot('boss-howl');
   },
+  /**
+   * The Hollow Lamplighter alone in the viewer (T54, golden set 6): front, three-quarter and side by day, then the front at
+   * night in the hollow (its flame, eyes and caged wisps). The in-game shots are the `boss` and `boss-moves` scenes.
+   */
+  async lamplighter(h) {
+    const mode = ['native', 'performance', 'n64'][display] ?? 'native';
+    await h.page.setViewportSize({ width: 1000, height: 900 });
+    for (const [name, query] of [['front', 'angle=0'], ['three-quarter', 'angle=45'], ['side', 'angle=90'], ['night', 'angle=20&place=hollow&hour=23']]) {
+      const url = new URL('viewer.html', h.page.url() === 'about:blank' ? env.url : h.page.url());
+      url.search = `?asset=hollow-lamplighter&panel=0&${query}&display=${mode}`;
+      await h.page.goto(url.href);
+      await h.until(() => window.embervale?.mode === 'viewer', 30000);
+      await h.wait(300);
+      await h.shot(`lamplighter-model-${name}`);
+    }
+  },
   /** Gravelheart: asleep in its hall, waking, posed from four sides, Hammerfall's windup and stuck slam, the wall stones and the risen ring. */
   async gravelheart(h) {
     await h.newGame();

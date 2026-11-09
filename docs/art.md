@@ -201,6 +201,8 @@ render, stored and listed here. If the style changes, update the golden set firs
 - **The rest of the prop set** (2026-11-08, T52): the hinged door, the stone door, the jar and the sign (the chest and the crate are above). Reference renders: `props-<id>-front`, `-three-quarter`, `-side`; in game `mill-door-close`, `mill-door-open`, `mill-sign`, `door-asleep`, `door-awake`, `ruins-ruin-shieldCottage`.
 - **Pip** (2026-11-08, T53): the first NPC, on the villagers' kit body (`render/models/villager.ts`: Wren's pieces, a child frame), every surface tiled and graded. Reference renders: `villagers-pip-front`, `-three-quarter`, `-side`; in game `villagers-pip-idle`, `-pip-near`, `-pip-doll` (hugging Button), `villagers-square` (the five villagers).
 
+- **The Hollow Lamplighter** (2026-11-08, T54): the first boss on the kit and a rig of its own (`render/models/lamplighter.ts`): gaunt, long-armed, big clawed hands, a frayed and patched coat, the lamplighter's strap, wick tin and coil, a sooty lantern-cage head with wax run off its eave, eye-holes with a faint cold light; its body moves exactly as the rough's did. Reference renders: `lamplighter-model-front`, `-three-quarter`, `-side`, `-night`; in game `boss-front`, `boss-howl` (the `boss-moves` scene has each move's telegraph).
+
 ## Escape hatch
 
 If an asset genuinely can't be built well in code (a very organic hero creature), the fallback is a generated mesh
