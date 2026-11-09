@@ -423,13 +423,62 @@ function dyingPose(t: number): PoseBit {
   return [{ ...SLEEP, lids: Math.min(1, 0.3 + k), eyes: 1 - k, ember: 1.8 - k * 1.4, float: 1 - k * 0.8 }, 1.2];
 }
 
+/**
+ * Keyed polish on top of the chased pose (T60). Each is a pose offset that is zero (and flat) at both ends of the windup,
+ * so the key angles the windup ends on, and the active step starts from, are exactly the `MOVES` ones; after an impact it
+ * starts at zero in the recover and rings out to nothing well before that step ends. The offset is added to the pose as
+ * it is applied, never to the pose that chases the target, so the chase itself (and so the fight's timing) is unchanged.
+ */
+/** Dip first, then rise past the key, then back to it: 0 at both ends of 0..1. */
+const dipRise = (t: number) => (Math.sin(Math.PI * 2 * t) * Math.sin(Math.PI * t) ** 3) / 0.58;
+/** Reach out past the key mid-windup and come back to it. */
+const hump = (t: number) => Math.sin(Math.PI * t) ** 4;
+/** A rebound that dies away: 0 at once, a lift or overshoot first, then smaller swings back. */
+const settle = (s: number, hz = 3.2, tau = 0.18) => Math.exp(-s / tau) * Math.sin(Math.PI * 2 * hz * s);
+
+type Flourish = (step: GravelheartStep, t: number, stepT: number) => Partial<Pose>;
+const FLOURISH: Record<string, Flourish> = {
+  // Hammerfall: it crouches to gather, rises past the apex, then the slam jolts it up and the fists bounce in the floor.
+  hammerfall: (step, t, s) =>
+    step === 'windup' ? { hipsY: -0.22 * dipRise(t), lean: 0.1 * dipRise(t), rArm: -0.12 * dipRise(t), lArm: -0.12 * dipRise(t) }
+    : step === 'recover' ? { hipsY: 0.12 * settle(s), lean: -0.1 * settle(s), rArm: 0.12 * settle(s), lArm: 0.12 * settle(s) }
+    : {},
+  sweep: (step, t, s) =>
+    step === 'windup' ? { twist: -0.2 * hump(t), hipsY: -0.1 * hump(t) }
+    : step === 'recover' ? { twist: 0.22 * settle(s, 2.6, 0.16) }
+    : {},
+  doubleSweep: (step, t, s) =>
+    step === 'windup' ? { twist: -0.2 * hump(t), hipsY: -0.1 * hump(t) }
+    : step === 'recover' ? { twist: -0.22 * settle(s, 2.6, 0.16) }
+    : {},
+  swipe: (step, t, s) =>
+    step === 'windup' ? { twist: 0.18 * hump(t), hipsY: -0.08 * hump(t) }
+    : step === 'recover' ? { twist: -0.2 * settle(s, 2.6, 0.16) }
+    : {},
+  // Howl: hunches in to draw breath, then rears back past the key; the floor-smash jolts it.
+  howl: (step, t, s) =>
+    step === 'windup' ? { lean: 0.16 * dipRise(t), headPitch: 0.25 * dipRise(t), hipsY: -0.14 * dipRise(t) }
+    : step === 'recover' ? { hipsY: 0.1 * settle(s), lean: -0.08 * settle(s) }
+    : {},
+  grind: (step, _t, s) => (step === 'recover' ? { twist: -0.18 * settle(s, 2.6, 0.16), hipsY: 0.08 * settle(s) } : {}),
+  // Cairn Roll: a small lurch forward, then the rock back (the key), and a sink into the curl.
+  cairnRoll: (step, t) => (step === 'windup' ? { lean: 0.18 * dipRise(t), hipsY: -0.12 * hump(t) } : {}),
+};
+
+/** The offset for this frame's move step (empty when none), exported so a test can check it is zero where it must be. */
+export function flourish(move: GravelheartMoveCue | null): Partial<Pose> {
+  return (move && FLOURISH[move.name]?.(move.step, move.t, move.stepT)) || {};
+}
+
 /** The steps that strike the floor: the pebbles jump and whirl. */
 const IMPACTS = new Set(['hammerfall', 'howl', 'grind', 'staggered', 'kneel']);
 
 /**
  * Turns the boss's state into a pose and puts it on the joints. The body (hips, legs, torso, head, arms and fists, the
- * ember, plates and keystone) follows the rough's motion exactly: its hurtboxes and the glove's aim ride those joints
- * (owner's call, 2026-11-08, T55; `game/bosses/gravelheart/gravelheart.trace.test.ts` checks it frame by frame). Polish
+ * ember, plates and keystone) chases the rough's poses exactly, with the same rates: its hurtboxes and the glove's aim ride
+ * those joints (owner's call, 2026-11-08, T55). T60 added the one change to the body: a keyed `FLOURISH` on top of the
+ * chased pose (a dip before the big moves, a rebound after their impacts), zero at the key frames (the windup's end, the
+ * active step's start), so the trace test was re-recorded by design and the key frames checked by hand. Polish
  * lives only on the parts no hurtbox rides: the lids slant on the red-eyed tell, the jaw drops in the howl and the heave
  * up, the arm stones tumble, pebbles circle the gaps (and jump when it strikes the floor), a loose plate or keystone
  * rattles inside its joint, and the carved spirals glow with the spirit-light.
@@ -462,6 +511,9 @@ export class GravelheartRig {
   private kick = 0;
   private kickV = 0;
   private lastImpact = '';
+  /** The keyed polish (`FLOURISH`) as applied this frame, eased so an interrupted move never pops, and the pose with it added. */
+  private readonly flair: Pose = Object.fromEntries(POSE_KEYS.map((k) => [k, 0])) as unknown as Pose;
+  private readonly applied: Pose = { ...SLEEP };
   private readonly phases: number[];
 
   constructor(private readonly p: GravelheartParts, seed = 7) {
@@ -485,6 +537,7 @@ export class GravelheartRig {
   /** Back to the sleeping heap (the fight reset when Wren dies). */
   reset() {
     Object.assign(this.pose, SLEEP);
+    for (const k of POSE_KEYS) this.flair[k] = 0;
   }
 
   /** Where this frame wants the pose, and how fast to chase it. */
@@ -510,12 +563,18 @@ export class GravelheartRig {
     const [target, rate] = this.target(cue);
     const c = this.pose;
     blendPose(c, target, damp(rate, dt));
+    // The keyed polish, eased at 30/s (about 33 ms of lag, nothing at the ends where it is flat zero).
+    const want = flourish(cue.move), k = damp(30, dt), a = this.applied;
+    for (const key of POSE_KEYS) {
+      this.flair[key] += ((want[key] ?? 0) - this.flair[key]) * k;
+      a[key] = c[key] + this.flair[key];
+    }
     // A slow, heavy breath; while stalking, a ponderous sway from foot to foot.
     this.breath += dt;
     this.stepPhase += cue.moving ? dt * 2.2 : 0;
     const sway = cue.moving ? Math.sin(this.stepPhase) * 0.05 : 0;
-    const hipsY = c.hipsY + Math.sin(this.breath * 1.3) * 0.03 + (cue.moving ? Math.abs(Math.sin(this.stepPhase)) * 0.05 : 0);
-    this.applyJoints(c, hipsY, cue.spin, dt);
+    const hipsY = a.hipsY + Math.sin(this.breath * 1.3) * 0.03 + (cue.moving ? Math.abs(Math.sin(this.stepPhase)) * 0.05 : 0);
+    this.applyJoints(a, hipsY, cue.spin, dt);
     this.p.torso.rotation.z = sway;
     this.applyGlows(c);
     const pulse = 0.65 + Math.sin(this.breath * 14) * 0.35;
@@ -531,7 +590,7 @@ export class GravelheartRig {
     this.polish(dt, cue, c);
   }
 
-  /** Puts the body in `c`, with the hips at `hipsY` and rolled by `spin`: exactly the rough's motion. */
+  /** Puts the body in `c` (the chased pose plus the keyed polish), with the hips at `hipsY` and rolled by `spin`. */
   private applyJoints(c: Pose, hipsY: number, spin: number, dt: number) {
     const p = this.p;
     this.t += dt;

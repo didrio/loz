@@ -90,9 +90,13 @@ is wrapped in `posed(move)`, which records `{ name, step, t, stepT }` for the ri
 rough's motion exactly (owner's call: hurtboxes ride those joints), proven frame by frame by
 `game/bosses/lamplighter.trace.test.ts` (a snapshot of the hurtboxes, the hook and the head recorded on the old inline code);
 polish is only on parts no hurtbox rides (coat springs, fingers, candles, eyes). Gravelheart (`render/models/gravelheart.ts`, T55)
-follows it: `GravelheartRig.target(cue)` and its `MOVES`, its moves wrapped in `posed`, proven by `gravelheart.trace.test.ts`;
-its polish (lids, jaw, arm stones, pebbles, the carved spirals) and the rattle of a loose plate or keystone ride child groups
-inside the joints, so the glove's aim never moves. A model the behaviour poses asleep at once (`animate(0)` in its constructor)
+follows it: `GravelheartRig.target(cue)` and its `MOVES`, its moves wrapped in `posed`, proven by `gravelheart.trace.test.ts`
+(re-recorded by design in T60); its polish (lids, jaw, arm stones, pebbles, the carved spirals) and the rattle of a loose plate or keystone ride child groups
+inside the joints, so the glove's aim never moves. **T60 keyed the body itself:** `FLOURISH` (by move name; `flourish(move)`) is a pose offset
+added to the *applied* pose, never to the chased one, so the chase rates and the key angles stay as they were: a dip-and-rise (`dipRise`) or
+a reach-past (`hump`) in the windup that is zero and flat at both ends, and a ringing rebound (`settle`) at the start of the recover that has
+died away long before it ends. Hurtboxes ride the joints, so the trace snapshot moved inside the windows (a fist up to ~0.7 m mid-windup);
+at the windup's end and the active step's first frame it stays within ~1 cm. The offset is eased (30/s) so an interrupted move never pops. A model the behaviour poses asleep at once (`animate(0)` in its constructor)
 still builds at rest, so the viewer shows it standing. **Regular enemies adopt it in their final passes; the Thornling
 (`render/models/thornling.ts`, T49) is the example to copy:** the model exports its `Pose`, a `REST` pose, `blendPose` and a
 `ThornlingRig`; the behaviour file keeps every timing and only hands the rig its state each frame (`rig.update(dt, { state, t,

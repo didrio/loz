@@ -52,16 +52,6 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
 
-### T60: Keyed body polish for Gravelheart (anticipation and settle)
-**Run:** auto · sonnet · high
-**Why:** T55 kept Gravelheart's body moving exactly as the rough did (owner's call: body exact, so the fight provably didn't change). The body only eases toward each pose: no dip before Hammerfall, no settle after a slam. A keyed dip and overshoot would read heavier; the owner wants to play that one change on its own.
-**Done when:**
-- In `GravelheartRig` (`render/models/gravelheart.ts`): anticipation before the big moves (Hammerfall, Sweep, the howl, Cairn Roll's rock back) and an overshoot-and-settle after their impacts, zero at the ends of each window, so the key angles at the windup's end and the active step stay where they are.
-- The behaviour files untouched (timings, AI, hurtbox sizes); `gravelheart.test.ts` passes unedited.
-- `gravelheart.trace.test.ts` re-recorded **by design** (the hurtboxes move a little inside the windows): say so in the commit, and check by hand that the hurtboxes at the windup's end and the active step's first frame stay within a few centimetres (compare the old and new snapshot lines at those frames).
-**Read first:** pipeline.md "The rig convention"; combat.md (boss fairness rules); `render/models/gravelheart.ts` (the rig half); `render/models/wren.ts` (how its swings keep key angles with a pull-back and overshoot that are zero there).
-**Verify:** `npm run check`; smoke `shrine-boss`; look `gravelheart gravelheart2` (looker). The owner plays the fight.
-
 ### T58: Measure and cut the phone's frame cost (Native, shadows, baked light)
 **Run:** auto · opus · high
 **Why:** On the owner's phone, Native with Shadows and baked light on plays poorly, and Performance (pixel ratio 1) looks noticeably worse, so most players will want Native. A first blind pass cut Native to 2× on touch, no multisampling there and a 1024 shadow map; nobody has measured what it bought or where the rest goes.

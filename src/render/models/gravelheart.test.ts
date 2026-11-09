@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { triangleCount } from '../kit';
-import { buildGravelheart, type GravelheartCue } from './gravelheart';
+import { buildGravelheart, flourish, type GravelheartCue, type GravelheartMoveCue } from './gravelheart';
 
 type GravelheartModel = ReturnType<typeof buildGravelheart>;
 
@@ -94,5 +94,52 @@ describe('the Gravelheart model (final, T55)', () => {
     };
     expect(pose(7)).toEqual(pose(7));
     expect(pose(7)).not.toEqual(pose(8));
+  });
+});
+
+describe('Gravelheart keyed polish (T60)', () => {
+  const move = (name: string, step: GravelheartMoveCue['step'], t: number, stepT = t): GravelheartMoveCue => ({ name, step, t, stepT });
+  const BIG = ['hammerfall', 'sweep', 'doubleSweep', 'swipe', 'howl', 'cairnRoll'];
+  const size = (o: Partial<Record<string, number>>) => Math.max(0, ...Object.values(o).map((v) => Math.abs(v ?? 0)));
+
+  it('is zero at both ends of every windup, so the key angles stay where they were', () => {
+    for (const name of BIG) {
+      expect(size(flourish(move(name, 'windup', 0)))).toBeLessThan(1e-9);
+      expect(size(flourish(move(name, 'windup', 1)))).toBeLessThan(1e-9);
+      // ... and flat there: a frame from the end (1/60 s of a 0.65 s windup) is a few millimetres at most
+      expect(size(flourish(move(name, 'windup', 0.97)))).toBeLessThan(0.01);
+    }
+  });
+
+  it('does nothing in the active step, and is zero as the recover begins', () => {
+    for (const name of BIG) {
+      expect(flourish(move(name, 'active', 0.5))).toEqual({});
+      expect(size(flourish(move(name, 'recover', 0, 0)))).toBeLessThan(1e-9);
+    }
+  });
+
+  it('has rung out well before the recover ends', () => {
+    expect(size(flourish(move('hammerfall', 'recover', 0.5, 0.5)))).toBeLessThan(0.01);
+    expect(size(flourish(move('swipe', 'recover', 0.5, 0.5)))).toBeLessThan(0.01);
+  });
+
+  it('dips before Hammerfall rises, rebounds after the slam, and moves the body', () => {
+    expect(flourish(move('hammerfall', 'windup', 0.3)).hipsY).toBeLessThan(-0.15);
+    expect(flourish(move('hammerfall', 'windup', 0.7)).hipsY).toBeGreaterThan(0.1);
+    expect(flourish(move('hammerfall', 'recover', 0.1, 0.08)).hipsY).toBeGreaterThan(0.05);
+    const m = buildGravelheart();
+    run(m, 1.5, () => ({ move: move('hammerfall', 'windup', 0.3, 0.27) }));
+    const dipped = m.rig.hips.position.y;
+    run(m, 1.5, () => ({ move: move('hammerfall', 'windup', 1, 0.9) }));
+    expect(dipped).toBeLessThan(m.rig.hips.position.y - 0.08);
+  });
+
+  it('puts the hips exactly on the chased pose at the key frame, whatever came before', () => {
+    const plain = buildGravelheart(), polished = buildGravelheart();
+    run(plain, 2.4, () => ({ move: move('hammerfall', 'windup', 1, 0.9) }));
+    run(polished, 0.9, (t) => ({ move: move('hammerfall', 'windup', t / 0.9, t) }));
+    run(polished, 1.5, () => ({ move: move('hammerfall', 'windup', 1, 0.9) }));
+    expect(polished.rig.hips.position.y).toBeCloseTo(plain.rig.hips.position.y, 2);
+    expect(polished.rig.armR.shoulder.rotation.x).toBeCloseTo(plain.rig.armR.shoulder.rotation.x, 2);
   });
 });
