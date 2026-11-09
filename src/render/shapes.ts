@@ -38,7 +38,18 @@ export function glow(color: number, radius: number, opacity = 0.35) {
   );
 }
 
-const SHADOW_GEO = new THREE.CircleGeometry(1, 16).rotateX(-Math.PI / 2);
+/**
+ * A soft additive glow, low-poly (detail 0: 20 faces; 1: 80), fading in fog like `glow`: what final models use instead
+ * (three's sphere in `glow` is 240 triangles).
+ */
+export function halo(color: number, radius: number, opacity: number, detail = 0) {
+  return new THREE.Mesh(
+    new THREE.IcosahedronGeometry(radius, detail),
+    fadeInFog(new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false })),
+  );
+}
+
+const SHADOW_GEO =new THREE.CircleGeometry(1, 16).rotateX(-Math.PI / 2);
 /** How high above the ground a floating thing's shadow fades out completely (meters). */
 const SHADOW_FADE = 12;
 

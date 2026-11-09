@@ -1,14 +1,14 @@
 import * as THREE from 'three';
-import { clamp, damp } from '../../../core/math';
+import { clamp } from '../../../core/math';
 import type { MusicMood } from '../../../core/tracks';
 import { uniqueSurf } from '../../../render/materials';
 import type { Physics } from '../../../core/physics';
 import type { WardenHearth } from '../../../world/dungeon/hearth';
-import { Boss, type Move } from '../../boss';
+import { Boss, type BossState, type Move } from '../../boss';
 import type { EnemyEnv, Hurtbox } from '../../enemies';
 import { RING_WIDTH } from '../../../world/dungeon/hearth';
 import { HOWL, KNEEL, MOVES, STAGGER } from './moves';
-import { blendPose, GravelheartRig, SLEEP, STAND, type Pose } from '../../../render/models/gravelheart';
+import { buildGravelheart, type GravelheartMoveCue, type GravelheartRig } from '../../../render/models/gravelheart';
 import { pal } from '../../../render/palette';
 
 /**
@@ -59,11 +59,10 @@ export class Gravelheart extends Boss {
   readonly rubble: { at: THREE.Vector3; mesh: THREE.Mesh; age: number }[] = [];
 
   readonly rig: GravelheartRig;
-  private readonly cur: Pose = { ...SLEEP };
-  private target: Pose = { ...SLEEP };
-  private rate = 6;
-  private breath = 0;
-  private stepPhase = 0;
+  /** The move running this frame, as its `update` saw it (set by `posed`; the rig reads it). */
+  poseMove: GravelheartMoveCue | null = null;
+  /** The state, its time and the phase as this frame began (the rig's state poses read them). */
+  private posing: { state: BossState; t: number; phase: number } = { state: 'dormant', t: 0, phase: 1 };
   private ground = false;
 
   private readonly rubbleMat = uniqueSurf('rock', 0x6f685d);
@@ -74,9 +73,11 @@ export class Gravelheart extends Boss {
     this.lockHeight = 3;
     if (hearth) this.walkable = (px, pz) => hearth.walkable(px, pz, this.phase >= 2 ? 2 + RING_WIDTH : 2);
     this.deathColor = 0x8f887c;
-    this.rig = new GravelheartRig(this.root);
+    const model = buildGravelheart();
+    this.root.add(model.root);
+    this.rig = model.rig;
     this.flashMats.push(...this.rig.flashMats);
-    this.rig.apply(this.cur, 0);
+    this.animate(0); // asleep in its heap from the start
   }
 
   protected moves(): Move<this>[] {
@@ -266,7 +267,7 @@ export class Gravelheart extends Boss {
     this.asleep = false;
     this.kneelsSpent = 0;
     this.ground = false;
-    Object.assign(this.cur, SLEEP);
+    this.rig.reset();
   }
 
   // ---------------------------------------------------------------------------
@@ -274,12 +275,12 @@ export class Gravelheart extends Boss {
   // ---------------------------------------------------------------------------
 
   update(dt: number, env: EnemyEnv) {
-    // Each frame starts from the base pose; the active move then bends it.
-    this.target = this.state === 'dormant' ? { ...SLEEP } : { ...STAND, emberUp: this.phase >= 2 ? 1 : 0 };
-    this.rate = this.state === 'dormant' ? 2 : 6;
+    // Each frame the rig starts from its base pose; the state's look and the running move then bend it.
+    this.poseMove = null;
+    this.posing = { state: this.state, t: this.stateT, phase: this.phase };
     this.gloom = this.state === 'fight' ? (this.phase === 1 ? 0.25 : 0.55) : 0;
-    if (this.state === 'intro') this.poseIntro(env);
-    if (this.state === 'dying') this.poseDying(env);
+    if (this.state === 'intro') this.introBeats(env);
+    if (this.state === 'dying') this.dyingBeats(env);
     // Rubble crumbles away after a while (the walls and this are its only plates and ammunition).
     for (let i = this.rubble.length - 1; i >= 0; i--) {
       const r = this.rubble[i];
@@ -297,25 +298,9 @@ export class Gravelheart extends Boss {
     super.update(dt, env);
   }
 
-  /** Lets moves bend the pose: `pose({ rArm: 2.9 }, 25)` with an optional snappier rate. */
-  pose(p: Partial<Pose>, rate?: number) {
-    Object.assign(this.target, p);
-    if (rate !== undefined) this.rate = rate;
-  }
-
-  private poseIntro(env: EnemyEnv) {
-    // Asleep in a heap, it stirs: the ember brightens, the lids crack open, and it heaves
-    // itself up, block by block, with a long grinding breath.
+  private introBeats(env: EnemyEnv) {
+    // It stirs and heaves itself up, block by block (the rig), with a long grinding breath.
     const t = this.stateT;
-    if (t < 1.2) {
-      this.pose({ ...SLEEP, ember: 0.35 + t * 0.8, float: 0.2 + t * 0.3 }, 3);
-    } else if (t < 2.0) {
-      this.pose({ ...SLEEP, lids: 0.55, eyes: 0.5, ember: 1.4, headPitch: 0.2, float: 0.7 }, 4);
-    } else if (t < 3.4) {
-      this.pose({ ...STAND, lean: 0.2, headPitch: -0.25, lids: 0.2, eyes: 1, ember: 1.6, rArm: 0.6, lArm: 0.6, rOut: 0.5, lOut: 0.5 }, 2.2);
-    } else {
-      this.pose({ ...STAND, headPitch: -0.1, lids: 0.35, eyes: 0.9, ember: 1.2 }, 4);
-    }
     if (t > 2 && !this.ground) {
       this.ground = true;
       env.sfx.grind();
@@ -323,11 +308,9 @@ export class Gravelheart extends Boss {
     if (t > 2 && t < 3.4 && Math.random() < 0.4) env.particles.fx('smoke', this.pos.clone().setY(this.pos.y + 0.2 + Math.random() * 3), { color: pal('stone', 1), life: 0.9, count: 2, speed: 1.5 });
   }
 
-  private poseDying(env: EnemyEnv) {
-    // It slows, sinks to its knees, and its eyes close: asleep at last. The ember dims.
+  private dyingBeats(env: EnemyEnv) {
+    // It sinks to its knees and its eyes close (the rig): asleep at last.
     const t = this.stateT;
-    const k = clamp(t / 3.5, 0, 1);
-    this.pose({ ...SLEEP, lids: Math.min(1, 0.3 + k), eyes: 1 - k, ember: 1.8 - k * 1.4, float: 1 - k * 0.8 }, 1.2);
     if (t > 3.5 && !this.asleep) {
       this.asleep = true;
       env.sfx.rumble();
@@ -336,20 +319,15 @@ export class Gravelheart extends Boss {
   }
 
   protected animate(dt: number) {
-    blendPose(this.cur, this.target, damp(this.rate, dt));
-    // A slow, heavy breath; while stalking, a ponderous sway from foot to foot.
-    this.breath += dt;
-    const moving = this.vel.lengthSq() > 0.1;
-    this.stepPhase += moving ? dt * 2.2 : 0;
-    const sway = moving ? Math.sin(this.stepPhase) * 0.05 : 0;
-    const p: Pose = { ...this.cur, hipsY: this.cur.hipsY + Math.sin(this.breath * 1.3) * 0.03 + (moving ? Math.abs(Math.sin(this.stepPhase)) * 0.05 : 0) };
-    this.rig.spin = this.spin;
-    this.rig.apply(p, dt);
-    this.rig.setKeystoneGlow(this.keyT > 0 ? 0.65 + Math.sin(this.breath * 14) * 0.35 : 0);
-    for (let i = 0; i < this.plates.length; i++) {
-      this.rig.plates[i].visible = this.plates[i];
-      this.rig.setPlateGlow(i, i === this.loose && this.looseT > 0 ? 0.65 + Math.sin(this.breath * 14) * 0.35 : 0);
-    }
-    this.rig.torso.rotation.z = sway;
+    this.rig.update(dt, {
+      posing: this.posing,
+      move: this.poseMove,
+      moving: this.vel.lengthSq() > 0.1,
+      spin: this.spin,
+      keyT: this.keyT,
+      plates: this.plates,
+      loose: this.loose,
+      looseT: this.looseT,
+    });
   }
 }

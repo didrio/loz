@@ -52,17 +52,6 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
 
-### T55: Final pass: Gravelheart (golden set 7)
-**Run:** plan · opusplan · high
-**Why:** The shrine's boss, built on the move system; the finished boss pair sets the bar for every later boss.
-**Done when:**
-- Within the 4000 triangle boss budget; weak-point hurtboxes and poses unchanged.
-- `tier: 'final'` in the registry; within budget; every colour a `pal()` name; built with the kit and `bakeRig`; the behaviour file untouched in the diff (silhouette, scale, joints, hurtboxes, timings frozen; ask the owner first if one must change).
-- Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
-**Read first:** render/models/gravelheart.ts; game/bosses/gravelheart/; combat.md; pipeline.md "Final pass", "The rig convention" and "The modeling kit"; art.md "The golden set" and the style rules; the model's file in `render/models/` and its behaviour file; `render/models/props.ts` `buildChest` (the approved example of the kit); **`render/models/lamplighter.ts` and `game/bosses/lamplighter.trace.test.ts` (T54, the boss example: copy its order).**
-**Notes (from T54):** record a trace test on today's code *first* (hurtboxes, the ember and head, every move, random numbers pinned); move the poses into the rig behind a `posed(move)` wrapper (a step can advance in the same frame before `animate`, so the move's look must be captured as its `update` runs); check the trace passes before touching geometry; ask the owner the same "body exact or keyed polish" question. Its glows: make them from icosahedra (three's sphere is 240 triangles each).
-**Verify:** `npm run check` (the validator fails a final asset's findings); the unit tests and smoke scenarios for it pass **unchanged**; `npm run look -- contact` and the asset viewer in Native and N64 mode, before and after (looker). smoke `gravelheart`.
-
 ### T56: Final pass: one shrine room (golden set 8)
 **Run:** plan · opusplan · high
 **Why:** Rooms get the style by one example: a shrine room with its dressing, palette, light and particles, puzzles untouched.
@@ -73,6 +62,16 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 **Read first:** pipeline.md "Rooms and areas"; shrine.md; dungeons.md; world/dungeon/decor.ts, build.ts (Grep, then ranges)
 **Verify:** `npm run check`; smoke `shrine-keys shrine-glove`; `npm run map -- shrine`; look scenes before and after.
 **Notes:** Ask the owner up front which room.
+
+### T60: Keyed body polish for Gravelheart (anticipation and settle)
+**Run:** auto · sonnet · high
+**Why:** T55 kept Gravelheart's body moving exactly as the rough did (owner's call: body exact, so the fight provably didn't change). The body only eases toward each pose: no dip before Hammerfall, no settle after a slam. A keyed dip and overshoot would read heavier; the owner wants to play that one change on its own.
+**Done when:**
+- In `GravelheartRig` (`render/models/gravelheart.ts`): anticipation before the big moves (Hammerfall, Sweep, the howl, Cairn Roll's rock back) and an overshoot-and-settle after their impacts, zero at the ends of each window, so the key angles at the windup's end and the active step stay where they are.
+- The behaviour files untouched (timings, AI, hurtbox sizes); `gravelheart.test.ts` passes unedited.
+- `gravelheart.trace.test.ts` re-recorded **by design** (the hurtboxes move a little inside the windows): say so in the commit, and check by hand that the hurtboxes at the windup's end and the active step's first frame stay within a few centimetres (compare the old and new snapshot lines at those frames).
+**Read first:** pipeline.md "The rig convention"; combat.md (boss fairness rules); `render/models/gravelheart.ts` (the rig half); `render/models/wren.ts` (how its swings keep key angles with a pull-back and overshoot that are zero there).
+**Verify:** `npm run check`; smoke `shrine-boss`; look `gravelheart gravelheart2` (looker). The owner plays the fight.
 
 ### T58: Measure and cut the phone's frame cost (Native, shadows, baked light)
 **Run:** auto · opus · high

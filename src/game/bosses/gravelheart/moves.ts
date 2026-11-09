@@ -27,6 +27,20 @@ export const ATTACKS = {
 
 type G = Gravelheart;
 
+/**
+ * A move whose look the rig plays (render/models/gravelheart.ts `MOVES`): each frame its `update` runs, the rig is told
+ * which step it is in and how far (a step can advance in the same frame, before the rig poses it).
+ */
+function posed(m: Move<G>): Move<G> {
+  return {
+    ...m,
+    update(b, step, t, env, dt) {
+      b.poseMove = { name: m.name, step, t, stepT: b.stepT };
+      m.update?.(b, step, t, env, dt);
+    },
+  };
+}
+
 /** Where its fists come down: on the floor about 2.6 m in front. */
 export function slamPoint(b: G, env: EnemyEnv) {
   const at = b.pos.clone().addScaledVector(b.forward, 2.6);
@@ -40,7 +54,7 @@ export function slamPoint(b: G, env: EnemyEnv) {
  * the floor and it's bent over, and one chest plate glows loose: tether it off. (The sword
  * can't reach the chest yet: that takes all three plates gone.)
  */
-export const HAMMERFALL: Move<G> = {
+export const HAMMERFALL: Move<G> = posed({
   name: 'hammerfall',
   cooldown: 2,
   timing: (b) => ({ windup: b.phase === 1 ? 0.9 : 0.7, active: 0.18, recover: 1.5 }),
@@ -61,23 +75,14 @@ export const HAMMERFALL: Move<G> = {
       env.sfx.boom();
     }
   },
-  update(b, step, t) {
-    if (step === 'windup') {
-      // Fists rise overhead; the eyes go red (the guard-crushing tell).
-      b.pose({ rArm: 2.9, lArm: 2.9, rOut: 0.2, lOut: 0.2, rBend: 0.5, lBend: 0.5, lean: -0.15, headPitch: -0.2, lids: 0, eyes: 1, red: Math.min(1, t * 3), hipsY: 1.8 }, 7);
-    } else if (step === 'active') {
-      b.pose({ rArm: 0.9, lArm: 0.9, rOut: 0.12, lOut: 0.12, rBend: 0.1, lBend: 0.1, lean: 0.75, headPitch: 0.1, lids: 0.2, eyes: 1, red: 1, hipsY: 1.15 }, 30);
-    } else {
-      // Stuck: fists in the floor, bent over, chest low. It wrenches free at the end.
-      const free = t > 0.8 ? (t - 0.8) / 0.2 : 0;
-      if (b.phase === 1 && !b.scratch.loosened) {
-        b.scratch.loosened = true;
-        b.loosenPlate();
-      }
-      b.pose({ rArm: 0.95 - free * 0.6, lArm: 0.95 - free * 0.6, rOut: 0.12, lOut: 0.12, rBend: 0.05, lBend: 0.05, lean: 0.8 - free * 0.5, headPitch: 0.15, lids: 0.35, eyes: 0.7, red: 0, hipsY: 1.05 + free * 0.4 }, 10);
+  update(b, step) {
+    // Stuck (the rig: fists in the floor, bent over, chest low): one plate works loose.
+    if (step === 'recover' && b.phase === 1 && !b.scratch.loosened) {
+      b.scratch.loosened = true;
+      b.loosenPlate();
     }
   },
-};
+});
 
 /** Is Wren behind it (the greed punish below)? */
 function behind(b: G) {
@@ -96,7 +101,7 @@ function sweepHit(b: G, env: EnemyEnv) {
  * Sweep: it rears one arm back and swings it low across the front. Blockable (cost 2), or
  * jump it. Only reaches what is in front of it.
  */
-export const SWEEP: Move<G> = {
+export const SWEEP: Move<G> = posed({
   name: 'sweep',
   cooldown: 1.5,
   timing: (b) => ({ windup: b.phase === 1 ? 0.85 : 0.65, active: 0.25, recover: 0.9 }),
@@ -110,18 +115,13 @@ export const SWEEP: Move<G> = {
       sweepHit(b, env);
     }
   },
-  update(b, step) {
-    if (step === 'windup') b.pose({ twist: -1.0, rArm: 1.45, rOut: 1.5, rBend: 0.1, lArm: 0.3, hipsY: 1.55, eyes: 1, lids: 0.1 }, 6);
-    else if (step === 'active') b.pose({ twist: 1.15, rArm: 1.45, rOut: 1.45, rBend: 0.05, lArm: 0.3, hipsY: 1.55, eyes: 1, lids: 0.2 }, 30);
-    else b.pose({ twist: 1.1, rArm: 1.3, rOut: 1.2, hipsY: 1.6, lids: 0.4 }, 5);
-  },
-};
+});
 
 /**
  * Double sweep (phase two's Sweep): the same low swing, then back again 0.75 s later. Each
  * costs 2 guard slots, so blocking both breaks a full guard: block the first, jump the second.
  */
-export const DOUBLE_SWEEP: Move<G> = {
+export const DOUBLE_SWEEP: Move<G> = posed({
   name: 'doubleSweep',
   cooldown: 1.5,
   timing: () => ({ windup: 0.65, active: 1.05, recover: 0.9 }),
@@ -138,18 +138,13 @@ export const DOUBLE_SWEEP: Move<G> = {
       });
     }
   },
-  update(b, step, t) {
-    if (step === 'windup') b.pose({ twist: -1.0, rArm: 1.45, rOut: 1.5, rBend: 0.1, lArm: 0.3, hipsY: 1.55, eyes: 1, lids: 0.1 }, 6);
-    else if (step === 'active') b.pose({ twist: t < 0.7 ? 1.15 : -1.15, rArm: 1.45, rOut: 1.45, rBend: 0.05, lArm: 1.45, lOut: 1.45, lBend: 0.05, hipsY: 1.55, eyes: 1, lids: 0.2 }, 22);
-    else b.pose({ twist: -1.1, rArm: 1.3, rOut: 1.2, hipsY: 1.6, lids: 0.4 }, 5);
-  },
-};
+});
 
 /**
  * Swipe (the close-range punish for crowding it): a quick backhand across its front, high, so
  * a jump doesn't clear it. Blockable (cost 2); stepping back out of its 3.8 m reach avoids it.
  */
-export const SWIPE: Move<G> = {
+export const SWIPE: Move<G> = posed({
   name: 'swipe',
   cooldown: 2.5,
   timing: (b) => ({ windup: b.phase === 1 ? 0.6 : 0.5, active: 0.2, recover: 0.8 }),
@@ -166,12 +161,7 @@ export const SWIPE: Move<G> = {
       env.sfx.boom();
     }
   },
-  update(b, step) {
-    if (step === 'windup') b.pose({ twist: 1.0, lArm: 1.3, lOut: 1.6, lBend: 0.2, rArm: 0.3, hipsY: 1.6, eyes: 1, lids: 0.1 }, 8);
-    else if (step === 'active') b.pose({ twist: -1.2, lArm: 1.3, lOut: 0.3, lBend: 0.1, rArm: 0.3, hipsY: 1.6, eyes: 1, lids: 0.2 }, 34);
-    else b.pose({ twist: -1.0, lArm: 1.2, lOut: 0.5, hipsY: 1.65, lids: 0.4 }, 5);
-  },
-};
+});
 
 /** Wakestones in a volley (owner's call: three were too easy to block with the shield). */
 export const VOLLEY_STONES = 5;
@@ -181,7 +171,7 @@ export const VOLLEY_STONES = 5;
  * floating, and throws them one after another at where Wren is. Block each (cost 1), sidestep
  * or catch one mid-air with the glove. The wall runs out of stones as the fight goes on.
  */
-export const VOLLEY: Move<G> = {
+export const VOLLEY: Move<G> = posed({
   name: 'volley',
   cooldown: 5,
   timing: (b) => ({ windup: b.phase === 1 ? 1.15 : 0.9, active: 1.5, recover: 1.0 }),
@@ -202,18 +192,13 @@ export const VOLLEY: Move<G> = {
       b.turnRate = 0.8;
     }
   },
-  update(b, step, t) {
-    if (step === 'windup') b.pose({ rArm: 2.5, lArm: 2.5, rOut: 0.9, lOut: 0.9, rBend: 0.3, lBend: 0.3, headPitch: -0.3, eyes: 1, lids: 0, lean: -0.1, hipsY: 1.75 }, 5);
-    else if (step === 'active') b.pose({ rArm: 1.6 + Math.sin(t * 9) * 0.5, lArm: 1.6 - Math.sin(t * 9) * 0.5, rOut: 0.4, lOut: 0.4, headPitch: 0.05, eyes: 1, lids: 0.1 }, 12);
-    else b.pose({ rArm: 0.6, lArm: 0.6, lids: 0.4 }, 5);
-  },
-};
+});
 
 /**
  * Grind, the greed punish: if Wren hugs its back it turns on its waist and grinds the floor
  * (close range; the ring of dust is jumpable). Nothing else threatens the space behind it.
  */
-export const GRIND: Move<G> = {
+export const GRIND: Move<G> = posed({
   name: 'grind',
   cooldown: 4,
   timing: () => ({ windup: 0.8, active: 0.2, recover: 1.1 }),
@@ -232,19 +217,14 @@ export const GRIND: Move<G> = {
       env.sfx.grind();
     }
   },
-  update(b, step) {
-    if (step === 'windup') b.pose({ twist: 2.4, lean: 0.25, hipsY: 1.45, rArm: 0.8, lArm: 0.8, rOut: 0.7, lOut: 0.7, eyes: 1, lids: 0.1 }, 5);
-    else if (step === 'active') b.pose({ twist: -2.4, lean: 0.25, hipsY: 1.4, rArm: 0.8, lArm: 0.8, rOut: 0.7, lOut: 0.7, eyes: 1 }, 24);
-    else b.pose({ twist: -2.0, hipsY: 1.6, lids: 0.45 }, 4);
-  },
-};
+});
 
 /**
  * Staggered: the last plate is gone and the ember glows bare. It reels, drops to one knee,
  * and for about three seconds the chest is in the sword's reach (weak point, double damage).
  * Then it pulls new plates from the walls and rises. Never picked: the glove forces it.
  */
-export const STAGGER: Move<G> = {
+export const STAGGER: Move<G> = posed({
   name: 'staggered',
   timing: () => ({ windup: 0.3, active: 3, recover: 1.0 }),
   weight: () => 0,
@@ -262,14 +242,11 @@ export const STAGGER: Move<G> = {
   },
   update(b, step, _t, env) {
     if (step === 'active' && Math.random() < 0.15) env.particles.fx('embers', b.emberWorldPos(), { color: pal('ember', 2), speed: 2.5, life: 0.5 });
-    if (step === 'windup') b.pose({ lean: -0.35, hipsY: 1.2, rArm: 0.2, lArm: 0.2, eyes: 1, lids: 0.1, red: 0, ember: 2 }, 12);
-    else if (step === 'active') b.pose({ lean: 0.1, hipsY: 0.95, headPitch: 0.45, rArm: 0.4, lArm: 0.4, rOut: 0.5, lOut: 0.5, eyes: 0.2, lids: 0.75, ember: 2 }, 6);
-    else b.pose({ lean: 0.1, hipsY: 1.4, headPitch: 0.1, eyes: 0.8, lids: 0.35, ember: 1.2 }, 4);
   },
   exit(b) {
     b.chestOpen = false;
   },
-};
+});
 
 
 
@@ -281,7 +258,7 @@ export const ROLL_SPEED = 13;
  * rolls straight at where Wren was. Sidestep it. If it hits the
  * wall it's dazed for three seconds and the keystone in its back glows: tether it out.
  */
-export const ROLL: Move<G> = {
+export const ROLL: Move<G> = posed({
   name: 'cairnRoll',
   cooldown: 5,
   timing: () => ({ windup: 1.0, active: 2.2, recover: 3.2 }),
@@ -306,12 +283,10 @@ export const ROLL: Move<G> = {
   update(b, step, t, env, dt) {
     if (step === 'windup') {
       b.settleSpin(dt);
-      b.pose({ lean: -0.45 - Math.sin(t * 16) * 0.05, hipsY: 1.5, tuck: t, rArm: 0.9, lArm: 0.9, rBend: 1.0, lBend: 1.0, headPitch: 0.4, eyes: 1, lids: 0.1, red: t }, 7);
     } else if (step === 'active') {
+      // Curled into a boulder (the rig): it rolls.
       b.vel.copy(b.rollDir).multiplyScalar(ROLL_SPEED);
       b.spin += (dt * ROLL_SPEED) / 1.5;
-      // Arms folded across the chest, head tucked, legs up: as close to a ball as stacked blocks get.
-      b.pose({ lean: 1.45, hipsY: 2.1, tuck: 1, rArm: 1.7, lArm: 1.7, rOut: 0.05, lOut: 0.05, rBend: 2.2, lBend: 2.2, headPitch: 1.1, eyes: 0.6, lids: 0.6, red: 1, float: 0.2 }, 14);
       if (!b.scratch.hit && b.distToPlayer < 2.5 && env.playerPos.y - b.pos.y < 1.6) {
         b.scratch.hit = true;
         env.hitPlayer(b.pos, ATTACKS.roll);
@@ -328,21 +303,20 @@ export const ROLL: Move<G> = {
       b.settleSpin(dt);
       // Dazed against the wall (or, if it found none, a short breather).
       if (!b.scratch.wall && t > 0.3) b.skipStep();
-      b.pose({ lean: 0.9, hipsY: 1.1, tuck: 0.7, headPitch: 0.6, rArm: 0.5, lArm: 0.5, lids: 0.9, eyes: 0.2, red: 0 }, 8);
     }
   },
   exit(b) {
     b.keyT = 0;
     b.spin = 0;
   },
-};
+});
 
 /**
  * Kneel: the keystone is out. It collapses to its knees facing Wren, head bowed within the
  * sword's reach, the ember bright inside it (the weak point, double damage). Then it rises.
  * Never picked: the glove forces it.
  */
-export const KNEEL: Move<G> = {
+export const KNEEL: Move<G> = posed({
   name: 'kneel',
   timing: () => ({ windup: 1.0, active: 2.8, recover: 1.2 }),
   weight: () => 0,
@@ -359,17 +333,13 @@ export const KNEEL: Move<G> = {
     }
   },
   update(b, step, _t, env) {
-    // Reels back with the keystone gone, then sinks onto its knees, fists on the floor, head bowed:
-    // the ember sparks and the whole body pulses red (Boss.exposed).
-    if (step === 'windup') b.pose({ lean: -0.5, hipsY: 1.5, headPitch: -0.3, rArm: 0.4, lArm: 0.4, rOut: 0.9, lOut: 0.9, eyes: 1, lids: 0.1, ember: 2, float: 2 }, 5);
-    else if (step === 'active') b.pose({ lean: 1.15, hipsY: 0.8, headPitch: 0.3, rArm: 0.85, lArm: 0.85, rOut: 0.3, lOut: 0.3, rBend: 0.1, lBend: 0.1, eyes: 0.3, lids: 0.7, ember: 2.4, float: 0.4 }, 4);
-    else b.pose({ lean: 0.4, hipsY: 1.4, headPitch: 0.1, eyes: 0.8, lids: 0.35, ember: 1.4 }, 4);
+    // On its knees, head bowed (the rig): the ember sparks and the whole body pulses red (Boss.exposed).
     if (step === 'active' && Math.random() < 0.15) env.particles.fx('embers', b.emberWorldPos(), { color: pal('ember', 2), speed: 2.5, life: 0.5 });
   },
   exit(b) {
     b.chestOpen = false;
   },
-};
+});
 
 /**
  * The phase move, at half health: it rears back and howls, then smashes the floor. The
@@ -377,7 +347,7 @@ export const KNEEL: Move<G> = {
  * head, out of the sword's reach, the plates fall away, and two hearts drop. It cannot be
  * hurt until it has finished.
  */
-export const HOWL: Move<G> = {
+export const HOWL: Move<G> = posed({
   name: 'howl',
   timing: () => ({ windup: 1.3, active: 0.5, recover: 1.4 }),
   weight: () => 0,
@@ -400,15 +370,12 @@ export const HOWL: Move<G> = {
     }
   },
   update(b, step, _t, env) {
-    if (step === 'windup') b.pose({ lean: -0.4, headPitch: -0.5, hipsY: 1.85, rArm: 1.2, lArm: 1.2, rOut: 1.0, lOut: 1.0, lids: 0, eyes: 1, red: 1, ember: 2 }, 4);
-    else if (step === 'active') b.pose({ lean: 0.85, headPitch: 0.1, hipsY: 1.1, rArm: 0.9, lArm: 0.9, rOut: 0.12, lOut: 0.12, eyes: 1, red: 1, ember: 2 }, 24);
-    else b.pose({ lean: 0.5, hipsY: 1.35, lids: 0.3, eyes: 0.8, red: 0 }, 5);
     // While the tiles rise, nobody stands where they will be.
     const h = b.hearth;
     if (h && step !== 'windup' && !h.ringUp && !h.insideRing(env.playerPos, 0.3)) {
       env.pushPlayer(env.playerPos.clone().multiplyScalar(2).sub(h.center.clone().setY(env.playerPos.y)), 9);
     }
   },
-};
+});
 
 export const MOVES = [HAMMERFALL, SWEEP, DOUBLE_SWEEP, SWIPE, VOLLEY, GRIND, ROLL, STAGGER, KNEEL, HOWL];

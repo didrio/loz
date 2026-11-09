@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { angleDiff, clamp, damp, easeOut, mix, mulberry32 } from '../../core/math';
 import { bakeRig } from '../bakeRig';
 import { bevelBox, crevice, extrudePath, gradient, kitMesh, lathe, lowSphere, merge, paint, paintRegion, place, taper, wobble, type Vec3 } from '../kit';
-import { fadeInFog, uniqueSurf } from '../materials';
+import { uniqueSurf } from '../materials';
+import { halo } from '../shapes';
 import { pal } from '../palette';
 import { faceted, type SurfaceId } from '../textures';
 import type { Model } from './types';
@@ -46,14 +47,6 @@ export interface LamplighterModel extends Model<LamplighterJoints> {
   /** The caged wisps on its belt (each frees a Gloomwisp in the howl, from where its `glow` is). */
   lanterns: { g: THREE.Group; glow: THREE.Mesh; ph: number }[];
   rig: LamplighterRig;
-}
-
-/** A soft additive glow, low-poly (detail 0: 20 faces; 1: 80), fading in fog like the game's other glows. */
-function halo(color: number, radius: number, opacity: number, detail = 0) {
-  return new THREE.Mesh(
-    new THREE.IcosahedronGeometry(radius, detail),
-    fadeInFog(new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false })),
-  );
 }
 
 /** A flame cone centred on its middle (the rig scales it about there). */

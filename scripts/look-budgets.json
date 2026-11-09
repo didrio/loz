@@ -52,8 +52,8 @@
     "triangles": 277000
   },
   "contact": {
-    "calls": 490,
-    "triangles": 31000
+    "calls": 480,
+    "triangles": 33000
   },
   "door": {
     "calls": 50,
@@ -97,11 +97,15 @@
   },
   "gravelheart": {
     "calls": 1400,
-    "triangles": 222000
+    "triangles": 223000
   },
   "gravelheart2": {
-    "calls": 380,
-    "triangles": 178000
+    "calls": 370,
+    "triangles": 179000
+  },
+  "gravelheartModel": {
+    "calls": 60,
+    "triangles": 3100
   },
   "grove": {
     "calls": 80,

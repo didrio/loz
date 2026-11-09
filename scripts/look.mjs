@@ -1425,6 +1425,19 @@ const SCENES = {
       await h.shot(`lamplighter-model-${name}`);
     }
   },
+  /** Gravelheart the model in the viewer (T55): front, three-quarter, side and back (the keystone), in the shrine's light. */
+  async gravelheartModel(h) {
+    const mode = ['native', 'performance', 'n64'][display] ?? 'native';
+    await h.page.setViewportSize({ width: 1000, height: 900 });
+    for (const [name, query] of [['front', 'angle=0'], ['three-quarter', 'angle=45'], ['side', 'angle=90'], ['back', 'angle=180']]) {
+      const url = new URL('viewer.html', h.page.url() === 'about:blank' ? env.url : h.page.url());
+      url.search = `?asset=gravelheart&panel=0&place=shrine&${query}&display=${mode}`;
+      await h.page.goto(url.href);
+      await h.until(() => window.embervale?.mode === 'viewer', 30000);
+      await h.wait(300);
+      await h.shot(`gravelheart-model-${name}`);
+    }
+  },
   /** Gravelheart: asleep in its hall, waking, posed from four sides, Hammerfall's windup and stuck slam, the wall stones and the risen ring. */
   async gravelheart(h) {
     await h.newGame();

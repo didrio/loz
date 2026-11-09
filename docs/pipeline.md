@@ -84,8 +84,11 @@ from the step its `update` saw, but `Boss.fight` can advance the step in the sam
 is wrapped in `posed(move)`, which records `{ name, step, t, stepT }` for the rig as the move runs. Its body follows the
 rough's motion exactly (owner's call: hurtboxes ride those joints), proven frame by frame by
 `game/bosses/lamplighter.trace.test.ts` (a snapshot of the hurtboxes, the hook and the head recorded on the old inline code);
-polish is only on parts no hurtbox rides (coat springs, fingers, candles, eyes). Gravelheart (`render/models/gravelheart.ts`)
-still takes its pose from its moves until its own pass (T55: copy the Lamplighter). **Regular enemies adopt it in their final passes; the Thornling
+polish is only on parts no hurtbox rides (coat springs, fingers, candles, eyes). Gravelheart (`render/models/gravelheart.ts`, T55)
+follows it: `GravelheartRig.target(cue)` and its `MOVES`, its moves wrapped in `posed`, proven by `gravelheart.trace.test.ts`;
+its polish (lids, jaw, arm stones, pebbles, the carved spirals) and the rattle of a loose plate or keystone ride child groups
+inside the joints, so the glove's aim never moves. A model the behaviour poses asleep at once (`animate(0)` in its constructor)
+still builds at rest, so the viewer shows it standing. **Regular enemies adopt it in their final passes; the Thornling
 (`render/models/thornling.ts`, T49) is the example to copy:** the model exports its `Pose`, a `REST` pose, `blendPose` and a
 `ThornlingRig`; the behaviour file keeps every timing and only hands the rig its state each frame (`rig.update(dt, { state, t,
 windup, moving })`) and its death (`rig.die(deathT / 0.35)` from a `dying` override). The rig's `target(cue)` is where each
@@ -135,7 +138,7 @@ and a rough asset's findings print as one warning line. `npm run assets` prints 
 status) and every finding. Reading the table: today's rough models mostly hold glow colours that are not swatches (eyes, embers, halos:
 `MeshBasicMaterial`s written as hex) and a few props over the 300-triangle budget (the heart vessel's extruded heart). A final pass
 fixes these; it never changes gameplay. **Glows count:** three's `SphereGeometry(r, 12, 10)` (`glow()`) is 240 triangles; a final
-model makes its own from an icosahedron (20 faces, or 80 for a big halo), as the Lamplighter's `halo()` does.
+model makes its own from an icosahedron (20 faces, or 80 for a big halo): `halo()` in `render/shapes.ts`.
 
 ## The viewer, contact sheet and dev shortcuts
 
@@ -159,7 +162,7 @@ model makes its own from an icosahedron (20 faces, or 80 for a big halo), as the
 
 Every final pass builds from one toolkit, so the style is consistent for free. **`render/kit.ts`**: builders that return a plain
 non-indexed `BufferGeometry` (`position`, `normal`, a vertex `color`), pure and deterministic. **`render/bakeRig.ts`**: merges a model's
-parts per joint. Forms stand on y = 0 and are centred on x and z (a box on all three); faces always point outward. Tests: `kit.test.ts`, `bakeRig.test.ts`.
+parts per joint. Forms stand on y = 0 and are centred on x and z, except `bevelBox`, which is centred on all three (don't shift it by half its height); faces always point outward. Tests: `kit.test.ts`, `bakeRig.test.ts`.
 
 | Builder | What it gives | Example |
 |---|---|---|
@@ -203,7 +206,12 @@ game can still recolour, glow and flash them after the bake; the villagers (`ren
 T54, 2,444 of 2,500) is the first boss: every group the rig moves on its own (13 coat strips, 8 fingers, 3 lanterns, the limbs) is passed to
 `bakeRig` as a joint so it keeps moving; ribs, hook, fingers and strap are `extrudePath`; the collar and snuffer bell are `lathe` shells whose
 profile turns back inside (no double-sided material); wax, soot, worn hems and patches are `paintRegion`; the mask is a joint of its own (the
-behaviour hides it when the cage bursts) with an unbaked eye mesh in `animated`. **The recipe for every final pass: `/final-pass`.**
+behaviour hides it when the cage bursts) with an unbaked eye mesh in `animated`. Gravelheart (`render/models/gravelheart.ts`, T55, 2,408 of
+4,000, 40 meshes against the rough's 46) is the second: chamfered, wobbled blocks (`blk`: a `bevelBox` centred like three's box), moss and
+lichen by `paintRegion` on up-facing faces, the shrine's spiral as an `extrudePath` ridge in one shared additive glow material, pebble rings
+as joints of their own; the plates and keystone keep materials of their own (`uniqueSurf(..., { vertexColors: true })` in `animated`: the
+glove's loose glow recolours them), so the model lists its baked body materials first in `flashMats` (the exposed pulse reads `[0]`).
+Unbaked textured meshes go through `faceted()` (`livingTextures.test.ts`). **The recipe for every final pass: `/final-pass`.**
 
 ## Visual checks
 

@@ -51,6 +51,8 @@ export const GOLDEN_SET: readonly string[] = [
   'pip',
   // The Hollow Lamplighter, the first boss (T54): the kit model and its rig.
   'hollow-lamplighter',
+  // Gravelheart, the shrine's boss (T55): the kit model and its rig.
+  'gravelheart',
 ];
 
 export const ASSETS: readonly AssetEntry[] = [
@@ -63,7 +65,7 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'shellback', kind: 'enemy', tier: 'rough', build: buildShellback },
   { id: 'cragstalker', kind: 'enemy', tier: 'rough', build: buildCragstalker },
   { id: 'hollow-lamplighter', kind: 'miniboss', tier: 'final', build: () => buildLamplighter(7) },
-  { id: 'gravelheart', kind: 'boss', tier: 'rough', build: buildGravelheart },
+  { id: 'gravelheart', kind: 'boss', tier: 'final', build: () => buildGravelheart(7) },
   { id: 'chest', kind: 'prop', tier: 'final', build: () => buildChest(true), note: 'locked, with its padlock' },
   { id: 'hinged-door', kind: 'prop', tier: 'final', build: () => buildHingedDoor() },
   { id: 'stone-door', kind: 'prop', tier: 'final', build: () => buildStoneDoor(), note: 'the shrine\'s door size' },
