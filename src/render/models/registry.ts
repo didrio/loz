@@ -37,7 +37,13 @@ export interface AssetEntry {
 }
 
 /** The golden set (art.md "The golden set"): owner-approved ids that define the style. The contact sheet marks them. */
-export const GOLDEN_SET: readonly string[] = ['chest', 'thornling', 'wren'];
+export const GOLDEN_SET: readonly string[] = [
+  'chest', 'thornling', 'wren',
+  // The entrance vignette (T51): Thistledown's road in.
+  'tree', 'pine', 'rock', 'grass-tuft', 'lone-oak',
+  'cottage-east', 'cottage-southwest', 'well', 'fence-section', 'lantern-post', 'barrel', 'crate',
+  'mill', 'mill-sails', 'odo-stall', 'ruined-home',
+];
 
 export const ASSETS: readonly AssetEntry[] = [
   { id: 'wren', kind: 'player', tier: 'final', build: () => buildWren(1), note: 'tunic, sword and shield; posed by their rig' },
