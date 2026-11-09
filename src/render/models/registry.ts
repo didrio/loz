@@ -8,6 +8,8 @@ import { buildHingedDoor, buildStoneDoor } from './doors';
 import { buildBush, buildChest, buildGreatLantern, buildHeartVessel, buildJar, buildShieldPickup, buildSign } from './props';
 import { pal } from '../palette';
 import { buildSentinel } from './sentinel';
+import { buildShrineCorner, buildShrinePillar } from './shrine';
+import { buildDoorFrame, buildSconce } from './shrineProps';
 import { buildShellback } from './shellback';
 import { buildThornling } from './thornling';
 import type { Model } from './types';
@@ -95,6 +97,12 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'odo-stall', kind: 'piece', tier: 'final', build: buildStall, note: 'counter, striped awning, shelf, wares' },
   { id: 'ruined-home', kind: 'piece', tier: 'final', build: () => buildRuin(1.3, 1), note: 'broken walls, a fallen shingle roof, charred rafters; jars are the world\'s' },
   // The gear (the Gear tab and the HUD's icons: render/icons.ts).
+  // The shrine (T56a, golden set 8: the Hall of Sleepers): the sandstone wing's shell, a doorway's frame, the sconce.
+  { id: 'shrine-corner', kind: 'piece', tier: 'final', build: buildShrineCorner, note: 'a sample of the sandstone shell: walls, plinth, course, cornice, pilaster, tiles; the world lays it on its own boxes' },
+  { id: 'shrine-pillar', kind: 'piece', tier: 'final', build: buildShrinePillar, note: 'the sandstone wing\'s pillar (the Nave\'s, 7 m)' },
+  { id: 'shrine-door-frame', kind: 'prop', tier: 'final', build: () => buildDoorFrame(), note: 'every dungeon doorway; its wing\'s trim colour' },
+  { id: 'sconce', kind: 'prop', tier: 'final', build: buildSconce, note: 'the iron is merged scenery; the flame flickers (render/sconceGlow.ts)' },
+
   { id: 'gear-sword', kind: 'prop', tier: 'rough', build: buildSwordItem, note: 'icon' },
   { id: 'gear-shield', kind: 'prop', tier: 'rough', build: buildShieldItem, note: 'icon' },
   { id: 'gear-tunic', kind: 'prop', tier: 'rough', build: buildTunicItem, note: 'icon' },

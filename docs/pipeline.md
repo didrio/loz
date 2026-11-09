@@ -54,6 +54,11 @@ model in place: there is never a rough and a final model side by side.
   shade as usual), in the same bucket as the plain meshes of its surface, so it costs no extra draw call. So **scenery
   models skip `crevice`** (the merge shades them); a model that stands alone (`b.dynamic`, a prop) keeps it. Name a surface
   (`kitMesh(g, 'wood')`): the texture audit flags a kit piece without one. **No flat colour** (owner, 2026-11-08): every `final` model's meshes name a surface (`render/models/noFlat.test.ts` sweeps the registry; glows, which are unlit `MeshBasicMaterial`s, are the only exceptions). Standalone models and instanced nature also carry `gradient`; merged scenery (`Parts`, the lone oak) does not, because `mergeStatic`'s `bakeColor` already ramps it foot to top (an extra `gradient` there cost the look scenes +19 draw calls and +20k triangles for no visible gain).
+- **Dungeon rooms** (T56a, [shrine.md](shrine.md) "The final look"): a wing goes final at once (`isFinal` in `world/dungeon/build.ts`).
+  The builder keeps every collider call as it was (`box(..., show = false)` draws nothing) and lays the kit's shell
+  (`render/models/shrine.ts`: flags, plinth, course, cornice, pilasters, beams, pillars) round them in world coordinates,
+  merged with the floor; `world/dungeon/colliders.test.ts` freezes the shrine's colliders and `npm run map -- shrine` must print the same.
+  Shared dungeon pieces (the door frame, the sconce: `shrineProps.ts`) are final in every wing at once.
 - **Instanced nature** (T51a, `render/models/nature.ts`): one geometry per kind, painted white with its own shade
   (`crevice`), coloured per instance by a palette swatch the layout's existing random draws pick (`roundTint(c1, c2)`), so
   the placement's random sequence never moves. A part keeps the rough's frame (size and centre), so the instance matrices
@@ -121,7 +126,7 @@ return them beside the `Model` (the Shellback's `eyes` and `legs`, Wren's `coatM
 used in the registry, so a new model cannot be forgotten. **Adding a model:** write `render/models/<name>.ts`, register it
 (`tier: 'rough'`), run `npm run assets`. `piece` is scenery bigger than a prop (buildings, landmarks; dungeon rooms join with the dungeon look ticket):
 budget 3,000 triangles (T51b). Not models, so not registered: `BossArena` (a sealing flame ring, an effect) and the terrain. Scenery joins the registry as it gets
-its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledown's cottages (T51b, two `piece`s) and its well, fence section, lantern post, barrel and crate (`prop`s), then the mill, its sails, Odo's stall and a ruined home (T51c, four `piece`s). Every NPC is `buildVillager` (`render/models/villager.ts`, T53) with its own look: Pip (`pip`, final) and one stand-in for the adults (`villager`, Maren's look, rough until the villagers' group passes).
+its final pass: the valley's nature (T51a; the lone oak as a `piece`), Thistledown's cottages (T51b, two `piece`s) and its well, fence section, lantern post, barrel and crate (`prop`s), then the mill, its sails, Odo's stall and a ruined home (T51c, four `piece`s). The shrine (T56a): a sample corner of the sandstone shell and its pillar (`shrine-corner`, `shrine-pillar`, `piece`s; the world builds the shell per room from the same functions), the door frame and the sconce (`prop`s). Every NPC is `buildVillager` (`render/models/villager.ts`, T53) with its own look: Pip (`pip`, final) and one stand-in for the adults (`villager`, Maren's look, rough until the villagers' group passes).
 
 **The validator** (`render/models/validate.ts`) builds every entry in Node and checks it:
 

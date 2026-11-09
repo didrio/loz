@@ -1017,6 +1017,39 @@ const SCENES = {
     await view('landmark-gallery-side', 1, [38.5, 3, 2.2], [35, -5, 3]);
     await view('landmark-crypt-side', -1, [27, 4, 2.2], [33, 10, 1.8]);
   },
+  /**
+   * The Hall of Sleepers, the golden set's shrine room (T56): from the way in, toward the bell post, the tablet's corner,
+   * the whole room from high in a corner, a door frame and sconce close up; then the sandstone wing's shell in the Nave
+   * (pillars) and the Gallery of Statues (kneeling keepers). The models alone: `shrineModels`.
+   */
+  async shrineHall(h) {
+    await h.newGame();
+    await h.game(() => window.embervale.loadArea('shrine'));
+    await h.wait(1500);
+    await h.game(() => window.embervale.enemies.list.forEach((e) => (e.alive = false)));
+    // Free camera, Wren hidden: `from` and `to` are [x, z, y above the floor] (floor 0 is y = 0). Wren waits mid-room
+    // (`park`): standing at a camera spot near the way out would walk them out of the shrine (its exit trigger).
+    const view = async (name, from, to, park = [9, 4]) => {
+      await h.game(([from, to, park]) => {
+        const g = window.embervale;
+        g.player.teleport(park[0], 0.05, park[1], 0);
+        g.hidePlayer(true);
+        g.rig.frozen = true;
+        g.camera.position.set(from[0], from[2], from[1]);
+        g.camera.lookAt(to[0], to[2], to[1]);
+      }, [from, to, park]);
+      await h.wait(900);
+      await h.shot(name);
+    };
+    await view('hall-in', [1.2, 6, 1.7], [14, 7, 2]); // from the way in: the nave door, the stone before it
+    await view('hall-bell', [12.5, 2, 2.2], [4, 10, 1.5]); // the bell post, the gallery door, the way out
+    await view('hall-tablet', [8, 5, 1.8], [3, 1, 1.2]); // the tablet in its corner
+    await view('hall-high', [13.2, 11.3, 5.5], [4, 2, 0.5]); // the whole room from high in a corner: walls, ceiling, floor
+    await view('hall-frame', [9.5, 10.6, 2.3], [14, 7, 2.6]); // the nave door's frame, the stone before it
+    await view('hall-sconce', [8.6, 2.4, 3], [7, 0.3, 3.3]); // a sconce on the north wall, close
+    await view('hall-nave', [15.5, -2.5, 2], [26, 12, 3], [22, 6]); // the wing next door: the nave's pillars
+    await view('hall-gallery', [7, 13.5, 2], [7, 24, 2.2], [4, 17]); // the Gallery of Statues: kneeling keepers along the walls
+  },
   /** The Deep Shaft stairs (shaftUp): tread nosings must be clean (no flicker) and the top landing clear. */
   async stairs(h) {
     await h.newGame();

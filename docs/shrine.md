@@ -205,6 +205,33 @@ pillars (`raiseGateShoulders` in `layout.ts`) so no gap shows beside them; the g
 - Optional, later: a half-sunk wakestone in Glimmer Lake that the glove pulls out, opening a grotto
   with a chest.
 
+## The final look (T56, golden set 8)
+
+The shrine's look rebuild starts with **the Hall of Sleepers** as the golden room and reaches **the whole sandstone wing**
+(floor 0) at once (owner's calls, 2026-11-08; the parts are T56a–c in [tickets.md](tickets.md)).
+
+- **The shell is laid round the colliders** (`build.ts`, `isFinal(room)`: today the sandstone theme). Every `b.box` and
+  `b.cylinder` call stays as it was, in the same order (`world/dungeon/colliders.test.ts` freezes them); a final wing's
+  floor slab, plinth and pillar are drawn by the kit (`render/models/shrine.ts`) instead of the rough boxes, and its plain
+  wall faces stay. Pieces are in world coordinates and merge with the floor's scenery (no `crevice`, no `gradient`).
+- **Floor:** 2 m flags on the wakestones' grid (the `rock` tile: whole stones, not the walls' coursed blocks), each a
+  shade darker or not by a hash of its cell, over a slab of the trim colour sunk by their thickness, so the seams show it.
+  Their tops are exactly the floor's height.
+- **Walls:** the chamfered plinth (the rough trim box's size), a **string course** at 2.45 m (above the tallest stone,
+  1.96 m, and behind the sleeping faces' panels), a two-step **cornice** under the ceiling (x walls run into the corners,
+  z walls butt each step against them), and a thin **pilaster** in each inner corner clear of doorways. Below the course
+  nothing stands prouder (0.15 m) than a stone at a wall already reaches into it (0.17 m), so no stone ever slides
+  through a moulding (`shell.test.ts`).
+- **Ceiling:** beams across the shorter span, about every 4 m, none across a stair shaft or drop hole. **Pillars:** a
+  square base, a collar, the rough's tapered octagonal shaft, a flared capital and an abacus.
+- **Shared pieces, final in every wing:** the **door frame** (quoined jambs, a lintel and a paler keystone, in its wing's
+  trim colour; the opening stays clear, tested) and the **sconce** (an iron plate, arm and cup merged in the scenery; a
+  pale flame and a two-layer glow that flicker on their own phases, a few warm specks of dust rising through it, all of
+  it one `SconceGlow` in `render/sconceGlow.ts`, the dust a single draw call). The flame is unlit: the room's pooled
+  point light still does the lighting.
+- **Still rough:** the other wings' shells, the stairs and railings, plates, crystals, the prism, locked door slabs,
+  wakestones, tablets, the bell post, the sleeping faces and keepers (T56b), and the Hall's dressing (T56c).
+
 ## Build plan (milestones)
 
 Each milestone ends with check + smoke (+ look) passing, so the game stays playable.

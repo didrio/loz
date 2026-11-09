@@ -60,8 +60,8 @@
     "triangles": 265000
   },
   "dungeon": {
-    "calls": 1400,
-    "triangles": 216000
+    "calls": 1240,
+    "triangles": 258000
   },
   "emptyVillage": {
     "calls": 300,
@@ -72,8 +72,8 @@
     "triangles": 192000
   },
   "entrance": {
-    "calls": 1400,
-    "triangles": 216000
+    "calls": 1240,
+    "triangles": 258000
   },
   "field": {
     "calls": 680,
@@ -128,8 +128,8 @@
     "triangles": 4100
   },
   "landmarks": {
-    "calls": 530,
-    "triangles": 183000
+    "calls": 500,
+    "triangles": 227000
   },
   "lostBell": {
     "calls": 600,
@@ -183,9 +183,13 @@
     "calls": 70,
     "triangles": 216000
   },
+  "shrineHall": {
+    "calls": 1010,
+    "triangles": 232000
+  },
   "stairs": {
-    "calls": 280,
-    "triangles": 173000
+    "calls": 270,
+    "triangles": 216000
   },
   "surf": {
     "calls": 430,

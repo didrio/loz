@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { Layer, type RAPIER } from '../../core/physics';
 import { mat, surf, uniqueMat, uniqueSurf } from '../../render/materials';
 import { faceted } from '../../render/textures';
+import { kitMesh } from '../../render/kit';
+import { doorFrameGeometry } from '../../render/models/shrineProps';
+import { pal } from '../../render/palette';
 import { glow, GroundShadow } from '../../render/shapes';
 import type { AreaBuilder } from '../area';
 import { Prism } from './prism';
@@ -61,21 +64,14 @@ export class DungeonDoor {
    * `wall`: `x` if the wall runs east–west (the door faces north/south), `z` if north–south.
    * (x, y, z) is the center of the doorway at floor level.
    */
-  constructor(b: AreaBuilder, parent: THREE.Object3D, readonly id: string, readonly style: DoorStyle, x: number, y: number, z: number, wall: 'x' | 'z', width: number, readonly keyColor?: KeyColor) {
+  /** `frameColour`: its wing's trim (decor.ts `THEMES`). */
+  constructor(b: AreaBuilder, parent: THREE.Object3D, readonly id: string, readonly style: DoorStyle, x: number, y: number, z: number, wall: 'x' | 'z', width: number, readonly keyColor?: KeyColor, frameColour = pal('stone', 1)) {
     this.group.position.set(x, y, z);
     if (wall === 'z') this.group.rotation.y = Math.PI / 2;
     parent.add(this.group);
 
-    // The frame: two posts and a lintel, a little proud of the wall on both sides.
-    const frame = surf('stone', STONE.trim);
-    for (const side of [-1, 1]) {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.35, DOOR_HEIGHT + 0.3, 0.8), frame);
-      post.position.set(side * (width / 2 + 0.17), (DOOR_HEIGHT + 0.3) / 2, 0);
-      this.group.add(post);
-    }
-    const lintel = new THREE.Mesh(new THREE.BoxGeometry(width + 0.7, 0.35, 0.8), frame);
-    lintel.position.y = DOOR_HEIGHT + 0.17;
-    this.group.add(lintel);
+    // The frame (final, T56a: render/models/shrineProps.ts): quoined jambs, a lintel and a keystone, proud of the wall on both sides.
+    this.group.add(kitMesh(doorFrameGeometry(width, DOOR_HEIGHT, frameColour), 'stone'));
     if (style === 'open') {
       this.open = true;
       return;
@@ -357,19 +353,4 @@ export function buildTablet(b: AreaBuilder, parent: THREE.Object3D, x: number, y
   g.rotation.y = yaw;
   parent.add(g);
   b.box(x, y + 0.6, z, 0.5, 0.6, 0.3, yaw, Layer.Prop);
-}
-
-/** A wall sconce: a little iron cup with a flame, for light you can see the source of. */
-export function buildSconce(parent: THREE.Object3D, x: number, y: number, z: number, yaw: number) {
-  const g = new THREE.Group();
-  const cup = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.18, 0.1, 0.22, 6)), surf('metal', STONE.iron));
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.35), surf('metal', STONE.iron));
-  arm.position.set(0, -0.05, -0.18);
-  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 5), new THREE.MeshBasicMaterial({ color: 0xffb35a }));
-  flame.position.y = 0.25;
-  g.add(cup, arm, flame, glow(0xffa64a, 0.32, 0.4));
-  g.position.set(x, y, z);
-  g.rotation.y = yaw;
-  parent.add(g);
-  return flame;
 }

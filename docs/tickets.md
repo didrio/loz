@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T60**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T61**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -52,16 +52,33 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
 
-### T56: Final pass: one shrine room (golden set 8)
-**Run:** plan · opusplan · high
-**Why:** Rooms get the style by one example: a shrine room with its dressing, palette, light and particles, puzzles untouched.
+**The shrine room (golden set 8), owner's calls (2026-11-08, T56's plan):** the room is **the Hall of Sleepers** (`entry`: the first room, where every death returns). The final pass reaches **the whole sandstone wing at once** (floor 0, like the vignette's trees valley-wide): its shell, its decor, and the shared pieces everywhere they stand; only the Hall gets the extra **dressing: carved spiral reliefs, offering niches with candles, rubble and sand drifts, hanging cloth**. **Mood: warm torchlight and dust**, no new real lights. Three parts, each leaving the game working; the lock comes after T56c on the owner's approval. Design: [shrine.md](shrine.md) "The final look".
+- **Layout frozen** is proven by `world/dungeon/colliders.test.ts` (every collider of the shrine, the Hall's one by one), passing unedited after each part, and by `npm run map -- shrine` unchanged (save its output before, diff after).
+- **Before renders:** the `shrineHall` look scene (8 in-game shots: the Hall from the way in, toward the bell post, the tablet, from high in a corner, the nave door's frame, a sconce close; the Nave's pillars; the Gallery of Statues). Its before set (rough, Native and N64) is in no baseline: if the owner wants it side by side, `git stash` the wing's changes and capture.
+- **Done so far (T56a):** the freeze test, the `shrineHall` scene, the sandstone wing's **shell** (flags, plinth, string course, cornice, corner pilasters, ceiling beams, pillars: `render/models/shrine.ts`, laid by `build.ts` round its unchanged colliders; the plain wall faces stay), the **door frame** (every doorway, its wing's trim: `render/models/shrineProps.ts`) and the **sconce** (every room: iron merged in the scenery; the flame flickers and dust rises through its glow: `render/sconceGlow.ts`). Registered `final`: `shrine-corner`, `shrine-pillar`, `shrine-door-frame`, `sconce`. Baselines and budgets approved for `shrineHall` (Native and N64), `dungeon`, `landmarks`, `stairs`, `entrance` (`door` unchanged); the other shrine scenes (`bells`, `bellShaft`, `atmosphere`, `bake`, `gravelheart*`, `wardenIntro`, `seal`, `contact`) still show "changed" from the frames and sconces: approve each as you run and review it.
+
+### T56b: Final pass: the Hall's things and the sandstone wing's decor
+**Run:** auto · sonnet · high
+**Why:** The Hall's own pieces are still rough beside its final shell: the wakestone, the tablet, the bell post, and the wing's carved sleepers.
 **Done when:**
-- One room chosen with the owner; layout, switches and puzzle logic frozen (`npm run map -- shrine` unchanged); phone performance noted.
-- `tier: 'final'` in the registry; within budget; every colour a `pal()` name; built with the kit and `bakeRig`; the behaviour file untouched in the diff (silhouette, scale, joints, hurtboxes, timings frozen; ask the owner first if one must change).
-- Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
-**Read first:** pipeline.md "Rooms and areas"; shrine.md; dungeons.md; world/dungeon/decor.ts, build.ts (Grep, then ranges)
-**Verify:** `npm run check`; smoke `shrine-keys shrine-glove`; `npm run map -- shrine`; look scenes before and after.
-**Notes:** Ask the owner up front which room.
+- Final kit models, registered, in budget, colours by `pal()`: the **wakestone** (light and heavy, one builder; the heavy spirals keep the area's shared pulsing `heavyGlow`; the body is the joint `Wakestone` moves), the **tablet**, the **bell post and its bell** (every bell site, overworld too; the pivot stays the joint `BellPost` swings), the wing's **sleeping-face reliefs** and **kneeling keepers** (`decor.ts` sandstone; the keepers' collider unchanged).
+- The sleeping faces no longer crowd a sconce: today the face panel at x 7 on the Hall's north wall rises into the sconce's cup (it did in the rough too). Keep wall spots and sconces apart (a test).
+- `Wakestone`, `BellPost`, `DungeonSwitch` keep their logic, timings and colliders byte-identical (the diff shows only the look); the collider snapshot passes unedited; `npm run map -- shrine` unchanged.
+- Viewer renders (front, three-quarter, side, Native and N64) for each new model (a `shrineModels` look scene like `vignetteModels`), plus `shrineHall`.
+**Read first:** tickets.md "The shrine room" (above); shrine.md "The final look"; pipeline.md "The rig convention" (the Thornling's split: model vs behaviour) and "The modeling kit"; `world/dungeon/pieces.ts` (`Wakestone`), `world/bell.ts` (`BellPost`, `bellModel`), `world/dungeon/decor.ts` (sandstone); `render/models/shrineProps.ts` (the frame and sconce to match)
+**Verify:** `npm run check`; `npm run assets`; smoke `shrine-keys shrine-glove bells`; `npm run map -- shrine`; `looker` on `shrineHall shrineModels bells bellShaft landmarks` (Native and N64).
+**Notes:** Plates, crystals, the prism and locked door slabs (key, boss, bars, hidden) stay rough: none stand in the Hall; they go with each wing's own ticket. A bell post stands in the overworld too: check the `bells` scene there. Every shrine scene's budget was re-set after T56a (art.md "Budgets"): keep the new pieces near the rough's counts all the same.
+
+### T56c: Final pass: the Hall's dressing and mood; renders; the lock
+**Run:** auto · sonnet · high
+**Why:** The golden room needs the dressing that makes it a place, then the owner's approval to lock it as the example every room follows.
+**Done when:**
+- The Hall's dressing (visual only, no colliders, nothing interactable): **spiral reliefs** on wall panels and a carved lintel over each doorway (faint glow in the cuts, like Gravelheart's spirals); **two or three offering niches** with candle clusters (unlit `halo()` glows, no new lights) and a bowl; **rubble** in the corners and **sand drifted** against the wall feet, a few **cracked or sunken flags** (visual only); **faded, torn banners** between the sconces (one cloth swatch added to `shrine.sandstone` if none fits: say so). A test keeps every piece clear of the wakestone's cells and slide path, the bell post, the tablet and the doorways.
+- **Mood:** the Hall's dust (beyond the sconces' own) and the light checked in Native and N64; no new real lights.
+- **Phone check:** the `shrineHall` scene's draw calls and triangles against the before set (rough: 868 / 152k; after T56a: 807 / 185k) into art.md "Budgets".
+- Before/after renders shown to the owner (in-game Hall shots and each model front/three-quarter/side, Native and N64). **On approval:** the Hall's ids added to `GOLDEN_SET`, the room to art.md's golden-set list with its reference renders, `shrineHall` and `shrineModels` baselines approved.
+**Read first:** tickets.md "The shrine room" (above); shrine.md "The final look"; art.md "The golden set", "Budgets"; `render/models/shrine.ts`; `world/dungeon/build.ts` (Grep `isFinal`, `decorateRoom`); `world/dungeon/decor.ts`
+**Verify:** `npm run check`; `npm run assets`; smoke `shrine-keys shrine-glove`; `npm run map -- shrine`; `looker` on `shrineHall shrineModels dungeon contact` (Native and N64).
 
 ### T60: Keyed body polish for Gravelheart (anticipation and settle)
 **Run:** auto · sonnet · high

@@ -3,6 +3,10 @@ import { mulberry32 } from '../../core/math';
 import { Layer, type Physics } from '../../core/physics';
 import { disposeTree, mat, mergeStatic, surf } from '../../render/materials';
 import { BAKE, collectBakeSet, EVERYWHERE, queueBake } from '../../render/bakeLight';
+import { kitMesh, place } from '../../render/kit';
+import { ceilingBeams, cornerPiers, course, floorTiles, innerOf, pillar, plinth, roomCornice, SANDSTONE, SHELL, type WallOrient } from '../../render/models/shrine';
+import { sconceIron } from '../../render/models/shrineProps';
+import { SconceGlow } from '../../render/sconceGlow';
 import { buildCourse } from '../platforming';
 import { AreaBuilder, type Area, type AreaEnv, type Interactable, type Spot, type Trigger } from '../area';
 import { BellPickup, BellPost, type BellId } from '../bell';
@@ -20,7 +24,7 @@ import { PULL_RANGE } from './puzzle';
 import type { FogLook } from '../../render/sky';
 import { decorateRoom, DUNGEON_FOG, THEMES, themeOf, type WallSpot } from './decor';
 import { WardenHearth } from './hearth';
-import { buildSconce, buildTablet, doorStyle, DungeonDoor, DungeonSwitch, Wakestone } from './pieces';
+import { buildTablet, doorStyle, DungeonDoor, DungeonSwitch, Wakestone } from './pieces';
 
 /** What happened when a stone was struck or pulled. */
 export type StoneResult = 'moved' | 'sunk' | 'blocked' | 'heavy' | 'bounced' | 'bridged';
@@ -45,7 +49,7 @@ interface StoneState {
  * floor above.
  */
 
-const WALL_T = 0.5;
+export const WALL_T = 0.5;
 /** Real point lights at once in a dungeon: the nearest `LIGHTS_NEAR` glow, the rest of the pool is for fading swaps. */
 const LIGHT_POOL = 8;
 const LIGHTS_NEAR = 6;
@@ -162,6 +166,8 @@ export class DungeonArea implements Area {
   private platformT = 0;
   /** Platform courses of the rooms that have `platforms` (their movers are ticked in `update`). */
   private readonly courses: { update(t: number): void; dispose(): void }[] = [];
+  /** The sconces' flames and their dust (render/sconceGlow.ts). */
+  private readonly sconceGlow = new SconceGlow();
 
   constructor(physics: Physics, readonly def: DungeonDef) {
     this.id = def.id;
@@ -186,13 +192,21 @@ export class DungeonArea implements Area {
       }
       return { ...p, src: src.get(floor)! };
     };
-    /** A static box (merged later; stone-textured), with an optional collider. */
-    const box = (group: THREE.Group, color: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, layer: number | null = Layer.World) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), surf('stone', color));
-      m.position.set(x, y, z);
-      group.add(m);
+    /** A static box (merged later; stone-textured), with an optional collider. `show` false: the collider alone (a final wing draws its own). */
+    const box = (group: THREE.Group, color: number, x: number, y: number, z: number, sx: number, sy: number, sz: number, layer: number | null = Layer.World, show = true) => {
+      if (show) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), surf('stone', color));
+        m.position.set(x, y, z);
+        group.add(m);
+      }
       if (layer !== null) b.box(x, y, z, sx / 2, sy / 2, sz / 2, 0, layer);
     };
+    /** A kit piece of a final wing's shell (render/models/shrine.ts), merged with the floor's scenery. */
+    const shell = (group: THREE.Group, geo: THREE.BufferGeometry | null) => {
+      if (geo) group.add(kitMesh(geo, 'stone'));
+    };
+    /** The sandstone wing is final (T56a): its shell comes from the kit; the other wings keep the rough boxes for now. */
+    const isFinal = (r: RoomDef) => themeOf(r) === 'sandstone';
 
     // --- floors, ceilings, pits, features -------------------------------------------
     for (const r of def.rooms) {
@@ -200,8 +214,18 @@ export class DungeonArea implements Area {
       const p = part(r.floor);
       const { holes } = roomOpenings(def, r);
       const pal = THEMES[themeOf(r)];
+      const final = isFinal(r);
       for (const s of subtractRects(roomRect(r), holes.map((o) => o.rect))) {
-        box(p.src.solid, pal.floor, s.x + s.w / 2, fy - FLOOR_T / 2, s.z + s.d / 2, s.w, FLOOR_T, s.d);
+        box(p.src.solid, pal.floor, s.x + s.w / 2, fy - FLOOR_T / 2, s.z + s.d / 2, s.w, FLOOR_T, s.d, Layer.World, !final);
+        if (final) {
+          // Tiles on the stones' 2 m grid, over a slab sunk by their thickness: the seams between them show its darker stone.
+          const slab = new THREE.Mesh(new THREE.BoxGeometry(s.w, FLOOR_T - SHELL.tileT, s.d), surf('stone', pal.trim));
+          slab.position.set(s.x + s.w / 2, fy - FLOOR_T / 2 - SHELL.tileT / 2, s.z + s.d / 2);
+          p.src.solid.add(slab);
+          const flags = floorTiles(s, { x: r.x, z: r.z }, fy, SANDSTONE.floor);
+          if (flags) p.src.solid.add(kitMesh(flags, 'rock')); // whole stones, not the walls' coursed blocks
+          continue;
+        }
         // Checkered tiles (marble): every other 2 m cell a shade darker.
         if (pal.floorAlt !== null) {
           for (let cx = r.x; cx < r.x + r.w; cx += 2) {
@@ -254,9 +278,15 @@ export class DungeonArea implements Area {
       for (const s of subtractRects(roomRect(r), above)) {
         box(p.src.ceiling, pal.ceiling, s.x + s.w / 2, fy + h + CEIL_T / 2, s.z + s.d / 2, s.w, CEIL_T, s.d);
       }
+      if (final) shell(p.src.ceiling, ceilingBeams(r, fy + h, pal.trim, above));
       for (const f of r.features ?? []) {
         if (f.kind === 'pillar') {
           const rad = f.r ?? 0.7;
+          if (final) {
+            shell(p.src.solid, place(pillar(rad, h, pal.pillar, pal.trim, f.x * 7 + f.z), r.x + f.x, fy, r.z + f.z));
+            b.cylinder(r.x + f.x, fy + h / 2, r.z + f.z, h / 2, rad, Layer.Prop);
+            continue;
+          }
           const m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad * 1.1, h, 8), surf('stone', pal.pillar));
           m.position.set(r.x + f.x, fy + h / 2, r.z + f.z);
           p.src.solid.add(m);
@@ -291,7 +321,7 @@ export class DungeonArea implements Area {
       const w = d.width ?? DEFAULT_DOOR_WIDTH;
       gap(pl.wall === 'x' ? `${a.floor}:x:${pl.z}` : `${a.floor}:z:${pl.x}`, pl.wall === 'x' ? pl.x : pl.z, w);
       const fy = floorY(def, a.floor);
-      const door = new DungeonDoor(b, part(a.floor).dynamic, d.id, doorStyle(d.lock), pl.x, fy, pl.z, pl.wall, w, d.lock && typeof d.lock === 'object' && 'key' in d.lock ? d.lock.key : undefined);
+      const door = new DungeonDoor(b, part(a.floor).dynamic, d.id, doorStyle(d.lock), pl.x, fy, pl.z, pl.wall, w, d.lock && typeof d.lock === 'object' && 'key' in d.lock ? d.lock.key : undefined, THEMES[themeOf(a)].trim);
       this.doors.set(d.id, door);
       if (d.lock && typeof d.lock === 'object' && 'cleared' in d.lock) {
         // A hidden room can be arrived in (the seal's vision ends there): just inside its door, facing in.
@@ -310,7 +340,7 @@ export class DungeonArea implements Area {
     const entrance = back === 'n' ? { wall: 'x' as const, x: ex, z: er.z } : back === 's' ? { wall: 'x' as const, x: ex, z: er.z + er.d }
       : back === 'w' ? { wall: 'z' as const, x: er.x, z: ez } : { wall: 'z' as const, x: er.x + er.w, z: ez };
     gap(entrance.wall === 'x' ? `${er.floor}:x:${entrance.z}` : `${er.floor}:z:${entrance.x}`, entrance.wall === 'x' ? entrance.x : entrance.z, DEFAULT_DOOR_WIDTH);
-    new DungeonDoor(b, part(er.floor).dynamic, 'entrance', 'open', entrance.x, floorY(def, er.floor), entrance.z, entrance.wall, DEFAULT_DOOR_WIDTH);
+    new DungeonDoor(b, part(er.floor).dynamic, 'entrance', 'open', entrance.x, floorY(def, er.floor), entrance.z, entrance.wall, DEFAULT_DOOR_WIDTH, undefined, THEMES[themeOf(er)].trim);
     // Beyond the doorway is nothing, so the view out would show whatever lies down there (the
     // rooms of the floor below); a black unlit panel just outside makes it read as darkness.
     {
@@ -381,11 +411,30 @@ export class DungeonArea implements Area {
             }
           }
           if (!inGap) {
-            if (orient === 'x') box(p.src.solid, wpal.trim, c, fy + 0.2, line, len, 0.4, WALL_T + 0.12, null);
+            if (isFinal(covering[0].room)) shell(p.src.solid, plinth(orient as WallOrient, line, u2, v2, fy, wpal.trim, WALL_T));
+            else if (orient === 'x') box(p.src.solid, wpal.trim, c, fy + 0.2, line, len, 0.4, WALL_T + 0.12, null);
             else box(p.src.solid, wpal.trim, line, fy + 0.2, c, WALL_T + 0.12, 0.4, len, null);
+            // The string course along each final room's face, kept to its inner faces (a z wall's stops short of the
+            // x walls' course, so none overlap in the corners).
+            for (const e of covering) {
+              if (!isFinal(e.room)) continue;
+              const i = innerOf(e.room, WALL_T);
+              const [lo2, hi2] = orient === 'x' ? [i.x0, i.x1] : [i.z0 + SHELL.courseOut, i.z1 - SHELL.courseOut];
+              const a = Math.max(u, lo2), bb = Math.min(v, hi2);
+              if (bb - a > 0.05) shell(p.src.solid, course(orient as WallOrient, line, e.side, a, bb, fy, THEMES[themeOf(e.room)].trim, WALL_T));
+            }
           }
         }
       }
+    }
+
+    // The final rooms' cornice under the ceiling, and a pilaster in each inner corner clear of doorways.
+    for (const r of def.rooms) {
+      if (!isFinal(r)) continue;
+      const fy = floorY(def, r.floor), h = roomHeight(def, r), g = part(r.floor).src.solid, trim = THEMES[themeOf(r)].trim;
+      shell(g, roomCornice(r, fy + h, trim, WALL_T));
+      const clear = (o: WallOrient, line: number, a: number, bb: number) => !(gapsBy.get(`${r.floor}:${o}:${line}`) ?? []).some(([g0, g1]) => g0 < bb && g1 > a);
+      shell(g, cornerPiers(r, fy, h, trim, clear, WALL_T));
     }
 
     // --- stairs, railings, drop rims ------------------------------------------------
@@ -477,7 +526,7 @@ export class DungeonArea implements Area {
         this.spawns.push({ id: t.id, type: t.type, room: r.id, x, y: fy + (t.up ?? 0), z, facing: t.facing, leash: ledge && { x: r.x + ledge.x, z: r.z + ledge.z, r: ledge.r } });
       }
     }
-    this.placeSconces(def, gapsBy);
+    this.placeSconces(def, gapsBy, (floor) => part(floor).src.solid);
     for (const r of def.rooms) {
       const hasStones = def.things.some((t) => t.room === r.id && (t.kind === 'stone' || (t.kind === 'switch' && t.style === 'plate')));
       const rand = mulberry32(r.x * 7919 + r.z * 104729 + r.floor * 31);
@@ -487,6 +536,7 @@ export class DungeonArea implements Area {
     this.spawn = { x: ex, y: floorY(def, er.floor) + 0.05, z: ez, facing: yawOf[def.entrance.facing] };
     const done = b.finish();
     this.root = done.root;
+    this.sconceGlow.finish(this.root);
     for (const [floor, p] of this.floors) {
       const s = src.get(floor)!;
       p.solid = mergeStatic(s.solid, 80, BAKE.atBuild);
@@ -591,8 +641,15 @@ export class DungeonArea implements Area {
     return out;
   }
 
-  /** Two sconces per room on its longer walls, kept clear of doorways. */
-  private placeSconces(def: DungeonDef, gapsBy: Map<string, [number, number][]>) {
+  /** Two sconces per room on its longer walls, kept clear of doorways: the iron merged with the floor's scenery, the flame alive. */
+  private placeSconces(def: DungeonDef, gapsBy: Map<string, [number, number][]>, solidOf: (floor: number) => THREE.Group) {
+    const sconce = (floor: number, parent: THREE.Object3D, x: number, y: number, z: number, yaw: number) => {
+      const iron = kitMesh(sconceIron(), 'metal');
+      iron.position.set(x, y, z);
+      iron.rotation.y = yaw;
+      solidOf(floor).add(iron);
+      this.sconceGlow.add(parent, x, y, z, yaw);
+    };
     for (const r of def.rooms) {
       const fy = floorY(def, r.floor), p = this.floors.get(r.floor)!;
       const alongX = r.w >= r.d;
@@ -604,8 +661,8 @@ export class DungeonArea implements Area {
         const [a0, a1] = alongX ? [r.x, r.x + r.w] : [r.z, r.z + r.d];
         const at = [0.5, 0.3, 0.7].map((f) => a0 + (a1 - a0) * f).find((v) => !gaps.some(([g0, g1]) => v > g0 - 1 && v < g1 + 1));
         if (at === undefined) continue;
-        if (alongX) buildSconce(p.dynamic, at, fy + 3.2, line, yaw);
-        else buildSconce(p.dynamic, line, fy + 3.2, at, yaw);
+        if (alongX) sconce(r.floor, p.dynamic, at, fy + 3.2, line, yaw);
+        else sconce(r.floor, p.dynamic, line, fy + 3.2, at, yaw);
       }
     }
   }
@@ -1009,6 +1066,7 @@ export class DungeonArea implements Area {
     for (const c of this.columns.values()) c.update(dt);
     for (const post of this.bellPosts.values()) post.update(dt);
     for (const bell of this.bellPickups.values()) bell.update(dt);
+    this.sconceGlow.update(this.t);
     this.heavyGlow.emissive.setRGB(0.1, 0.55 + Math.sin(this.t * 2.4) * 0.2, 0.5 + Math.sin(this.t * 2.4) * 0.18);
     if (_env.playerPos) this.updateLights(dt, _env.playerPos);
   }
