@@ -120,6 +120,11 @@ export class Sky {
     if (snap) this.weights = { [id]: 1 };
   }
 
+  /** The dome's colours now (linear, after the blight and gloom): read them, don't change them. */
+  get domeColors(): { readonly top: THREE.Color; readonly horizon: THREE.Color } {
+    return { top: this.uniforms.top.value, horizon: this.uniforms.horizon.value };
+  }
+
   /** What drifts through the air now (the place's motes, or the blight's ash), for `Motes`. */
   moteLook(): MoteLook | null {
     return moteLook(this.weights, this.blight, this.indoor ? this.indoorLook : null);

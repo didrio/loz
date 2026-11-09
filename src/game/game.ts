@@ -16,6 +16,7 @@ import { ShadowRig } from '../render/shadows';
 import { RetroPipeline, renderStill, internalSize, pixelRatioFor, DISPLAY_NATIVE, DISPLAY_PERFORMANCE, DISPLAY_N64 } from '../render/retro';
 import type { AtmosphereId } from '../render/atmosphere';
 import { Sky } from '../render/sky';
+import { ModernLook } from '../render/experiments/modernLook';
 import { Hud } from '../ui/hud';
 import { nearestInteractable, sameLevel, type Area } from '../world/area';
 import { Boss } from './boss';
@@ -76,6 +77,8 @@ export class Game implements ScriptApi {
   /** The sun's shadow map (render/shadows.ts): on by the Shadows setting, outdoors only. */
   readonly shadows: ShadowRig;
   private readonly motes: Motes;
+  /** EXPERIMENT (T62): the Dev tab's modern lighting and the experiment barrels (render/experiments/modernLook.ts). */
+  readonly modern: ModernLook;
   readonly player: Player;
   readonly rig: CameraRig;
   readonly hazards: Hazards;
@@ -128,6 +131,7 @@ export class Game implements ScriptApi {
     this.dialog = new Dialog(this.hud, this.sfx, () => this.area.voiceRoom ?? 'outdoors');
     this.sky = new Sky(this.scene);
     this.shadows = new ShadowRig(this.renderer, this.scene, this.sky.sun);
+    this.modern = new ModernLook(this.renderer, this.scene, this.camera, this.sky);
     this.motes = new Motes(this.scene);
     this.particles = new Particles(this.scene);
     this.pickups = new Pickups(this.scene);
@@ -287,10 +291,18 @@ export class Game implements ScriptApi {
 
     this.updateWorld(dt, rawDt);
     this.input.endFrame();
-    if (this.retro.active) this.retro.render(this.renderer, this.scene, this.camera);
-    else this.renderer.render(this.scene, this.camera);
+    this.drawFrame();
     requestAnimationFrame(this.frame);
   };
+
+  /** Draws the frame through the Display mode's pipeline (or the T62 experiment's). Public for the look scene's cost measure. */
+  drawFrame() {
+    // The pipelines draw more than once a frame, so they count it themselves (renderer.info).
+    this.renderer.info.autoReset = !this.retro.active && !this.modern.active;
+    if (this.retro.active) this.retro.render(this.renderer, this.scene, this.camera);
+    else if (this.modern.active) this.modern.render();
+    else this.renderer.render(this.scene, this.camera);
+  }
 
   private updateTitle(dt: number) {
     const choice = this.title.update(dt, this.input, this.camera, this.state);
@@ -507,6 +519,7 @@ export class Game implements ScriptApi {
     this.sky.setAtmosphere(this.atmosphereAt(player.pos));
     this.sky.update(state.hours, this.mode === 'title' ? new THREE.Vector3() : player.pos, this.camera.position, dt);
     this.shadows.update(dt, !!this.area.indoor);
+    this.modern.update(rawDt, this.settings.display === DISPLAY_N64, !!this.area.indoor);
     this.debug?.update(dt);
   }
 
@@ -808,6 +821,7 @@ export class Game implements ScriptApi {
     this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.retro.setSize(size);
+    this.modern.setSize(window.innerWidth, window.innerHeight, ratio);
     this.renderer.info.autoReset = !size;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();

@@ -3,6 +3,7 @@ import { DEV_STATES } from '../content/devStates';
 import { foundHints } from '../content/hints';
 import { foundSigils } from '../content/sigils';
 import { SENSITIVITY_RANGE, type Settings } from '../core/save';
+import { LOOK, TONE_MAPS, type LookSettings } from '../render/experiments/modernLook';
 import { BAKE, bakedLightOn, setBakedLight, setBakeStrength, type BakeProfile, type BakeStrength } from '../render/bakeLight';
 import { DISPLAY_NAMES } from '../render/retro';
 import { setTextureResolution, TEXTURE_RESOLUTION_RANGE, textureResolution } from '../render/textures';
@@ -29,6 +30,43 @@ function loadBake() {
     if (saved.indoor) setBakeStrength('indoor', saved.indoor);
     if (saved.on === false) setBakedLight(false);
   } catch { /* no storage or a bad entry: keep the defaults */ }
+}
+
+/** Where the Dev tab's look experiment (T62: render/experiments/modernLook.ts) is remembered, the same way. */
+const LOOK_KEY = 'embervale:dev:lookExperiment';
+
+function saveLook() {
+  try { localStorage.setItem(LOOK_KEY, JSON.stringify(LOOK)); } catch { /* not remembered */ }
+}
+
+function loadLook() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LOOK_KEY) ?? 'null') as Partial<LookSettings> | null;
+    if (!saved) return;
+    for (const k of Object.keys(LOOK) as (keyof LookSettings)[]) {
+      if (typeof saved[k] === typeof LOOK[k]) (LOOK as Record<string, unknown>)[k] = saved[k];
+    }
+  } catch { /* no storage or a bad entry: keep the defaults */ }
+}
+
+/** EXPERIMENT (T62): the look-direction comparison's switches. Not a setting; off by default. */
+function lookRows(): MenuRow[] {
+  const toggle = (label: string, key: 'barrels' | 'lighting' | 'smooth'): MenuRow => ({
+    kind: 'toggle', label, get: () => LOOK[key], set: (on) => { LOOK[key] = on; saveLook(); },
+  });
+  const slider = (label: string, key: 'exposure' | 'sky' | 'ao' | 'bloom', max: number): MenuRow => ({
+    kind: 'slider', label, min: 0, max, step: 0.05, format: (v) => v.toFixed(2), get: () => LOOK[key], set: (v) => { LOOK[key] = v; saveLook(); },
+  });
+  return [
+    toggle('Barrels (today, modern, photoreal)', 'barrels'),
+    toggle('Modern lighting (not in N64)', 'lighting'),
+    toggle('Smooth shading', 'smooth'),
+    { kind: 'choice', label: 'Tone mapping', space: true, options: TONE_MAPS, get: () => LOOK.toneMap, set: (i) => { LOOK.toneMap = i; saveLook(); } },
+    slider('Exposure', 'exposure', 2),
+    slider('Sky light', 'sky', 2),
+    slider('Corner shade', 'ao', 1),
+    slider('Bloom', 'bloom', 1),
+  ];
 }
 
 /** The Dev tab's live strength sliders for one bake profile (render/bakeLight.ts): no rebuild, the colours recompose. */
@@ -65,6 +103,7 @@ export class PauseMenu {
       if (saved) setTextureResolution(saved);
     } catch { /* no storage (tests, private windows): keep the default */ }
     loadBake();
+    loadLook();
   }
 
   get isOpen() {
@@ -174,6 +213,7 @@ export class PauseMenu {
       { kind: 'toggle', label: 'Baked light', get: bakedLightOn, set: (on) => { setBakedLight(on); saveBake(); } },
       ...bakeSliders('sky', 'Outdoor'),
       ...bakeSliders('indoor', 'Indoor'),
+      { kind: 'submenu', label: 'Look experiment (T62)', menu: () => ({ title: 'Look experiment', rows: lookRows() }) },
       { kind: 'toggle', label: 'Trial falls cost a half heart', get: () => TRIAL_RULES.fallDamage > 0, set: (on) => (TRIAL_RULES.fallDamage = on ? 1 : 0) },
       ...states,
     ];

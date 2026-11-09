@@ -5,6 +5,9 @@ import { kitMesh } from '../../render/kit';
 import { buildMill, buildMillSails, buildStall, MILL_AXLE_Y, MILL_DOOR_TOP, millHub, millLamp } from '../../render/models/mill';
 import { buildBarrel, buildCottage, buildCrate, buildLanternPost, buildWell, COTTAGE, COTTAGE_WINDOW, fencePost, fenceRail, FENCE_RAILS, type CottageStyle } from '../../render/models/village';
 import { applySurface } from '../../render/textures';
+import { buildModernBarrel } from '../../render/experiments/modernBarrel';
+import { EXPERIMENT_BUILD } from '../../render/experiments/modernLook';
+import { buildRealBarrel } from '../../render/experiments/realBarrel';
 import type { AreaBuilder } from '../area';
 import { HOMES, MILL, MILL_BED, MILL_TOWER, STALL, terrainHeight, VILLAGE } from './layout';
 import { HingedDoor } from '../objects';
@@ -231,6 +234,26 @@ export function buildVillage(b: AreaBuilder) {
       b.box(x, y + 0.45, z, 0.45, 0.45, 0.45, i, Layer.Prop);
     }
   });
+
+  // EXPERIMENT (T62, owner, 2026-11-09): the look-direction comparison. Beside today's barrel (clutter at 4, 9), a
+  // modern-stylized one and a photoreal one (1.7×: real size read small beside the game's chunky scale). Nothing is made
+  // until the Dev tab's Look experiment → Barrels is on (render/experiments/modernLook.ts calls this builder): not even a
+  // Group, since every three.js object draws random numbers for its id and would shift the seeded look shots. Not the art
+  // style, no colliders (the layout freeze); remove this and render/experiments/ to drop it (render.md "Look experiment").
+  b.dynamicGroup.userData[EXPERIMENT_BUILD] = () => {
+    const group = new THREE.Group();
+    const place = (o: THREE.Object3D, dx: number, dz: number, yaw: number) => {
+      const x = cx + dx, z = cz + dz;
+      o.position.set(x, terrainHeight(x, z) - 0.02, z);
+      o.rotation.y = yaw;
+      group.add(o);
+    };
+    const real = buildRealBarrel();
+    real.scale.setScalar(1.7);
+    place(real, 2.5, 9.3, 0.6);
+    place(buildModernBarrel(), 1.0, 9.6, 0.3);
+    return group;
+  };
 
   return { windowMat, lanternMat, haloMat, lights, blades, millDoor };
 }

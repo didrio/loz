@@ -669,6 +669,76 @@ const SCENES = {
     const stats = await h.game(() => window.embervaleBake.stats);
     for (const s of stats) console.log(`      bake ${s.label}: ${s.points} points, ${s.occluderTris} occluder tris, prep ${s.prepMs} ms (main thread), done in ${s.totalMs} ms`);
   },
+  /**
+   * EXPERIMENT (T62): the look-direction comparison. The three barrels close up (today's, modern-stylized, photoreal) and
+   * the square from the `village` frame, at noon and dusk, each with modern lighting off, on, and on with smooth shading.
+   * Then prints what a frame costs (ms with the GPU waited for, draw calls) per setting, at three window sizes. Not
+   * approved as baselines: it's an experiment.
+   */
+  async modernLook(h) {
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.set('valleyOpen');
+      g.player.invuln = 1e6;
+      Object.assign(window.embervaleLook.LOOK, { barrels: true, lighting: false, smooth: false });
+    });
+    const set = (patch) => h.game((p) => Object.assign(window.embervaleLook.LOOK, p), patch);
+    const variants = [['off', { lighting: false, smooth: false }], ['on', { lighting: true, smooth: false }], ['smooth', { lighting: true, smooth: true }]];
+    const ground = await h.game(async () => (await import('/src/world/overworld/layout.ts')).terrainHeight(-59.5, -48.9));
+    for (const [when, hours] of [['noon', 12], ['dusk', 18]]) {
+      await h.game((n) => (window.embervale.state.hours = n), hours);
+      // The barrels from a parked camera; Wren stands behind it, out of the shot.
+      await h.teleport(-59.5, -41, Math.PI);
+      await h.wait(1500);
+      await h.game((y) => {
+        const g = window.embervale;
+        g.rig.frozen = true;
+        g.camera.position.set(-59.4, y + 1.35, -44.6);
+        g.camera.lookAt(-59.6, y + 0.55, -48.9);
+      }, ground);
+      for (const [name, patch] of variants) {
+        await set(patch);
+        await h.wait(1200);
+        await h.shot(`modern-barrels-${when}-${name}`);
+      }
+      await set({ lighting: false, smooth: false });
+      await h.game(() => (window.embervale.rig.frozen = false));
+      await h.teleport(-50, -42, Math.atan2(-12, -16));
+      await h.wait(1500);
+      for (const [name, patch] of variants) {
+        await set(patch);
+        await h.wait(1200);
+        await h.shot(`modern-square-${when}-${name}`);
+      }
+      await set({ lighting: false, smooth: false });
+    }
+    // The cost, at noon in the square: the plain frame, then each part of modern lighting added in turn.
+    await h.game(() => (window.embervale.state.hours = 12));
+    const costs = [
+      ['off', { lighting: false, smooth: false }],
+      ['lighting, no post', { lighting: true, ao: 0, bloom: 0 }],
+      ['+ corner shade', { ao: 1 }],
+      ['+ bloom (all on)', { bloom: 0.25 }],
+      ['+ smooth shading', { smooth: true }],
+    ];
+    for (const [w, ht, label] of [[1280, 720, 'look window'], [1920, 1080, 'desktop 1080p'], [1688, 780, 'phone landscape, ratio 2']]) {
+      await h.page.setViewportSize({ width: w, height: ht });
+      await set({ lighting: false, smooth: false, ao: 1, bloom: 0.25 });
+      await h.wait(600);
+      console.log(`      ${label} (${w}×${ht}):`);
+      for (const [name, patch] of costs) {
+        await set(patch);
+        await h.wait(600);
+        const c = await h.game(() => window.embervaleLook.cost(60));
+        console.log(`        ${name.padEnd(18)} ${c.ms.toFixed(2)} ms  ${c.calls} draw calls  ${c.triangles} triangles  (${c.width}×${c.height})`);
+      }
+    }
+    const smoothMs = await h.game(() => window.embervaleLook.smoothMs());
+    console.log(`      smooth shading's one-off cost when flipped: ${smoothMs.toFixed(0)} ms`);
+    await set({ barrels: false, lighting: false, smooth: false, ao: 1, bloom: 0.25 });
+    await h.page.setViewportSize({ width: 1280, height: 720 });
+  },
   /** After the prism: the blight gone and Thistledown with only Lark and Pip; Odo's stall unattended. */
   async emptyVillage(h) {
     await h.newGame();

@@ -43,6 +43,34 @@ One **Display** setting (Settings, `Settings.display`): **Native** (0, the defau
 - Settings saved before Display migrate: a retro look on → N64; Balanced or Performance resolution → Performance; else Native (the oldest Sharpness:
   sharp → Native, else Performance; the retro look's old default Soft 720, never chosen, counts as off). Gone: Resolution, Retro look, Balanced, `Sky.retro`'s warm haze.
 
+## Look experiment (`render/experiments/`, T62)
+
+An **experiment to inform a decision** (owner, 2026-11-09): how much of a "modern" look comes from lighting and how much from
+models. It breaks art.md's rendering rules on purpose (PBR, SSAO, tone mapping) and **art.md is unchanged**. Everything is off
+by default, in **Dev → Look experiment (T62)** (remembered in localStorage, like the baked-light try-out):
+- **Barrels**: built by the `lookExperiment` builder Thistledown leaves on its dynamic group (`world/overworld/village.ts`), beside today's barrel at the clutter spot
+  (4, 9): the photoreal barrel (`realBarrel.ts`, 1.7×, ~0.4 M triangles) and the **modern-stylized** one (`modernBarrel.ts`, today's
+  size, ~2.8k triangles, smooth and rounded, Standard materials with a small grain shader). **Nothing is made until switched on**
+  (built once, lazily; `ModernLook` makes its own objects lazily too): every three.js object draws random numbers for its id, so
+  even an empty hidden Group would shift the seeded look shots. The shipped scene, baselines and budgets don't see any of it. No colliders (layout freeze). Both wear their own
+  sky cube (`skyEnv.ts`, `userData.ownEnv`).
+- **Modern lighting** (`modernLook.ts`, `ModernLook`; never in N64): every `MeshLambertMaterial` in the scene is swapped for a cached
+  `MeshStandardMaterial` twin (`twinOf`: colour and emissive shared by reference so flashes show, the surface patch carried over, metal
+  gets metalness), rescanned every 0.25 s; `scene.environment` is a PMREM painted from the sky dome's colours (indoors the hemisphere
+  light's), redrawn when they move; the hemisphere light keeps `HEMI_KEEP` of its strength. Frames go through an `EffectComposer`:
+  render → GTAO at half resolution (Corner shade) → `UnrealBloomPass` → `OutputPass` (tone mapping: Neutral / AgX / ACES, Exposure).
+  `Game.drawFrame` picks the pipeline. (Lambert alone can't do it: in three r187 it takes `scene.environment` as light but also runs
+  the old multiply-by-reflection path, which tints everything.)
+- **Smooth shading** (`smoothMeshes`): non-indexed geometry gets `toCreasedNormals` at 50° (8-sided barrels go round, boxes stay
+  hard), `flatShading` off; switching off gives back the saved normals exactly. Textures don't move (they project on `surfNormal`).
+- **Cost** (T62, M3 Pro GPU, the village square at noon, ms per frame with the GPU waited for): 1920×1080 off 9.6, lighting without
+  post 10.9, + corner shade 16.1, + bloom 19.2; at a phone's pixel count (1688×780) 7.1 → 13.9. Corner shade renders the scene a
+  second time (draw calls and triangles ×2). Smooth shading's flip: 30-45 ms once. The post-processing modules load on first use
+  (importing them makes objects, which would shift the seeded look shots; the first frames after switching on are plain). A phone's GPU will be several times slower: measure
+  there before deciding. `npm run look -- modernLook` re-measures and shoots the comparison.
+- **To remove it:** delete `render/experiments/`, the `lookExperiment` block in `village.ts`, the `ModernLook` lines in `game/game.ts`,
+  `domeColors` in `sky.ts` if nothing else reads it, `embervaleLook` in `main.ts`, the submenu in `pauseMenu.ts`, the `modernLook` look scene.
+
 ## Textures (`render/textures.ts`, T19)
 
 - **Never `flat` varyings in the surface shader** (T44): `vSurfNormal` as `flat varying` made Metal (ANGLE, Mac GPU) fail with GL_OUT_OF_MEMORY and lose the WebGL context, so frames went black with no console error. A face's vertices share one normal, so smooth interpolation is identical. A black look shot with no error: check `webglcontextlost` and the console's warnings.

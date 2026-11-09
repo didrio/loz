@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T62**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T64**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -51,6 +51,19 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51c):** the mill (outside, door frame, lamp bracket, axle), its sails (hub moved 0.35 m out so the lowest tip clears the wall and the lintel), Odo's stall and every ruined home are final (`render/models/mill.ts`, `ruins.ts`; pipeline.md "Scenery buildings"); colliders, `MILL_TOWER`, `MILL_BED`, jars and flags untouched. Phone check is in art.md "Budgets" (about +3% triangles, 22 fewer draw calls in the village). New look scene `vignetteModels` (both cottages, the mill, sails, stall and a ruin from the front, three-quarter and side). Baselines approved for `vignetteModels`, `mill`, `villageDetails`, `vignette`, `village`, `ruins`, `opening`, `contact`, `bake` (Native and N64); look budgets re-set for `ruins`, `opening`, `contact` (the new pieces cost triangles). The vignette is **locked into the golden set** (owner approved, 2026-11-08). The other outdoor scenes still show "changed" from the new buildings: approve each as you run and review it.
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
+
+### T63: A live view for visual settings: the menu steps aside, hold to hide, swing the camera
+**Run:** auto · sonnet · high
+**Why:** Tuning anything visual (Display, Shadows, texture resolution, baked light, the T62 look experiment) happens behind the pause panel, which covers the world. The owner wants to A/B a change against the live scene, as in modern games' graphics menus, for players and for giving the agents exact feedback.
+**Done when:**
+- Rows can be marked **visual** (Settings: Display, Shadows; Dev: texture resolution, baked light and its sliders, everything in Look experiment). With the cursor on one, the pause panel shrinks to a compact, semi-transparent strip at the screen's edge (the selected row and its neighbours; the panel's dimming behind it goes away); back on a non-visual row, the full panel returns. Mouse, keyboard, gamepad and touch all still work.
+- **Hold to hide:** holding one key/button (pick a free one in `core/input.ts`, e.g. Tab / gamepad Y; a touch equivalent) hides the menu completely; releasing brings it back. The menu's hint line names it.
+- **Camera while paused:** in the live view, mouse drag / right stick (touch: drag) orbits the camera around Wren at the usual distance, with the usual wall rules; closing the menu leaves the camera where it is, as after any turn. Game time stays stopped.
+- **Copy values** (Dev tab): one action copies every visual slider and switch's current value as text to the clipboard (a toast says so), to paste to an agent.
+- A look shot of the live view (Settings → Display selected, and a Look experiment slider), desktop and phone.
+**Read first:** art.md "UI" (the surface rules; the pause layout itself waits for the UI pass, so keep this a mode of today's panel); `game/menu.ts` (`MenuRow`, `MenuView`); `game/menuDriver.ts`; `game/pauseMenu.ts` (`settingsRows`, `devRows`, `lookRows`); `ui/hud.ts` (Grep `menu`) and `ui/style.css` (Grep `.menu`/`pause`); `game/camera.ts` (the orbit, `frozen`); `game/game.ts` `frame` (paused: `updateWorld` still runs with dt 0, `drawFrame` draws).
+**Verify:** `npm run check`; the look shots; the smoke scenarios that open the pause menu (testing.md); a menu unit test for the visual flag and the hide key.
+**Notes:** Owner's calls (2026-11-09): players get it too (not Dev only); the camera orbits around Wren for everyone (no free-fly). One menu, not a second settings window (agreed: one set of controls to keep working). Every change already applies live while paused; this only moves the menu out of the way.
 
 ### T58: Measure and cut the phone's frame cost (Native, shadows, baked light)
 **Run:** auto · opus · high
