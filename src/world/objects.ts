@@ -3,7 +3,8 @@ import { damp, lerpAngle } from '../core/math';
 import { Layer, type RAPIER } from '../core/physics';
 import { buildHumanoid, type Humanoid, type HumanoidColors } from '../render/characters';
 import { fadeInFog, uniqueSurf } from '../render/materials';
-import { buildBush, buildChest, buildGreatLantern, buildHeartVessel, buildHingedDoor, buildShieldPickup, buildStoneDoor } from '../render/models/props';
+import { buildHingedDoor, buildStoneDoor } from '../render/models/doors';
+import { buildBush, buildChest, buildGreatLantern, buildHeartVessel, buildShieldPickup } from '../render/models/props';
 import { GroundShadow } from '../render/shapes';
 import type { AreaBuilder } from './area';
 
@@ -116,7 +117,7 @@ export class HingedDoor {
   private angle = 0;
 
   /** (x, y, z): the middle of the door's bottom edge. */
-  constructor(b: AreaBuilder, readonly x: number, readonly y: number, readonly z: number, yaw: number, width = 1.44, height = 2.3, color = 0x4a2e18) {
+  constructor(b: AreaBuilder, readonly x: number, readonly y: number, readonly z: number, yaw: number, width = 1.44, height = 2.3, color?: number) {
     const m = buildHingedDoor(width, height, color);
     this.pivot = m.joints.pivot;
     m.root.position.set(x, y, z);
@@ -138,7 +139,7 @@ export class HingedDoor {
 }
 
 export class StoneDoor {
-  readonly mesh: THREE.Mesh;
+  readonly mesh: THREE.Object3D;
   private readonly glyphMat: THREE.MeshBasicMaterial;
   private readonly collider: RAPIER.Collider;
   opening = false;

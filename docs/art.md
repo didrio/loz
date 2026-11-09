@@ -198,6 +198,7 @@ render, stored and listed here. If the style changes, update the golden set firs
 - **The Thornling** (2026-11-08, T49): `thornling-model-front`, `-three-quarter`, `-side`; in game `thornling-windup`.
 - **Wren** (2026-11-08, T50): `wren-model-front`, `-three-quarter`, `-side`; in game `wren-guard` (the `wren` scene has every state).
 - **The entrance vignette, Thistledown's road in** (2026-11-08, T51a-c): the valley's tree, pine, rock, grass tuft and lone oak; both cottages, the well, fence, lantern post, barrel and crate; the windmill, its sails, Odo's stall and a ruined home. Reference renders: `vignette-noon`, `-dusk`, `-night` (the frame), `vignetteModels-<id>-front`, `-three-quarter`, `-side` (the buildings), in game `mill-sails`, `mill-stall`, `ruins-ruin-shieldCottage`.
+- **The rest of the prop set** (2026-11-08, T52): the hinged door, the stone door, the jar and the sign (the chest and the crate are above). Reference renders: `props-<id>-front`, `-three-quarter`, `-side`; in game `mill-door-close`, `mill-door-open`, `mill-sign`, `door-asleep`, `door-awake`, `ruins-ruin-shieldCottage`.
 
 ## Escape hatch
 

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { Layer } from '../core/physics';
-import { surf } from '../render/materials';
-import { faceted } from '../render/textures';
+import { buildJar } from '../render/models/props';
 import type { AreaBuilder } from './area';
 
 /** What a jar holds: nothing, a blue gem (5 gems), a heart, or Pip's doll (a story script, `jar.doll`). */
@@ -23,27 +22,14 @@ export interface BrokenJar {
 }
 
 /** The jars in ruins and nooks: clay pots a sword breaks once, for good. */
-type Jar = JarSpot & { group: THREE.Group; collider: ReturnType<AreaBuilder['ball']>; broken: boolean };
+type Jar = JarSpot & { group: THREE.Object3D; collider: ReturnType<AreaBuilder['ball']>; broken: boolean };
 
 export class JarField {
   private readonly items: Jar[] = [];
 
   constructor(b: AreaBuilder, spots: JarSpot[]) {
-    const clay = surf('plaster', 0xa8683a), dark = surf('plaster', 0x7a4a2a);
     for (const s of spots) {
-      const g = new THREE.Group();
-      const body = new THREE.Mesh(faceted(new THREE.SphereGeometry(0.4, 8, 6)), clay);
-      body.scale.set(1, 1.15, 1);
-      body.position.y = 0.46;
-      const neck = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.2, 0.26, 0.2, 8)), clay);
-      neck.position.y = 0.95;
-      const rim = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.27, 0.27, 0.07, 8)), dark);
-      rim.position.y = 1.08;
-      const band = new THREE.Mesh(faceted(new THREE.CylinderGeometry(0.405, 0.405, 0.07, 8)), dark);
-      band.position.y = 0.5;
-      for (const m of [body, neck, rim, band]) {
-        g.add(m);
-      }
+      const g = buildJar().root;
       g.position.set(s.x, s.y, s.z);
       g.rotation.y = (s.x * 7.3 + s.z * 3.1) % 6.28;
       b.dynamic(g);

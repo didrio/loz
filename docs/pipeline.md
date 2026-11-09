@@ -186,7 +186,7 @@ centimetres (seeded) so no two edges are parallel; `crevice` last. Spend triangl
 smoother cylinders.
 
 Kit colours are palette colours; `crevice` and the lighting then darken them, as in the scenery. The kit material (white, vertex-coloured) is a swatch, so the validator accepts it.
-The chest (`render/models/props.ts`, 272 of its 300 triangles) is the first model built this way; the Thornling
+The chest (`render/models/props.ts`, 272 of its 300 triangles) is the first model built this way (the rest of the prop set, T52, follows it: the hinged door and the stone door in `doors.ts`, the jar and the sign in `props.ts`; a door's pivot or slab is a joint the world still moves, a recoloured glyph or lit notice is an `animated` unbaked mesh, and the sign's scribbles come from a `seed` argument, never from the shared random numbers); the Thornling
 (`render/models/thornling.ts`, 800 of 1,200: an 80-face ball, thorns as `extrudePath` spikes curving back, a face of glow eyes, brows and a
 hinged jaw, five joints) the first creature; Wren (`render/models/wren.ts`, ten joints) the first person: the coat,
 blade and shield wood are `uniqueSurf(..., { vertexColors: true })` materials of their own in `animated`, the vertices painted white, so the

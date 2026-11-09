@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Layer } from '../../core/physics';
 import { mat, surf } from '../../render/materials';
+import { buildSign as buildSignModel } from '../../render/models/props';
 import type { AreaBuilder } from '../area';
 import { GreatLantern } from '../objects';
 import { BRIDGE, bridgeDeck, GATE, GROVE, HOLLOW_ENTRANCE, SHRINE, SPAWN, terrainHeight, VILLAGE } from './layout';
@@ -108,35 +109,9 @@ export function buildShrine(b: AreaBuilder) {
  */
 export function buildSign(b: AreaBuilder, x: number, z: number) {
   const y = terrainHeight(x, z);
-  const wood = surf('wood', 0xb07a44, 0x6a4824), dark = surf('wood', 0x8a5e34, 0x4a3016), paper = surf('plaster', 0xfaf0d2, 0xbeb28c), ink = mat(0x3a2a1e), seal = mat(0xc23b2a, 0x5a1a10);
-  // (Emissive, because a sign faces the spawn, often away from the sun, and would sit in gloom.)
-  const g = new THREE.Group();
+  const g = buildSignModel(Math.floor(Math.abs(x * 31 + z * 17)) + 7).root;
   g.position.set(x, y, z);
   g.rotation.y = Math.atan2(SPAWN.x - x, SPAWN.z - z);
-  const part = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
-    const me = new THREE.Mesh(geo, m);
-    me.position.set(px, py, pz);
-    g.add(me);
-    return me;
-  };
-  part(new THREE.BoxGeometry(0.26, 2.1, 0.2), dark, 0, 1.05, -0.12); // behind the board
-  part(new THREE.BoxGeometry(1.8, 1.1, 0.12), wood, 0, 1.6, 0.02);
-  part(new THREE.BoxGeometry(1.95, 0.1, 0.22), dark, 0, 2.2, 0.02); // cap
-  part(new THREE.BoxGeometry(1.5, 0.86, 0.04), paper, 0, 1.6, 0.09);
-  // Scribbled lines: a few short dashes per row, widths picked from a hash of the position.
-  let h = Math.floor(Math.abs(x * 31 + z * 17)) + 7;
-  const next = () => ((h = (h * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
-  for (let row = 0; row < 4; row++) {
-    let px = -0.62;
-    const py = 1.9 - row * 0.16;
-    while (px < 0.55) {
-      const w = 0.12 + next() * 0.28;
-      if (px + w > 0.66) break;
-      part(new THREE.BoxGeometry(w, 0.05, 0.02), ink, px + w / 2, py, 0.12);
-      px += w + 0.07 + next() * 0.06;
-    }
-  }
-  part(new THREE.BoxGeometry(0.14, 0.14, 0.02), seal, 0.52, 1.28, 0.12).rotation.z = Math.PI / 4;
   b.dynamic(g);
   b.cylinder(x, y + 1.0, z, 1.0, 0.3, Layer.Prop);
 }

@@ -52,12 +52,12 @@
     "triangles": 277000
   },
   "contact": {
-    "calls": 560,
+    "calls": 550,
     "triangles": 33000
   },
   "door": {
-    "calls": 60,
-    "triangles": 216000
+    "calls": 50,
+    "triangles": 265000
   },
   "dungeon": {
     "calls": 1400,
@@ -128,8 +128,8 @@
     "triangles": 258000
   },
   "mill": {
-    "calls": 340,
-    "triangles": 336000
+    "calls": 270,
+    "triangles": 337000
   },
   "night": {
     "calls": 450,
@@ -151,9 +151,13 @@
     "calls": 520,
     "triangles": 266000
   },
+  "props": {
+    "calls": 10,
+    "triangles": 1300
+  },
   "ruins": {
-    "calls": 500,
-    "triangles": 338000
+    "calls": 370,
+    "triangles": 337000
   },
   "sallowmere": {
     "calls": 820,

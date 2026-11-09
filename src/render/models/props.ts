@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { bakeRig } from '../bakeRig';
-import { bevelBox, crevice, extrudePath, kitMesh, merge, paint, paintRegion, place, type Vec3 } from '../kit';
+import { bevelBox, crevice, extrudePath, kitMesh, lathe, merge, paint, paintRegion, place, type Vec3 } from '../kit';
 import { uniqueMat, uniqueSurf, surf } from '../materials';
 import { pal } from '../palette';
 import { glow, heartGeometry, shieldModel } from '../shapes';
@@ -55,48 +55,6 @@ export function buildChest(locked = false): Model<{ lid: THREE.Group; padlock: T
   return bakeRig({ root, joints: { lid, padlock }, flashMats: [] }, { shared: true });
 }
 
-/**
- * A plank door on a hinge. It faces +z, hinged on its -x edge (`pivot` swings about it); `root` stands on the middle of the
- * door's bottom edge, so a house yaw turns it in place.
- */
-export function buildHingedDoor(width = 1.44, height = 2.3, color = 0x4a2e18): Model<{ pivot: THREE.Group }> {
-  const root = new THREE.Group();
-  const pivot = new THREE.Group();
-  pivot.position.x = -width / 2;
-  root.add(pivot);
-  const strap = surf('leather', 0x33200f);
-  const part = (geo: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => {
-    const me = new THREE.Mesh(geo, m);
-    me.position.set(px + width / 2, py, pz);
-    pivot.add(me);
-  };
-  part(new THREE.BoxGeometry(width, height, 0.14), surf('wood', color), 0, height / 2, 0);
-  for (const side of [-1, 1]) {
-    for (const px of [-width / 4, 0, width / 4]) part(new THREE.BoxGeometry(0.04, height, 0.02), strap, px, height / 2, side * 0.08);
-    for (const py of [0.45, height - 0.35]) part(new THREE.BoxGeometry(width - 0.24, 0.08, 0.03), strap, 0, py, side * 0.085);
-    part(faceted(new THREE.SphereGeometry(0.07, 6, 5)), surf('metal', 0xc9a227), width / 2 - 0.22, 1.1, side * 0.13);
-  }
-  return { root, joints: { pivot }, flashMats: [] };
-}
-
-/**
- * A stone slab (a door across a doorway, `width` along z and `height` tall, centred on the origin) with a spiral glyph on its
- * -x face. `glyphMat` is the glyph's colour: dark while the door sleeps, bright once it's awake.
- */
-export function buildStoneDoor(width = 4, height = 6.3): Model<{ slab: THREE.Mesh }> & { glyphMat: THREE.MeshBasicMaterial } {
-  const glyphMat = new THREE.MeshBasicMaterial({ color: 0x5ff2d6 });
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(0.6, height, width), surf('stone', 0x77736a));
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.12, 6, 18), glyphMat);
-  ring.rotation.y = Math.PI / 2;
-  ring.position.set(-0.32, 0.3, 0);
-  const dot = new THREE.Mesh(new THREE.OctahedronGeometry(0.3), glyphMat);
-  dot.position.set(-0.34, 0.3, 0);
-  slab.add(ring, dot);
-  const root = new THREE.Group();
-  root.add(slab);
-  return { root, joints: { slab }, flashMats: [], glyphMat };
-}
-
 /** A floating heart container: a chunky heart in a gold ring, with a soft pink glow. Centred on the origin. */
 export function buildHeartVessel(): Model<{ heart: THREE.Mesh }> {
   const heart = new THREE.Mesh(heartGeometry(0.22), uniqueMat(0xff3b5c, { emissive: 0x5a0d1a }));
@@ -141,4 +99,65 @@ export function buildBush(): Model<{ blob: THREE.Mesh }> {
   const root = new THREE.Group();
   root.add(blob);
   return { root, joints: { blob }, flashMats: [] };
+}
+
+/**
+ * A clay jar, a sword breaks it (`world/jars.ts`): 0.82 m across the belly, 1.1 m tall, standing on y = 0. A lathe with a banded
+ * belly, a dark flared lip round a hollow mouth, and two little lugs at the neck. Built with the kit and baked, so a jar is one
+ * mesh where the rough's was four.
+ */
+export function buildJar(): Model {
+  const clay = pal('clay', 2), clayDark = pal('clay', 1), mouth = pal('ink', 2);
+  const body = lathe([[0, 0], [0.24, 0.02], [0.36, 0.14], [0.41, 0.42], [0.37, 0.68], [0.21, 0.86], [0.2, 0.95], [0.27, 1.02], [0.27, 1.1], [0.17, 1.1], [0.14, 1.0], [0, 0.98]], 8);
+  const painted = paintRegion(paint(body, clay), (c, n) => {
+    if (n.y > 0.5 && c.y > 0.95) return mouth;
+    if (c.y > 0.96 || (c.y > 0.42 && c.y < 0.56 && c.x * c.x + c.z * c.z > 0.14) || c.y < 0.1) return clayDark;
+    return undefined;
+  });
+  const lugs = [-1, 1].map((s) => place(paint(bevelBox(0.1, 0.12, 0.07, 0), clayDark), s * 0.23, 0.9, 0));
+  const root = new THREE.Group();
+  root.add(kitMesh(crevice(merge(painted, ...lugs), { foot: 0.9 }), 'plaster'));
+  return bakeRig({ root, joints: {}, flashMats: [] }, { shared: true });
+}
+
+/**
+ * A signpost facing +z, standing on y = 0: a post behind a board of three planks under a little gabled cap, a paper notice with
+ * rows of scribbled ink and a red seal, and a few stones at its foot. `seed` picks the scribbles (the same hash as ever), so
+ * every sign reads differently and none moves the shared random numbers. The notice is lit from within a little (it faces the
+ * spawn, often away from the sun), so it is the one unbaked mesh, in `animated`.
+ */
+export function buildSign(seed = 7): Model {
+  const wood = pal('wood', 2), woodDark = pal('wood', 1), woodLight = pal('wood', 3), nail = pal('slate', 1);
+  const ink = pal('ink', 3), seal = pal('crimson'), stone = pal('stone', 2), stoneDark = pal('stone', 1);
+  const planks = [0.37, 0, -0.37].map((dy, i) => place(paint(bevelBox(1.8 - i * 0.03, 0.34, 0.12, 0), i === 1 ? woodLight : wood), i === 1 ? 0.02 : -0.01, 1.6 + dy, 0.02));
+  const post = place(paint(bevelBox(0.26, 2.1, 0.2, 0), woodDark), 0, 1.05, -0.12);
+  const cap = [-1, 1].map((s) => place(paint(bevelBox(1.95, 0.08, 0.16, 0), woodDark), 0, 2.24, s * 0.07, [s * 0.45, 0, 0]));
+  const nails = [-1, 1].flatMap((sx) => [-1, 1].map((sy) => place(paint(bevelBox(0.07, 0.07, 0.03, 0), nail), sx * 0.8, 1.6 + sy * 0.46, 0.09)));
+  const root = new THREE.Group();
+  root.add(kitMesh(merge(post, ...planks, ...cap, ...nails), 'wood'));
+
+  // The notice: a sheet, and its scribbles (two triangles each) from a hash of the seed.
+  const paperMat = uniqueSurf('plaster', pal('plaster', 3), { emissive: pal('plaster', 1) });
+  const paper = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.86), paperMat);
+  paper.position.set(0, 1.6, 0.0825);
+  root.add(paper);
+  let h = seed;
+  const next = () => ((h = (h * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  const bars: THREE.BufferGeometry[] = [];
+  for (let row = 0; row < 4; row++) {
+    let px = -0.62;
+    const py = 1.9 - row * 0.16;
+    while (px < 0.55) {
+      const w = 0.12 + next() * 0.28;
+      if (px + w > 0.66) break;
+      bars.push(place(paint(new THREE.PlaneGeometry(w, 0.05), ink), px + w / 2, py, 0.0875));
+      px += w + 0.07 + next() * 0.06;
+    }
+  }
+  bars.push(place(paint(new THREE.PlaneGeometry(0.14, 0.14), seal), 0.52, 1.28, 0.0885, [0, 0, Math.PI / 4]));
+  // Stones heaped round the post's foot.
+  const stones = [[-0.22, 0.1, 0.12, 0.3], [0.25, 0.08, 0.05, 0.5], [0.05, 0.07, 0.2, 0.15], [-0.05, 0.08, -0.26, 0.7]].map(([x, y, z, r], i) =>
+    place(paint(bevelBox(0.3, 0.2, 0.26, 0), i % 2 ? stone : stoneDark), x, y, z, [0.1, r, 0.08]));
+  root.add(kitMesh(crevice(merge(...bars, ...stones), { foot: 0.9 }), 'plaster'));
+  return bakeRig({ root, joints: {}, flashMats: [], animated: [paperMat] }, { shared: true });
 }

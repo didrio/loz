@@ -4,7 +4,8 @@ import { buildBellItem, buildDoll, buildFlask, buildKeyItem, buildShieldItem, bu
 import { buildGravelheart } from './gravelheart';
 import { buildLamplighter } from './lamplighter';
 import { buildGrassTuft, buildLoneOak, buildPine, buildRock, buildRoundTree } from './nature';
-import { buildBush, buildChest, buildGreatLantern, buildHeartVessel, buildHingedDoor, buildShieldPickup, buildStoneDoor } from './props';
+import { buildHingedDoor, buildStoneDoor } from './doors';
+import { buildBush, buildChest, buildGreatLantern, buildHeartVessel, buildJar, buildShieldPickup, buildSign } from './props';
 import { pal } from '../palette';
 import { buildSentinel } from './sentinel';
 import { buildShellback } from './shellback';
@@ -43,6 +44,8 @@ export const GOLDEN_SET: readonly string[] = [
   'tree', 'pine', 'rock', 'grass-tuft', 'lone-oak',
   'cottage-east', 'cottage-southwest', 'well', 'fence-section', 'lantern-post', 'barrel', 'crate',
   'mill', 'mill-sails', 'odo-stall', 'ruined-home',
+  // The rest of the prop set (T52); the chest and the crate are above.
+  'hinged-door', 'stone-door', 'jar', 'sign',
 ];
 
 export const ASSETS: readonly AssetEntry[] = [
@@ -56,8 +59,10 @@ export const ASSETS: readonly AssetEntry[] = [
   { id: 'hollow-lamplighter', kind: 'miniboss', tier: 'rough', build: buildLamplighter },
   { id: 'gravelheart', kind: 'boss', tier: 'rough', build: buildGravelheart },
   { id: 'chest', kind: 'prop', tier: 'final', build: () => buildChest(true), note: 'locked, with its padlock' },
-  { id: 'hinged-door', kind: 'prop', tier: 'rough', build: () => buildHingedDoor() },
-  { id: 'stone-door', kind: 'prop', tier: 'rough', build: () => buildStoneDoor(), note: 'the shrine\'s door size' },
+  { id: 'hinged-door', kind: 'prop', tier: 'final', build: () => buildHingedDoor() },
+  { id: 'stone-door', kind: 'prop', tier: 'final', build: () => buildStoneDoor(), note: 'the shrine\'s door size' },
+  { id: 'jar', kind: 'prop', tier: 'final', build: buildJar, note: 'JarField breaks it' },
+  { id: 'sign', kind: 'prop', tier: 'final', build: () => buildSign(), note: 'the signposts; the notice is lit from within' },
   { id: 'heart-vessel', kind: 'prop', tier: 'rough', build: buildHeartVessel },
   { id: 'shield-pickup', kind: 'prop', tier: 'rough', build: buildShieldPickup },
   { id: 'great-lantern', kind: 'prop', tier: 'rough', build: buildGreatLantern },

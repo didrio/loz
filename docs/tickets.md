@@ -52,17 +52,6 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
 
-### T52: Final pass: the prop set, rest of it (golden set 4)
-**Run:** auto · sonnet · high
-**Why:** The chest is approved; the door, jar, crate and sign finish the props that make any room look like a room.
-**Done when:**
-- Hinged door, stone door, jar, crate and sign as final builders in `render/models/props.ts` (split the file if it passes ~400 lines), matching the chest.
-- `tier: 'final'` in the registry; within budget; every colour a `pal()` name; built with the kit and `bakeRig`; the behaviour file untouched in the diff (silhouette, scale, joints, hurtboxes, timings frozen; ask the owner first if one must change).
-- Before/after renders (front, three-quarter, side, one in-game, Native and N64) shown to the owner. **Locked into the golden set (`GOLDEN_SET`, art.md's list with its reference renders) only when the owner approves.**
-**Read first:** props.ts `buildChest`, world/objects.ts and world/jars.ts (placement and joints used)
-**Verify:** `npm run check`; smoke `village jars shrine-keys`; contact sheet before and after.
-**Notes:** The crate is done in T51b (`buildCrate`, `render/models/village.ts`). A sign may not exist as a model yet: add it as rough first (the pipeline) only if something already places it; otherwise skip and say so.
-
 ### T53: Final pass: Pip, the NPC (golden set 5)
 **Run:** plan · opusplan · high
 **Why:** One NPC on the shared humanoid shows how every villager gets finished; groups follow.
