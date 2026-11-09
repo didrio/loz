@@ -68,16 +68,16 @@
     "triangles": 254000
   },
   "enemies": {
-    "calls": 700,
-    "triangles": 192000
+    "calls": 580,
+    "triangles": 265000
   },
   "entrance": {
     "calls": 1240,
     "triangles": 258000
   },
   "field": {
-    "calls": 680,
-    "triangles": 328000
+    "calls": 440,
+    "triangles": 352000
   },
   "gate": {
     "calls": 180,
@@ -92,8 +92,8 @@
     "triangles": 178000
   },
   "gorge": {
-    "calls": 560,
-    "triangles": 267000
+    "calls": 370,
+    "triangles": 345000
   },
   "gravelheart": {
     "calls": 1400,
@@ -108,8 +108,8 @@
     "triangles": 3100
   },
   "grove": {
-    "calls": 80,
-    "triangles": 293000
+    "calls": 60,
+    "triangles": 291000
   },
   "guard": {
     "calls": 710,
@@ -144,8 +144,8 @@
     "triangles": 268000
   },
   "northpass": {
-    "calls": 250,
-    "triangles": 363000
+    "calls": 220,
+    "triangles": 415000
   },
   "opening": {
     "calls": 650,
@@ -236,8 +236,8 @@
     "triangles": 334000
   },
   "villagers": {
-    "calls": 280,
-    "triangles": 335000
+    "calls": 260,
+    "triangles": 334000
   },
   "wardenIntro": {
     "calls": 830,

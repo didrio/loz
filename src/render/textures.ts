@@ -148,6 +148,32 @@ export function finishTile(f: Float32Array) {
   return out;
 }
 
+/**
+ * Cells that tile: a jittered `g × g` grid of points, each pixel assigned to its nearest point (and told how far the second
+ * nearest is), measured with the axes scaled by `ax` and `ay` (`ax < 1` makes cells wider than tall). `dx` and `dy` are the pixel
+ * minus its cell's centre. Rock slabs and leaf clumps are drawn on it: `d2 - d1` is small along a cell's border.
+ */
+function cellField(n: number, g: number, rnd: () => number, ax = 1, ay = 1, jitter = 0.8) {
+  const s = n / g;
+  const px = Array.from({ length: g * g }, (_, k) => (k % g + 0.5 + (rnd() - 0.5) * jitter) * s);
+  const py = Array.from({ length: g * g }, (_, k) => (Math.floor(k / g) + 0.5 + (rnd() - 0.5) * jitter) * s);
+  const id = new Int16Array(n * n), d1 = new Float32Array(n * n), d2 = new Float32Array(n * n), dx = new Float32Array(n * n), dy = new Float32Array(n * n);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const i = y * n + x, gx = Math.floor(x / s), gy = Math.floor(y / s);
+    let best = 1e9, second = 1e9;
+    for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) {
+      const k = wrap(gy + oy, g) * g + wrap(gx + ox, g);
+      const cx = px[k] + Math.floor((gx + ox) / g) * n, cy = py[k] + Math.floor((gy + oy) / g) * n;
+      const d = Math.hypot((cx - x - 0.5) * ax, (cy - y - 0.5) * ay);
+      if (d < best) { second = best; best = d; id[i] = k; dx[i] = x + 0.5 - cx; dy[i] = y + 0.5 - cy; }
+      else if (d < second) second = d;
+    }
+    d1[i] = best;
+    d2[i] = second;
+  }
+  return { id, d1, d2, dx, dy, s };
+}
+
 /** Limewashed plaster: soft blotches, fine speckle and a few hairline cracks. */
 function plaster(n: number, rnd: () => number) {
   const f = fbmTile(n, 4, 4, 3, rnd);
@@ -313,27 +339,81 @@ function shingle(n: number, rnd: () => number) {
   return f;
 }
 
-/** Earth: clumps, speckle and a scatter of pebbles (light or dark, 1–2 texels). */
+/**
+ * Earth, 128 texels (4 m): clods in a few flat tones (contoured, not smooth), a sparse dither, pebbles with a lit top-left and a
+ * shadow under them, short grass tufts, and a few dry cracks. No per-texel noise: at this size it only turns to static.
+ */
 function ground(n: number, rnd: () => number) {
-  const f = fbmTile(n, 8, 8, 3, rnd);
-  for (let i = 0; i < f.length; i++) f[i] = f[i] + rnd() * 0.35;
-  for (let p = 0; p < n * 0.6; p++) {
-    const x = Math.floor(rnd() * n), y = Math.floor(rnd() * n);
-    const v = rnd() < 0.5 ? 0.45 : -0.45;
-    const big = rnd() < 0.4;
-    for (let dy = 0; dy <= (big ? 1 : 0); dy++) for (let dx = 0; dx <= (big ? 1 : 0); dx++) f[wrap(y + dy, n) * n + wrap(x + dx, n)] += v;
+  const base = fbmTile(n, 8, 8, 3, rnd);
+  const f = new Float32Array(n * n);
+  for (let i = 0; i < f.length; i++) {
+    f[i] = Math.round(base[i] / 0.08) * 0.08 + (rnd() < 0.06 ? (rnd() < 0.5 ? -0.07 : 0.07) : 0);
+  }
+  const at = (x: number, y: number) => wrap(y, n) * n + wrap(x, n);
+  for (let c = 0; c < 4; c++) { // dry cracks
+    let x = rnd() * n, y = rnd() * n, a = rnd() * Math.PI * 2;
+    const len = 14 + rnd() * 12;
+    for (let s = 0; s < len; s++) {
+      f[at(Math.floor(x), Math.floor(y))] -= 0.2;
+      a += (rnd() - 0.5) * 1.1;
+      x += Math.cos(a);
+      y += Math.sin(a);
+    }
+  }
+  for (let t = 0; t < n * 0.7; t++) { // grass tufts: a dark stem with a light tip
+    const x = Math.floor(rnd() * n), y = Math.floor(rnd() * n), len = 2 + Math.floor(rnd() * 2), lean = rnd() < 0.5 ? 0 : rnd() < 0.5 ? -1 : 1;
+    for (let k = 0; k < len; k++) f[at(x + (k > 1 ? lean : 0), y - k)] += k === len - 1 ? 0.2 : -0.14;
+  }
+  for (let p = 0; p < n * 0.45; p++) { // pebbles
+    const cx = Math.floor(rnd() * n), cy = Math.floor(rnd() * n), rx = 1 + Math.floor(rnd() * 2), ry = rnd() < 0.5 ? 1 : rx;
+    const tone = 0.12 + rnd() * 0.2;
+    for (let dy = -ry - 1; dy <= ry + 1; dy++) for (let dx = -rx - 1; dx <= rx + 1; dx++) {
+      const inside = (dx / (rx + 0.75)) ** 2 + (dy / (ry + 0.75)) ** 2 <= 1;
+      const under = !inside && ((dx - 1) / (rx + 0.75)) ** 2 + ((dy - 1) / (ry + 0.75)) ** 2 <= 1;
+      if (inside) f[at(cx + dx, cy + dy)] += tone + (dx + dy < -rx ? 0.14 : 0) - (dx + dy > rx ? 0.1 : 0);
+      else if (under) f[at(cx + dx, cy + dy)] -= 0.2; // the shadow it casts
+    }
   }
   return f;
 }
 
-/** Rock faces: broad patches crossed by ridged cracks. */
+/**
+ * Rock faces: angular slabs, wider than tall, each its own tone and each lit on its upper-left (its centre-to-corner gradient is
+ * stepped into flat bands, so it reads as facets, not a blur). Crevices between slabs are a gritty mid-dark that widens where
+ * the rock has worn; the rim facing the light is pale, the rim facing away is dark. Pits, pale flecks, a few hairline cracks and
+ * a face-wide stain. As with the stone, nothing is near-black: `finishTile` spends the contrast on the slabs.
+ */
 function rock(n: number, rnd: () => number) {
-  const base = fbmTile(n, 4, 4, 3, rnd);
-  const ridges = fbmTile(n, 6, 6, 2, rnd);
+  const cell = cellField(n, 4, rnd, 0.5, 1, 1.0);
+  const grain = fbmTile(n, 16, 16, 2, rnd);
+  const stain = fbmTile(n, 3, 3, 2, rnd);
+  const wear = fbmTile(n, 6, 6, 2, rnd);
+  const tones = Array.from({ length: 16 }, () => 0.42 + rnd() * 0.26);
   const f = new Float32Array(n * n);
   for (let i = 0; i < f.length; i++) {
-    const crack = Math.abs(ridges[i] - 0.5) < 0.025 ? -0.5 : 0;
-    f[i] = base[i] + crack + rnd() * 0.12;
+    const gap = cell.d2[i] - cell.d1[i];
+    const crevice = gap < 1.2 || (wear[i] > 0.68 && gap < 2.2);
+    if (crevice && !(wear[i] < 0.3 && gap > 1.0 && (i * 7) % 5 === 0)) { // now and then a crevice is closed up
+      f[i] = 0.21 + (grain[i] - 0.5) * 0.2 + (stain[i] - 0.5) * 0.15;
+      continue;
+    }
+    const lit = -(cell.dx[i] + cell.dy[i]) / (cell.s * 0.9); // + toward the upper left of the slab
+    const step = Math.round(Math.max(-1, Math.min(1, lit)) * 2) / 2;
+    let v = tones[cell.id[i]] + step * 0.09 + (grain[i] - 0.5) * 0.2 + (stain[i] - 0.5) * 0.15;
+    if (gap < 3.4) v += lit > 0 ? 0.07 : -0.08; // the rim toward the light, the rim away
+    f[i] = v;
+  }
+  const at = (x: number, y: number) => wrap(Math.floor(y), n) * n + wrap(Math.floor(x), n);
+  for (let p = 0; p < n * 0.3; p++) f[Math.floor(rnd() * n * n)] += rnd() < 0.7 ? -0.14 : 0.1; // pits and pale flecks
+  for (let c = 0; c < 3; c++) { // hairline cracks
+    let x = rnd() * n, y = rnd() * n, a = rnd() * Math.PI * 2;
+    const len = 6 + rnd() * 8;
+    for (let s = 0; s < len; s++) {
+      f[at(x, y)] -= 0.18;
+      a += (rnd() - 0.5) * 0.9;
+      x += Math.cos(a);
+      y += Math.sin(a);
+    }
   }
   return f;
 }
@@ -362,16 +442,29 @@ function bark(n: number, rnd: () => number) {
   return f;
 }
 
-/** Foliage: soft blotches of light and shade with scattered leaf clumps, 2–4 texels across. Gentle: it must never read as noise. */
+/**
+ * Foliage: leaf clumps about 8 texels across, each lit on its upper left and darker below, with a mid-dark shadow under each clump's far rim
+ * (broken here and there) and a few pale leaf glints. A canopy-wide slow light and shade under it. Gentle: it must never read as
+ * noise, so the clumps stay in a narrow range of tones and the glints are short.
+ */
 function foliage(n: number, rnd: () => number) {
-  const f = fbmTile(n, 4, 4, 2, rnd);
-  for (let i = 0; i < f.length; i++) f[i] = f[i] * 0.8 + rnd() * 0.08;
-  for (let c = 0; c < n * 0.9; c++) {
-    const cx = Math.floor(rnd() * n), cy = Math.floor(rnd() * n);
-    const v = rnd() < 0.5 ? 0.3 : -0.3, r = 1 + Math.floor(rnd() * 2);
-    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-      if (dx * dx + dy * dy <= r * r + 1) f[wrap(cy + dy, n) * n + wrap(cx + dx, n)] += v;
-    }
+  const cell = cellField(n, n / 8, rnd, 1, 1, 0.9);
+  const slow = fbmTile(n, 3, 3, 2, rnd);
+  const wear = fbmTile(n, 8, 8, 2, rnd);
+  const tones = Array.from({ length: cell.id.length }, () => 0.45 + rnd() * 0.18);
+  const f = new Float32Array(n * n);
+  for (let i = 0; i < f.length; i++) {
+    const gap = cell.d2[i] - cell.d1[i];
+    const lit = -(cell.dx[i] + cell.dy[i]) / (cell.s * 0.7);
+    if (gap < 2 && lit < 0.2 && wear[i] < 0.7) { f[i] = 0.3 + (slow[i] - 0.5) * 0.15; continue; } // the shadow under a clump's far rim
+    const step = Math.round(Math.max(-1, Math.min(1, lit)) * 2) / 2;
+    let v = tones[cell.id[i]] + step * 0.1 + (slow[i] - 0.5) * 0.25;
+    f[i] = v;
+  }
+  for (let g = 0; g < n * 0.5; g++) { // a glint: two texels of a leaf catching the light, lying along a diagonal
+    const x = Math.floor(rnd() * n), y = Math.floor(rnd() * n), s = rnd() < 0.5 ? 1 : -1;
+    f[wrap(y, n) * n + wrap(x, n)] += 0.2;
+    f[wrap(y + s, n) * n + wrap(x + 1, n)] += 0.14;
   }
   return f;
 }
@@ -400,32 +493,71 @@ function metal(n: number, rnd: () => number) {
   return f;
 }
 
-/** Thatch: straw strands running downhill (v), bundled in bands across the slope, ragged at each band's lower edge. */
+/**
+ * Thatch: straw laid in overlapping bundles down the slope (v runs downhill). Each bundle is 12-18 texels tall with a ragged lower
+ * edge that sags a few texels along u; straws are 1-3 texels wide, each its own tone, and drift a texel sideways as they run.
+ * The bundle below starts in the shadow of the one above, and its own hanging ends catch the light. Stray straws lie across.
+ */
 function thatch(n: number, rnd: () => number) {
-  const strands = fbmTile(n, 28, 3, 2, rnd);
+  const grain = fbmTile(n, 24, 6, 2, rnd);
   const f = new Float32Array(n * n);
-  const band = 16;
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const inBand = y % band;
-    const ragged = (rnd() - 0.5) * 2.4;
-    const edge = inBand + ragged > band - 2 ? -0.35 : inBand < 2 ? 0.2 : 0;
-    f[y * n + x] = 0.4 + strands[y * n + x] * 0.6 + (inBand / band) * 0.15 + edge;
+  const heights = cuts(n, 12, 18, rnd);
+  const tops: number[] = [];
+  let acc = 0;
+  for (const h of heights) { tops.push(acc); acc += h; }
+  const sags = heights.map(() => { const s = periodicNoise(n, 6, 1, rnd); return Array.from({ length: n }, (_, x) => Math.round((s[x] - 0.5) * 5)); });
+  const bundles = heights.map(() => {
+    const tone: number[] = [], first: boolean[] = [];
+    for (const w of cuts(n, 1, 3, rnd)) { const t = 0.3 + rnd() * 0.5; for (let k = 0; k < w; k++) { tone.push(t); first.push(k === 0); } }
+    return { tone, first, drift: rnd() < 0.5 ? -1 : 1 };
+  });
+  for (let x = 0; x < n; x++) {
+    for (let bi = 0; bi < heights.length; bi++) {
+      const top = tops[bi] + sags[bi][x];
+      const next = bi + 1 < heights.length ? tops[bi + 1] + sags[bi + 1][x] : n + tops[0] + sags[0][x];
+      const h = next - top, b = bundles[bi];
+      for (let ly = 0; ly < h; ly++) {
+        const i = wrap(top + ly, n) * n + x;
+        const xs = wrap(x + b.drift * Math.floor(ly / 5), n);
+        let v = 0.3 + b.tone[xs] * 0.5 + (grain[i] - 0.5) * 0.25;
+        if (b.first[xs]) v -= 0.08; // the gap between two straws
+        if (ly === 0) v -= 0.3; // under the bundle above
+        else if (ly === 1) v -= 0.14;
+        else if (ly === h - 1) v += 0.14; // the hanging ends
+        f[i] = v;
+      }
+    }
+  }
+  for (let s = 0; s < n * 0.6; s++) { // stray straws
+    const x = Math.floor(rnd() * n), y = Math.floor(rnd() * n), len = 3 + Math.floor(rnd() * 3), dir = rnd() < 0.5 ? -1 : 1, light = rnd() < 0.6;
+    for (let k = 0; k < len; k++) f[wrap(y + (k >> 1), n) * n + wrap(x + dir * k, n)] += light ? 0.2 : -0.16;
   }
   return f;
 }
 
-/** Cloth: a plain weave (fine warp and weft threads crossing), a few slubs, and a seam fold every half metre. */
+/**
+ * Cloth: a plain weave drawn in 2-texel threads (a texel-fine weave shimmers; this one reads as cloth up close and as a tone from
+ * far), each thread its own tone, soft folds stepped into flat bands, a few slubs, and a hem seam every half metre: a mid-dark
+ * fold with a dashed stitch beside it.
+ */
 function cloth(n: number, rnd: () => number) {
-  const f = new Float32Array(n * n);
+  const half = n / 2;
+  const warp = Array.from({ length: half }, () => rnd() - 0.5), weft = Array.from({ length: half }, () => rnd() - 0.5);
   const lump = fbmTile(n, 4, 4, 2, rnd);
+  const f = new Float32Array(n * n);
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const weave = (x + y) % 2 === 0 ? 0.05 : -0.05; // over-under
-    f[y * n + x] = 0.55 + weave + (lump[y * n + x] - 0.5) * 0.3 + (rnd() - 0.5) * 0.08;
-    if (x % (n / 2) === 0) f[y * n + x] -= 0.25; // the seam
+    const tx = x >> 1, ty = y >> 1, over = (tx + ty) % 2 === 0;
+    const fold = Math.round(Math.sin((Math.PI * 4 * (x + 2 * y)) / n) * 2) / 2; // diagonal soft folds, periodic in the tile
+    let v = 0.55 + (over ? 0.04 : -0.04) + (over ? warp[tx] : weft[ty]) * 0.09 + (lump[y * n + x] - 0.5) * 0.25 + fold * 0.06;
+    const sx = x % half;
+    if (sx === 0) v -= 0.1; // the seam
+    else if (sx === 1) v += 0.05;
+    else if (sx === 3 && y % 4 < 2) v += 0.14; // a stitch every four texels
+    f[y * n + x] = v;
   }
-  for (let s = 0; s < 10; s++) { // slubs: a short thicker thread
+  for (let s = 0; s < 8; s++) { // slubs: a short thicker thread
     const sx = Math.floor(rnd() * n), sy = Math.floor(rnd() * n), len = 3 + Math.floor(rnd() * 4);
-    for (let k = 0; k < len; k++) f[wrap(sy, n) * n + wrap(sx + k, n)] += 0.2;
+    for (let k = 0; k < len; k++) f[wrap(sy, n) * n + wrap(sx + k, n)] += 0.15;
   }
   return f;
 }
@@ -474,20 +606,51 @@ function skin(n: number, rnd: () => number) {
   return f;
 }
 
-/** Scales: rows of overlapping rounded scales (8 × 6 texels), every other row shifted half a scale, each lit on top and dark at its lower edge. */
+/**
+ * Scales: rows of overlapping shield-shaped scutes (5-7 texels of row, 7-10 wide, so no two rows line up). Each scute reaches two
+ * texels into the row below with a rounded lower edge, casts a one-texel shadow on what it lies over, and has a lit keel down the
+ * middle, a lit left half, a shaded right half and a pale lower rim. Rows are drawn bottom-up so upper scutes lie on lower ones
+ * (the last row's overlap wraps onto the first). The odd scale is worn pale or chipped. 1.5 m tile (the Shellback's shell).
+ */
 function scales(n: number, rnd: () => number) {
-  const w = 8, h = 6;
+  const grain = fbmTile(n, 12, 12, 2, rnd);
+  const stain = fbmTile(n, 2, 2, 2, rnd);
   const f = new Float32Array(n * n);
-  const tint = periodicNoise(n, n / w, n / h, rnd) // 6 × 8 lattice at n = 48;
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    const row = Math.floor(y / h), yy = y % h, xx = (x + (row % 2) * (w / 2)) % w;
-    let v = 0.5 + (tint[y * n + x] - 0.5) * 0.25 - yy * 0.03;
-    if (yy <= 1) v += 0.18; // the lit upper edge
-    if (xx === 0) v -= 0.22; // the overlap beside it
-    if (yy === h - 1) v -= 0.35; // the shadow under the lower edge
-    else if (yy === h - 2 && (xx === 0 || xx === w - 1)) v -= 0.3; // the rounded corners
-    f[y * n + x] = v + (rnd() - 0.5) * 0.04;
+  for (let i = 0; i < f.length; i++) f[i] = 0.3 + (grain[i] - 0.5) * 0.15;
+  const rows: { top: number; h: number; x0: number; scutes: { w: number; tone: number; worn: boolean; chip: number }[] }[] = [];
+  let top = 0;
+  for (const h of cuts(n, 5, 7, rnd)) {
+    const scutes = cuts(n, 7, 10, rnd).map((w) => ({ w, tone: 0.42 + rnd() * 0.28, worn: rnd() < 0.15, chip: rnd() < 0.12 ? (rnd() < 0.5 ? 1 : w - 2) : -1 }));
+    rows.push({ top, h, x0: Math.floor(rnd() * n), scutes });
+    top += h;
   }
+  const drawRow = (r: (typeof rows)[number], wrapOnly: boolean) => {
+    let x0 = r.x0;
+    for (const s of r.scutes) {
+      const key = Math.floor(s.w / 2), mid = (s.w - 1) / 2;
+      for (let lx = 0; lx < s.w; lx++) {
+        const round = Math.round(3 * ((lx - mid) / (mid + 0.5)) ** 2); // the lower edge curves up toward the sides
+        const depth = r.h + 2 - round - (lx === s.chip ? 1 : 0);
+        const x = wrap(x0 + lx, n);
+        if (!wrapOnly || r.top + depth + 1 > n) {
+          const sh = r.top + depth; // the shadow it casts on the scute below
+          if (!wrapOnly || sh >= n) f[wrap(sh, n) * n + x] -= 0.2;
+        }
+        for (let ly = 0; ly < depth; ly++) {
+          if (wrapOnly && r.top + ly < n) continue;
+          const i = wrap(r.top + ly, n) * n + x;
+          let v = s.tone + (grain[i] - 0.5) * 0.22 + (stain[i] - 0.5) * 0.15 + (lx < key ? 0.04 : lx > key ? -0.05 : 0.08);
+          if (ly === depth - 1) v += 0.1; // the lower rim
+          if (lx === 0 || lx === s.w - 1) v -= 0.1; // where it meets the scute beside
+          if (s.worn && grain[i] > 0.55) v += 0.1;
+          f[i] = v;
+        }
+      }
+      x0 += s.w;
+    }
+  };
+  for (let k = rows.length - 1; k >= 0; k--) drawRow(rows[k], false);
+  drawRow(rows[rows.length - 1], true);
   return f;
 }
 

@@ -49,7 +49,7 @@ describe('generated tiles', () => {
   });
 
   // Owner's call, 2026-11-09: perfect dark lines read as a grid and cheap. Joints must wander, wear and stay off the extremes.
-  it.each(['stone', 'planks', 'shingle'] as TileId[])('%s has no ruler-straight dark joint across the whole tile, and no clamped black', (id) => {
+  it.each(['stone', 'planks', 'shingle', 'rock', 'scales', 'thatch', 'cloth'] as TileId[])('%s has no ruler-straight dark joint across the whole tile, and no clamped black', (id) => {
     const n = TILE_SIZE[id], t = drawTile(id);
     const mean = t.reduce((a, v) => a + v, 0) / t.length;
     const sd = Math.sqrt(t.reduce((a, v) => a + (v - mean) ** 2, 0) / t.length);

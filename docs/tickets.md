@@ -62,17 +62,6 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 **Read first:** pipeline.md "The rig convention"; combat.md (boss fairness rules); `render/models/gravelheart.ts` (the rig half); `render/models/wren.ts` (how its swings keep key angles with a pull-back and overshoot that are zero there).
 **Verify:** `npm run check`; smoke `shrine-boss`; look `gravelheart gravelheart2` (looker). The owner plays the fight.
 
-### T61: Texture pass: bring every tile up to the brick standard
-**Run:** auto · sonnet · high
-**Why:** The owner's call (2026-11-09) is that textures should look like well-done low-resolution pixel art: realistic in what they suggest, clearly pixelated. The stone, planks, shingle and metal tiles were redrawn to that bar (the "brick redraw"); art.md "Texture recipe" is the rule. The rest of the tiles in `render/textures.ts` weren't judged against it.
-**Done when:**
-- Redrawn to the recipe, in this order of need (a contact sheet of all tiles showed these as weakest): **rock** (flat grey blobs with dark outlines; it is the dungeon flagstone floors, cave walls and cliff faces, so the most seen), **scales** (a perfectly regular grid), **foliage** (soft blobs and round dots). Then **ground** (soft, low structure), **thatch** (ruled straight bands), **cloth** (regular weave), and **metal** if it still reads flat. Plaster, bark, hide, leather and skin are fine: leave them unless the sheet shows otherwise.
-- Block size, `TILE_SIZE`, `TILE_METRES` and every model untouched: only the drawing changes. A seam/joint test like the one in `textures.test.ts` for any tile with joints or bands; the generic tile tests pass.
-- Judged on **big lit faces seen close** as well as at play distance (the brick redraw first made a nearby pillar worse than the old tile, see the render.md note); no moire or shimmer; Native and N64.
-**Read first:** art.md "Texture recipe"; render.md "Textures"; `render/textures.ts` (the `stone`, `planks` and `shingle` drawings are the examples).
-**Verify:** `npm run check`; looker on `dungeon bells shrineHall village gate landmarks gorge northpass` (the scenes that show rock, foliage, roofs and scales; Native and `--display n64`), against shots taken first; a before/after PNG of each tile by a scratch vitest (as the brick redraw did).
-**Notes:** Sallowmere stands empty, nothing to check there. The Shellback's shell (scales) is seen in the `shellback` scene. No gameplay changes, so no smoke.
-
 ### T58: Measure and cut the phone's frame cost (Native, shadows, baked light)
 **Run:** auto · opus · high
 **Why:** On the owner's phone, Native with Shadows and baked light on plays poorly, and Performance (pixel ratio 1) looks noticeably worse, so most players will want Native. A first blind pass cut Native to 2× on touch, no multisampling there and a 1024 shadow map; nobody has measured what it bought or where the rest goes.
