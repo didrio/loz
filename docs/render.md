@@ -48,12 +48,60 @@ One **Display** setting (Settings, `Settings.display`): **Native** (0, the defau
 An **experiment to inform a decision** (owner, 2026-11-09): how much of a "modern" look comes from lighting and how much from
 models. It breaks art.md's rendering rules on purpose (PBR, SSAO, tone mapping) and **art.md is unchanged**. **Modern lighting is now on by default** (owner's call, 2026-11-09, below); the rest is off. All of it is in
 **Dev → Look experiment (T62)** (never saved; only a page load resets tweaks, and the pinned Default switch shows the defaults: engine.md "Defaults and reset"):
-- **Barrels**: built by the `lookExperiment` builder Thistledown leaves on its dynamic group (`world/overworld/village.ts`), beside today's barrel at the clutter spot
-  (4, 9): the photoreal barrel (`realBarrel.ts`, 1.7×, ~0.4 M triangles) and the **modern-stylized** one (`modernBarrel.ts`, today's
+- **Barrels**: built by the `lookExperiment` builder Thistledown leaves on its dynamic group (`world/overworld/village.ts`), north of today's barrel at the clutter spot
+  (4, 9; layout in the T65 bullet): the photoreal barrel (`realBarrel.ts`, 1.7×, ~0.4 M triangles) and the **modern-stylized** one (`modernBarrel.ts`, today's
   size, ~2.8k triangles, smooth and rounded, Standard materials with a small grain shader). **Nothing is made until switched on**
   (built once, lazily; `ModernLook` makes its own objects lazily too): every three.js object draws random numbers for its id, so
   even an empty hidden Group would shift the seeded look shots. The shipped scene, baselines and budgets don't see any of it. No colliders (layout freeze). Both wear their own
   sky cube (`skyEnv.ts`, `userData.ownEnv`).
+- **T65: how close to photoreal a phone allows** (owner, 2026-11-09: "everything but the ground at this standard, 60 fps on a
+  2–3-year-old phone"). Three more barrel types, built at the game barrel's size (1 m, 0.48 m belly) on one
+  generated body (`barrelBody.ts`: separate staves with V-grooves, 4 hoops, a 5-board head, a bung, one UV atlas, the photoreal
+  shader's attributes): **live** (the photoreal shaders on every pixel), **baked** (the same shaders run **once** into three
+  1024² textures: colour, roughness/metalness, an object-space normal; then a plain Standard material, one draw call;
+  `barrelBake.ts`) and **bakedRich** (the same baked, on a 3.4× richer shape: rounded stave edges, rounder hoops, rivets).
+  The bake draws the body flat in its atlas (each vertex at its uv), so the shader's own anti-aliasing fits the texel size, then
+  dilates each chart into the gutters. Look scene `modernBarrels` (testing.md).
+  **Layout (owner, after the first renders):** every experiment barrel at the photoreal one's size (1.615 m: its 0.95 m × 1.7;
+  "every barrel in the game should be the larger one's size", for T67), a **row of four per type** north of today's barrel,
+  nearest first: baked, bakedRich, live, modern, photoreal (rows 3 m apart, barrels 2.2 m). The dev panel has a **switch per type**
+  (Barrels: modern / live / baked / baked rich / photoreal; `BARREL_SWITCH`), each type's row built the first time it is switched
+  on (clones share geometry, materials and the bake), so a phone can be timed one type at a time by walking closer; touch
+  opens the dev panel with the **Dev** button beside ☰ (engine.md).
+  **Budget (owner's call, 2026-11-09):** a prop ≤5k triangles, 1–2 draw calls, its surface baked; 60 of them at play distance
+  plus one close-up add ≤1.5 ms on the M3 Pro at phone size (a phone's GPU taken as ~4× slower, so ≈6 ms of a 16.6 ms frame; the
+  ×4 is an assumption until T58 measures a phone).
+  **What carries the look** (the A/B on the photoreal barrel, noon close-up):
+
+  | Taken away | Difference |
+  |---|---|
+  | The per-pixel surface (flat wood and iron instead) | **Huge**: a grey-tan barrel with black bands, the game's own flat look |
+  | The bump (relief) | Barely visible: the hoops a little flatter |
+  | Varied roughness and metalness (one value each) | Barely visible: a duller sheen on the hoops |
+  | Its shape (the 0.4 M-triangle staves → the 4.4k body, same surface) | Small: baked reads almost like it; the photoreal one still has more contrast and specular, and its 1.7× size shows more detail |
+  | 3.4× more shape (bakedRich vs baked) | Small: a rounder belly, prouder hoops; rivets and rounded edges don't show |
+  | 1024² → 512² textures | None visible up close |
+
+  So **the surface's colour carries the look**, and a baked texture keeps it. **Cost** (`npm run look -- modernBarrels`, M3 Pro,
+  modern lighting at the game's defaults, noon, every barrel at the photoreal one's 1.615 m; Δ against the same frame without
+  the barrel; a single close-up is within the noise, ±0.1 ms, except where shown):
+
+  | Barrel | Triangles | Draw calls | Textures | Close-up Δms (phone / 1080p) | 60 at play distance Δms (phone / 1080p) | Budget |
+  |---|---|---|---|---|---|---|
+  | modern | 2,784 | 2 | 0 | ~0 / ~0 | 0.48 / 0.73 | yes |
+  | live | 4,360 | 2 | 0 | 1.55 / 2.23 | 8.38 / 10.23 | no (≈6× the budget) |
+  | **baked** | 4,360 | 1 | 16 MB (4 at 512²) | ~0 / ~0 | 0.83 / 0.75 | **yes** |
+  | bakedRich | 14,752 | 1 | 16 MB | ~0 / ~0 | 1.13 / 1.15 | ms yes, triangles no |
+  | photoreal | 475,824 | 3 | 0 | 6.73 / 8.70 | ≈130 / ≈170 (10 measured) | no |
+
+  (At the game barrel's 1 m size, the first run: baked 0.35 + 0.58 ms at phone size, live 1.72 + 5.45.)
+  **Bake time:** the first bake 2.2 s (nearly all compiling the photoreal shader once), each one after ~85–105 ms, on the M3 Pro; a
+  phone compiles slower, so bakes belong behind a load screen or in idle frames. **Memory** is the real limit: 16 MB per prop
+  *type* at 1024², 4 MB at 512² (RGBA8 + mipmaps, 3 maps); 512² showed no loss at a close-up.
+  **Known flaws:** faint pale hairlines between staves on the baked ones up close (most likely filtering averaging the two
+  staves' sloped edge normals at each groove: inset each stave's uv by a texel, or bake the groove darker); no contact shadow
+  under props at noon (corner shade is off by default); the heads read murky and dark. At play distance live, baked and
+  bakedRich can't be told apart.
 - **Modern lighting** (`modernLook.ts`, `ModernLook`; never in N64): every `MeshLambertMaterial` in the scene is swapped for a cached
   `MeshStandardMaterial` twin (`twinOf`: colour and emissive shared by reference so flashes show, the surface patch carried over, metal
   gets metalness), rescanned every 0.25 s; `scene.environment` is a PMREM painted from the sky dome's colours (indoors the hemisphere
@@ -72,7 +120,7 @@ models. It breaks art.md's rendering rules on purpose (PBR, SSAO, tone mapping) 
   **The grade** (`withGrade`, in three's output pass, so no extra pass): **Contrast** (a power on each channel: darker darks, the same white) and **Saturation** (around each pixel's own grey), both 1.00 by default (no change). Why it exists: **AgX** keeps colours natural (bright saturated colours drift toward white instead of turning neon), but its curve lifts the darks and drains the colour, so the frame stays as bright yet looks washed out. Measured on a noon village frame: Neutral darkest-10% 69, saturation 103; AgX 96 and 57; AgX with Contrast 1.35, Saturation 1.4 (Blender's own "Punchy" look on top of AgX) 65 and 110, but 15% darker overall, so raise Exposure with it.
   there before deciding. `npm run look -- modernLook` re-measures and shoots the comparison.
 - **To remove it:** delete `render/experiments/`, the `lookExperiment` block in `village.ts`, the `ModernLook` lines in `game/game.ts`,
-  `domeColors` in `sky.ts` if nothing else reads it, `embervaleLook` in `main.ts`, the submenu in `pauseMenu.ts`, the `modernLook` look scene.
+  `domeColors` in `sky.ts` if nothing else reads it, `embervaleLook` in `main.ts`, the submenu in `pauseMenu.ts`, the `modernLook` and `modernBarrels` look scenes.
 
 ## Textures (`render/textures.ts`, T19)
 

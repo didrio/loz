@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T64**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T69**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -52,17 +52,25 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
 
-### T65: Explore barrels between the modern-stylized and the photoreal one, within a phone's budget
-**Run:** plan · opusplan · high
-**Why:** The owner finds the photoreal barrel (`realBarrel.ts`: 30 real staves, forged hoops, ~0.4 M triangles, every pixel drawn by a procedural shader in metres) amazing, and the modern-stylized one (`modernBarrel.ts`: ~2.8k triangles, smooth, Standard materials with a small grain shader) decent but not nearly as good. Find out how close to the photoreal one a prop can get without costs that would hurt a phone, so a direction for "modern props" can be chosen.
+### T68: Time each barrel type on the owner's phone and pick the modern-prop direction
+**Run:** auto · sonnet · medium
+**Why:** T65's costs are from an M3 Pro, with a phone assumed ~4× slower. The owner tests the real thing on their phone (the GitHub Pages build: Dev button → Look experiment → one "Barrels: <type>" switch at a time, the Performance meter on) and picks the look that holds 60 fps; T67 builds on that choice.
 **Done when:**
-- **What carries the look, first:** a quick A/B of the photoreal barrel's ingredients (its shape detail, its per-pixel wood and iron, how its surface takes light: roughness, the hoops' metal) by swapping them between the two existing barrels, so the variants spend the budget where it shows. One short table in render.md.
-- **Two or three new barrels in between**, each a deliberate step toward the photoreal one, beside the existing three at the clutter spot (4, 9) behind the Barrels switch. For example: the photoreal shader on a low-poly body whose normals carry the stave and hoop detail; then a reduced photoreal shape (fewer segments, no per-stave solids) with the shader at fewer octaves.
-- **Each one's cost:** triangles, draw calls and ms per frame up close (`embervaleLook.cost`) at desktop and phone size (1688×780, ratio 2) in modern lighting, against a per-prop budget proposed in the plan (the plan names it; a phone must keep its frame rate with a scene full of such props).
-- **Renders for the owner:** all barrels side by side at noon and dusk, close up and at play distance (a `modernLook` look-scene addition), so they can pick a direction. Nothing outside `render/experiments/` and the scene changes; the chosen direction becomes a recipe ticket for modern props.
-**Read first:** render.md "Look experiment"; `render/experiments/realBarrel.ts`, `realBarrelGlsl.ts`, `modernBarrel.ts`, `skyEnv.ts`; the `lookExperiment` builder in `world/overworld/village.ts`; `scripts/look.mjs` `modernLook`.
-**Verify:** `npm run check`; `npm run look -- modernLook` (looker: the new barrels sit on the ground beside the others, nothing floats or z-fights); the cost table in the report.
-**Notes:** Owner (2026-11-09): "explore some more in-between options, maybe something even closer to the higher detail one without going into extremes that could hurt mobile." Plan-mode questions for the owner: shape or surface first, the phone budget per prop, and whether the winner should later replace the kit's look for props.
+- The owner's numbers per barrel type (fps or frame ms, how many on screen, the phone's model) and their pick are in render.md's T65 bullet; the "×4" assumption is replaced by the measured factor.
+- T67 is updated for the pick (or rewritten, if no type holds 60 fps: then the next step is cheaper surfaces, e.g. 512² bakes or fewer maps).
+**Read first:** render.md "Look experiment" (the T65 bullet); `docs/tickets.md` T67.
+**Verify:** nothing to build; docs only (`npm run check` still passes).
+**Notes:** Guide the owner step by step: open the Pages build on the phone, tap the screen, Dev, switch on the Performance meter; walk to the rows north of the square (nearest: baked, then baked rich, live, modern, photoreal); one type on at a time, photoreal last (half a million triangles each: it may stall the tab); "Copy performance" pastes the meter's numbers. Each type builds the first time it's switched on (a short hitch, not the frame rate). The local dev server is much slower than the built site: time on Pages.
+
+### T67: The recipe for modern props: a baked photoreal surface on a ≤5k body (draft: the owner confirms the direction first)
+**Run:** plan · opusplan · high
+**Why:** T65 found how close to photoreal a phone allows (and T68 times it on the owner's phone) (render.md "Look experiment", the T65 bullet): the photoreal barrel's look comes almost all from its per-pixel surface, and running that surface **once** into textures on a 4.4k-triangle body keeps it for ~1 ms per 60 props at phone size. The owner picks a direction from T65's renders (`npm run look -- modernBarrels`); if it's the baked barrel, this turns the experiment into a way to build any prop.
+**Done when:**
+- The owner's direction and its open calls are recorded in render.md and art.md: whether modern props replace the kit's prop look (left open in T65), and how they meet the palette and the N64 mode.
+- A plan, written as tickets, for a shared bake (any model's surface shader → its atlas textures, behind a load screen or idle frames, with a texture-memory budget per area; 1024² for hero props, 512² for clutter) and a first real prop through it (the village barrel), with the pipeline.md recipe that later props follow.
+**Read first:** render.md "Look experiment" (the T65 bullet: tables, budget, known flaws); `render/experiments/barrelBody.ts`, `barrelBake.ts`; pipeline.md (Rough → Final, the kit); art.md "Rendering rules".
+**Verify:** the owner approves the plan; nothing is built until then.
+**Notes:** **Owner's call (2026-11-09, after T65's renders): every barrel in the game is the photoreal one's size** (1.615 m tall, against today's 1 m). The village barrel's collider and `world/overworld/colliders.test.ts` change with it: that is a layout change, so plan it with the owner (paths, the clutter spots). T65's flaws to carry into the recipe: hairlines between staves on the baked barrels up close (filtering across the groove's two edge normals), no contact shadow under props at noon, murky heads. Shader compile is the bake's real cost (2.2 s once on the M3 Pro); memory is the limit (16 MB per prop type at 1024²). The ×4 phone factor waits on T58's real-phone measurement.
 
 ### T66: Look shots and budgets in the modern look (the game's default now)
 **Run:** auto · sonnet · high

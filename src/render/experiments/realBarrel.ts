@@ -40,7 +40,7 @@ const R = (y: number) => {
   return RH + (RB - RH) * (1 - s * s);
 };
 
-function mulberry(seed: number) {
+export function mulberry(seed: number) {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -52,13 +52,13 @@ function mulberry(seed: number) {
 }
 
 type V3 = [number, number, number];
-type Sample = { p: V3; attrs: Record<string, number[]> };
+export type Sample = { p: V3; attrs: Record<string, number[]> };
 
 /**
  * A (nu+1)×(nv+1) grid of vertices (or nu×… when wrapped) with smooth normals of its own, turned so they agree with
  * `outward(p)`. Each surface of a part is its own grid, so creases between them stay sharp.
  */
-function grid(nu: number, nv: number, at: (i: number, j: number) => Sample, outward: (p: THREE.Vector3) => THREE.Vector3, wrapU = false) {
+export function grid(nu: number, nv: number, at: (i: number, j: number) => Sample, outward: (p: THREE.Vector3) => THREE.Vector3, wrapU = false) {
   const cu = wrapU ? nu : nu + 1, cv = nv + 1;
   const pos: number[] = [];
   const attrs: Record<string, number[]> = {};
@@ -281,8 +281,70 @@ function patched(header: string, vertexDecl: string, vertexBody: string, fragmen
   return m;
 }
 
+/**
+ * The A/B (T65): which of the photoreal barrel's ingredients carry its look. `plain` drops the per-pixel surface for flat
+ * Standard wood and iron; `bump: false` keeps the colours but not the relief; `variedPbr: false` keeps colour and relief but
+ * gives every pixel the same roughness (and the iron one metalness).
+ */
+export type PhotorealOpts = { surface?: 'full' | 'plain'; bump?: boolean; variedPbr?: boolean };
+
+/** The uniforms the photoreal wood shader reads: stave thickness, 6 hoops (lower, upper edge), the bung and the head. */
+export type WoodUniforms = { uT: number; uHoops: [number, number][]; uBung: THREE.Vector4; uHead: THREE.Vector2; uH: number };
+
+/** The photoreal wood and iron materials (the shaders in `realBarrelGlsl.ts`), for any geometry carrying aWood/aInfo and aHoop. */
+export function photorealMaterials(u: WoodUniforms, opts: PhotorealOpts = {}): { wood: THREE.MeshStandardMaterial; iron: THREE.MeshStandardMaterial } {
+  const { surface = 'full', bump = true, variedPbr = true } = opts;
+  if (surface === 'plain') {
+    return {
+      wood: wearSkyCube(new THREE.MeshStandardMaterial({ color: new THREE.Color(0.3, 0.19, 0.11), roughness: 0.78, envMapIntensity: 0.5 })),
+      iron: wearSkyCube(new THREE.MeshStandardMaterial({ color: new THREE.Color(0.08, 0.075, 0.07), roughness: 0.62, metalness: 0.6, envMapIntensity: 0.5 })),
+    };
+  }
+  const key = `${bump ? 'b' : ''}${variedPbr ? 'v' : ''}`;
+  const bumpLine = (s: string) => (bump ? s.replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = bumpNormal(-vViewPosition, normal, bH, faceDirection);') : s);
+  const wood = patched(
+    WOOD_HEADER,
+    'attribute vec3 aWood; attribute vec4 aInfo; varying vec3 vWood; varying vec4 vInfo; varying vec3 vObj;',
+    'vWood = aWood; vInfo = aInfo; vObj = position;',
+    (s) => {
+      s = s.replace('#include <map_fragment>', '#include <map_fragment>\nvec3 bCol; float bRough; vec3 bH; barrelWood(bCol, bRough, bH); diffuseColor.rgb = bCol;');
+      if (variedPbr) s = s.replace('#include <roughnessmap_fragment>', 'float roughnessFactor = bRough;');
+      return bumpLine(s);
+    },
+    `realBarrelWood${key}`,
+    {
+      uT: { value: u.uT },
+      uHoops: { value: u.uHoops.map(([y0, y1]) => new THREE.Vector4(y0, y1, 0, 0)) },
+      uBung: { value: u.uBung },
+      uHead: { value: u.uHead },
+    },
+  );
+  const iron = patched(
+    IRON_HEADER,
+    'attribute vec4 aHoop; varying vec4 vHoop; varying vec3 vObj;',
+    'vHoop = aHoop; vObj = position;',
+    (s) => {
+      s = s.replace('#include <map_fragment>', '#include <map_fragment>\nvec3 bCol; float bRough; float bMetal; vec3 bH; barrelIron(bCol, bRough, bMetal, bH); diffuseColor.rgb = bCol;');
+      if (variedPbr) {
+        s = s
+          .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = bRough;')
+          .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = bMetal;');
+      }
+      return bumpLine(s);
+    },
+    `realBarrelIron${key}`,
+    { uH: { value: u.uH } },
+  );
+  if (!variedPbr) {
+    wood.roughness = 0.78;
+    iron.roughness = 0.62;
+    iron.metalness = 0.5;
+  }
+  return { wood, iron };
+}
+
 /** Builds the barrel, standing on its bottom at the origin. */
-export function buildRealBarrel(): THREE.Group {
+export function buildRealBarrel(opts: PhotorealOpts = {}): THREE.Group {
   const rnd = mulberry(20261109);
   const widths = Array.from({ length: N_STAVES }, () => 0.75 + rnd() * 0.5);
   const total = widths.reduce((a, b) => a + b, 0);
@@ -297,34 +359,13 @@ export function buildRealBarrel(): THREE.Group {
   wood.push(...buildHead(rnd), buildBung(bungAngle));
   const iron = HOOPS.flatMap(([y0, w], k) => buildHoop(y0, w, k, rnd));
 
-  const woodMat = patched(
-    WOOD_HEADER,
-    'attribute vec3 aWood; attribute vec4 aInfo; varying vec3 vWood; varying vec4 vInfo; varying vec3 vObj;',
-    'vWood = aWood; vInfo = aInfo; vObj = position;',
-    (s) => s
-      .replace('#include <map_fragment>', '#include <map_fragment>\nvec3 bCol; float bRough; vec3 bH; barrelWood(bCol, bRough, bH); diffuseColor.rgb = bCol;')
-      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = bRough;')
-      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = bumpNormal(-vViewPosition, normal, bH, faceDirection);'),
-    'realBarrelWood',
-    {
-      uT: { value: T },
-      uHoops: { value: HOOPS.map(([y0, w]) => new THREE.Vector4(y0, y0 + w, 0, 0)) },
-      uBung: { value: new THREE.Vector4(Math.atan2(Math.sin(bungAngle), Math.cos(bungAngle)), H / 2, 0.0222, RB) },
-      uHead: { value: new THREE.Vector2(HEAD_Y, R(HEAD_Y) - T) },
-    },
-  );
-  const ironMat = patched(
-    IRON_HEADER,
-    'attribute vec4 aHoop; varying vec4 vHoop; varying vec3 vObj;',
-    'vHoop = aHoop; vObj = position;',
-    (s) => s
-      .replace('#include <map_fragment>', '#include <map_fragment>\nvec3 bCol; float bRough; float bMetal; vec3 bH; barrelIron(bCol, bRough, bMetal, bH); diffuseColor.rgb = bCol;')
-      .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = bRough;')
-      .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = bMetal;')
-      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal = bumpNormal(-vViewPosition, normal, bH, faceDirection);'),
-    'realBarrelIron',
-    { uH: { value: H } },
-  );
+  const { wood: woodMat, iron: ironMat } = photorealMaterials({
+    uT: T,
+    uHoops: HOOPS.map(([y0, w]) => [y0, y0 + w]),
+    uBung: new THREE.Vector4(Math.atan2(Math.sin(bungAngle), Math.cos(bungAngle)), H / 2, 0.0222, RB),
+    uHead: new THREE.Vector2(HEAD_Y, R(HEAD_Y) - T),
+    uH: H,
+  }, opts);
 
   const root = new THREE.Group();
   root.name = 'realBarrel';

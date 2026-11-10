@@ -5,8 +5,9 @@ import { kitMesh } from '../../render/kit';
 import { buildMill, buildMillSails, buildStall, MILL_AXLE_Y, MILL_DOOR_TOP, millHub, millLamp } from '../../render/models/mill';
 import { buildBarrel, buildCottage, buildCrate, buildLanternPost, buildWell, COTTAGE, COTTAGE_WINDOW, fencePost, fenceRail, FENCE_RAILS, type CottageStyle } from '../../render/models/village';
 import { applySurface } from '../../render/textures';
+import { buildBakedBarrel, buildLiveBarrel } from '../../render/experiments/barrelBake';
 import { buildModernBarrel } from '../../render/experiments/modernBarrel';
-import { EXPERIMENT_BUILD } from '../../render/experiments/modernLook';
+import { EXPERIMENT_BUILD, type BarrelType } from '../../render/experiments/modernLook';
 import { buildRealBarrel } from '../../render/experiments/realBarrel';
 import type { AreaBuilder } from '../area';
 import { HOMES, MILL, MILL_BED, MILL_TOWER, STALL, terrainHeight, VILLAGE } from './layout';
@@ -235,24 +236,36 @@ export function buildVillage(b: AreaBuilder) {
     }
   });
 
-  // EXPERIMENT (T62, owner, 2026-11-09): the look-direction comparison. Beside today's barrel (clutter at 4, 9), a
-  // modern-stylized one and a photoreal one (1.7×: real size read small beside the game's chunky scale). Nothing is made
-  // until the Dev tab's Look experiment → Barrels is on (render/experiments/modernLook.ts calls this builder): not even a
-  // Group, since every three.js object draws random numbers for its id and would shift the seeded look shots. Not the art
-  // style, no colliders (the layout freeze); remove this and render/experiments/ to drop it (render.md "Look experiment").
-  b.dynamicGroup.userData[EXPERIMENT_BUILD] = () => {
-    const group = new THREE.Group();
-    const place = (o: THREE.Object3D, dx: number, dz: number, yaw: number) => {
-      const x = cx + dx, z = cz + dz;
-      o.position.set(x, terrainHeight(x, z) - 0.02, z);
-      o.rotation.y = yaw;
-      group.add(o);
+  // EXPERIMENT (T62, T65; owner, 2026-11-09): the look-direction barrels, a row of four per type north of today's barrel
+  // (clutter at 4, 9), nearest first: baked (the photoreal surface baked into textures once: the phone candidate), bakedRich
+  // (a richer shape, baked), live (the photoreal surface drawn every frame), modern-stylized, photoreal. All at the photoreal
+  // one's size (owner, T65: "every barrel should be the larger one's size"). Nothing is made until the Dev tab's Look
+  // experiment → Barrels picks a type (render/experiments/modernLook.ts calls this per type): not even a Group, since every
+  // three.js object draws random numbers for its id and would shift the seeded look shots. Not the art style, no colliders
+  // (the layout freeze); remove this and render/experiments/ to drop it (render.md "Look experiment").
+  b.dynamicGroup.userData[EXPERIMENT_BUILD] = (renderer: THREE.WebGLRenderer, type: BarrelType) => {
+    const SIZE = 0.95 * 1.7; // the photoreal barrel's height: a 0.95 m wine barrel at 1.7×
+    const ROW_DZ: Record<BarrelType, number> = { baked: 12, bakedRich: 15, live: 18, modern: 21, real: 24 };
+    const make = (): THREE.Object3D => {
+      const o = type === 'real' ? buildRealBarrel()
+        : type === 'modern' ? buildModernBarrel()
+        : type === 'live' ? buildLiveBarrel('standard')
+        : buildBakedBarrel(renderer, type === 'baked' ? 'standard' : 'rich', 1024);
+      o.scale.setScalar(type === 'real' ? 1.7 : SIZE); // the others are built 1 m tall
+      return o;
     };
-    const real = buildRealBarrel();
-    real.scale.setScalar(1.7);
-    place(real, 2.5, 9.3, 0.6);
-    place(buildModernBarrel(), 1.0, 9.6, 0.3);
-    return group;
+    const row = new THREE.Group();
+    row.name = type;
+    const first = make();
+    [-3.5, -1.3, 0.9, 3.1].forEach((dx, k) => {
+      const o = k === 0 ? first : first.clone(); // clones share geometry, materials and the bake
+      const x = cx + dx, z = cz + ROW_DZ[type];
+      o.name = `${type}-${k}`;
+      o.position.set(x, terrainHeight(x, z) - 0.02, z);
+      o.rotation.y = 0.2 + k * 1.3;
+      row.add(o);
+    });
+    return row;
   };
 
   return { windowMat, lanternMat, haloMat, lights, blades, millDoor };

@@ -744,7 +744,7 @@ const SCENES = {
       g.state.set('valleyOpen');
       g.player.invuln = 1e6;
       // T62's comparison as it was measured: corner shade, bloom and 4× anti-aliasing on (they are off by default since).
-      Object.assign(window.embervaleLook.LOOK, { barrels: true, lighting: false, smooth: false, ao: 1, bloom: 0.25, aa: 2 });
+      Object.assign(window.embervaleLook.LOOK, { barrelsModern: true, barrelsLive: true, barrelsBaked: true, barrelsRich: true, barrelsReal: true, lighting: false, smooth: false, ao: 1, bloom: 0.25, aa: 2 });
     });
     const set = (patch) => h.game((p) => Object.assign(window.embervaleLook.LOOK, p), patch);
     const variants = [['off', { lighting: false, smooth: false }], ['on', { lighting: true, smooth: false }], ['smooth', { lighting: true, smooth: true }]];
@@ -800,7 +800,192 @@ const SCENES = {
     }
     const smoothMs = await h.game(() => window.embervaleLook.smoothMs());
     console.log(`      smooth shading's one-off cost when flipped: ${smoothMs.toFixed(0)} ms`);
-    await set({ barrels: false, lighting: false, smooth: false, ao: 0, bloom: 0, aa: 0 });
+    await set({ barrelsModern: false, barrelsLive: false, barrelsBaked: false, barrelsRich: false, barrelsReal: false, lighting: false, smooth: false, ao: 0, bloom: 0, aa: 0 });
+    await h.page.setViewportSize({ width: 1280, height: 720 });
+  },
+  /**
+   * EXPERIMENT (T65): the barrels between modern-stylized and photoreal, in the game's look (modern lighting, its defaults). A row
+   * of four per type north of the square, all at the photoreal one's size. The rows from the square at noon and dusk, each type
+   * close up (its row alone) and at play distance behind Wren; then the A/B of the photoreal barrel's ingredients (plain / no bump /
+   * flat roughness) and the baked one at 512²; then each type's cost at phone size and 1080p: one close up, and a crowd of 60
+   * over the square (10 for the photoreal), as the change against the same frame without it. Never approved as baselines.
+   */
+  async modernBarrels(h) {
+    await h.newGame();
+    await h.game(() => {
+      const g = window.embervale;
+      g.state.set('valleyOpen');
+      g.player.invuln = 1e6;
+      Object.assign(window.embervaleLook.LOOK, { barrelsModern: true, barrelsLive: true, barrelsBaked: true, barrelsRich: true, barrelsReal: true, lighting: true, smooth: false, ao: 0, bloom: 0, aa: 0 });
+      // Each type's row ('baked', ...) and its first barrel ('baked-0').
+      window.__rows = () => {
+        let rows = null;
+        g.scene.traverse((o) => { if (o.userData.lookExperimentBuilt) rows = o.userData.lookExperimentBuilt; });
+        return rows ?? {};
+      };
+      window.__barrel = (name) => window.__rows()[name]?.getObjectByName(`${name}-0`);
+      // Shows only `name`'s first barrel (and anything swapped in for it); '__all__' shows every row again.
+      window.__only = (name) => {
+        for (const row of Object.values(window.__rows())) {
+          row.visible = name === '__all__' || row.name === name;
+          for (const c of row.children) c.visible = name === '__all__' || c.name === `${name}-0` || !!c.userData.swap;
+        }
+      };
+    });
+    await h.teleport(-62.2, -52, 0);
+    await h.until(() => Object.keys(window.__rows()).length === 5, 90000);
+    const { ground, gameAt } = await h.game(async () => {
+      const { terrainHeight } = await import('/src/world/overworld/layout.ts');
+      return { ground: terrainHeight(-62.2, -46), gameAt: terrainHeight(-58, -49) };
+    });
+    const bakes = await h.game(() => ['baked', 'bakedRich'].map((n) => [n, window.__barrel(n).userData.bake]));
+    for (const [name, b] of bakes) console.log(`      bake ${name}: ${b.size}² in ${b.ms} ms, ${(b.bytes / 1048576).toFixed(1)} MB of textures`);
+    const only = (name) => h.game((name) => window.__only(name), name);
+    const NAMES = ['baked', 'bakedRich', 'live', 'modern', 'real', 'game'];
+    // Parks the camera on barrel `name` from the square's side, at the same framing for its height (the game's own barrel is the
+    // static one at the clutter spot 4, 9). three's classes are taken off live objects: a page script can't import 'three' by name.
+    const frame = (name) => h.game(([name, gameAt]) => {
+      const g = window.embervale;
+      g.rig.frozen = true;
+      let c = { x: -58, z: -49 }, base = gameAt, ht = 1;
+      if (name !== 'game') {
+        const o = window.__barrel(name);
+        let mesh = null;
+        o.traverse((m) => { if (!mesh && m.isMesh) mesh = m; });
+        mesh.geometry.computeBoundingBox();
+        const box = new mesh.geometry.boundingBox.constructor().setFromObject(o);
+        c = { x: (box.min.x + box.max.x) / 2, z: (box.min.z + box.max.z) / 2 };
+        base = box.min.y;
+        ht = box.max.y - box.min.y;
+      }
+      g.camera.position.set(c.x + 0.25 * ht, base + 1.25 * ht, c.z - 1.9 * ht);
+      g.camera.lookAt(c.x, base + 0.5 * ht, c.z);
+    }, [name, gameAt]);
+    const unfreeze = () => h.game(() => (window.embervale.rig.frozen = false));
+
+    for (const [when, hours] of [['noon', 12], ['dusk', 18]]) {
+      await h.game((n) => (window.embervale.state.hours = n), hours);
+      await only('__all__');
+      await h.wait(1200);
+      await h.game((y) => {
+        const g = window.embervale;
+        g.rig.frozen = true;
+        g.camera.position.set(-62.2, y + 4.5, -54);
+        g.camera.lookAt(-62.2, y + 0.8, -40);
+      }, ground);
+      await h.wait(800);
+      await h.shot(`barrels-${when}-row`);
+      for (const name of NAMES) {
+        await only(name === 'game' ? '__none__' : name);
+        await frame(name);
+        await h.wait(800);
+        await h.shot(`barrels-${when}-${name}`);
+      }
+      await only('__all__');
+      await unfreeze();
+      await h.teleport(-56.5, -51, 0); // east of the well, so the camera behind Wren isn't over its roof
+      await h.wait(1500);
+      await h.shot(`barrels-${when}-play`);
+    }
+
+    // The A/B: the photoreal barrel with one ingredient taken away at a time, swapped in at its spot.
+    await h.game((n) => (window.embervale.state.hours = n), 12);
+    await h.wait(800);
+    const swap = (opts, name) => h.game(async ([opts, name]) => {
+      const spot = window.__barrel(name), row = spot.parent;
+      for (const c of row.children.filter((c) => c.userData.swap)) row.remove(c);
+      spot.visible = !opts;
+      if (!opts) return;
+      const m = name === 'real' ? await import('/src/render/experiments/realBarrel.ts') : await import('/src/render/experiments/barrelBake.ts');
+      const o = name === 'real' ? m.buildRealBarrel(opts) : m.buildBakedBarrel(window.embervale.renderer, 'standard', opts.size);
+      o.position.copy(spot.position);
+      o.rotation.copy(spot.rotation);
+      o.scale.copy(spot.scale);
+      o.userData.swap = true;
+      row.add(o);
+    }, [opts, name]);
+    await only('real');
+    for (const [label, opts] of [['full', null], ['plain', { surface: 'plain' }], ['nobump', { bump: false }], ['flatpbr', { variedPbr: false }]]) {
+      await swap(opts, 'real');
+      await frame('real');
+      await h.wait(900);
+      await h.shot(`barrels-ab-real-${label}`);
+    }
+    await swap(null, 'real');
+    await only('baked');
+    await swap({ size: 512 }, 'baked');
+    await frame('baked');
+    await h.wait(900);
+    await h.shot('barrels-ab-baked512');
+    await swap(null, 'baked');
+
+    // The cost: the change a type makes against the same frame without any experiment barrel, median of three.
+    const measure = () => h.game(() => {
+      const runs = [0, 1, 2].map(() => window.embervaleLook.cost(40)).sort((a, b) => a.ms - b.ms);
+      return runs[1];
+    });
+    const crowd = (name, n) => h.game(async ([name, n]) => {
+      const { terrainHeight } = await import('/src/world/overworld/layout.ts');
+      for (const row of Object.values(window.__rows())) for (const c of row.children.filter((c) => c.userData.crowd)) row.remove(c);
+      if (!name) return;
+      const src = window.__barrel(name), row = src.parent;
+      row.visible = true;
+      for (const c of row.children) c.visible = false;
+      for (let k = 0; k < n; k++) {
+        const o = src.clone();
+        const x = -73 + (k % 10) * 2.3 + (Math.floor(k / 10) % 2) * 1.1, z = -46.5 - Math.floor(k / 10) * 2.1;
+        o.position.set(x, terrainHeight(x, z) - 0.02, z);
+        o.rotation.y = k * 2.4;
+        o.visible = true;
+        o.userData.crowd = true;
+        row.add(o);
+      }
+    }, [name, n]);
+    const crowdCam = () => h.game((y) => {
+      const g = window.embervale;
+      g.rig.frozen = true;
+      g.camera.position.set(-61.5, y + 2.4, -40.5);
+      g.camera.lookAt(-61.5, y + 0.3, -53);
+    }, ground);
+    const info = await h.game(() => Object.fromEntries(Object.keys(window.__rows()).map((name) => {
+      let tris = 0, meshes = 0;
+      const b = window.__barrel(name);
+      b.traverse((o) => { if (o.isMesh) { meshes++; tris += (o.geometry.index?.count ?? o.geometry.attributes.position.count) / 3; } });
+      return [name, { tris, meshes, bytes: b.userData.bake?.bytes ?? 0 }];
+    })));
+    const VARIANTS = ['modern', 'live', 'baked', 'bakedRich', 'real'];
+    for (const [w, ht, label] of [[1688, 780, 'phone landscape, ratio 2'], [1920, 1080, 'desktop 1080p']]) {
+      await h.page.setViewportSize({ width: w, height: ht });
+      await h.wait(600);
+      console.log(`      ${label} (${w}×${ht}), modern lighting at the game's defaults, noon. Budget: ≤5k triangles, 1-2 draw calls, close + crowd ≤ 1.5 ms`);
+      console.log('        barrel       triangles  calls  textures   close Δms  crowd Δms (n)   within budget');
+      for (const name of VARIANTS) {
+        await only('__none__');
+        await frame(name);
+        await h.wait(300);
+        const closeBase = await measure();
+        await only(name);
+        await h.wait(300);
+        const close = await measure();
+        await only('__none__');
+        const n = name === 'real' ? 10 : 60;
+        await crowdCam();
+        await h.wait(300);
+        const crowdBase = await measure();
+        await crowd(name, n);
+        await h.wait(600);
+        const many = await measure();
+        await crowd(null, 0);
+        const it = info[name];
+        const dClose = close.ms - closeBase.ms, dCrowd = many.ms - crowdBase.ms;
+        const per = n === 60 ? dCrowd : (dCrowd * 60) / n;
+        const ok = it.tris <= 5000 && it.meshes <= 2 && dClose + per <= 1.5;
+        console.log(`        ${name.padEnd(12)} ${String(Math.round(it.tris)).padStart(9)}  ${String(it.meshes).padStart(5)}  ${(it.bytes / 1048576).toFixed(1).padStart(6)} MB  ${dClose.toFixed(2).padStart(9)}  ${dCrowd.toFixed(2).padStart(9)} (${n})${n === 60 ? '' : ` ≈${per.toFixed(1)} for 60`}   ${ok ? 'yes' : 'no'}`);
+      }
+    }
+    await only('__all__');
+    await unfreeze();
+    await h.game(() => Object.assign(window.embervaleLook.LOOK, { barrelsModern: false, barrelsLive: false, barrelsBaked: false, barrelsRich: false, barrelsReal: false }));
     await h.page.setViewportSize({ width: 1280, height: 720 });
   },
   /** After the prism: the blight gone and Thistledown with only Lark and Pip; Odo's stall unattended. */

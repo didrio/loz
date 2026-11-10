@@ -59,8 +59,12 @@ export const aaSamples = (canvasAntialias: boolean, i: number) => (canvasAntiali
  * (`__embervaleClassicLook`, scripts/browser.mjs) until the baselines move over (docs/tickets.md).
  */
 export const LOOK = {
-  /** The two experiment barrels beside today's in Thistledown. */
-  barrels: false,
+  /** Which experiment barrels stand in Thistledown, a switch per type (`BARREL_SWITCH`), so a phone can be timed one type at a time. */
+  barrelsModern: false,
+  barrelsLive: false,
+  barrelsBaked: false,
+  barrelsRich: false,
+  barrelsReal: false,
   lighting: !(globalThis as { __embervaleClassicLook?: boolean }).__embervaleClassicLook,
   smooth: false,
   /** Index into `TONE_MAPS`. */
@@ -85,8 +89,23 @@ export type LookSettings = typeof LOOK;
 export const HEMI_KEEP = 0.35;
 /** Smooth shading's crease: faces meeting at less than this blend (today's 8-sided barrel, 45°, does; a box's 90° doesn't). */
 export const SMOOTH_CREASE = (50 * Math.PI) / 180;
-/** The `userData` key under which an area leaves a builder for the experiment barrels (`world/overworld/village.ts`). */
+/**
+ * The `userData` key under which an area leaves a builder for the experiment barrels (`world/overworld/village.ts`): called with the
+ * renderer (the baked ones bake on it) and a type, it returns that type's row.
+ */
 export const EXPERIMENT_BUILD = 'lookExperiment';
+/** The experiment barrels' types (T62, T65), each a row of four at the photoreal one's size (render.md "Look experiment"). */
+export const BARREL_TYPES = ['modern', 'live', 'baked', 'bakedRich', 'real'] as const;
+export type BarrelType = (typeof BARREL_TYPES)[number];
+/** Each type's switch in `LOOK` (and the dev panel's label for it). */
+export const BARREL_SWITCH = {
+  modern: ['barrelsModern', 'Barrels: modern'],
+  live: ['barrelsLive', 'Barrels: live'],
+  baked: ['barrelsBaked', 'Barrels: baked'],
+  bakedRich: ['barrelsRich', 'Barrels: baked rich'],
+  real: ['barrelsReal', 'Barrels: photoreal'],
+} as const satisfies Record<BarrelType, readonly [keyof typeof LOOK, string]>;
+const barrelWanted = (t: BarrelType) => LOOK[BARREL_SWITCH[t][0]];
 
 // ---------------------------------------------------------------------------
 // Material twins (pure: no GL, unit-tested)
@@ -326,18 +345,22 @@ export class ModernLook {
     this.sky.hemi.intensity *= HEMI_KEEP;
   }
 
-  /** The experiment barrels show while their switch is on, built (from the area's builder) the first time. */
+  /** The chosen experiment barrels show, each type's row built (from the area's builder) the first time it is wanted. */
   private showBarrels() {
     const hosts: THREE.Object3D[] = [];
     this.scene.traverse((o) => { if (o.userData[EXPERIMENT_BUILD]) hosts.push(o); });
     for (const host of hosts) {
-      let built = host.userData.lookExperimentBuilt as THREE.Object3D | undefined;
-      if (!built && LOOK.barrels) {
-        built = (host.userData[EXPERIMENT_BUILD] as () => THREE.Object3D)();
-        host.userData.lookExperimentBuilt = built;
-        host.add(built);
+      let built = host.userData.lookExperimentBuilt as Partial<Record<BarrelType, THREE.Object3D>> | undefined;
+      if (!built) {
+        if (!BARREL_TYPES.some(barrelWanted)) continue;
+        built = host.userData.lookExperimentBuilt = {};
       }
-      if (built) built.visible = LOOK.barrels;
+      const build = host.userData[EXPERIMENT_BUILD] as (r: THREE.WebGLRenderer, t: BarrelType) => THREE.Object3D;
+      for (const t of BARREL_TYPES) {
+        if (!built[t] && barrelWanted(t)) host.add((built[t] = build(this.renderer, t)));
+        const row = built[t];
+        if (row) row.visible = barrelWanted(t);
+      }
     }
   }
 

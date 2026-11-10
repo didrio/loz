@@ -185,6 +185,7 @@ export class Game implements ScriptApi {
     this.hud.onMenuReset = (i) => openMenu()?.reset(i);
     this.hud.onTitleClick = (i) => this.title.click(i);
     this.hud.onTap = (a) => this.input.touch?.tap(a);
+    this.hud.showDevButton(this.devTab);
   }
 
   start() {

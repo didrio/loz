@@ -1,6 +1,6 @@
 import { DEV_STATES } from '../content/devStates';
 import { BAKE, BAKE_DEFAULTS, bakedLightOn, setBakedLight, setBakeStrength, type BakeProfile, type BakeStrength } from '../render/bakeLight';
-import { AA_NAMES, LOOK, TONE_MAPS } from '../render/experiments/modernLook';
+import { AA_NAMES, BARREL_SWITCH, LOOK, TONE_MAPS } from '../render/experiments/modernLook';
 import { DEFAULT_TEXTURE_RESOLUTION, setTextureResolution, TEXTURE_RESOLUTION_RANGE, textureResolution } from '../render/textures';
 import type { Game } from './game';
 import { changedSummary, resetRow, type Menu, type MenuRow } from './menu';
@@ -13,14 +13,15 @@ const TRIAL_FALLS_HURT = TRIAL_RULES.fallDamage > 0;
 
 /** The look experiment's switches and sliders (T62), under one heading. */
 function lookRows(): MenuRow[] {
-  const toggle = (label: string, key: 'barrels' | 'lighting' | 'smooth'): MenuRow => ({
+  type Switch = 'lighting' | 'smooth' | (typeof BARREL_SWITCH)[keyof typeof BARREL_SWITCH][0];
+  const toggle = (label: string, key: Switch): MenuRow => ({
     kind: 'toggle', label, def: LOOK_DEFAULTS[key], get: () => LOOK[key], set: (on) => { LOOK[key] = on; },
   });
   const slider = (label: string, key: 'exposure' | 'sky' | 'ao' | 'bloom' | 'contrast' | 'saturation', max: number): MenuRow => ({
     kind: 'slider', label, def: LOOK_DEFAULTS[key], min: 0, max, step: 0.05, format: (v) => v.toFixed(2), get: () => LOOK[key], set: (v) => { LOOK[key] = v; },
   });
   const rows: MenuRow[] = [
-    toggle('Barrels (3 looks)', 'barrels'),
+    ...Object.values(BARREL_SWITCH).map(([key, label]) => toggle(label, key)),
     toggle('Modern lighting', 'lighting'),
     toggle('Smooth shading', 'smooth'),
     { kind: 'choice', label: 'Anti-aliasing (modern)', def: LOOK_DEFAULTS.aa, options: AA_NAMES, get: () => LOOK.aa, set: (i) => { LOOK.aa = i; } },

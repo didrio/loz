@@ -152,7 +152,7 @@ export class Hud {
   constructor() {
     this.el.innerHTML = `
       <div class="hud-top-left">
-        <div class="top-row"><div class="menu-btn">☰</div><div class="hearts"></div></div>
+        <div class="top-row"><div class="menu-btn">☰</div><div class="dev-btn">Dev</div><div class="hearts"></div></div>
         <div class="gems"><span class="gem-icon"></span><span class="gem-count">0</span></div>
         <div class="keys hidden">${SMALL_KEY_SVG}<span class="key-count">×0</span><span class="color-keys"></span>${BOSS_KEY_SVG}</div>
         <div class="drinks"></div>
@@ -219,6 +219,7 @@ export class Hud {
     this.menuHint = q('.menu-hint');
     this.menuHint.addEventListener('click', () => this.onTap('pause'));
     q('.menu-btn').addEventListener('click', () => this.onTap('pause'));
+    q('.dev-btn').addEventListener('click', () => this.onTap('devMenu'));
     this.menu = q('.menu');
     this.menu.addEventListener('click', (e) => {
       const r = (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
@@ -468,13 +469,18 @@ export class Hud {
   }
 
   /** Draws the dev panel (game/devPanel.ts): plain rows down the right edge, or nothing when null. */
+  /** Touch's way into the dev panel (a "Dev" button beside ☰), only where the dev panel exists (`Game.devTab`). */
+  showDevButton(on: boolean) {
+    this.el.classList.toggle('has-dev', on);
+  }
+
   setDevMenu(view: MenuView | null) {
     this.devmenu.classList.toggle('hidden', !view);
     this.devmenu.classList.toggle('peeking', !!view?.peeking);
     const anyReset = view?.rows.some((r) => r.resettable) ?? false;
     const rows = (pinned: boolean) => view!.rows.map((r, i) => (!!r.pinned === pinned ? this.menuRow(r, i, anyReset) : '')).join('');
     const html = view
-      ? `<div class="devmenu-panel"><div class="devmenu-title">${escape(view.title)}</div><div class="gmenu-list">${rows(false)}</div><div class="devmenu-pinned">${rows(true)}</div><div class="devmenu-help">${this.key('devMenu')} close · ${this.key('menuReset')} reset · ${this.key('hideMenu')} hold to hide · drag to turn</div></div>`
+      ? `<div class="devmenu-panel"><div class="devmenu-close" data-close="devMenu">✕</div><div class="devmenu-title">${escape(view.title)}</div><div class="gmenu-list">${rows(false)}</div><div class="devmenu-pinned">${rows(true)}</div><div class="devmenu-help">${this.key('devMenu')} close · ${this.key('menuReset')} reset · ${this.key('hideMenu')} hold to hide · drag to turn</div></div>`
       : '';
     if (html === this.devmenuHtml) return;
     const scroll = this.devmenu.querySelector<HTMLElement>('.gmenu-list')?.scrollTop ?? 0;
