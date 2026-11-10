@@ -5,6 +5,7 @@ import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import type { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import type { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { gradeUniforms, setGradeUniforms, TONE_MAPS, toneMappingFor, withGrade, type GradeUniforms } from '../grade';
 import type { Sky } from '../sky';
 
 /**
@@ -19,32 +20,7 @@ import type { Sky } from '../sky';
  * switch: it re-welds the normals of today's faceted models (a crease angle keeps hard edges hard).
  */
 
-export const TONE_MAPS = ['Neutral', 'AgX', 'ACES'];
-const TONE_MAPPING = [THREE.NeutralToneMapping, THREE.AgXToneMapping, THREE.ACESFilmicToneMapping];
-
-/**
- * Puts the grade into three's output pass (`OutputShader`): after tone mapping, before the screen's colour encoding, so it costs
- * nothing (no extra pass). A power on each channel deepens the darks while white stays white (contrast), then the colour is pushed
- * away from (or toward) its own grey (saturation). AgX's colours are the natural ones, but its curve lifts the darks and drains the
- * brightest colours toward white, so the two dials give back the depth and the vividness. Throws if three's shader has changed
- * shape, so an upgrade can't silently drop the grade.
- */
-export function withGrade(fragmentShader: string): string {
-  const uniform = 'uniform sampler2D tDiffuse;';
-  const before = '// color space';
-  if (!fragmentShader.includes(uniform) || !fragmentShader.includes(before)) throw new Error('withGrade: three\'s OutputShader changed shape');
-  return fragmentShader
-    .replace(uniform, `${uniform}\n\t\tuniform float gradeContrast;\n\t\tuniform float gradeSaturation;`)
-    .replace(
-      before,
-      `// grade (render/experiments/modernLook.ts \`withGrade\`)
-			gl_FragColor.rgb = pow( max( gl_FragColor.rgb, vec3( 0.0 ) ), vec3( gradeContrast ) );
-			float gradeGrey = dot( gl_FragColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
-			gl_FragColor.rgb = max( mix( vec3( gradeGrey ), gl_FragColor.rgb, gradeSaturation ), vec3( 0.0 ) );
-
-			${before}`,
-    );
-}
+export { TONE_MAPS, withGrade };
 
 /** The modern pipeline's anti-aliasing: samples per pixel in its half-float buffers. 4× is today's look; it is also most of the pipeline's cost. */
 export const AA_NAMES = ['Off', '2×', '4×'];
@@ -53,11 +29,17 @@ const AA_SAMPLES = [0, 2, 4];
 export const aaSamples = (canvasAntialias: boolean, i: number) => (canvasAntialias ? (AA_SAMPLES[i] ?? 4) : 0);
 
 /**
- * The dev panel's switches and sliders, at their defaults: the game's look (owner's call, 2026-11-09: modern lighting on, Neutral,
- * contrast 1, saturation 0.9, exposure 1, sky light 1, no corner shade, bloom or anti-aliasing). Never remembered: only a page load
- * resets tweaks to these (game/devPanel.ts; its Default switch shows these while on). The look and smoke harness keeps the classic look
- * (`__embervaleClassicLook`, scripts/browser.mjs) until the baselines move over (docs/tickets.md).
+ * The dev panel's switches and sliders, at their defaults: the game's look (owner's call, 2026-11-09: classic lighting, modern one switch away;
+ * contrast 1, saturation 1, exposure 1, sky light 1, no corner shade, bloom or anti-aliasing). Never remembered: only a page load
+ * resets tweaks to these (game/devPanel.ts; its Default switch shows these while on).
  */
+/**
+ * The owner's grade (2026-11-09, tuned by eye in classic lighting). The look and smoke harness sets `__embervaleNeutralGrade`
+ * (scripts/browser.mjs) so its baselines and budgets stay the ungraded picture, and the grade's lazily loaded modules never shift a seeded shot.
+ */
+const GRADED = !(globalThis as { __embervaleNeutralGrade?: boolean }).__embervaleNeutralGrade;
+const g = <T,>(tuned: T, neutral: T) => (GRADED ? tuned : neutral);
+
 export const LOOK = {
   /** Which experiment barrels stand in Thistledown, a switch per type (`BARREL_SWITCH`), so a phone can be timed one type at a time. */
   barrelsModern: false,
@@ -65,11 +47,14 @@ export const LOOK = {
   barrelsBaked: false,
   barrelsRich: false,
   barrelsReal: false,
-  lighting: !(globalThis as { __embervaleClassicLook?: boolean }).__embervaleClassicLook,
+  lighting: false,
   smooth: false,
-  /** Index into `TONE_MAPS`. */
-  toneMap: 0,
-  exposure: 1,
+  /** Index into `TONE_MAPS` (render/grade.ts). Auto: Neutral under modern lighting, none under classic. */
+  toneMap: g(1, 0),
+  exposure: g(2, 1),
+  /** The grade (render/grade.ts) for every look: gamma 1 leaves it alone; highlights 0 leaves them alone. */
+  gamma: g(1.25, 1),
+  highlights: g(-1, 0),
   /** How strongly the sky's environment map lights and reflects (`scene.environmentIntensity`). */
   sky: 1,
   /** Index into `AA_NAMES`. Off by default (owner's call, 2026-11-09: 120 fps only with it and corner shade off). */
@@ -79,9 +64,9 @@ export const LOOK = {
   /** Bloom strength; 0 turns the pass off. Off by default (the owner tunes with it off); 0.25 was the first try. */
   bloom: 0,
   /** The grade after tone mapping (`withGrade`): a power on every channel (above 1: deeper darks, the same white). 1 leaves it alone. */
-  contrast: 1,
-  /** The grade's saturation around each pixel's own grey. 1 leaves it alone; 0.9 is the owner's. Blender's AgX "Punchy" look is contrast 1.35, saturation 1.4. */
-  saturation: 0.9,
+  contrast: g(1.15, 1),
+  /** The grade's saturation around each pixel's own grey. 1 leaves it alone (0.9 was the owner's under modern lighting). Blender's AgX "Punchy" look is contrast 1.35, saturation 1.4. */
+  saturation: g(0.9, 1),
 };
 export type LookSettings = typeof LOOK;
 
@@ -279,7 +264,7 @@ export class ModernLook {
   private gtao: GTAOPass | null = null;
   private bloom: UnrealBloomPass | null = null;
   /** The output pass's uniforms, for the grade (`withGrade`). */
-  private grade: Record<string, THREE.IUniform> | null = null;
+  private grade: GradeUniforms | null = null;
   private loading = false;
   private size = { w: 1, h: 1, ratio: 1 };
   private lightingOn = false;
@@ -461,9 +446,9 @@ export class ModernLook {
     composer.addPass(this.bloom);
     const output = new OutputPass();
     output.material.fragmentShader = withGrade(output.material.fragmentShader);
-    Object.assign(output.uniforms, { gradeContrast: { value: 1 }, gradeSaturation: { value: 1 } });
+    Object.assign(output.uniforms, gradeUniforms());
     output.material.needsUpdate = true;
-    this.grade = output.uniforms;
+    this.grade = output.uniforms as unknown as GradeUniforms;
     composer.addPass(output);
     this.composer = composer;
     this.setSize(this.size.w, this.size.h, this.size.ratio);
@@ -502,9 +487,8 @@ export class ModernLook {
     blendUniforms.fogFar.value = fog?.far ?? 1e9;
     this.bloom!.enabled = LOOK.bloom > 0;
     this.bloom!.strength = LOOK.bloom;
-    this.grade!.gradeContrast.value = LOOK.contrast;
-    this.grade!.gradeSaturation.value = LOOK.saturation;
-    r.toneMapping = TONE_MAPPING[LOOK.toneMap] ?? THREE.NeutralToneMapping;
+    setGradeUniforms(this.grade!, LOOK);
+    r.toneMapping = toneMappingFor(LOOK.toneMap, true);
     r.toneMappingExposure = LOOK.exposure;
     this.composer.render();
     r.toneMapping = THREE.NoToneMapping;

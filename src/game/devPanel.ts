@@ -17,18 +17,20 @@ function lookRows(): MenuRow[] {
   const toggle = (label: string, key: Switch): MenuRow => ({
     kind: 'toggle', label, def: LOOK_DEFAULTS[key], get: () => LOOK[key], set: (on) => { LOOK[key] = on; },
   });
-  const slider = (label: string, key: 'exposure' | 'sky' | 'ao' | 'bloom' | 'contrast' | 'saturation', max: number): MenuRow => ({
-    kind: 'slider', label, def: LOOK_DEFAULTS[key], min: 0, max, step: 0.05, format: (v) => v.toFixed(2), get: () => LOOK[key], set: (v) => { LOOK[key] = v; },
+  const slider = (label: string, key: 'exposure' | 'sky' | 'ao' | 'bloom' | 'contrast' | 'saturation' | 'gamma' | 'highlights', max: number, min = 0): MenuRow => ({
+    kind: 'slider', label, def: LOOK_DEFAULTS[key], min, max, step: 0.05, format: (v) => v.toFixed(2), get: () => LOOK[key], set: (v) => { LOOK[key] = v; },
   });
   const rows: MenuRow[] = [
     ...Object.values(BARREL_SWITCH).map(([key, label]) => toggle(label, key)),
     toggle('Modern lighting', 'lighting'),
     toggle('Smooth shading', 'smooth'),
     { kind: 'choice', label: 'Anti-aliasing (modern)', def: LOOK_DEFAULTS.aa, options: AA_NAMES, get: () => LOOK.aa, set: (i) => { LOOK.aa = i; } },
-    { kind: 'choice', label: 'Tone mapping', def: LOOK_DEFAULTS.toneMap, options: TONE_MAPS, get: () => LOOK.toneMap, set: (i) => { LOOK.toneMap = i; } },
+    { kind: 'choice', label: 'Highlight curve', def: LOOK_DEFAULTS.toneMap, options: TONE_MAPS, get: () => LOOK.toneMap, set: (i) => { LOOK.toneMap = i; } },
+    slider('Exposure', 'exposure', 4),
+    slider('Gamma', 'gamma', 2, 0.4),
+    slider('Highlights', 'highlights', 1, -1),
     slider('Contrast', 'contrast', 2),
     slider('Saturation', 'saturation', 2),
-    slider('Exposure', 'exposure', 2),
     slider('Sky light', 'sky', 2),
     slider('Corner shade', 'ao', 1),
     slider('Bloom', 'bloom', 1),

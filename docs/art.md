@@ -17,7 +17,7 @@ extend the "today" look: build new work so it moves toward the target.
 
 ## Rendering rules
 
-**Owner's call (2026-11-09): the game now starts in modern lighting** (render.md "Look experiment": Standard materials lit by the sky, Neutral tone mapping, saturation 0.9). This table still describes the classic look, which N64 mode keeps and every look shot shows; T66 rewrites it with the baselines.
+**Owner's call (2026-11-09): the game starts in classic lighting** (modern lighting, Standard materials lit by the sky, is a dev-panel switch: render.md "Look experiment"). This table describes the classic look. The picture's grade (exposure, highlight curve, gamma, highlights, contrast, saturation: render.md, `render/grade.ts`) works in every look; the game starts at the owner's tuned values, look and smoke baselines at neutral.
 
 | Rule | Today | Target (ticket) |
 |---|---|---|

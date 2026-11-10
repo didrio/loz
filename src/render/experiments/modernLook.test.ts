@@ -135,7 +135,7 @@ describe('the grade after tone mapping', () => {
     const src = withGrade(OutputShader.fragmentShader);
     expect(src).toContain('uniform float gradeContrast;');
     expect(src).toContain('uniform float gradeSaturation;');
-    const grade = src.indexOf('gradeGrey');
+    const grade = src.indexOf('gradeApply( gl_FragColor.rgb )');
     expect(grade).toBeGreaterThan(src.indexOf('CustomToneMapping( gl_FragColor.rgb )'));
     expect(grade).toBeLessThan(src.indexOf('sRGBTransferOETF'));
   });
@@ -144,7 +144,7 @@ describe('the grade after tone mapping', () => {
     expect(() => withGrade('void main() { gl_FragColor = vec4(1.0); }')).toThrow(/changed shape/);
   });
 
-  it('starts at the owner\'s look: modern lighting on, Neutral, contrast 1, saturation 0.9, nothing costly', () => {
-    expect(LOOK).toMatchObject({ lighting: true, smooth: false, toneMap: 0, contrast: 1, saturation: 0.9, exposure: 1, sky: 1, ao: 0, bloom: 0, aa: 0 });
+  it('starts at the owner\'s look: classic lighting, the tuned grade, nothing else costly', () => {
+    expect(LOOK).toMatchObject({ lighting: false, smooth: false, toneMap: 1, contrast: 1.15, saturation: 0.9, gamma: 1.25, highlights: -1, exposure: 2, sky: 1, ao: 0, bloom: 0, aa: 0 });
   });
 });

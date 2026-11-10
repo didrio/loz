@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GRADE_GLSL, GRADE_UNIFORMS_GLSL, gradeUniforms, isNeutral, setGradeUniforms, type GradeParams } from './grade';
 
 /**
  * The N64 display mode (T28): the scene is drawn 240 rows tall with no antialiasing, then a composite pass reduces
@@ -75,6 +76,10 @@ const COMPOSITE_FRAG = /* glsl */ `
 uniform sampler2D tScene;
 uniform vec2 size; // the internal size in pixels
 uniform float levels;
+uniform float gradeOn; // 0 while every dial is neutral: the picture is then untouched
+uniform float exposure;
+${GRADE_UNIFORMS_GLSL}
+${GRADE_GLSL}
 varying vec2 vUv;
 
 const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
@@ -85,6 +90,7 @@ float bayer(vec2 p) {
 
 void main() {
   vec3 c = texture2D(tScene, vUv).rgb;
+  if (gradeOn > 0.5) c = gradeApply(c * exposure); // the grade works on the light, before the colour crush (no tone curve in N64)
   gl_FragColor = vec4(c, 1.0);
   #include <colorspace_fragment>
   float steps = levels - 1.0;
@@ -118,7 +124,7 @@ export class RetroPipeline {
   private readonly quad = new FullScreen();
   private readonly composite = new THREE.ShaderMaterial({
     vertexShader: VERT, fragmentShader: COMPOSITE_FRAG, depthTest: false, depthWrite: false,
-    uniforms: { tScene: { value: null }, size: { value: new THREE.Vector2(1, 1) }, levels: { value: COLOR_LEVELS } },
+    uniforms: { tScene: { value: null }, size: { value: new THREE.Vector2(1, 1) }, levels: { value: COLOR_LEVELS }, gradeOn: { value: 0 }, exposure: { value: 1 }, ...gradeUniforms() },
   });
 
   /** Sizes the target for an internal size (null frees it). The target is linear-filtered: the upscale is soft. */
@@ -136,7 +142,7 @@ export class RetroPipeline {
     return this.scene !== null;
   }
 
-  render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
+  render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, grade?: GradeParams) {
     const rt = this.scene;
     if (!rt) return;
     // Two draws into different targets: count them together (Game turns autoReset back on when the look is off).
@@ -145,6 +151,12 @@ export class RetroPipeline {
     renderer.setRenderTarget(rt);
     renderer.render(scene, camera);
     this.composite.uniforms.tScene.value = rt.texture;
+    const graded = !!grade && !isNeutral(grade);
+    this.composite.uniforms.gradeOn.value = graded ? 1 : 0;
+    if (graded) {
+      this.composite.uniforms.exposure.value = grade.exposure;
+      setGradeUniforms(this.composite.uniforms as unknown as ReturnType<typeof gradeUniforms>, grade);
+    }
     this.quad.draw(renderer, this.composite, null);
   }
 

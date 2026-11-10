@@ -56,26 +56,27 @@ describe('the dev panel', () => {
   it('Default shows and uses the defaults and locks the visual rows, whatever happens, until it goes off and the tweaks come back', () => {
     const { panel, frame, row, view } = setup();
     const was = { ...LOOK };
+    const base = LOOK.exposure; // the game's default exposure
     try {
       frame('devMenu');
       const exposure = row('Exposure');
       panel.menu.adjust(exposure, 1);
       panel.menu.adjust(exposure, 1);
-      expect(LOOK.exposure).toBeCloseTo(1.1); // a tweak
+      expect(LOOK.exposure).toBeCloseTo(base + 0.1); // a tweak
       panel.menu.click(row('Default')); // on
-      expect(LOOK.exposure).toBe(1);
-      expect(view().rows[exposure]).toMatchObject({ locked: true, value: '1.00' });
+      expect(LOOK.exposure).toBe(base);
+      expect(view().rows[exposure]).toMatchObject({ locked: true, value: base.toFixed(2) });
       panel.menu.adjust(exposure, 1); // ignored while it is on
       panel.menu.reset(exposure);
-      expect(LOOK.exposure).toBe(1);
+      expect(LOOK.exposure).toBe(base);
       expect(view().rows[row('Dev sprint (x5)')].locked).toBeUndefined(); // gameplay rows stay free
       frame('devMenu'); // close and reopen: still on, still the defaults
       frame();
       frame('devMenu');
       expect(view().rows[row('Default')].on).toBe(true);
-      expect(LOOK.exposure).toBe(1);
+      expect(LOOK.exposure).toBe(base);
       panel.menu.click(row('Default')); // off: the tweak is back
-      expect(LOOK.exposure).toBeCloseTo(1.1);
+      expect(LOOK.exposure).toBeCloseTo(base + 0.1);
       expect(view().rows[row('Exposure')].locked).toBeUndefined();
     } finally {
       Object.assign(LOOK, was);
@@ -85,12 +86,13 @@ describe('the dev panel', () => {
   it('keeps tweaks when the panel closes (only a page load resets them)', () => {
     const { panel, frame, row } = setup();
     const was = { ...LOOK };
+    const base = LOOK.exposure;
     try {
       frame('devMenu');
       panel.menu.adjust(row('Exposure'), 1);
       frame('devMenu');
       frame();
-      expect(LOOK.exposure).toBeCloseTo(1.05);
+      expect(LOOK.exposure).toBeCloseTo(base + 0.05);
     } finally {
       Object.assign(LOOK, was);
     }

@@ -17,7 +17,7 @@ when it's near.
 
 - **Next region:** Sallowmere's map and Stiltwick are built and empty; its story and mechanics are being redesigned by
   the owner (2026-11-06: the old design in [sallowmere.md](sallowmere.md) is shelved, not the plan).
-- **Modern lighting is the default look** (owner's call, 2026-11-09): the final passes still build N64-style assets (faceted, palette, pixel textures), now lit by the modern pipeline. Next steps: T66 (look shots, budgets and art.md in the modern look), T65 (how far props can go toward the photoreal barrel within a phone's budget), T58 (phones in modern lighting).
+- **Classic lighting is the default look** (owner's call, 2026-11-09, after trying modern lighting as the default: too heavy on phones); the grade (exposure, curve, gamma, highlights, contrast, saturation) works in every look (T66). Next: T58 (phone frame cost: the default grade is one extra pass in Native/Performance).
 - **The N64 look rebuild** (owner, 2026-11-07; replaces the shelved PS2 "look pass", old T20–T26 in git history): the
   starter zone rebuilt on the new pipeline ([art.md](art.md), [pipeline.md](pipeline.md)) before any new area. Behaviour
   never changes. In order, each written as a ticket when it's near (at the previous one's `/wrap`):

@@ -18,7 +18,8 @@ import { bakedLightOn } from '../render/bakeLight';
 import { overlayLines, PerfMeter, perfReport, type PerfFacts } from './perf';
 import type { AtmosphereId } from '../render/atmosphere';
 import { Sky } from '../render/sky';
-import { ModernLook } from '../render/experiments/modernLook';
+import { LOOK, ModernLook } from '../render/experiments/modernLook';
+import { GradePass, isNeutral } from '../render/grade';
 import { Hud } from '../ui/hud';
 import { nearestInteractable, sameLevel, type Area } from '../world/area';
 import { Boss } from './boss';
@@ -82,6 +83,8 @@ export class Game implements ScriptApi {
   private readonly motes: Motes;
   /** EXPERIMENT (T62): the Dev tab's modern lighting and the experiment barrels (render/experiments/modernLook.ts). */
   readonly modern: ModernLook;
+  /** Classic lighting's grade (render/grade.ts): made empty, loads and draws only once a dial leaves neutral. */
+  private readonly grade: GradePass;
   readonly player: Player;
   readonly rig: CameraRig;
   readonly hazards: Hazards;
@@ -143,6 +146,7 @@ export class Game implements ScriptApi {
     this.sky = new Sky(this.scene);
     this.shadows = new ShadowRig(this.renderer, this.scene, this.sky.sun);
     this.modern = new ModernLook(this.renderer, this.scene, this.camera, this.sky);
+    this.grade = new GradePass(this.renderer, this.scene, this.camera);
     this.motes = new Motes(this.scene);
     this.particles = new Particles(this.scene);
     this.pickups = new Pickups(this.scene);
@@ -349,9 +353,11 @@ export class Game implements ScriptApi {
   /** Draws the frame through the Display mode's pipeline (or the T62 experiment's). Public for the look scene's cost measure. */
   drawFrame() {
     // The pipelines draw more than once a frame, so they count it themselves (renderer.info).
-    this.renderer.info.autoReset = !this.retro.active && !this.modern.active;
-    if (this.retro.active) this.retro.render(this.renderer, this.scene, this.camera);
+    const graded = !this.retro.active && !this.modern.active && !isNeutral(LOOK);
+    this.renderer.info.autoReset = !this.retro.active && !this.modern.active && !graded;
+    if (this.retro.active) this.retro.render(this.renderer, this.scene, this.camera, LOOK);
     else if (this.modern.active) this.modern.render();
+    else if (graded) this.grade.render(LOOK);
     else this.renderer.render(this.scene, this.camera);
   }
 
@@ -875,6 +881,7 @@ export class Game implements ScriptApi {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.retro.setSize(size);
     this.modern.setSize(window.innerWidth, window.innerHeight, ratio);
+    this.grade.setSize(window.innerWidth, window.innerHeight, ratio);
     this.renderer.info.autoReset = !size;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
