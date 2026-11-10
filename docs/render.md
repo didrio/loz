@@ -63,7 +63,7 @@ models. It breaks art.md's rendering rules on purpose (PBR, SSAO, tone mapping) 
   The bake draws the body flat in its atlas (each vertex at its uv), so the shader's own anti-aliasing fits the texel size, then
   dilates each chart into the gutters. Look scene `modernBarrels` (testing.md).
   **Layout (owner, after the first renders):** every experiment barrel at the photoreal one's size (1.615 m: its 0.95 m × 1.7;
-  "every barrel in the game should be the larger one's size", for T67), a **row of four per type** north of today's barrel,
+  "every barrel in the game should be the larger one's size", for T67, since shelved with modern props), a **row of four per type** north of today's barrel,
   nearest first: baked, bakedRich, live, modern, photoreal (rows 3 m apart, barrels 2.2 m). The dev panel has a **switch per type**
   (Barrels: modern / live / baked / baked rich / photoreal; `BARREL_SWITCH`), each type's row built the first time it is switched
   on (clones share geometry, materials and the bake), so a phone can be timed one type at a time by walking closer; touch
@@ -102,6 +102,12 @@ models. It breaks art.md's rendering rules on purpose (PBR, SSAO, tone mapping) 
   staves' sloped edge normals at each groove: inset each stave's uv by a texel, or bake the groove darker); no contact shadow
   under props at noon (corner shade is off by default); the heads read murky and dark. At play distance live, baked and
   bakedRich can't be told apart.
+- **Modern props shelved** (owner's call, 2026-11-09, after T69). **Assets stay at today's kit level** (art.md, pipeline.md); the
+  barrels above stay behind their switches as a record. T69 built Maren twice on one smooth body at stylized-modern proportions:
+  **modern** (flat colours, Standard material) and **baked** (procedural skin, cloth, leather and hair baked into a 1024² atlas, with
+  baked occlusion). Both fit the prop budget (4.6k triangles, 1 draw call; a crowd of 20 cost less than the measurement's noise)
+  and couldn't be told apart at play distance, but **neither looked good as a person**, while the game's chunky villager stays
+  charming. Its code was removed before it was ever committed; this note is the record.
 - **Modern lighting** (`modernLook.ts`, `ModernLook`; never in N64): every `MeshLambertMaterial` in the scene is swapped for a cached
   `MeshStandardMaterial` twin (`twinOf`: colour and emissive shared by reference so flashes show, the surface patch carried over, metal
   gets metalness), rescanned every 0.25 s; `scene.environment` is a PMREM painted from the sky dome's colours (indoors the hemisphere
