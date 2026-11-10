@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FrameCap, overlayLines, PerfMeter, perfReport, type PerfFacts, type PerfScene } from './perf';
+import { FrameCap, HitchLog, overlayLines, PerfMeter, perfReport, type PerfFacts, type PerfScene } from './perf';
 
 const facts: PerfFacts = { calls: 1240, triangles: 312456, pixelRatio: 2, width: 2764, height: 1604, display: 'Native', modern: true, shadowMap: 1024 };
 
@@ -86,5 +86,58 @@ describe('FrameCap', () => {
 
   it('off (desktop), every frame is drawn', () => {
     expect(run(new FrameCap(false), 144)).toBeCloseTo(144, -1);
+  });
+});
+
+describe('HitchLog', () => {
+  const steady = (log: HitchLog, from: number, frames: number, ms = 1000 / 60) => {
+    let t = from;
+    for (let i = 0; i < frames; i++) log.frame((t += ms), 2, []);
+    return t;
+  };
+
+  it('a frame far over the usual is a hitch, with the causes noted in the frame before it', () => {
+    const log = new HitchLog();
+    let t = steady(log, 0, 60);
+    log.frame((t += 70), 55, ['shader']);
+    t = steady(log, t, 10);
+    log.frame((t += 45), 3, []);
+    expect(log.total).toBe(2);
+    expect(log.hitches[0]).toMatchObject({ cpuMs: 55, causes: ['shader'] });
+    expect(log.hitches[0].gapMs).toBeCloseTo(70);
+    expect(log.lines()[0]).toContain('by cause: shader 1, none 1');
+    expect(log.lines()[2]).toContain('nothing noted');
+  });
+
+  it('ordinary jitter, the first frames, and a page that was away are not hitches', () => {
+    const log = new HitchLog();
+    log.frame(0, 0, []);
+    log.frame(200, 0, []); // still warming up
+    let t = steady(log, 200, 60);
+    for (let i = 0; i < 30; i++) log.frame((t += i % 2 ? 22 : 12), 2, []); // uneven but normal
+    log.frame((t += 5000), 0, []); // the page was hidden
+    log.frame((t += 80), 0, [], true);
+    expect(log.total).toBe(0);
+    expect(log.lines()[0]).toContain('none');
+  });
+
+  it('on a 30 fps device, "usual" is 33 ms: a 50 ms frame is not a hitch, 100 ms is', () => {
+    const log = new HitchLog();
+    let t = steady(log, 0, 60, 33.3);
+    log.frame((t += 50), 2, []);
+    expect(log.total).toBe(0);
+    log.frame((t += 100), 2, ['resolution']);
+    expect(log.total).toBe(1);
+    expect(log.recent(t, 60)).toBe(1);
+  });
+});
+
+describe('the meter with hitches', () => {
+  it('names the last minute\'s hitches on the first line, only when there are some', () => {
+    const facts: PerfFacts = { calls: 1, triangles: 1, pixelRatio: 2, width: 1, height: 1, display: 'Auto', modern: false, shadowMap: 0 };
+    const stats = { fps: 60, frameMs: 16.7, worstMs: 80, cpuMs: 3 };
+    expect(overlayLines(stats, facts, 3)[0]).toBe('60 fps · 16.7 ms · worst 80 · 3 hitches/min');
+    expect(overlayLines(stats, facts, 1)[0]).toContain('1 hitch/min');
+    expect(overlayLines(stats, facts)[0]).toBe('60 fps · 16.7 ms · worst 80');
   });
 });

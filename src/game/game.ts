@@ -15,8 +15,8 @@ import { Particles } from '../render/particles';
 import { ShadowRig } from '../render/shadows';
 import { RetroPipeline, renderStill, internalSize, pixelRatioFor, DISPLAY_NAMES, DISPLAY_NATIVE, DISPLAY_N64, DISPLAY_AUTO } from '../render/retro';
 import { AutoResolution } from '../render/autoResolution';
-import { bakedLightOn } from '../render/bakeLight';
-import { FrameCap, overlayLines, PerfMeter, perfReport, type PerfFacts } from './perf';
+import { bakedLightOn, bakePending } from '../render/bakeLight';
+import { FrameCap, HitchLog, overlayLines, PerfMeter, perfReport, type HitchCause, type PerfFacts } from './perf';
 import type { AtmosphereId } from '../render/atmosphere';
 import { Sky } from '../render/sky';
 import { LOOK, ModernLook } from '../render/experiments/modernLook';
@@ -176,6 +176,7 @@ export class Game implements ScriptApi {
     // Sent to the background (another app or tab, the screen locked, a call): save, hush the audio, and come back paused.
     document.addEventListener('visibilitychange', () => {
       this.sfx.setHidden(document.hidden);
+      this.wasAway = true;
       if (document.hidden) {
         this.save();
         this.pauseMenu.openSoon();
@@ -232,6 +233,7 @@ export class Game implements ScriptApi {
     if (this.hiddenIn !== id) this.hiddenIn = null;
     this.interactAim.reset();
     this.autoRes.rest();
+    this.note('area');
     const { area, content } = createArea(id, this.physics);
     this.area = area;
     this.content = content;
@@ -304,6 +306,9 @@ export class Game implements ScriptApi {
       return;
     }
     const started = performance.now();
+    this.hitches.frame(now, this.lastCpuMs, this.noted, this.wasAway);
+    this.noted = [];
+    this.wasAway = false;
     this.resizeIfChanged();
     this.timer.update(now);
     const rawDt = Math.min(this.timer.getDelta(), 0.05);
@@ -339,13 +344,41 @@ export class Game implements ScriptApi {
     this.input.endFrame();
     if (this.settings.display === DISPLAY_AUTO && this.autoRes.frame(now)) this.resize();
     this.drawFrame();
-    this.perf.frame(now, performance.now() - started);
+    this.noteFrameChanges();
+    this.lastCpuMs = performance.now() - started;
+    this.perf.frame(now, this.lastCpuMs);
     if (now - this.perfShownAt >= 250) {
       this.perfShownAt = now;
-      this.hud.setPerf(this.devTab && this.showPerf && this.mode !== 'title' ? overlayLines(this.perf.stats(), this.perfFacts()).join('\n') : null);
+      this.hud.setPerf(this.devTab && this.showPerf && this.mode !== 'title' ? overlayLines(this.perf.stats(), this.perfFacts(), this.hitches.recent(now)).join('\n') : null);
     }
     requestAnimationFrame(this.frame);
   };
+
+  /** The hitch log (game/perf.ts, T70): long frames and what happened in them, for "Copy performance". */
+  readonly hitches = new HitchLog();
+  private noted: HitchCause[] = [];
+  private lastCpuMs = 0;
+  private wasAway = false;
+  private seen = { programs: 0, textures: 0, geometries: 0, bake: 0, menu: false };
+
+  /** Notes something that may make this frame long (the hitch log). */
+  note(cause: HitchCause) {
+    if (!this.noted.includes(cause)) this.noted.push(cause);
+  }
+
+  /** What changed during the frame: a new shader program, new GPU uploads, baked light landing, a menu opening or closing. */
+  private noteFrameChanges() {
+    const { info } = this.renderer;
+    const s = this.seen;
+    const programs = info.programs?.length ?? 0;
+    if (programs > s.programs) this.note('shader');
+    if (info.memory.textures > s.textures || info.memory.geometries > s.geometries) this.note('upload');
+    const bake = bakePending();
+    if (bake !== s.bake) this.note('bake');
+    const menu = this.pauseMenu.isOpen || this.devPanel.isOpen;
+    if (menu !== s.menu) this.note('menu');
+    this.seen = { programs, textures: info.memory.textures, geometries: info.memory.geometries, bake, menu };
+  }
 
   /** What the renderer says about the frame just drawn (the pipelines count their own passes: `renderer.info`). */
   private perfFacts(): PerfFacts {
@@ -369,7 +402,7 @@ export class Game implements ScriptApi {
       windowSize: `${window.innerWidth}×${window.innerHeight}`, devicePixelRatio: window.devicePixelRatio,
       geometries: info.memory.geometries, textures: info.memory.textures, programs: info.programs?.length ?? 0,
       lines: info.render.lines, points: info.render.points, shadows: this.settings.shadows && !this.area.indoor, bakedLight: bakedLightOn(),
-      changed: this.devPanel.changedText(),
+      changed: this.devPanel.changedText(), hitches: this.hitches.lines(),
     });
   }
 
@@ -841,6 +874,7 @@ export class Game implements ScriptApi {
   // ---------------------------------------------------------------------------
 
   save() {
+    this.note('save');
     if (this.mode === 'title') return;
     this.saveSlot.write(this.state.toSave());
     this.autosaveT = AUTOSAVE_SECONDS;
@@ -934,6 +968,7 @@ export class Game implements ScriptApi {
   private readonly autoRes = new AutoResolution(pixelRatioFor(DISPLAY_NATIVE, window.devicePixelRatio, wantsTouch()));
 
   private resize() {
+    this.note('resolution');
     this.sizedFor = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio };
     const { display } = this.settings;
     this.autoRes.setMax(pixelRatioFor(DISPLAY_NATIVE, window.devicePixelRatio, wantsTouch()));

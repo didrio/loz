@@ -193,9 +193,22 @@ export default async function run(t) {
     await up(1);
   });
 
-  await step('☰ opens the pause menu, ✕ closes it', async () => {
+  await step('☰ opens the pause menu; tapping Display\'s options switches it (Auto, then back to Native); ✕ closes it', async () => {
     await tap('.menu-btn');
     await until(() => window.embervale.pauseMenu.isOpen, 5000);
+    // A finger never hovers (iPhone Safari drops a tap whose pretend mouse move redrew the menu, T70).
+    const pick = async (name) => {
+      const o = page.locator('.gmenu .seg-opt', { hasText: new RegExp(`^${name}$`) }).first();
+      await o.scrollIntoViewIfNeeded();
+      const b = await o.boundingBox();
+      await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
+      await wait(300);
+    };
+    await pick('Auto');
+    check((await game(() => window.embervale.settings.display)) === 3, 'one tap on Auto did not choose it');
+    await pick('Native');
+    check((await game(() => window.embervale.settings.display)) === 0, 'one tap on Native did not choose it');
+    check((await game(() => window.embervale.renderer.getPixelRatio())) === (await game(() => Math.min(2, devicePixelRatio))), 'Native did not restore its ratio');
     await tap('.gmenu-close');
     await until(() => !window.embervale.pauseMenu.isOpen, 5000);
   });

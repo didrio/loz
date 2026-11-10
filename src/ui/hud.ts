@@ -259,8 +259,10 @@ export class Hud {
     const bind = (el: HTMLElement, h: () => MenuHandlers) => {
       // Hover follows the mouse's own movement, not rows scrolling under a resting cursor (a trackpad
       // fling would otherwise redraw the menu mid-scroll, stop its momentum and snap back to the selection).
-      el.addEventListener('mousemove', (e) => {
-        if (e.movementX === 0 && e.movementY === 0) return;
+      // A real mouse only: a finger's tap also sends a pretend mouse move, and iPhone Safari treats a tap whose mouse move
+      // changes the page (this hover redraws the menu) as a hover and never sends its click (T70: Display → Native "never took").
+      el.addEventListener('pointermove', (e) => {
+        if (e.pointerType !== 'mouse' || (e.movementX === 0 && e.movementY === 0)) return;
         const r = rowOf(e);
         if (!r || r.classList.contains('selected')) return;
         this.hoverDraw = true;

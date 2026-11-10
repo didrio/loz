@@ -61,9 +61,10 @@ const one = (v: number) => v.toFixed(1);
 const count = (n: number) => (n >= 100000 ? `${Math.round(n / 1000)}k` : n >= 10000 ? `${(n / 1000).toFixed(1)}k` : String(n));
 
 /** The overlay's lines (short: it is always on). */
-export function overlayLines(s: PerfStats | null, f: PerfFacts): string[] {
+export function overlayLines(s: PerfStats | null, f: PerfFacts, hitchesLastMinute = 0): string[] {
+  const hitches = hitchesLastMinute ? ` · ${hitchesLastMinute} hitch${hitchesLastMinute === 1 ? '' : 'es'}/min` : '';
   return [
-    s ? `${Math.round(s.fps)} fps · ${one(s.frameMs)} ms · worst ${Math.round(s.worstMs)}` : '… fps',
+    s ? `${Math.round(s.fps)} fps · ${one(s.frameMs)} ms · worst ${Math.round(s.worstMs)}${hitches}` : '… fps',
     s ? `cpu ${one(s.cpuMs)} ms · ${count(f.calls)} calls · ${count(f.triangles)} tris` : `${count(f.calls)} calls · ${count(f.triangles)} tris`,
     `${f.pixelRatio.toFixed(2).replace(/0$/, '')}× · ${f.width}×${f.height} · ${f.display}${f.modern ? ' · modern' : ''}${f.shadowMap ? ` · sh ${f.shadowMap}` : ''}`,
   ];
@@ -86,6 +87,8 @@ export interface PerfScene {
   bakedLight: boolean;
   /** The dev panel's settings that are not at their defaults ("" for none). */
   changed: string;
+  /** The hitch log's lines (`HitchLog.lines`). */
+  hitches?: string[];
 }
 
 /** The text "Copy performance" puts on the clipboard: the scene and the numbers, to paste to an agent. */
@@ -103,6 +106,7 @@ export function perfReport(s: PerfStats | null, f: PerfFacts, scene: PerfScene):
     `Display: ${f.display}; shadows ${scene.shadows ? `on (map ${f.shadowMap || 'idle'})` : 'off'}; baked light ${scene.bakedLight ? 'on' : 'off'}; modern lighting ${f.modern ? 'on' : 'off'}`,
     `GPU: ${scene.gpu}`,
     `Dev settings changed from the defaults: ${scene.changed ? `\n${scene.changed}` : 'none'}`,
+    ...(scene.hitches ?? []),
   ].join('\n');
 }
 
@@ -132,5 +136,84 @@ export class FrameCap {
     if (!this.enabled || this.interval > 1000 / CAP_ABOVE_HZ) return (this.drewLast = true);
     this.drewLast = !this.drewLast;
     return this.drewLast;
+  }
+}
+
+/** What can happen in a frame that might make it long (the hitch log's causes). */
+export type HitchCause = 'resolution' | 'shader' | 'upload' | 'area' | 'bake' | 'save' | 'menu';
+
+/** A frame this many times the usual one, or this much longer (ms), whichever is more, is a hitch. */
+const HITCH_TIMES = 2.5;
+const HITCH_EXTRA_MS = 12;
+/** How many frames the "usual" (the median gap) is taken over. */
+const USUAL_OVER = 120;
+/** How many hitches the report lists. */
+const HITCH_KEEP = 30;
+
+export interface Hitch {
+  /** Seconds since the page loaded. */
+  at: number;
+  /** The gap between this frame and the one before, ms. */
+  gapMs: number;
+  /** How long the game's own code took in the long frame, ms (most of the gap: our code; little of it: the GPU, the browser, garbage collection). */
+  cpuMs: number;
+  causes: HitchCause[];
+}
+
+/**
+ * The hitch log (T70): frames much longer than the usual, with what happened in them, for "Copy performance". Stutter is a few
+ * long frames, not a low average, so the meter's fps can look fine while play doesn't. Pure: the game feeds each frame's start, the
+ * previous frame's code time and the causes it noted during that frame; a long frame with none noted is the browser's own work
+ * (usually garbage collection) or the GPU.
+ */
+export class HitchLog {
+  private gaps: number[] = [];
+  private usual = 1000 / 60;
+  private sinceSort = 0;
+  private last = -1;
+  readonly hitches: Hitch[] = [];
+  private readonly counts = new Map<string, number>();
+  total = 0;
+
+  /** At the start of a frame: `now` its timestamp (ms), `cpuMs` and `causes` the previous frame's. `hidden`: the page was away (not a hitch). */
+  frame(now: number, cpuMs: number, causes: readonly HitchCause[], hidden = false) {
+    const gap = this.last >= 0 ? now - this.last : 0;
+    this.last = now;
+    if (gap <= 0 || hidden || gap > 2000) return; // the page in the background, or a pause in the debugger
+    const limit = Math.max(this.usual * HITCH_TIMES, this.usual + HITCH_EXTRA_MS);
+    if (this.gaps.length >= 30 && gap > limit) {
+      const h: Hitch = { at: now / 1000, gapMs: gap, cpuMs, causes: [...causes] };
+      this.hitches.push(h);
+      if (this.hitches.length > HITCH_KEEP) this.hitches.shift();
+      this.total++;
+      const key = causes.length ? causes.join('+') : 'none';
+      this.counts.set(key, (this.counts.get(key) ?? 0) + 1);
+    } else {
+      // Hitches don't move "usual" (a run of them would hide themselves).
+      this.gaps.push(gap);
+      if (this.gaps.length > USUAL_OVER) this.gaps.shift();
+      if (++this.sinceSort >= 15 || this.gaps.length < 30) {
+        this.sinceSort = 0;
+        const sorted = [...this.gaps].sort((a, b) => a - b);
+        this.usual = sorted[sorted.length >> 1];
+      }
+    }
+  }
+
+  /** Hitches in the last `seconds` before `now` (ms). */
+  recent(now: number, seconds = 60) {
+    let n = 0;
+    for (const h of this.hitches) if (now / 1000 - h.at <= seconds) n++;
+    return n;
+  }
+
+  /** The report's lines: the usual frame, counts by cause, then the latest hitches. */
+  lines(): string[] {
+    if (!this.total) return [`Hitches: none (usual frame ${this.usual.toFixed(1)} ms)`];
+    const by = [...this.counts].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(', ');
+    return [
+      `Hitches: ${this.total} (frames over ${HITCH_TIMES}× the usual ${this.usual.toFixed(1)} ms); by cause: ${by}`,
+      ...this.hitches.map((h) => `  ${h.at.toFixed(1)} s: ${Math.round(h.gapMs)} ms (code ${h.cpuMs.toFixed(1)} ms) ${h.causes.length ? h.causes.join(', ') : 'nothing noted (garbage collection, the GPU or the browser)'}`),
+    ];
   }
 }

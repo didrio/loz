@@ -20,7 +20,7 @@ implementation.
 - **Run:** choose from "Choosing a ticket's Run line" in CLAUDE.md.
 - **Scaling checklist:** check the triggers in [roadmap.md](roadmap.md) while writing; a fired
   item goes into the ticket's Notes, so the agent doing it needn't read the checklist.
-- **Ids** are never reused (next free: **T70**). The order of this file is the run order; the
+- **Ids** are never reused (next free: **T71**). The order of this file is the run order; the
   owner reorders freely. An idea that isn't near yet is a line in roadmap.md, not a ticket.
 
 ```
@@ -51,6 +51,17 @@ every NPC, quest, enemy, boss and puzzle plays exactly as before. Sallowmere wai
 - **Done so far (T51c):** the mill (outside, door frame, lamp bracket, axle), its sails (hub moved 0.35 m out so the lowest tip clears the wall and the lintel), Odo's stall and every ruined home are final (`render/models/mill.ts`, `ruins.ts`; pipeline.md "Scenery buildings"); colliders, `MILL_TOWER`, `MILL_BED`, jars and flags untouched. Phone check is in art.md "Budgets" (about +3% triangles, 22 fewer draw calls in the village). New look scene `vignetteModels` (both cottages, the mill, sails, stall and a ruin from the front, three-quarter and side). Baselines approved for `vignetteModels`, `mill`, `villageDetails`, `vignette`, `village`, `ruins`, `opening`, `contact`, `bake` (Native and N64); look budgets re-set for `ruins`, `opening`, `contact` (the new pieces cost triangles). The vignette is **locked into the golden set** (owner approved, 2026-11-08). The other outdoor scenes still show "changed" from the new buildings: approve each as you run and review it.
 - **Done so far (T51b):** Thistledown's two cottages (gable roofs, deep eaves, timber gables, tapered chimneys, each house's touches), the well, the fence, the lantern post, the barrel and the crate are final (`render/models/village.ts`, pipeline.md "Scenery buildings"); `piece` budget 3,000. The glowing panes and lantern cores stay the world's own. Look baselines approved (Native and N64) for `vignette`, `village`, `villageDetails`, `contact`, `mill`; `villageDetails` is at 258,808 / 259,000 triangles in its budget. The village atmosphere was left as it is (the frame already reads warm); no day motes.
 - **Done so far (T51a):** the valley's nature is final (`render/models/nature.ts`, pipeline.md "Instanced nature"), the merge keeps kit paint, the `vignette` look scene exists. Look baselines approved for `vignette`, `field`, `grove`, `village`, `contact`; every other outdoor scene still shows "changed" from the new trees and grass (atmosphere, blight, thorns, opening, ruins, bake, ...): approve each as you run and review it.
+
+### T70: Find and fix the phone's stutter (from the hitch log)
+**Run:** auto · opus · high
+**Why:** On the owner's **iPhone Air** (3× screen, ProMotion, Safari) the average fps is good but play **stutters**: some frames take far longer than the rest.
+**Done so far:** the **hitch log** (engine.md "The performance meter": long frames with their causes, "N hitches/min" on the meter, the list in Copy performance). **Display → Native "never took" on the phone:** headless taps on the options work; the likely iPhone cause (a tap whose pretend mouse move redrew the menu loses its click) is fixed by hovering with a real mouse only, and the `touch` smoke taps Auto then Native. **Unconfirmed on the phone:** ask the owner first whether it works now.
+**Done when:**
+- The owner plays a minute or two on the phone (walking, turning, a fight, an area change) and pastes Copy performance; the top causes are fixed, with before/after hitch counts from a second paste.
+- Likely fixes by cause: **resolution**: Auto steps rarer (hold still while the stick or camera moves; fewer probes up). **none** with little code time (garbage collection): reuse scratch vectors in the per-frame paths (`GroundEnemy.walk`, `toScreen`, `guardGaugePosition`, the camera, `Combat`). **shader**: warm the area's programs at load (`renderer.compile`/`compileAsync`). **upload**/**bake**: spread over frames. Big **code** time: CPU-profile that path (a scratch CDP profile at phone size, CPU ×4).
+**Read first:** engine.md "The performance meter" and "What a phone frame costs"; render.md "Display modes" (Auto); `game/perf.ts`; `render/autoResolution.ts`; then only the files the pasted causes point to.
+**Verify:** `npm run check`; smoke `touch`; the owner's second paste.
+**Notes:** Measure on the phone, not by guessing: the Mac can't show a phone's GC pauses or compile stalls.
 
 ### T64: Exposure and sky light that follow the time and the place (modern lighting)
 **Run:** auto · sonnet · high
