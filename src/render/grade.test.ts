@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { LOOK } from './experiments/modernLook';
-import { gradeColor, GRADE_GLSL, isNeutral, toneMappingFor, type GradeParams } from './grade';
+import { canFold, foldedToneMappingGlsl, gradeColor, GRADE_GLSL, isNeutral, toneMappingFor, type GradeParams } from './grade';
 
 const NEUTRAL: GradeParams = { toneMap: 0, exposure: 1, gamma: 1, highlights: 0, contrast: 1, saturation: 1 };
 
@@ -60,5 +60,32 @@ describe('the grade (T66)', () => {
     expect(toneMappingFor(0, true)).toBe(THREE.NeutralToneMapping);
     expect(toneMappingFor(4, true)).toBe(THREE.LinearToneMapping);
     expect(toneMappingFor(2, false)).toBe(THREE.AgXToneMapping);
+  });
+});
+
+describe('the folded grade (T58)', () => {
+  const OWNER: GradeParams = { toneMap: 1, exposure: 2, gamma: 1.25, highlights: -1, contrast: 1.15, saturation: 0.9 };
+
+  it('becomes three\'s CustomToneMapping: the chosen curve, then the grade with the dials as constants', () => {
+    const glsl = foldedToneMappingGlsl(OWNER);
+    expect(glsl).toContain('vec3 CustomToneMapping( vec3 color ) { return foldGradeApply( NeutralToneMapping( color ) ); }');
+    expect(glsl).toContain('const float foldContrast = 1.15;');
+    expect(glsl).toContain('const float foldHighlights = -1.0;');
+    expect(glsl).not.toMatch(/uniform|gradeContrast|gradeApply\(/); // no names that clash with the pass's uniforms
+    expect(foldedToneMappingGlsl({ ...OWNER, toneMap: 0 })).toContain('LinearToneMapping( color )'); // Auto under classic
+  });
+
+  it('three\'s chunks still have the lines foldGrade replaces (an upgrade would otherwise drop the grade or double the fog)', () => {
+    expect(THREE.ShaderChunk.tonemapping_pars_fragment).toContain('vec3 CustomToneMapping( vec3 color ) { return color; }');
+    expect(THREE.ShaderChunk.tonemapping_fragment).toContain('gl_FragColor.rgb = toneMapping( gl_FragColor.rgb );');
+    expect(THREE.ShaderChunk.fog_fragment).toContain('gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );');
+  });
+
+  it('frames fold only while the dials match the compiled ones; exposure is live', () => {
+    expect(canFold(OWNER, OWNER)).toBe(true);
+    expect(canFold({ ...OWNER, exposure: 1.4 }, OWNER)).toBe(true);
+    expect(canFold({ ...OWNER, gamma: 1.3 }, OWNER)).toBe(false);
+    expect(canFold({ ...OWNER, toneMap: 2 }, OWNER)).toBe(false);
+    expect(canFold(OWNER, null)).toBe(false);
   });
 });

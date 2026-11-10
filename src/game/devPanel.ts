@@ -116,6 +116,8 @@ export class DevPanel {
     const tuning: MenuRow[] = [
       { kind: 'slider', label: 'Texture resolution', group: 'Rendering', def: DEFAULT_TEXTURE_RESOLUTION, ...TEXTURE_RESOLUTION_RANGE, step: 1, get: textureResolution, format: (v) => `${v} / m`, set: setTextureResolution },
       { kind: 'toggle', label: 'Baked light', def: true, get: bakedLightOn, set: (on) => setBakedLight(on) },
+      // T58: classic's grade is folded into the materials (no extra pass); this draws it the old way, for an A/B.
+      { kind: 'toggle', label: 'Grade as a pass (old)', def: false, get: () => game.gradePass, set: (on) => (game.gradePass = on) },
       ...bakeSliders('sky', 'Outdoor'),
       ...bakeSliders('indoor', 'Indoor'),
       ...lookRows(),

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { overlayLines, PerfMeter, perfReport, type PerfFacts, type PerfScene } from './perf';
+import { FrameCap, overlayLines, PerfMeter, perfReport, type PerfFacts, type PerfScene } from './perf';
 
-const facts: PerfFacts = { calls: 1240, triangles: 312456, pixelRatio: 2, width: 2764, height: 1604, display: 'Native', modern: true };
+const facts: PerfFacts = { calls: 1240, triangles: 312456, pixelRatio: 2, width: 2764, height: 1604, display: 'Native', modern: true, shadowMap: 1024 };
 
 describe('PerfMeter', () => {
   it('says nothing until there are two frames', () => {
@@ -47,7 +47,7 @@ describe('the overlay and the report', () => {
     expect(overlayLines(stats, facts)).toEqual([
       '58 fps · 17.2 ms · worst 24',
       'cpu 6.1 ms · 1240 calls · 312k tris',
-      '2.0× · 2764×1604 · Native · modern',
+      '2.0× · 2764×1604 · Native · modern · sh 1024',
     ]);
   });
 
@@ -68,5 +68,23 @@ describe('the overlay and the report', () => {
     expect(text).toContain('GPU: ANGLE (Apple, Metal)');
     expect(text).toContain('Exposure: 1.30 (default 1.00)');
     expect(perfReport(null, facts, { ...scene, changed: '' })).toContain('changed from the defaults: none');
+  });
+});
+
+describe('FrameCap', () => {
+  const run = (cap: FrameCap, hz: number, seconds = 3) => {
+    let drawn = 0;
+    for (let t = 0; t < seconds * 1000; t += 1000 / hz) if (cap.shouldDraw(t)) drawn++;
+    return drawn / seconds;
+  };
+
+  it('a 120 Hz phone draws 60 frames a second; a 60 Hz or 90 Hz one draws them all', () => {
+    expect(run(new FrameCap(true), 120)).toBeCloseTo(60, -1);
+    expect(run(new FrameCap(true), 60)).toBeCloseTo(60, -1);
+    expect(run(new FrameCap(true), 90)).toBeCloseTo(90, -1);
+  });
+
+  it('off (desktop), every frame is drawn', () => {
+    expect(run(new FrameCap(false), 144)).toBeCloseTo(144, -1);
   });
 });

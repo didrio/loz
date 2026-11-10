@@ -13,15 +13,18 @@ import { Icons } from '../render/icons';
 import { Motes } from '../render/motes';
 import { Particles } from '../render/particles';
 import { ShadowRig } from '../render/shadows';
-import { RetroPipeline, renderStill, internalSize, pixelRatioFor, DISPLAY_NAMES, DISPLAY_NATIVE, DISPLAY_PERFORMANCE, DISPLAY_N64 } from '../render/retro';
+import { RetroPipeline, renderStill, internalSize, pixelRatioFor, DISPLAY_NAMES, DISPLAY_NATIVE, DISPLAY_N64, DISPLAY_AUTO } from '../render/retro';
+import { AutoResolution } from '../render/autoResolution';
 import { bakedLightOn } from '../render/bakeLight';
-import { overlayLines, PerfMeter, perfReport, type PerfFacts } from './perf';
+import { FrameCap, overlayLines, PerfMeter, perfReport, type PerfFacts } from './perf';
 import type { AtmosphereId } from '../render/atmosphere';
 import { Sky } from '../render/sky';
 import { LOOK, ModernLook } from '../render/experiments/modernLook';
-import { GradePass, isNeutral } from '../render/grade';
+import { GradePass, canFold, foldGrade, isNeutral, renderFolded } from '../render/grade';
 import { Hud } from '../ui/hud';
-import { nearestInteractable, sameLevel, type Area } from '../world/area';
+import { nearestInteractable, sameLevel, type Area, type Interactable } from '../world/area';
+import { InteractAim } from './lockon';
+import { Haptics } from '../core/haptics';
 import { Boss } from './boss';
 import { CameraRig } from './camera';
 import { dungeonQuiet } from './dungeonQuiet';
@@ -53,8 +56,6 @@ export type Mode = 'title' | 'play' | 'cutscene';
 
 const SETTINGS_KEY = 'embervale:settings';
 const AUTOSAVE_SECONDS = 30;
-/** Touch: how long an Interact tap waits for something to come into reach. */
-const INTERACT_BUFFER = 0.25;
 /** A full day passes in about five minutes. */
 const HOURS_PER_SECOND = 1 / 24; // a day and night take 10 minutes
 const WARP_HOURS_PER_SECOND = 6;
@@ -72,6 +73,8 @@ export class Game implements ScriptApi {
   private lookDir = new THREE.Vector3();
   readonly input: Input;
   readonly sfx = new Sfx();
+  /** Vibration where the browser has it (Android): hits, blocks, guard breaks (Settings → Vibration). */
+  readonly haptics = new Haptics();
   readonly hud = new Hud();
   readonly director = new Director();
   readonly state = new GameState();
@@ -115,6 +118,8 @@ export class Game implements ScriptApi {
   readonly devPanel: DevPanel;
   /** Frame timing for the performance meter (bottom right), and whether the dev panel has it on (it starts on). */
   readonly perf = new PerfMeter();
+  /** Touch devices hold 60 fps on faster screens (game/perf.ts). */
+  private readonly frameCap = new FrameCap(wantsTouch());
   readonly perfByDefault = !(globalThis as { __embervaleNoPerf?: boolean }).__embervaleNoPerf; // the test harness turns it off
   showPerf = this.perfByDefault;
   private perfShownAt = 0;
@@ -125,7 +130,8 @@ export class Game implements ScriptApi {
   readonly choice: ChoiceMenu;
   /** Slow motion for cutscenes (1 = normal). */
   private timeScale = 1;
-  private interactBuffer = 0;
+  /** What an interact press uses (touch forgives a late or early tap: game/lockon.ts). */
+  private readonly interactAim = new InteractAim<Interactable>();
   /** The music is off (Wren just died). */
   private musicSilenced = false;
   /** Wren is hidden (a vision) while this area is loaded; leaving it shows her again. */
@@ -134,14 +140,17 @@ export class Game implements ScriptApi {
   private pendingScripts: Script[] = [];
 
   constructor(canvas: HTMLCanvasElement, readonly physics: Physics, private readonly store: KeyValueStore = localStore) {
+    foldGrade(LOOK); // before any shader compiles
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !(wantsTouch() && window.devicePixelRatio >= 2) }); // multisampling on a dense phone screen costs a lot and shows nothing
+    // Checking every new shader for errors waits on the GPU's compile (a stall each time one is built); only worth it while developing.
+    this.renderer.debug.checkShaderErrors = import.meta.env.DEV;
     this.renderer.setPixelRatio(pixelRatioFor(DISPLAY_NATIVE, window.devicePixelRatio, wantsTouch()));
     this.scene.fog = new THREE.Fog(0xbfe0f2, 50, 215);
     window.addEventListener('resize', () => this.resize()); // sized for real by applySettings, once the settings are read
     this.watchPixelRatio();
 
     this.input = new Input(canvas);
-    this.touch = new TouchControls(this.input, document.getElementById('hud')!, () => this.sfx.init());
+    this.touch = new TouchControls(this.input, document.getElementById('hud')!, () => this.onGesture());
     this.dialog = new Dialog(this.hud, this.sfx, () => this.area.voiceRoom ?? 'outdoors');
     this.sky = new Sky(this.scene);
     this.shadows = new ShadowRig(this.renderer, this.scene, this.sky.sun);
@@ -156,7 +165,7 @@ export class Game implements ScriptApi {
     this.combat = new Combat(this);
 
     this.saveSlot = new SaveSlot(store);
-    this.defaultSettings = { ...DEFAULT_SETTINGS, display: wantsTouch() ? DISPLAY_PERFORMANCE : DISPLAY_NATIVE, shadows: !wantsTouch() };
+    this.defaultSettings = { ...DEFAULT_SETTINGS, display: wantsTouch() ? DISPLAY_AUTO : DISPLAY_NATIVE, shadows: !wantsTouch() };
     this.settings = decodeSettings(store.get(SETTINGS_KEY), this.defaultSettings);
     this.applySettings();
     this.loadArea('overworld');
@@ -164,7 +173,14 @@ export class Game implements ScriptApi {
     this.title = new TitleMenu(this.hud, this.sfx, !!this.saveSlot.load());
 
     window.addEventListener('pagehide', () => this.save());
-    document.addEventListener('visibilitychange', () => document.hidden && this.save());
+    // Sent to the background (another app or tab, the screen locked, a call): save, hush the audio, and come back paused.
+    document.addEventListener('visibilitychange', () => {
+      this.sfx.setHidden(document.hidden);
+      if (document.hidden) {
+        this.save();
+        this.pauseMenu.openSoon();
+      } else this.keepAwake();
+    });
     this.debug = new URLSearchParams(location.search).has('debug') ? new Debug(this) : null;
     this.icons = new Icons(this.renderer);
     this.hud.icon = (id) => this.icons.get(id);
@@ -214,6 +230,8 @@ export class Game implements ScriptApi {
       this.area.dispose();
     }
     if (this.hiddenIn !== id) this.hiddenIn = null;
+    this.interactAim.reset();
+    this.autoRes.rest();
     const { area, content } = createArea(id, this.physics);
     this.area = area;
     this.content = content;
@@ -281,6 +299,10 @@ export class Game implements ScriptApi {
   // ---------------------------------------------------------------------------
 
   private frame = (now: number) => {
+    if (!this.frameCap.shouldDraw(now)) {
+      requestAnimationFrame(this.frame);
+      return;
+    }
     const started = performance.now();
     this.resizeIfChanged();
     this.timer.update(now);
@@ -315,6 +337,7 @@ export class Game implements ScriptApi {
 
     this.updateWorld(dt, rawDt);
     this.input.endFrame();
+    if (this.settings.display === DISPLAY_AUTO && this.autoRes.frame(now)) this.resize();
     this.drawFrame();
     this.perf.frame(now, performance.now() - started);
     if (now - this.perfShownAt >= 250) {
@@ -330,7 +353,7 @@ export class Game implements ScriptApi {
     const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
     return {
       calls: info.render.calls, triangles: info.render.triangles, pixelRatio: this.renderer.getPixelRatio(),
-      width: size.x, height: size.y, display: DISPLAY_NAMES[this.settings.display], modern: this.modern.active,
+      width: size.x, height: size.y, display: DISPLAY_NAMES[this.settings.display], modern: this.modern.active, shadowMap: this.shadows.mapSize,
     };
   }
 
@@ -350,14 +373,20 @@ export class Game implements ScriptApi {
     });
   }
 
+  /** Forces classic's grade through its old pass instead of the folded one (the A/B of T58: `embervale.gradePass = true`). */
+  gradePass = false;
+
   /** Draws the frame through the Display mode's pipeline (or the T62 experiment's). Public for the look scene's cost measure. */
   drawFrame() {
     // The pipelines draw more than once a frame, so they count it themselves (renderer.info).
+    // Classic's grade is folded into the materials (render/grade.ts `foldGrade`, no extra pass) unless the dev sliders moved it since load.
     const graded = !this.retro.active && !this.modern.active && !isNeutral(LOOK);
-    this.renderer.info.autoReset = !this.retro.active && !this.modern.active && !graded;
+    const pass = graded && (this.gradePass || !canFold(LOOK));
+    this.renderer.info.autoReset = !this.retro.active && !this.modern.active && !pass;
     if (this.retro.active) this.retro.render(this.renderer, this.scene, this.camera, LOOK);
     else if (this.modern.active) this.modern.render();
-    else if (graded) this.grade.render(LOOK);
+    else if (pass) this.grade.render(LOOK);
+    else if (graded) renderFolded(this.renderer, this.scene, this.camera, LOOK);
     else this.renderer.render(this.scene, this.camera);
   }
 
@@ -388,6 +417,7 @@ export class Game implements ScriptApi {
     this.placeAtSpawn();
     this.areaName = this.area.nameAt(this.player.pos.x, this.player.pos.z);
     this.mode = 'play';
+    this.keepAwake();
     this.content.start?.(this);
     if (newGame) this.run(intro);
     else this.showAreaName(this.areaName);
@@ -403,12 +433,9 @@ export class Game implements ScriptApi {
 
     // "Interact" comes before "jump" because they share a gamepad button (touch has a button of its own).
     const near = this.nearInteractable();
-    const used = this.input.pressed('interact');
-    // On touch a tap that lands a frame after the thing left reach (a thumb is slower than the stick) still counts for a moment.
-    this.interactBuffer = used ? (touch && !near ? INTERACT_BUFFER : 0) : Math.max(0, this.interactBuffer - dt);
-    if (near && (used || this.interactBuffer > 0)) {
-      this.interactBuffer = 0;
-      const script = this.content.scripts[near.id];
+    const use = this.interactAim.update(near, this.input.pressed('interact'), touch, this.player.pos, dt);
+    if (use) {
+      const script = this.content.scripts[use.id];
       if (script) this.run(script);
       return;
     }
@@ -477,7 +504,9 @@ export class Game implements ScriptApi {
   private touchContext(): TouchContext {
     const { mode, state } = this;
     const menu = this.pauseMenu.isOpen || this.choice.isOpen || this.dialog.asking;
-    const near = mode === 'play' ? this.nearInteractable() : null;
+    const touch = this.input.device === 'touch';
+    // The button lingers while a tap would still count (game/lockon.ts InteractAim), so it never vanishes under a landing thumb.
+    const near = mode === 'play' ? this.nearInteractable() ?? (touch ? this.interactAim.lingering(this.player.pos) : null) : null;
     return {
       mode: mode === 'title' ? 'title' : menu ? 'menu' : mode === 'cutscene' ? 'dialog' : 'play',
       use: near?.label ?? null, sword: state.has('hasSword'), shield: state.has('hasShield'), tether: state.items.has('tether'), locked: !!this.combat.lock,
@@ -489,7 +518,9 @@ export class Game implements ScriptApi {
     this.camera.updateMatrixWorld();
     const v = p.clone().project(this.camera);
     if (v.z > 1) return null;
-    return { x: ((v.x + 1) / 2) * window.innerWidth, y: ((1 - v.y) / 2) * window.innerHeight };
+    // The size the canvas was last sized for (read once a frame in `resizeIfChanged`): reading the window's size here, after
+    // the HUD's writes, would make the browser lay out the page mid-frame, once per call.
+    return { x: ((v.x + 1) / 2) * this.sizedFor.w, y: ((1 - v.y) / 2) * this.sizedFor.h };
   }
 
   /** -1 / 1 when the menu keys step up / down this frame. */
@@ -764,6 +795,7 @@ export class Game implements ScriptApi {
     if (!s) return false;
     this.hud.hideTitle();
     this.mode = 'play';
+    this.keepAwake();
     this.content.start?.(this);
     this.loadDevState(s);
     return true;
@@ -827,6 +859,7 @@ export class Game implements ScriptApi {
     this.input.mouseSensitivity = s.mouseSensitivity;
     this.input.stickSensitivity = s.stickSensitivity;
     this.input.invertY = s.invertY;
+    this.haptics.enabled = s.haptics;
     this.shadows.configure(s.shadows, s.display, wantsTouch());
     this.resize();
   }
@@ -841,6 +874,32 @@ export class Game implements ScriptApi {
 
   get isFullscreen() {
     return !!document.fullscreenElement;
+  }
+
+  /**
+   * A finger lifted (inside the touch's own event, where browsers allow what follows): start the audio (iOS needs it here),
+   * keep the screen awake, and on the first tap go fullscreen and hold landscape where the browser can (Android; owner's call,
+   * T58: like a store game). Once per page load: a player who leaves fullscreen isn't pulled back (Settings has the switch).
+   */
+  private onGesture() {
+    this.sfx.init();
+    this.keepAwake();
+    if (this.fullscreenTried) return;
+    this.fullscreenTried = true;
+    if (!wantsTouch() || !this.canFullscreen || this.isFullscreen || new URLSearchParams(location.search).has('touch')) return; // not under test (?touch=)
+    document.documentElement.requestFullscreen({ navigationUI: 'hide' })
+      .then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape'))
+      .catch(() => {}); // refused, or no orientation lock (iPad): the "turn sideways" card still covers portrait
+  }
+
+  private fullscreenTried = false;
+  private wakeLock: { released: boolean } | null = null;
+
+  /** Asks the screen not to dim or lock during play (a long read or a cutscene has no touches). The browser drops it when the page hides. */
+  private keepAwake() {
+    const wl = (navigator as Navigator & { wakeLock?: { request(type: 'screen'): Promise<{ released: boolean }> } }).wakeLock;
+    if (!wl || document.hidden || (this.wakeLock && !this.wakeLock.released)) return;
+    wl.request('screen').then((lock) => (this.wakeLock = lock)).catch(() => {});
   }
 
   /** Browsers only allow this from a key press or click, so a gamepad button may be refused: say so. */
@@ -871,10 +930,14 @@ export class Game implements ScriptApi {
     if (s.w !== window.innerWidth || s.h !== window.innerHeight || s.dpr !== window.devicePixelRatio) this.resize();
   }
 
+  /** Display → Auto's controller (render/autoResolution.ts): its cap is Native's ratio for this screen. */
+  private readonly autoRes = new AutoResolution(pixelRatioFor(DISPLAY_NATIVE, window.devicePixelRatio, wantsTouch()));
+
   private resize() {
     this.sizedFor = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio };
     const { display } = this.settings;
-    const ratio = pixelRatioFor(display, window.devicePixelRatio, wantsTouch());
+    this.autoRes.setMax(pixelRatioFor(DISPLAY_NATIVE, window.devicePixelRatio, wantsTouch()));
+    const ratio = display === DISPLAY_AUTO ? this.autoRes.ratio : pixelRatioFor(display, window.devicePixelRatio, wantsTouch());
     // N64: the scene's rows are counted in device pixels (up to the canvas's own), then scaled up softly.
     const size = internalSize(display, window.innerWidth * ratio, window.innerHeight * ratio);
     this.renderer.setPixelRatio(ratio);

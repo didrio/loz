@@ -96,6 +96,8 @@ export abstract class Enemy {
   protected deathT = 0;
   /** Where its dice come from (wandering, move picks). Tests swap in a seeded one. */
   rng: () => number = Math.random;
+  /** Whether it may think at a lower rate when far from Wren (`EnemyManager`, `FAR_ENEMY`). Bosses never do. */
+  readonly mayIdleFar: boolean = true;
 
   abstract update(dt: number, env: EnemyEnv): void;
 
@@ -545,8 +547,22 @@ export class Gloomwisp extends Enemy {
 }
 
 /** Keeps an area populated: thornlings day and night (respawning), wisps after dark. */
+/**
+ * Farther than this (m) from Wren, an enemy thinks and moves only every `FAR_EVERY`th frame, with the time it missed added up
+ * (T58: on a phone each walker's physics was a real share of the frame, and the valley keeps a dozen or more out of sight).
+ * Past every notice range (the widest is 22 m) and inside the fog, so nothing plays differently; far walkers' steps are too
+ * small to see. Like an N64 game's distant actors at a lower rate.
+ */
+export const FAR_ENEMY = 60;
+export const FAR_EVERY = 4;
+/** The most time one far update may cover, s (a slow frame doesn't send a walker through a wall). */
+const FAR_MAX_DT = 0.12;
+
 export class EnemyManager {
   readonly list: Enemy[] = [];
+  private frame = 0;
+  /** Time a far enemy has missed since it last thought. */
+  private readonly owed = new WeakMap<Enemy, number>();
   private respawns: number[] = [];
   /** The thornlings this manager spawned itself: only these come back as random field spawns. */
   private readonly fieldBorn = new WeakSet<Enemy>();
@@ -587,8 +603,26 @@ export class EnemyManager {
 
   /** `cutscene`: only enemies that animate in cutscenes move, and nothing spawns. */
   update(dt: number, env: EnemyEnv, cutscene = false) {
-    for (const e of this.list) if (!cutscene || e.animatesInCutscene()) e.update(dt, env);
-    for (const e of this.list) e.placeShadow(this.physics);
+    this.frame++;
+    const far2 = FAR_ENEMY * FAR_ENEMY;
+    for (let i = 0; i < this.list.length; i++) {
+      const e = this.list[i];
+      if (cutscene && !e.animatesInCutscene()) continue;
+      if (e.mayIdleFar && e.alive && e.pos.distanceToSquared(env.playerPos) > far2) {
+        const owed = (this.owed.get(e) ?? 0) + dt;
+        // (The first frame it's far, it still thinks: a new arrival gets its blob placed at once.)
+        if (this.owed.has(e) && (this.frame + i) % FAR_EVERY !== 0) {
+          this.owed.set(e, owed);
+          continue; // its blob stays where it was, like the rest of it
+        }
+        this.owed.set(e, 0);
+        e.update(Math.min(owed, FAR_MAX_DT), env);
+      } else {
+        this.owed.delete(e);
+        e.update(dt, env);
+      }
+      e.placeShadow(this.physics);
+    }
     if (cutscene) {
       this.removeGone();
       return;

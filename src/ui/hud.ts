@@ -211,6 +211,12 @@ export class Hud {
       if (d) this.onTap(d.dataset.action as Action);
     });
     this.prompt = q('.prompt');
+    // On touch the floating prompt is a second Interact button, right where the eye already is (CSS gives it pointer events there).
+    this.prompt.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch' || !this.prompt.classList.contains('show')) return;
+      e.preventDefault();
+      this.onTap('interact');
+    });
     this.clock = q('.clock-text');
     this.place = q('.place');
     this.clockEl = q('.clock');
@@ -496,14 +502,20 @@ export class Hud {
   }
 
   setHearts(hp: number, max: number) {
+    // Called every frame: compare the numbers, not `innerHTML` (reading it back serializes the SVGs, and never matches the source exactly).
+    const key = hp * 1000 + max;
+    if (key === this.heartsKey) return;
+    this.heartsKey = key;
     let html = '';
     for (let i = 0; i < max / 2; i++) {
       const v = hp - i * 2;
       html += `<span class="heart ${v >= 2 ? 'full' : v === 1 ? 'half' : 'empty'}">${HEART_SVG}</span>`;
     }
-    if (this.hearts.innerHTML !== html) this.hearts.innerHTML = html;
+    this.hearts.innerHTML = html;
     this.hearts.classList.toggle('low', hp <= 2);
   }
+
+  private heartsKey = -1;
 
   /**
    * The guard gauge that floats beside Wren: one bar per slot (`fills`, 1 = up), green while

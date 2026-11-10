@@ -72,6 +72,7 @@ export class Sky {
             float y = vDir.y;
             vec3 c = y > 0.0 ? mix(horizon, top, pow(smoothstep(0.0, 1.0, y), 0.55)) : horizon * 0.85;
             gl_FragColor = vec4(c, 1.0);
+            #include <tonemapping_fragment>
             #include <colorspace_fragment>
           }`,
       }),

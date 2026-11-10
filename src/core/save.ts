@@ -51,10 +51,12 @@ export interface Settings {
   mouseSensitivity: number;
   stickSensitivity: number;
   invertY: boolean;
-  /** Display (render/retro.ts): 0 Native, 1 Performance (pixel ratio ~1), 2 N64 (240 rows, colour crush). Replaced Resolution + Retro look. */
-  display: 0 | 1 | 2;
+  /** Display (render/retro.ts): 0 Native, 1 Performance (pixel ratio ~1), 2 N64 (240 rows, colour crush), 3 Auto (Native's density, lowered while frames drop: T58). Replaced Resolution + Retro look. */
+  display: 0 | 1 | 2 | 3;
   /** Sun shadows (render/shadows.ts, T46): one shadow map outdoors. Fresh installs get On, touch devices Off. */
   shadows: boolean;
+  /** Vibration on hits, blocks and guard breaks (core/haptics.ts, T58): only where the browser can (Android). */
+  haptics: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -67,6 +69,7 @@ export const DEFAULT_SETTINGS: Settings = {
   invertY: false,
   display: 0,
   shadows: true,
+  haptics: true,
 };
 
 export const SENSITIVITY_RANGE = { min: 0.2, max: 2 };
@@ -232,7 +235,7 @@ export function decodeSettings(raw: string | null, defaults: Settings = DEFAULT_
     const num = (v: unknown, fallback: number, min: number, max: number) =>
       typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
     const d = defaults;
-    const savedDisplay = o.display === 0 || o.display === 1 || o.display === 2 ? o.display : null;
+    const savedDisplay = o.display === 0 || o.display === 1 || o.display === 2 || o.display === 3 ? o.display : null;
     const display = savedDisplay ?? migrateDisplay(o, d.display);
     return {
       masterVolume: num(o.masterVolume, d.masterVolume, 0, 1),
@@ -245,6 +248,7 @@ export function decodeSettings(raw: string | null, defaults: Settings = DEFAULT_
       invertY: typeof o.invertY === 'boolean' ? o.invertY : d.invertY,
       display,
       shadows: typeof o.shadows === 'boolean' ? o.shadows : d.shadows,
+      haptics: typeof o.haptics === 'boolean' ? o.haptics : d.haptics,
     };
   } catch {
     return { ...defaults };

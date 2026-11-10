@@ -10,13 +10,17 @@ import { GRADE_GLSL, GRADE_UNIFORMS_GLSL, gradeUniforms, isNeutral, setGradeUnif
 
 /**
  * Settings' "Display" (art.md "Display modes"). Native: the screen's full density (cap 3, on touch 2), antialiased (not on a dense touch screen, where it can't be seen). Performance: the
- * same look at a pixel ratio of about 1. N64: the scene drawn 240 rows tall, soft-filtered up, colour crush + dither.
+ * same look at a pixel ratio of about 1. N64: the scene drawn 240 rows tall, soft-filtered up, colour crush + dither. Auto: Native, the ratio lowered while frames drop.
  */
-export const DISPLAY_NAMES = ['Native', 'Performance', 'N64'];
-export type Display = 0 | 1 | 2;
+export const DISPLAY_NAMES = ['Native', 'Performance', 'N64', 'Auto'];
+export type Display = 0 | 1 | 2 | 3;
 export const DISPLAY_NATIVE: Display = 0;
 export const DISPLAY_PERFORMANCE: Display = 1;
 export const DISPLAY_N64: Display = 2;
+/** Native's look and cap, with the ratio lowered while frames drop (render/autoResolution.ts; T58, the touch default). Its index is last so saves keep theirs. */
+export const DISPLAY_AUTO: Display = 3;
+/** The Settings capsule's order (indexes into `DISPLAY_NAMES`): Auto first, N64 last. */
+export const DISPLAY_ORDER: readonly Display[] = [DISPLAY_AUTO, DISPLAY_NATIVE, DISPLAY_PERFORMANCE, DISPLAY_N64];
 /** The N64 mode's height in rows. */
 export const N64_ROWS = 240;
 /** No screen is drawn denser than this. */
@@ -28,7 +32,7 @@ const PERFORMANCE_PIXEL_RATIO = 1;
 /** The canvas's pixel ratio in N64 mode: it only holds the upscale, so the screen's own density (cap 2) keeps the filter smooth. */
 const N64_CANVAS_RATIO = 2;
 
-/** The renderer's pixel ratio for a Display mode on a screen of `dpr` device pixels per CSS pixel. */
+/** The renderer's pixel ratio for a Display mode on a screen of `dpr` device pixels per CSS pixel (Auto: the most it may use). */
 export function pixelRatioFor(display: Display, dpr: number, touch = false): number {
   const native = Math.min(Math.max(dpr || 1, 0.5), touch ? MAX_TOUCH_PIXEL_RATIO : MAX_PIXEL_RATIO);
   if (display === DISPLAY_PERFORMANCE) return Math.min(native, PERFORMANCE_PIXEL_RATIO);

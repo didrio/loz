@@ -19,6 +19,34 @@ export type FingerRole =
   | { kind: 'look' }
   | { kind: 'button'; actions: readonly Action[] };
 
+/** A button's tappable circle on screen (CSS pixels): its drawn centre and radius, plus how far past the rim a tap still counts. */
+export interface ButtonZone<Id extends string = string> {
+  id: Id;
+  x: number;
+  y: number;
+  r: number;
+  slop: number;
+}
+
+/**
+ * The button a finger landing at (x, y) is for, or null for none. A tap counts within the drawn circle plus its slop, and
+ * where two zones overlap the one whose rim is nearer wins (a thumb aims at a button's middle, so "nearer rim" beats "on
+ * top in the page"). This is how the overlay hit-tests: by geometry, not by which element the browser says is under the
+ * finger, so a hidden fade or a stacking order never eats a tap.
+ */
+export function hitButton<Id extends string>(zones: readonly ButtonZone<Id>[], x: number, y: number): Id | null {
+  let best: Id | null = null;
+  let bestEdge = Infinity;
+  for (const z of zones) {
+    const edge = Math.hypot(x - z.x, y - z.y) - z.r;
+    if (edge <= z.slop && edge < bestEdge) {
+      best = z.id;
+      bestEdge = edge;
+    }
+  }
+  return best;
+}
+
 interface Finger {
   role: FingerRole;
   x: number;

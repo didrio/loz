@@ -107,9 +107,12 @@ export async function openGame(env, outDir, { fixture, touch = false, stepped = 
   }
   // Settings planted before the game boots: a Display mode (0 Native, 1 Performance, 2 N64) and Shadows (off unless asked: a
   // desktop install defaults to On, but shadows add draw calls and every baseline and budget was taken without them).
+  // A touch page gets Performance unless asked (its fresh-install default is Auto, T58, which would change the resolution as
+  // headless frames come and go: baselines were taken at Performance).
+  const planted = display ?? (touch ? 1 : undefined);
   await page.addInitScript(
     (s) => localStorage.setItem('embervale:settings', JSON.stringify(s)),
-    { ...(display !== undefined ? { display } : {}), shadows },
+    { ...(planted !== undefined ? { display: planted } : {}), shadows },
   );
   // The performance meter (bottom right) shows live numbers: off in every look shot and smoke run, so baselines stay put.
   await page.addInitScript(() => { window.__embervaleNoPerf = true; });

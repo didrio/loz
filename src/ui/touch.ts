@@ -4,12 +4,13 @@
  * never see them. `?touch=1` / `?touch=0` force them on or off (tests, look scenes).
  *
  * This is the DOM half: it draws the stick and buttons, hit-tests each finger once when it lands
- * and hands it to `core/touch.ts`, which turns fingers into actions for `Input`. It sits under the
- * HUD, so the HUD's own tappable bits (menu rows, dialog choices, flasks, ☰) get their taps first.
+ * (by geometry: `hitButton`, the nearest rim within the circle plus `SLOP`) and hands it to `core/touch.ts`,
+ * which turns fingers into actions for `Input`. It sits under the HUD, so the HUD's own tappable bits
+ * (menu rows, dialog choices, flasks, ☰, the floating prompt) get their taps first.
  * The game tells it what to show each frame (`setContext`); it knows nothing else about the game.
  */
 import type { Input } from '../core/input';
-import { TouchPad, type FingerRole } from '../core/touch';
+import { TouchPad, hitButton, type ButtonZone, type FingerRole } from '../core/touch';
 
 /** What the overlay is for right now. `title`/`menu`: taps go to the HUD's rows. `dialog`: a tap anywhere reads on. */
 export type TouchMode = 'play' | 'dialog' | 'menu' | 'title' | 'off';
@@ -27,6 +28,11 @@ export interface TouchContext {
 type ButtonId = 'attack' | 'jump' | 'interact' | 'shield' | 'lock' | 'item';
 
 type ButtonRole = Extract<FingerRole, { kind: 'button' }>;
+
+/** How far past a button's drawn rim a tap still counts, px (the gaps between buttons are wider, and the nearer rim wins anyway). */
+const SLOP = 12;
+/** Interact's is wider: it's the button you reach for mid-stride, and nothing sits right beside it. */
+const INTERACT_SLOP = 18;
 
 const ROLES: Record<ButtonId, ButtonRole> = {
   attack: { kind: 'button', actions: ['attack'] },
@@ -88,6 +94,11 @@ export class TouchControls {
       else this.disable();
     });
 
+    // The browser's own touch gestures never start on the controls: no edge swipe back (iOS Safari), no double-tap zoom, no
+    // magnifier on a long press, no pull to refresh. (`touch-action: none` covers most, not the edge swipe; pointer events'
+    // preventDefault doesn't cancel touch gestures, so this is a touch listener.) The HUD's taps are on its own elements.
+    this.el.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+    this.el.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
     this.el.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       this.input.device = 'touch';
@@ -152,15 +163,28 @@ export class TouchControls {
   private roleAt(e: PointerEvent): FingerRole | null {
     if (this.mode === 'dialog') return { kind: 'button', actions: ['confirm'] };
     if (this.mode !== 'play') return null;
-    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-btn]');
-    if (btn) return ROLES[btn.dataset.btn as ButtonId];
+    const btn = hitButton(this.zones(), e.clientX, e.clientY);
+    if (btn) return ROLES[btn];
     return e.clientX < window.innerWidth * 0.45 ? { kind: 'stick' } : { kind: 'look' };
+  }
+
+  /** The buttons on screen now, as circles (read when a finger lands: six rects, no layout cache to go stale). */
+  private zones(): ButtonZone<ButtonId>[] {
+    const zones: ButtonZone<ButtonId>[] = [];
+    for (const [id, b] of Object.entries(this.buttons) as [ButtonId, HTMLElement][]) {
+      if (b.classList.contains('hidden') || (id === 'interact' && !b.classList.contains('show'))) continue;
+      const r = b.getBoundingClientRect();
+      if (r.width === 0) continue; // display: none
+      zones.push({ id, x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2, slop: id === 'interact' ? INTERACT_SLOP : SLOP });
+    }
+    return zones;
   }
 
   private enable() {
     this.input.touch = this.pad;
     this.input.device = 'touch';
     document.documentElement.classList.add('touch-device');
+    blockPageGestures();
   }
 
   private disable() {
@@ -168,5 +192,20 @@ export class TouchControls {
     this.input.touch = null;
     if (this.input.device === 'touch') this.input.device = 'keyboard';
     document.documentElement.classList.remove('touch-device');
+  }
+}
+
+let gesturesBlocked = false;
+
+/**
+ * A game, not a page: on a touch device nothing zooms, selects, or pops a menu. iOS Safari ignores `user-scalable=no` and
+ * pinches through `touch-action` on some elements (its own `gesture*` events), and a long press opens the context menu.
+ */
+function blockPageGestures() {
+  if (gesturesBlocked) return;
+  gesturesBlocked = true;
+  const stop = (e: Event) => e.preventDefault();
+  for (const type of ['gesturestart', 'gesturechange', 'gestureend', 'dblclick', 'contextmenu', 'selectstart']) {
+    document.addEventListener(type, stop, { passive: false });
   }
 }

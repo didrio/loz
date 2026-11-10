@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics, Physics } from '../core/physics';
 import { Thornling } from './enemies';
-import { AIM_RANGE, autoAimYaw, LOCK_CLOSE, LOCK_RANGE, nextLockTarget, pickLockTarget } from './lockon';
+import { AIM_RANGE, autoAimYaw, INTERACT_BUFFER, INTERACT_GRACE, INTERACT_SLACK, InteractAim, LOCK_CLOSE, LOCK_RANGE, nextLockTarget, pickLockTarget } from './lockon';
 
 beforeAll(async () => {
   await initPhysics();
@@ -74,5 +74,69 @@ describe('touch lock-on and aim', () => {
     const next = foe(2, 6);
     expect(nextLockTarget(wren, 0, [dead, next], dead, physics)).toBe(next);
     expect(nextLockTarget(wren, 0, [dead], dead, physics)).toBeNull();
+  });
+});
+
+describe('InteractAim', () => {
+  const thing = (x = 0, z = 0, r = 2, on = true) => ({ x, z, r, enabled: () => on });
+  const dt = 1 / 30;
+
+  it('keyboard and pad use only what is in reach this frame', () => {
+    const aim = new InteractAim();
+    const npc = thing();
+    expect(aim.update(npc, true, false, { x: 1, z: 0 }, dt)).toBe(npc);
+    aim.update(npc, false, false, { x: 1, z: 0 }, dt);
+    expect(aim.update(null, true, false, { x: 2.5, z: 0 }, dt)).toBe(null);
+    expect(aim.update(npc, false, false, { x: 1, z: 0 }, dt)).toBe(null); // no buffered press either
+  });
+
+  it('touch: a tap just after the thing slipped out of reach still uses it', () => {
+    const aim = new InteractAim();
+    const npc = thing();
+    aim.update(npc, false, true, { x: 1.9, z: 0 }, dt);
+    aim.update(null, false, true, { x: 2.1, z: 0 }, dt);
+    expect(aim.update(null, true, true, { x: 2.3, z: 0 }, dt)).toBe(npc);
+  });
+
+  it('touch: not once the grace is over, too far, or the thing was switched off', () => {
+    const late = new InteractAim();
+    late.update(thing(), false, true, { x: 1, z: 0 }, dt);
+    late.update(null, false, true, { x: 2.1, z: 0 }, INTERACT_GRACE + 0.05);
+    expect(late.update(null, true, true, { x: 2.1, z: 0 }, dt)).toBe(null);
+
+    const far = new InteractAim();
+    far.update(thing(), false, true, { x: 1, z: 0 }, dt);
+    expect(far.update(null, true, true, { x: 2 + INTERACT_SLACK + 0.1, z: 0 }, dt)).toBe(null);
+
+    let on = true;
+    const chest = { x: 0, z: 0, r: 2, enabled: () => on };
+    const off = new InteractAim<typeof chest>();
+    off.update(chest, false, true, { x: 1, z: 0 }, dt);
+    on = false; // opened, say
+    expect(off.update(null, true, true, { x: 1, z: 0 }, dt)).toBe(null);
+  });
+
+  it('touch: a tap just before the thing comes into reach waits for it', () => {
+    const aim = new InteractAim();
+    const npc = thing();
+    expect(aim.update(null, true, true, { x: 5, z: 0 }, dt)).toBe(null);
+    expect(aim.update(npc, false, true, { x: 1.9, z: 0 }, dt)).toBe(npc);
+    const slow = new InteractAim();
+    slow.update(null, true, true, { x: 5, z: 0 }, dt);
+    slow.update(null, false, true, { x: 4, z: 0 }, INTERACT_BUFFER + 0.05);
+    expect(slow.update(npc, false, true, { x: 1.9, z: 0 }, dt)).toBe(null);
+  });
+});
+
+describe('InteractAim.lingering', () => {
+  it('names the thing that just left reach for the grace, then nothing', () => {
+    const aim = new InteractAim();
+    const npc = { x: 0, z: 0, r: 2, enabled: () => true };
+    aim.update(npc, false, true, { x: 1, z: 0 }, 1 / 30);
+    expect(aim.lingering({ x: 1, z: 0 })).toBe(null); // still in reach: the button shows it anyway
+    aim.update(null, false, true, { x: 2.2, z: 0 }, 0.2);
+    expect(aim.lingering({ x: 2.2, z: 0 })).toBe(npc);
+    aim.update(null, false, true, { x: 2.2, z: 0 }, 0.3);
+    expect(aim.lingering({ x: 2.2, z: 0 })).toBe(null);
   });
 });

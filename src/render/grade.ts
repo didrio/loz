@@ -6,8 +6,9 @@ import * as THREE from 'three';
  * the models, the palette or the lighting.
  *
  * The values live in `LOOK` (render/experiments/modernLook.ts, the dev panel's sliders) and apply to **every** look: modern lighting
- * (its composer's output pass), classic Native / Performance (`GradePass`, below) and N64 (a few lines in the composite, retro.ts).
- * At neutral values classic costs nothing: no render target, no pass (`isNeutral`).
+ * (its composer's output pass), classic Native / Performance / Auto (folded into every material's tone mapping, `foldGrade`; the
+ * `GradePass` below while the dev sliders differ from the folded values) and N64 (a few lines in the composite, retro.ts).
+ * At neutral values classic costs nothing (`isNeutral`).
  */
 
 /** The tone curve's choices. Auto: Neutral under modern lighting (its HDR light needs one), none under classic. */
@@ -105,8 +106,109 @@ export function withGrade(fragmentShader: string): string {
     .replace(before, `// grade (render/grade.ts)\n\t\t\tgl_FragColor.rgb = gradeApply( gl_FragColor.rgb );\n\n\t\t\t${before}`);
 }
 
+/** three's curve function (in its `tonemapping_pars_fragment` chunk) for a choice under classic lighting. Auto and Off: Linear (the exposure only). */
+const CURVE_GLSL = ['LinearToneMapping', 'NeutralToneMapping', 'AgXToneMapping', 'ACESFilmicToneMapping', 'LinearToneMapping'];
+
+const glslFloat = (v: number) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
+
 /**
- * Classic lighting's grade (Native and Performance): the scene drawn into a multisampled half-float target, then one output pass
+ * The grade as three's `CustomToneMapping` function (T58): the curve, then `gradeApply`, with the dials as constants. Every lit
+ * material runs it on its own pixels as it draws to the screen, so classic Native / Performance get the grade with **no extra
+ * pass** (no half-float target, no full-screen redraw: on a phone that pass was a large share of the frame). Exposure stays
+ * live (three's `toneMappingExposure` uniform); the other dials are compiled in.
+ */
+export function foldedToneMappingGlsl(p: GradeParams): string {
+  const consts = `const float foldContrast = ${glslFloat(p.contrast)};\nconst float foldGamma = ${glslFloat(p.gamma)};\n`
+    + `const float foldHighlights = ${glslFloat(p.highlights)};\nconst float foldSaturation = ${glslFloat(p.saturation)};`;
+  const apply = GRADE_GLSL.replace('gradeApply', 'foldGradeApply').replace(/grade(Contrast|Gamma|Highlights|Saturation)/g, 'fold$1');
+  return `${consts}\n${apply}\nvec3 CustomToneMapping( vec3 color ) { return foldGradeApply( ${CURVE_GLSL[p.toneMap] ?? 'LinearToneMapping'}( color ) ); }`;
+}
+
+/** The dials the shaders were compiled with (`foldGrade`), or null. */
+let folded: GradeParams | null = null;
+
+/**
+ * Puts the grade into three's tone-mapping chunk. Call once, before the first frame (programs compile on first use and are
+ * cached, so a later change wouldn't reach them: `canFold` then says no and the grade takes the pass, as while the dev
+ * panel's sliders move). Throws if three's chunk has changed shape, so an upgrade can't silently drop the grade.
+ */
+export function foldGrade(p: GradeParams) {
+  const C = THREE.ShaderChunk;
+  const stub = 'vec3 CustomToneMapping( vec3 color ) { return color; }';
+  const apply = 'gl_FragColor.rgb = toneMapping( gl_FragColor.rgb );';
+  const mix = 'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );';
+  if (!C.tonemapping_pars_fragment.includes(stub) || !C.tonemapping_fragment.includes(apply) || !C.fog_fragment.includes(mix)) {
+    throw new Error('foldGrade: three\'s tone-mapping or fog chunk changed shape');
+  }
+  C.tonemapping_pars_fragment = C.tonemapping_pars_fragment.replace(stub, foldedToneMappingGlsl(p));
+  // three mixes the fog in after tone mapping, onto the finished screen colour. The pass graded the fogged picture (the fog
+  // mixed in linear light, then the curve), so a tone-mapped frame does the same: the fog first, then the curve. Only while
+  // tone mapping is on (TONE_MAPPING: the folded frame; every other path draws as before). `fadeInFog` glows keep theirs.
+  C.tonemapping_fragment = C.tonemapping_fragment.replace(apply, `${FOG_BEFORE_CURVE}\n\t${apply}\n${LINEAR_BLEND_ALPHA}`);
+  C.fog_fragment = `#ifndef TONE_MAPPING\n${C.fog_fragment}\n#endif`;
+  folded = { ...p };
+}
+
+/**
+ * See-through things on a folded frame. The pass blended them in linear light, then graded; here they blend onto the finished
+ * screen colour, where a bright glow over dark reads much fainter and a dark blob over bright much heavier. Re-weighting the
+ * alpha closes most of that gap: a bright layer over dark looks in linear light like α^(1/2.2) does on screen, a dark layer
+ * over bright like 1 − (1 − α)^(1/2.2); the fragment's own brightness picks between them. Opaque pixels (α = 1) are untouched.
+ */
+const LINEAR_BLEND_ALPHA = /* glsl */ `	if ( gl_FragColor.a < 1.0 ) {
+		float foldLight = pow( clamp( dot( gl_FragColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) ), 0.0, 1.0 ), 0.4545 );
+		float foldA = clamp( gl_FragColor.a, 0.0, 1.0 );
+		gl_FragColor.a = mix( 1.0 - pow( 1.0 - foldA, 0.4545 ), pow( foldA, 0.4545 ), foldLight );
+	}`;
+
+/**
+ * three's fog mix (`fog_fragment`), run before the curve on a tone-mapped frame. And additive glows (`fadeInFog`, which marks
+ * them FADE_IN_FOG): their strength goes in before the curve, as it did in the pass (a glow at a third of its colour keeps its
+ * hue; at full colour the curve would wash it toward white and the opacity would then only dim that).
+ */
+const FOG_BEFORE_CURVE = /* glsl */ `#ifdef FADE_IN_FOG
+	gl_FragColor.rgb *= gl_FragColor.a;
+	gl_FragColor.a = 1.0;
+	#endif
+	#if defined( USE_FOG ) && !defined( FADE_IN_FOG )
+	#ifdef FOG_EXP2
+		float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );
+	#else
+		float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
+	#endif
+	gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
+	#endif`;
+
+/** Whether the compiled-in grade is these dials (exposure aside: it's live), so a frame can be graded without the pass. */
+export function canFold(p: GradeParams, compiled: GradeParams | null = folded): boolean {
+  return !!compiled && compiled.toneMap === p.toneMap && compiled.gamma === p.gamma && compiled.highlights === p.highlights
+    && compiled.contrast === p.contrast && compiled.saturation === p.saturation;
+}
+
+const fogWas = new THREE.Color();
+
+/**
+ * Draws one classic frame with the folded grade: three's custom tone mapping on for this render only. The fog now mixes in
+ * linear light (before the curve, `foldGrade`), but three hands a frame drawn to the screen its fog colour already encoded
+ * for the screen; so for this frame the colour is set to what encodes to its own linear value.
+ */
+export function renderFolded(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, p: GradeParams) {
+  const fog = scene.fog;
+  if (fog) {
+    fogWas.copy(fog.color);
+    fog.color.setRGB(fogWas.r, fogWas.g, fogWas.b, THREE.SRGBColorSpace);
+  }
+  renderer.toneMapping = THREE.CustomToneMapping;
+  renderer.toneMappingExposure = p.exposure;
+  renderer.render(scene, camera);
+  renderer.toneMapping = THREE.NoToneMapping;
+  renderer.toneMappingExposure = 1;
+  if (fog) fog.color.copy(fogWas);
+}
+
+/**
+ * Classic lighting's grade (Native and Performance) when it can't be folded (`canFold`: the dev panel's sliders moved since load):
+ * the scene drawn into a multisampled half-float target, then one output pass
  * (exposure, tone curve, grade, colour encoding). Made only when a dial leaves neutral, so the default path never loads or pays for it.
  */
 export class GradePass {

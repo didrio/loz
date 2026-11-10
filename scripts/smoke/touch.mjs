@@ -1,6 +1,7 @@
 // Touch controls on a landscape phone (ui/touch.ts): the title takes a tap, the stick walks, the sword swings,
-// Jump then holding Shield surfs, Interact (its own button) reads Talk near Lark and opens her talk, taps read on, ☰ (top-left) and ✕ open and close the
-// pause menu, and a key press hides the controls until the next touch.
+// Jump then holding Shield surfs, Interact (its own button) reads Talk near Lark and opens her talk, taps read on, a late tap
+// still talks (the button lingers; hit areas are geometry), the floating prompt is tappable, backgrounding pauses, ☰ (top-left)
+// and ✕ open and close the pause menu, and a key press hides the controls until the next touch.
 export const fixture = 'field-sword';
 export const touch = true;
 
@@ -98,6 +99,66 @@ export default async function run(t) {
       else await page.touchscreen.tap(420, 120);
       await wait(250);
     }
+  });
+
+  // Read every talk out (a choice row if there is one, else a tap anywhere).
+  const finishTalk = async () => {
+    const end = Date.now() + 45000;
+    while ((await g()).mode === 'cutscene') {
+      if (Date.now() > end) throw new Error('the talk never ended');
+      if (await shown('.choice-row')) await tap('.choice-row');
+      else await page.touchscreen.tap(420, 120);
+      await wait(250);
+    }
+  };
+  const lark = () => game(() => {
+    const it = window.embervale.area.interactables.find((i) => i.id === 'npc.lark');
+    return { x: it.x, z: it.z, r: it.r };
+  });
+
+  await step('a late tap: just out of reach, Interact lingers and still talks; a tap just past its rim counts', async () => {
+    const p = await lark();
+    await teleport(p.x + 1.2, p.z, -Math.PI / 2);
+    await until(() => !!document.querySelector('.tb-interact.show'), 5000);
+    await wait(200);
+    await teleport(p.x + p.r + 0.6, p.z, -Math.PI / 2); // slid out of reach
+    await wait(60);
+    check(await shown('.tb-interact.show'), 'Interact vanished the moment Lark left reach');
+    // Land the finger 12 px past the drawn rim, down-left (toward Shield): geometry, not the element, decides.
+    const b = await page.locator('.tb-interact').boundingBox();
+    const r = b.width / 2 + 12;
+    await down(5, b.x + b.width / 2 - r * Math.SQRT1_2, b.y + b.height / 2 + r * Math.SQRT1_2);
+    await up(5);
+    await until(() => window.embervale.mode === 'cutscene', 3000);
+    await finishTalk();
+    // Long after leaving reach, the button is gone and a tap there is a camera drag, not a talk.
+    await teleport(p.x + p.r + 6, p.z, -Math.PI / 2);
+    await wait(1200);
+    check(!(await shown('.tb-interact.show')), 'Interact still showing far from Lark');
+  });
+
+  await step('the floating prompt is a button too', async () => {
+    const p = await lark();
+    await teleport(p.x + 1.2, p.z, -Math.PI / 2);
+    await until(() => !!document.querySelector('.prompt.show'), 5000);
+    await wait(300);
+    // (The title's rows were still tappable after it faded, and caught this tap: hidden for good since T58.)
+    check(await game(() => [...document.querySelectorAll('.title .menu-item')].every((m) => getComputedStyle(m).pointerEvents === 'none')), 'the faded title still takes taps');
+    await tap('.prompt');
+    await until(() => window.embervale.mode === 'cutscene', 3000);
+    await finishTalk();
+  });
+
+  await step('sent to the background, it comes back paused', async () => {
+    await game(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await until(() => window.embervale.pauseMenu.isOpen, 5000);
+    await tap('.gmenu-close');
+    await until(() => !window.embervale.pauseMenu.isOpen, 5000);
   });
 
   await step('the bed: Interact reads Sleep, its label is centred, a tapped "Sleep" ends with the controls back and the stick working', async () => {

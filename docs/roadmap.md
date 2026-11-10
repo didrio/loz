@@ -17,7 +17,7 @@ when it's near.
 
 - **Next region:** Sallowmere's map and Stiltwick are built and empty; its story and mechanics are being redesigned by
   the owner (2026-11-06: the old design in [sallowmere.md](sallowmere.md) is shelved, not the plan).
-- **Classic lighting is the default look** (owner's call, 2026-11-09, after trying modern lighting as the default: too heavy on phones); the grade (exposure, curve, gamma, highlights, contrast, saturation) works in every look (T66). Next: T58 (phone frame cost: the default grade is one extra pass in Native/Performance).
+- **Classic lighting is the default look** (owner's call, 2026-11-09, after trying modern lighting as the default: too heavy on phones); the grade (exposure, curve, gamma, highlights, contrast, saturation) works in every look (T66) and, since T58, costs no extra pass in classic (folded into the materials).
 - **The N64 look rebuild** (owner, 2026-11-07; replaces the shelved PS2 "look pass", old T20–T26 in git history): the
   starter zone rebuilt on the new pipeline ([art.md](art.md), [pipeline.md](pipeline.md)) before any new area. Behaviour
   never changes. In order, each written as a ticket when it's near (at the previous one's `/wrap`):
@@ -115,6 +115,21 @@ enemy randomness.
   real ticket.*
 
 ## Known quirks and tech debt
+
+- **Phone performance, what T58 left** (engine.md "What a phone frame costs"; measured on a Mac at phone size, never on a phone):
+  - **Profile on a real phone** (the owner's): the dev panel's Copy performance there, Native vs Auto, shadows on and off, to set
+    Auto's thresholds and the shadow default from real numbers. Desktop Chrome can't show a phone GPU's tile and bandwidth costs.
+  - **Shadows on touch:** still off by default (+0.4-1.3 ms and ~+230k triangles here). A cheaper map (casters only within ~12 m on
+    touch, or the far merged chunks not casting) would make On affordable on phones.
+  - **Draw submission** is now the biggest CPU cost after physics (three's per-object work at ~200-350 calls). If phones are CPU-bound:
+    fewer, bigger merges for dynamic props, or instancing the repeated ones.
+  - **A web app manifest** (Android "Add to Home Screen" as an installed, fullscreen, landscape app) needs an app icon: an owner's call
+    (store art). The meta tags for iOS are in place.
+  - **Untraced triangle growth** (from T58's notes): `touch`, `choice` and `gear` were ~5k triangles over budget before T63; not found
+    (2%, below what matters on these numbers).
+  - **The modern pipeline** (dev switch only): its MSAA/FXAA choice and a cheaper bloom wait until modern lighting is wanted again.
+  - Folded grade vs the pass: the river is a touch deeper blue and lantern glows slightly brighter (render.md "The grade"); the pass
+    stays for tuning and an A/B (dev panel).
 
 - **Kit `wobble` splits a lathe's seam.** It welds vertices by a rounded `toFixed(4)` key, and a lathe's last ring lands on `-0.0000` where its first is `0.0000`, so the two halves move apart (a slit down the model). The jar skips `wobble` and a test checks it is closed. Fix: key with `Math.round(v * 1e4)`; it shifts the approved Thornling and Wren, so do it inside a final pass that re-approves them, and check any other lathe + `wobble` model (`npm run look -- contact`).
 - **Baked light: awaiting the owner's verdict.** Before T48 it was parked (owner, 2026-11-07: "I don't really see a difference;

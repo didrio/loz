@@ -83,6 +83,11 @@ export class ShadowRig {
   /** True while the shadow map is drawing this frame (on, and outdoors). */
   active = false;
 
+  /** The shadow map's side in texels while it draws, else 0 (the performance meter). */
+  get mapSize() {
+    return this.active ? this.sun.shadow.mapSize.x : 0;
+  }
+
   constructor(private readonly renderer: THREE.WebGLRenderer, private readonly scene: THREE.Scene, private readonly sun: THREE.DirectionalLight) {
     const cam = sun.shadow.camera;
     cam.left = cam.bottom = -SHADOW_RADIUS;

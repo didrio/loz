@@ -40,9 +40,9 @@ export default async function run(t) {
     check((await menu()).open && (await game(() => document.querySelector('.gmenu-tab.active')?.textContent)) === 'Gear', 'E should go to the Gear tab');
     await press('KeyE'); // no Dev tab: back round to Settings
     check((await menu()).open && !/Dev sprint/.test((await menu()).text) && (await game(() => document.querySelector('.gmenu-tab.active')?.textContent)) === 'Settings', 'E should wrap to Settings (the dev tools are not a tab)');
-    // Display shows all three options in a capsule, and the on/off rows are switches with no text.
+    // Display shows all four options in a capsule (Auto first, T58), and the on/off rows are switches with no text.
     const controls = await game(() => ({ opts: document.querySelectorAll('.gmenu .seg-opt').length, on: document.querySelector('.gmenu .seg-opt.on')?.textContent, switches: document.querySelectorAll('.gmenu .sw').length, onoff: /\b(ON|OFF)\b/.test(document.querySelector('.gmenu')?.textContent ?? '') }));
-    check(controls.opts === 3 && controls.switches >= 2 && !controls.onoff, `controls: ${JSON.stringify(controls)}`);
+    check(controls.opts === 4 && controls.on === 'Native' && controls.switches >= 2 && !controls.onoff, `controls: ${JSON.stringify(controls)}`);
     await shot('hints-00-settings');
     await press('KeyP');
     await until(() => !window.embervale.pauseMenu.isOpen, 5000);

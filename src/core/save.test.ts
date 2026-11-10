@@ -166,6 +166,13 @@ describe('save files', () => {
     expect(decodeSettings('{"shadows":"yes"}').shadows).toBe(true);
   });
 
+  it('keeps Auto display and haptics; older saves get the install default', () => {
+    expect(decodeSettings('{"display":3}').display).toBe(3);
+    expect(decodeSettings('{}', { ...DEFAULT_SETTINGS, display: 3 }).display).toBe(3); // a touch device's fresh install
+    expect(decodeSettings('{"display":1}').haptics).toBe(true);
+    expect(decodeSettings('{"haptics":false}').haptics).toBe(false);
+  });
+
   it('keeps saved settings and clamps or drops nonsense', () => {
     const s = decodeSettings('{"masterVolume":0.3,"mouseSensitivity":9,"stickSensitivity":"fast","invertY":true,"display":2,"sfxVolume":-1}');
     expect(s).toMatchObject({ masterVolume: 0.3, mouseSensitivity: 2, stickSensitivity: 1, invertY: true, display: 2, sfxVolume: 0 });

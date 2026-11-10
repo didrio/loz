@@ -2,7 +2,7 @@ import { G } from '../content/text/gear';
 import { foundHints } from '../content/hints';
 import { foundSigils } from '../content/sigils';
 import { SENSITIVITY_RANGE, type Settings } from '../core/save';
-import { DISPLAY_NAMES } from '../render/retro';
+import { DISPLAY_NAMES, DISPLAY_ORDER } from '../render/retro';
 import { gearRows } from './gearRows';
 import type { Game } from './game';
 import type { Menu, MenuRow } from './menu';
@@ -33,6 +33,13 @@ export class PauseMenu {
     return this.menu.isOpen;
   }
 
+  /** Opens the menu on the next frame of play (the game was sent to the background: it comes back paused). */
+  openSoon() {
+    this.openAsked = true;
+  }
+
+  private openAsked = false;
+
   /** The hide button on the screen (touch) is held. */
   touchPeek = false;
 
@@ -57,7 +64,9 @@ export class PauseMenu {
   update(): boolean {
     const { input } = this.game;
     if (!this.menu.isOpen) {
-      if (this.game.mode !== 'play' || !input.pressed('pause')) return false;
+      const asked = this.openAsked;
+      this.openAsked = false;
+      if (this.game.mode !== 'play' || !(input.pressed('pause') || asked)) return false;
       if (!this.tabs().includes(this.tab)) this.tab = 'settings';
       this.game.cutVoice();
       this.menu.open(this.page(this.tab));
@@ -111,9 +120,15 @@ export class PauseMenu {
       sensitivity('Mouse sensitivity', 'mouseSensitivity', true),
       sensitivity('Stick sensitivity', 'stickSensitivity'),
       { kind: 'toggle', label: 'Invert camera up/down', def: d.invertY, get: () => s.invertY, set: (on) => this.change({ invertY: on }) },
-      { kind: 'choice', label: 'Display', space: true, def: d.display, options: DISPLAY_NAMES, get: () => s.display, set: (i) => this.change({ display: i as Settings['display'] }) },
+      {
+        kind: 'choice', label: 'Display', space: true, def: DISPLAY_ORDER.indexOf(d.display), options: DISPLAY_ORDER.map((m) => DISPLAY_NAMES[m]),
+        get: () => DISPLAY_ORDER.indexOf(s.display), set: (i) => this.change({ display: DISPLAY_ORDER[i] }),
+      },
       { kind: 'toggle', label: 'Shadows', def: d.shadows, get: () => s.shadows, set: (on) => this.change({ shadows: on }) },
     ];
+    if (game.haptics.supported) {
+      rows.push({ kind: 'toggle', label: 'Vibration', def: d.haptics, get: () => s.haptics, set: (on) => this.change({ haptics: on }) });
+    }
     if (game.canFullscreen) {
       rows.push({ kind: 'toggle', label: 'Fullscreen', get: () => game.isFullscreen, set: (on) => game.setFullscreen(on) });
     }

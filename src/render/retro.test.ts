@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAYER4, bayerOffset, COLOR_LEVELS, crushChannel, DISPLAY_NAMES, internalSize, N64_ROWS, pixelRatioFor } from './retro';
+import { BAYER4, bayerOffset, COLOR_LEVELS, crushChannel, DISPLAY_AUTO, DISPLAY_NAMES, DISPLAY_NATIVE, DISPLAY_ORDER, internalSize, N64_ROWS, pixelRatioFor } from './retro';
 
 describe('the dither matrix', () => {
   it('holds each of 0..15 once, so every threshold is used evenly', () => {
@@ -84,6 +84,12 @@ describe('pixelRatioFor (Display)', () => {
     expect(pixelRatioFor(2, 1)).toBe(1);
   });
   it('has a name per mode', () => {
-    expect(DISPLAY_NAMES).toEqual(['Native', 'Performance', 'N64']);
+    expect(DISPLAY_NAMES).toEqual(['Native', 'Performance', 'N64', 'Auto']);
+  });
+  it('the Settings capsule lists every mode once, Auto first; Auto may use Native\'s full ratio', () => {
+    expect([...DISPLAY_ORDER].sort()).toEqual([0, 1, 2, 3]);
+    expect(DISPLAY_ORDER[0]).toBe(DISPLAY_AUTO);
+    expect(pixelRatioFor(DISPLAY_AUTO, 3, true)).toBe(pixelRatioFor(DISPLAY_NATIVE, 3, true));
+    expect(internalSize(DISPLAY_AUTO, 1600, 900)).toBe(null);
   });
 });

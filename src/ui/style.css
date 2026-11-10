@@ -1,5 +1,6 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; } /* iOS enlarges text when a phone turns sideways */
 #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 
 #hud {
@@ -235,6 +236,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 
 .title { background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.55)); transition: opacity 1s; }
 .title.gone { opacity: 0; }
+/* Gone means gone: on touch the rows take taps (below), and a faded-out "Continue" would catch the taps and camera drags of play
+   (a phone snaps a tap to a tappable thing near the finger). */
+#hud .title.gone .menu-item { pointer-events: none; }
 .logo {
   font-family: Georgia, 'Times New Roman', serif; font-size: clamp(48px, 9vw, 110px); font-weight: bold; letter-spacing: 0.12em;
   background: linear-gradient(#fff6c8, #e8b440 55%, #a8641a); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -336,6 +340,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
 #hud.touch .controls-touch b { color: #ffd76a; }
 #hud.touch .menu-item { pointer-events: auto; padding: 8px 26px; }
 #hud.touch .prompt { padding: 3px 11px; } /* its key is hidden: even padding keeps the label over the arrow */
+#hud.touch .prompt.show { pointer-events: auto; } /* a tap on it interacts (ui/hud.ts) */
+#hud.touch .prompt::before { content: ''; position: absolute; inset: -12px -8px; }
 #hud.touch .actions, #hud.touch .prompt .key, #hud.touch .gmenu-help, #hud.touch .gmenu-tabkey { display: none; }
 #hud.touch .menu-hint, #hud.touch .drink { pointer-events: auto; }
 #hud.touch .drink .key { display: none; } /* the icons themselves are the buttons */
@@ -449,8 +455,7 @@ html.touch-device #hud { padding: env(safe-area-inset-top) env(safe-area-inset-r
 .touch-btn.down { background: var(--ui-plate); border-color: var(--ui-gold); color: var(--ui-plate-ink); text-shadow: none; box-shadow: inset -2px -2px 0 rgba(255, 255, 255, 0.4), inset 2px 3px 0 rgba(0, 0, 0, 0.3); }
 /* The arc around the right thumb: the sword at the corner, the rest within one reach of it. */
 .tb-attack { width: 88px; height: 88px; font-size: 16px; right: calc(28px + env(safe-area-inset-right)); bottom: calc(26px + env(safe-area-inset-bottom)); }
-/* Hit areas: the drawn circle plus 5 px all round (never under ~44 pt); the gaps between buttons are wider than 10 px. */
-.touch-btn::before { content: ''; position: absolute; inset: -5px; border-radius: 50%; }
+/* Hit areas are geometry, not these elements (ui/touch.ts `zones`): the drawn circle plus 12 px (Interact 18), the nearer rim winning. */
 /* Inner ring: Shield left of the sword, Lock above it, Interact between them (up-left of the sword). */
 .tb-shield { width: 66px; height: 66px; right: calc(130px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom)); }
 .tb-lock { width: 58px; height: 58px; font-size: 12px; right: calc(43px + env(safe-area-inset-right)); bottom: calc(131px + env(safe-area-inset-bottom)); }
@@ -458,11 +463,10 @@ html.touch-device #hud { padding: env(safe-area-inset-top) env(safe-area-inset-r
 .tb-interact {
   width: 70px; height: 70px; right: calc(115px + env(safe-area-inset-right)); bottom: calc(95px + env(safe-area-inset-bottom));
   border-color: var(--ui-gold); color: var(--ui-gear); text-align: center; line-height: 1.1; padding: 0 5px; overflow: visible; overflow-wrap: anywhere;
-  /* Fades in at full size: a scale-in would leave a half-size hit area for the first moments, when a thumb is already on its way. */
-  opacity: 0; pointer-events: none; transition: opacity 0.15s;
+  /* Fades in at full size and counts from its first frame; it lingers a moment after its target leaves (game/lockon.ts InteractAim). */
+  opacity: 0; transition: opacity 0.12s;
 }
-.tb-interact::before { inset: -12px; }
-.tb-interact.show { opacity: 1; pointer-events: auto; }
+.tb-interact.show { opacity: 1; }
 .tb-interact.long { font-size: 11px; letter-spacing: 0; }
 /* Outer ring: Jump up-left of the cluster, the glove on its upper part. */
 .tb-jump { width: 66px; height: 66px; right: calc(202px + env(safe-area-inset-right)); bottom: calc(142px + env(safe-area-inset-bottom)); }

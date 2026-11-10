@@ -48,6 +48,20 @@ export class Sfx {
   voice: BlipPlayer | null = null;
   private duckTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /** The page is in the background (another tab or app, the screen locked). */
+  private hidden = false;
+
+  /**
+   * Silences everything while the page is hidden: phones (Android especially) keep a page's audio playing behind another app.
+   * Coming back resumes it (or the next tap does, where the browser wants a gesture).
+   */
+  setHidden(hidden: boolean) {
+    this.hidden = hidden;
+    if (!this.ctx) return;
+    if (hidden) void this.ctx.suspend();
+    else void this.ctx.resume().catch(() => {});
+  }
+
   init() {
     if (this.ctx) {
       void this.ctx.resume();
@@ -406,7 +420,8 @@ export class Sfx {
     if (!this.ctx) return;
     // Browsers can suspend audio (a long pause, the tab in the background); bring it back
     // so the music never just stops.
-    if (this.ctx.state === 'suspended' && playing && this.musicOn) void this.ctx.resume();
+    // ('interrupted': iOS after a call or Siri; a gesture may be needed, and every tap calls `init`.)
+    if (this.ctx.state !== 'running' && this.ctx.state !== 'closed' && !this.hidden && playing && this.musicOn) void this.ctx.resume();
     const want = this.musicOn && playing ? mood : null;
     if (want !== this.musicMood) {
       // Silence cuts in at once (death, a boss's entrance); the boss theme fast; day and night slowly.

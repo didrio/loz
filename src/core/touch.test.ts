@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STICK_RADIUS, TouchPad } from './touch';
+import { STICK_RADIUS, TouchPad, hitButton } from './touch';
 
 describe('TouchPad', () => {
   it('the stick reads full tilt at its radius, zero at rest, in pad convention', () => {
@@ -77,6 +77,15 @@ describe('TouchPad', () => {
     expect(pad.look).toEqual({ x: 20, y: -10 });
   });
 
+  it('a quick tap that lands and lifts between two frames still presses', () => {
+    const pad = new TouchPad();
+    pad.down(3, 700, 200, { kind: 'button', actions: ['interact'] });
+    pad.up(3);
+    expect(pad.pressed('interact')).toBe(true);
+    pad.endFrame();
+    expect(pad.pressed('interact')).toBe(false);
+  });
+
   it('clear lifts everything', () => {
     const pad = new TouchPad();
     pad.down(1, 0, 0, { kind: 'button', actions: ['shield'] });
@@ -85,5 +94,26 @@ describe('TouchPad', () => {
     pad.clear();
     expect(pad.held('shield')).toBe(false);
     expect(pad.stick).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe('hitButton', () => {
+  const zones = [
+    { id: 'sword', x: 100, y: 100, r: 44, slop: 10 },
+    { id: 'use', x: 30, y: 40, r: 35, slop: 16 },
+  ] as const;
+
+  it('a tap inside a circle, or just past its rim, is that button; farther out is nothing', () => {
+    expect(hitButton(zones, 100, 100)).toBe('sword');
+    expect(hitButton(zones, 100, 100 + 44 + 9)).toBe('sword');
+    expect(hitButton(zones, 100, 100 + 44 + 12)).toBe(null);
+  });
+
+  it('where two zones overlap, the nearer rim wins, whatever the page order', () => {
+    // Between the two: 2 px past the sword's rim, ~11 px past use's: the sword.
+    const between = { x: 100 - 46 * Math.SQRT1_2, y: 100 - 46 * Math.SQRT1_2 };
+    expect(hitButton(zones, between.x, between.y)).toBe('sword');
+    expect(hitButton([...zones].reverse(), between.x, between.y)).toBe('sword');
+    expect(hitButton(zones, 30, 40 + 35 + 14)).toBe('use'); // inside use's wider slop
   });
 });

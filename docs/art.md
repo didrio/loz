@@ -52,9 +52,10 @@ and the blight's ash (`BLIGHT_ASH`) wins while it lies on the valley. To add a p
 
 ## Display modes
 
-**Today (T28 done):** one **Display** setting with three options (render.md "Display modes"):
+**Today (T28, T58):** one **Display** setting with four options (render.md "Display modes"):
+- **Auto** (T58, default on touch devices; owner's call): Native's sharpness while the device holds 50+ fps, the resolution lowered a step at a time (never under Performance's) only while frames drop.
 - **Native**: full device resolution (cap 3×; 2× on touch screens, and no multisampling there), antialiased. Default on desktop and Steam.
-- **Performance**: the same look with the render resolution capped (pixel ratio ~1). Default on touch devices.
+- **Performance**: the same look with the render resolution capped (pixel ratio ~1).
 - **N64**: the 3D scene drawn 240 rows tall, width from the screen's aspect (no black bars), upscaled with soft
   (linear) filtering; the 5-bit colour crush and ordered dither stay (the N64's 16-bit framebuffer did both); no bloom.
 
@@ -190,7 +191,10 @@ Lock if jump matters more in combat); the styling is in (T38); only the later it
 - **Item** (the glove) on the outer ring, upper part. Hearts and keys top-left with a small menu button; the dial top-right.
 - Touch areas bigger than the drawn buttons, nothing under ~44 pt. Gamepad A stays interact + jump (AGENTS.md).
 - Era styling (T38, built): the theme's translucent fill and rim, a domed bevel that flips gold when pressed, the game's font.
-- Later: a layout editor, haptics on native builds.
+- **Built (T58):** hit areas by geometry (nearest rim), an Interact that forgives a late or early tap and lingers, the floating prompt as a
+  second Interact, no browser gestures, fullscreen + landscape on the first tap (Android), pause when sent to the background, haptics on
+  Android (Settings → Vibration), 60 fps on fast screens (engine.md "Touch controls").
+- Later: a layout editor, haptics on native builds (iPhone).
 
 ## Items and the pause screen
 

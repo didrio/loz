@@ -25,6 +25,8 @@ export interface PerfFacts {
   height: number;
   display: string;
   modern: boolean;
+  /** The sun's shadow map side while it draws, else 0. */
+  shadowMap: number;
 }
 
 export class PerfMeter {
@@ -63,7 +65,7 @@ export function overlayLines(s: PerfStats | null, f: PerfFacts): string[] {
   return [
     s ? `${Math.round(s.fps)} fps · ${one(s.frameMs)} ms · worst ${Math.round(s.worstMs)}` : '… fps',
     s ? `cpu ${one(s.cpuMs)} ms · ${count(f.calls)} calls · ${count(f.triangles)} tris` : `${count(f.calls)} calls · ${count(f.triangles)} tris`,
-    `${f.pixelRatio.toFixed(1)}× · ${f.width}×${f.height} · ${f.display}${f.modern ? ' · modern' : ''}`,
+    `${f.pixelRatio.toFixed(2).replace(/0$/, '')}× · ${f.width}×${f.height} · ${f.display}${f.modern ? ' · modern' : ''}${f.shadowMap ? ` · sh ${f.shadowMap}` : ''}`,
   ];
 }
 
@@ -98,8 +100,37 @@ export function perfReport(s: PerfStats | null, f: PerfFacts, scene: PerfScene):
       : 'Frames: not enough yet',
     `Draw: ${f.calls} calls, ${f.triangles} triangles, ${scene.lines} lines, ${scene.points} points; ${scene.geometries} geometries, ${scene.textures} textures, ${scene.programs} programs`,
     `Canvas: ${f.width}×${f.height} px at pixel ratio ${f.pixelRatio.toFixed(2)} (window ${scene.windowSize}, devicePixelRatio ${scene.devicePixelRatio})`,
-    `Display: ${f.display}; shadows ${scene.shadows ? 'on' : 'off'}; baked light ${scene.bakedLight ? 'on' : 'off'}; modern lighting ${f.modern ? 'on' : 'off'}`,
+    `Display: ${f.display}; shadows ${scene.shadows ? `on (map ${f.shadowMap || 'idle'})` : 'off'}; baked light ${scene.bakedLight ? 'on' : 'off'}; modern lighting ${f.modern ? 'on' : 'off'}`,
     `GPU: ${scene.gpu}`,
     `Dev settings changed from the defaults: ${scene.changed ? `\n${scene.changed}` : 'none'}`,
   ].join('\n');
+}
+
+/** On a touch device a screen faster than this (Hz) gets every other frame drawn: a 120 Hz phone plays at 60. */
+export const CAP_ABOVE_HZ = 100;
+
+/**
+ * The phone frame cap (T58). Mobile games hold 60: a 120 Hz phone drawing every refresh does twice the work for a picture a
+ * thumb can't tell apart, and pays in heat, battery and, soon after, the phone slowing itself down. Fed every animation frame's
+ * timestamp; says whether to draw this one. It watches the screen's own rate, so a 60 Hz or 90 Hz screen (or a game already
+ * slower than the cap) draws every frame.
+ */
+export class FrameCap {
+  private last = -1;
+  /** The smoothed time between animation frames, ms. */
+  private interval = 1000 / 60;
+  private drewLast = false;
+
+  constructor(public enabled: boolean) {}
+
+  shouldDraw(now: number): boolean {
+    if (this.last >= 0) {
+      const d = now - this.last;
+      if (d > 0 && d < 100) this.interval += (d - this.interval) * 0.1; // a long gap (a hitch, the page hidden) says nothing
+    }
+    this.last = now;
+    if (!this.enabled || this.interval > 1000 / CAP_ABOVE_HZ) return (this.drewLast = true);
+    this.drewLast = !this.drewLast;
+    return this.drewLast;
+  }
 }

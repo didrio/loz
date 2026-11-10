@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Sfx } from '../core/audio';
+import type { Haptics } from '../core/haptics';
 import type { Physics } from '../core/physics';
 import type { Particles } from '../render/particles';
 import type { Hud } from '../ui/hud';
@@ -23,6 +24,7 @@ export interface CombatHost {
   readonly player: Player;
   readonly state: GameState;
   readonly sfx: Sfx;
+  readonly haptics: Haptics;
   readonly hud: Hud;
   readonly particles: Particles;
   readonly pickups: Pickups;
@@ -276,8 +278,10 @@ export class Combat {
     const r = player.receiveHit(from, attack);
     const at = player.pos.clone().setY(player.pos.y + 1.2);
     const shieldAt = at.clone().add(player.forward.multiplyScalar(0.7));
+    const { haptics } = this.g;
     if (r === 'hit') {
       sfx.hurt();
+      haptics.pulse('hurt');
       particles.fx('hurtSpark', at);
       this.hitStop = Math.max(this.hitStop, 0.07);
       rig.shake(0.2);
@@ -285,10 +289,12 @@ export class Combat {
       // Heavier attacks clang harder: the cost should be felt, not just seen in the HUD.
       if (attack.guard >= 2) sfx.heavyBlock();
       else sfx.clank();
+      haptics.pulse(attack.guard >= 2 ? 'heavyBlock' : 'block');
       particles.fx('guardSpark', shieldAt, { count: 4 + attack.guard * 4, speed: 5, life: 0.3 });
       if (attack.guard >= 2) rig.shake(0.12 * attack.guard);
     } else if (r === 'broken') {
       sfx.guardBreak();
+      haptics.pulse('guardBreak');
       particles.fx('shards', shieldAt, { count: 14, speed: 6, life: 0.6 });
       particles.fx('guardSpark', shieldAt, { speed: 7 });
       this.hitStop = Math.max(this.hitStop, 0.09);

@@ -79,7 +79,8 @@ export function cloneMaterial<T extends THREE.Material>(m: T): T {
  */
 export function fadeInFog<T extends THREE.Material>(m: T): T {
   m.onBeforeCompile = (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', `#ifdef USE_FOG
+    // FADE_IN_FOG: a folded-grade frame mixes the fog in before the curve (render/grade.ts foldGrade); not for this one.
+    shader.fragmentShader = '#define FADE_IN_FOG\n' + shader.fragmentShader.replace('#include <fog_fragment>', `#ifdef USE_FOG
   #ifdef FOG_EXP2
     float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );
   #else

@@ -75,6 +75,8 @@ export interface BossConfig {
  * animation), its moves, its hurtboxes and its guard rules.
  */
 export abstract class Boss extends Enemy {
+  /** A boss always thinks every frame, near or far (`EnemyManager`). */
+  override readonly mayIdleFar = false;
   abstract readonly title: string;
   abstract readonly epithet: string;
   /** The song while it's engaged. */

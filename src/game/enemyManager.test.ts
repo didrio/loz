@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initPhysics } from '../core/physics';
 import type { Area } from '../world/area';
-import { Thornling, EnemyManager } from './enemies';
+import { Thornling, EnemyManager, FAR_ENEMY, FAR_EVERY, type Enemy } from './enemies';
 import { enemyEnv, flatGround } from './enemyTestEnv';
 
 beforeAll(async () => {
@@ -104,5 +104,42 @@ describe('EnemyManager blob shadows', () => {
     expect(blobs(parent).length).toBe(1);
     m.remove(t);
     expect(blobs(parent).length).toBe(0);
+  });
+});
+
+describe('EnemyManager far from Wren (T58)', () => {
+  /** A stand-in enemy that records the time steps it's given. */
+  const stub = (x: number, mayIdleFar = true) => ({
+    pos: new THREE.Vector3(x, 0, 0), alive: true, gone: false, mayIdleFar, steps: [] as number[],
+    update(dt: number) { this.steps.push(dt); }, placeShadow() {}, animatesInCutscene: () => false, dispose() {},
+  });
+
+  it('a near enemy thinks every frame; a far one every few frames, with the time it missed added up', () => {
+    const physics = flatGround();
+    const m = new EnemyManager(new THREE.Group(), physics, { ...field(0), indoor: true } as Area);
+    const { env } = enemyEnv(physics, new THREE.Vector3(0, 0, 0));
+    const near = stub(FAR_ENEMY - 5), far = stub(FAR_ENEMY + 5), boss = stub(FAR_ENEMY + 5, false);
+    for (const e of [near, far, boss]) m.add(e as unknown as Enemy);
+    const frames = FAR_EVERY * 10;
+    for (let i = 0; i < frames; i++) m.update(1 / 60, env);
+    expect(near.steps).toHaveLength(frames);
+    expect(boss.steps).toHaveLength(frames);
+    expect(far.steps.length).toBeLessThanOrEqual(frames / FAR_EVERY + 1);
+    expect(far.steps[0]).toBeCloseTo(1 / 60); // the first far frame thinks at once
+    const total = far.steps.reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThan((frames - FAR_EVERY) / 60); // no time lost but the last few frames still owed
+  });
+
+  it('coming back within range, it thinks every frame again', () => {
+    const physics = flatGround();
+    const m = new EnemyManager(new THREE.Group(), physics, { ...field(0), indoor: true } as Area);
+    const { env } = enemyEnv(physics, new THREE.Vector3(0, 0, 0));
+    const e = stub(FAR_ENEMY + 20);
+    m.add(e as unknown as Enemy);
+    for (let i = 0; i < 8; i++) m.update(1 / 60, env);
+    e.pos.x = 10;
+    e.steps.length = 0;
+    for (let i = 0; i < 8; i++) m.update(1 / 60, env);
+    expect(e.steps).toHaveLength(8);
   });
 });
